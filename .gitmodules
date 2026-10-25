@@ -1,0 +1,6 @@
+[submodule "ardupilot-hakea"]
+	path = ardupilot-hakea
+	url = https://github.com/fredgaffey/ardupilot.git
+[submodule "am32-hakea"]
+	path = am32-hakea
+	url = https://github.com/fredgaffey/AM32.git
