@@ -1,0 +1,231 @@
+{
+ "f_loop_median": 20000.01882801886,
+ "f_loop_per_step": [
+  19801.35,
+  20000.09,
+  19999.99,
+  20000.09,
+  19999.99,
+  20000.09,
+  20000.0,
+  20000.09,
+  20000.01,
+  20000.1,
+  19999.99,
+  20000.09,
+  19999.98,
+  20000.09,
+  20000.02
+ ],
+ "gate_A": {
+  "t_running": 1.901,
+  "t_gate_open": 2.0875500004236303,
+  "zero_crosses_at_gate_interp": 999.9500038126712,
+  "zero_crosses_1ms_before": 995.0,
+  "zero_crosses_at_first_tick_sample": 1004.0
+ },
+ "timeline_A": [
+  {
+   "step": 0,
+   "t_start": 2.0875500004236303,
+   "duration_s": 3.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 1,
+   "t_start": 5.08755000042363,
+   "duration_s": 2.999999999999999,
+   "freq_prog": 250,
+   "amp_prog": 40,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 2,
+   "t_start": 8.08755000042363,
+   "duration_s": 1.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 3,
+   "t_start": 9.08755000042363,
+   "duration_s": 3.0,
+   "freq_prog": 250,
+   "amp_prog": 100,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 4,
+   "t_start": 12.08755000042363,
+   "duration_s": 1.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 5,
+   "t_start": 13.08755000042363,
+   "duration_s": 3.0,
+   "freq_prog": 400,
+   "amp_prog": 100,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 6,
+   "t_start": 16.08755000042363,
+   "duration_s": 1.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 7,
+   "t_start": 17.08755000042363,
+   "duration_s": 3.0,
+   "freq_prog": 600,
+   "amp_prog": 100,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 8,
+   "t_start": 20.08755000042363,
+   "duration_s": 1.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 9,
+   "t_start": 21.08755000042363,
+   "duration_s": 3.0,
+   "freq_prog": 600,
+   "amp_prog": 200,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 10,
+   "t_start": 24.08755000042363,
+   "duration_s": 1.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 11,
+   "t_start": 25.08755000042363,
+   "duration_s": 3.0,
+   "freq_prog": 800,
+   "amp_prog": 100,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 12,
+   "t_start": 28.08755000042363,
+   "duration_s": 1.0,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 13,
+   "t_start": 29.08755000042363,
+   "duration_s": 3.0000000000000036,
+   "freq_prog": 1000,
+   "amp_prog": 100,
+   "ms_prog": 3000,
+   "duration_expected_s": 2.99999717579983
+  },
+  {
+   "step": 14,
+   "t_start": 32.08755000042363,
+   "duration_s": 1.000449999576368,
+   "freq_prog": 0,
+   "amp_prog": 0,
+   "ms_prog": 1000,
+   "duration_expected_s": 0.9999990585999433
+  },
+  {
+   "step": 15,
+   "t_start": 33.088
+  }
+ ],
+ "restart_B": {
+  "segments": [
+   [
+    0,
+    34.151,
+    38.468
+   ],
+   [
+    1,
+    38.469,
+    40.15
+   ]
+  ],
+  "armed_min": 1.0,
+  "t_gate_open": 35.46890000009414,
+  "zero_crosses_at_gate_interp": 1000.4000005648176,
+  "t_step1_start": 38.46890000009414,
+  "step0_duration_s": 3.0
+ },
+ "restart_C": {
+  "segments": [
+   [
+    1,
+    40.151,
+    40.65
+   ],
+   [
+    0,
+    40.651,
+    45.738
+   ],
+   [
+    1,
+    45.739,
+    47.3
+   ]
+  ],
+  "armed_min": 0.0,
+  "t_disarmed": 40.65,
+  "t_rearmed": 42.252,
+  "iwdg_kicks_dropped_to": 0.0,
+  "tenkhzcounter_min": 0.0,
+  "t_gate_open": 42.7390000009414,
+  "zero_crosses_at_gate_interp": 1000.0000084726465,
+  "t_step1_start": 45.739,
+  "step0_duration_s": 2.999999999058595
+ },
+ "restart_B_step1_f_meas": 250.00064530539072,
+ "restart_B_step1_mod_amp": 40.11054598091998,
+ "timing_profile": {
+  "iwdg_max_gap_ms_at_1ms_res": 1.9750000000007262,
+  "iwdg_kicks_per_s": 224724.33253744303,
+  "tick_rate_tenkhzcounter": 19996.275235280984,
+  "tick_rate_step_ticks": 20000.01882801886
+ },
+ "timing_stock_pr438": {
+  "iwdg_max_gap_ms_at_1ms_res": 1.974999999999838,
+  "iwdg_kicks_per_s": 227330.9792843691,
+  "tick_rate_tenkhzcounter": 19999.882158155542,
+  "rpm_mean": 14605.243850317722,
+  "pcu_W": 11.341616371627302,
+  "desyncs": 0
+ }
+}

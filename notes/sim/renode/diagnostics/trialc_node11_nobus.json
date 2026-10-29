@@ -1,0 +1,80 @@
+{
+ "name": "trialc_node11_nobus",
+ "target": "VIMDRONES_L431_CAN",
+ "elf": "/home/fred/vehicles/hakea/am32-renode/variants/VIMDRONES_L431_CAN_ramp16.elf",
+ "model": "/home/fred/vehicles/hakea/scripts/sim/models/hakea_2307_5in.json",
+ "model_json": {
+  "motor": {
+   "kv": 1300,
+   "poles": 14,
+   "resistance": 0.04,
+   "inductance": 1.5e-05,
+   "mutual_inductance": 0.0,
+   "inertia": 1.5e-05,
+   "damping": 1e-06,
+   "static_friction": 0.002,
+   "load_k_omega2": 5e-08
+  },
+  "battery": {
+   "voltage": 24.2,
+   "resistance": 0.05,
+   "capacitance": 0.002,
+   "sink_resistance": 0.05,
+   "sink_current_max": 0
+  },
+  "esc": {
+   "rds_on": 0.004,
+   "diode_vf": 0.7,
+   "commutation_transfer": 1.0,
+   "temperature_c": 38
+  }
+ },
+ "eeprom": "scripts/sim/renode/eeprom/esc1_config_can11.bin",
+ "eeprom_buffer_first48": "[1, 4, 17, 2, 21, 160, 4, 0, 10, 100, 0, 50, 2, 0, 255, 255, 255, 0, 0, 0, 1, 1, 1, 26, 24, 100, 32, 14, 0, 0, 5, 0, 128, 128, 128, 50, 0, 50, 0, 0, 15, 10, 10, 100, 0, 6, 1, 1]",
+ "base": 1047,
+ "step_us": 100,
+ "frame_us": 100,
+ "dshot_kbaud": 300,
+ "sine_hz": 250.0,
+ "segments": [
+  {
+   "name": "ramp",
+   "start_step": 0,
+   "end_step": 5000,
+   "seconds": 0.49999999999999994
+  },
+  {
+   "name": "settle",
+   "start_step": 5000,
+   "end_step": 15000,
+   "seconds": 0.9999999999999999
+  },
+  {
+   "name": "sine200",
+   "start_step": 15000,
+   "end_step": 17000,
+   "seconds": 0.19999999999999998
+  },
+  {
+   "name": "hold1",
+   "start_step": 17000,
+   "end_step": 20000,
+   "seconds": 0.3
+  },
+  {
+   "name": "sine600",
+   "start_step": 20000,
+   "end_step": 22000,
+   "seconds": 0.19999999999999998
+  },
+  {
+   "name": "zero",
+   "start_step": 22000,
+   "end_step": 25000,
+   "seconds": 0.3
+  }
+ ],
+ "profile_virtual_s": 2.5,
+ "profile_wall_s": 6.297199010848999,
+ "realtime_factor": 0.3970019044487758
+}

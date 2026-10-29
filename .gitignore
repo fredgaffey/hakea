@@ -1,1 +1,19 @@
 logs/
+escsim/
+
+# AM32 worktrees (recreate from am32-hakea branches when needed)
+am32-*/
+!am32-hakea/
+
+# simulator work dirs and raw outputs (regenerable)
+scripts/sim/renode/work*/
+scripts/motorid/.luabuild/
+raw/
+trial_*.csv
+notes/sim/sitl_calib/sitl_eval_final.json
+
+# python / numba caches
+__pycache__/
+*.pyc
+*.nbc
+*.nbi

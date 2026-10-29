@@ -1,0 +1,53 @@
+{
+ "base": {
+  "kv": 1380.0,
+  "R_phase": 0.07715877327818697,
+  "L_phase": 1.8e-05,
+  "J_m": 4.167271856614777e-06,
+  "J_p": 2.5295148680153794e-06,
+  "kq": 1.8425621926787373e-08,
+  "T0": 0.002,
+  "b": 5.792168694968939e-06,
+  "Rb": 0.036977286310262855,
+  "rds_on": 0.002,
+  "delay": 0.004980799722555805,
+  "commutation_transfer": 1.0,
+  "_source": "params_v5all.json via sitl_calib.base_from_avg; kv/L/T0 from SITL grid g1; L_phase 18 uH = physics prior (L not identified by bench data <50 Hz; 2306-class ~11 uH ph-ph scaled by Kv^2)"
+ },
+ "vbat": 24.3,
+ "ee": {},
+ "base_dshot": 1048,
+ "model": {
+  "motor": {
+   "kv": 1380.0,
+   "poles": 14,
+   "resistance": 0.07715877327818697,
+   "inductance": 1.8e-05,
+   "mutual_inductance": 0.0,
+   "inertia": 6.696786724630156e-06,
+   "damping": 5.792168694968939e-06,
+   "static_friction": 0.002,
+   "load_k_omega2": 1.8425621926787373e-08
+  },
+  "battery": {
+   "voltage": 24.3,
+   "resistance": 0.036977286310262855,
+   "capacitance": 0.0
+  },
+  "esc": {
+   "rds_on": 0.002,
+   "diode_vf": 0.7,
+   "commutation_transfer": 1.0,
+   "temperature_c": 38
+  }
+ },
+ "frame_ns": 100000,
+ "sine_s": 1.0,
+ "skip_s": 0.2,
+ "elfs": {
+  "16": "/home/fred/vehicles/hakea/am32-sim/variants/sitl_ramp16.elf",
+  "32": "/home/fred/vehicles/hakea/am32-sim/variants/sitl_ramp32.elf",
+  "64": "/home/fred/vehicles/hakea/am32-sim/variants/sitl_ramp64.elf",
+  "255": "/home/fred/vehicles/hakea/am32-sim/variants/sitl_ramp255.elf"
+ }
+}

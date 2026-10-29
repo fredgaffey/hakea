@@ -1,0 +1,15 @@
+{
+  "motor": {
+    "kv": 1300,
+    "poles": 14,
+    "resistance": 0.040,
+    "inductance": 1.5e-5,
+    "mutual_inductance": 0.0,
+    "inertia": 1.5e-5,
+    "damping": 1.0e-6,
+    "static_friction": 0.002,
+    "load_k_omega2": 5.0e-8
+  },
+  "battery": { "voltage": 24.2, "resistance": 0.05, "capacitance": 0.002, "sink_resistance": 0.05, "sink_current_max": 0 },
+  "esc": { "rds_on": 0.004, "diode_vf": 0.7, "commutation_transfer": 1.0, "temperature_c": 38 }
+}

@@ -1,0 +1,54 @@
+diff --git a/Inc/targets.h b/Inc/targets.h
+index 430769a..51f3183 100644
+--- a/Inc/targets.h
++++ b/Inc/targets.h
+@@ -1487,6 +1487,17 @@
+ #define USE_SERIAL_TELEMETRY
+ #endif
+ 
++#ifdef FOXEER_F421_PROFILE
++// Hakea bench test build: FOXEER_F421 plus the throttle sine programme (Src/hakea_profile.c)
++#define HARDWARE_GROUP_AT_C
++#define FIRMWARE_NAME "FOXEER F4   "
++#define FILE_NAME "FOXEER_F421_PROFILE"
++#define DEAD_TIME 35
++#define HARDWARE_GROUP_AT_540
++#define USE_SERIAL_TELEMETRY
++#define HAKEA_PROFILE
++#endif
++
+ #ifdef FOXEER_F421
+ #define HARDWARE_GROUP_AT_C
+ #define FIRMWARE_NAME "FOXEER F4   "
+diff --git a/Src/main.c b/Src/main.c
+index 117ffe8..fca3180 100644
+--- a/Src/main.c
++++ b/Src/main.c
+@@ -230,6 +230,7 @@ an settings option)
+ #include "signal.h"
+ #include "sounds.h"
+ #include "targets.h"
++#include "hakea_profile.h"
+ #include <stdint.h>
+ #include <string.h>
+ #include <assert.h>
+@@ -1513,12 +1514,19 @@ void tenKhzRoutine()
+              duty_cycle = last_duty_cycle;
+             }
+ 
++#ifdef HAKEA_PROFILE
++        hakea_profile_tick(armed && running && input > 47 && zero_crosses > 1000);
++#endif
+         if ((armed && running) && input > 47) {
+           if(zero_throttle_brake_active){
+             zero_throttle_brake_active = 0;
+             temp_comp_pwm = eepromBuffer.comp_pwm;
+           }else{
++#ifdef HAKEA_PROFILE
++            adjusted_duty_cycle = ((hakea_profile_apply(duty_cycle, duty_cycle_maximum) * tim1_arr) / 2000) + 1;
++#else
+             adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000) + 1;
++#endif
+         }
+         } else {
+           if(running && input < 47){ // brake on zero throttle behavior while motor is still rotating

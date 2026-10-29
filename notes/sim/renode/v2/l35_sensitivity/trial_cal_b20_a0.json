@@ -1,0 +1,74 @@
+{
+ "name": "trial_cal_b20_a0",
+ "freq": 250.0,
+ "amp": 0,
+ "elf_sha256": "352157592199b86f15634d08e2b25855e32179b73a6050b5783ba5b82ec68688",
+ "model_sha256": "69749a5ed9bead7bd9c7e1929101ebfe31411420208bbf6e0eaccdb7a91e2923",
+ "window_ms": 50.0,
+ "bidir": false,
+ "edt": false,
+ "target": "FOXEER_F421",
+ "elf": "/home/fred/vehicles/hakea/firmware/AM32_FOXEER_F421_head-pr438_bdbc75e.elf",
+ "model": "/home/fred/vehicles/hakea/scripts/sim/models/hakea_calibrated_prop_24v3.json",
+ "model_json": {
+  "motor": {
+   "kv": 1380.0,
+   "poles": 14,
+   "resistance": 0.07715877327818697,
+   "inductance": 1.8e-05,
+   "mutual_inductance": 0.0,
+   "inertia": 6.696786724630156e-06,
+   "damping": 5.792168694968939e-06,
+   "static_friction": 0.002,
+   "load_k_omega2": 1.8425621926787373e-08
+  },
+  "battery": {
+   "voltage": 24.3,
+   "resistance": 0.036977286310262855,
+   "capacitance": 0.0
+  },
+  "esc": {
+   "rds_on": 0.002,
+   "diode_vf": 0.7,
+   "commutation_transfer": 1.0,
+   "temperature_c": 38
+  }
+ },
+ "eeprom": "/home/fred/Downloads/esc1_config.bin",
+ "eeprom_buffer_first48": "[1, 4, 17, 2, 21, 160, 4, 0, 10, 100, 0, 50, 2, 0, 255, 255, 255, 0, 0, 0, 1, 1, 1, 26, 24, 100, 32, 14, 0, 0, 5, 0, 128, 128, 128, 50, 0, 50, 0, 0, 15, 10, 10, 100, 102, 6, 1, 1]",
+ "bridge_batch_us": 20,
+ "base": 1048,
+ "step_us": 100,
+ "frame_us": 100,
+ "dshot_kbaud": 300,
+ "sine_hz": 250.0,
+ "segments": [
+  {
+   "name": "ramp",
+   "start_step": 0,
+   "end_step": 5000,
+   "seconds": 0.49999999999999994
+  },
+  {
+   "name": "settle",
+   "start_step": 5000,
+   "end_step": 15000,
+   "seconds": 0.9999999999999999
+  },
+  {
+   "name": "sine",
+   "start_step": 15000,
+   "end_step": 18000,
+   "seconds": 0.3
+  },
+  {
+   "name": "zero",
+   "start_step": 18000,
+   "end_step": 21000,
+   "seconds": 0.3
+  }
+ ],
+ "profile_virtual_s": 2.1,
+ "profile_wall_s": 8.474128246307373,
+ "realtime_factor": 0.24781310111928992
+}

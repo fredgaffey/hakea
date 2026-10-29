@@ -1,0 +1,29 @@
+NOTE: 32: throttle commanded from 537.54 s but no rotation until 540.46 s; run starts at 540.26 s
+NOTE: 32: throttle commanded from 595.04 s but no rotation until 598.03 s; run starts at 597.83 s
+33  (/home/fred/vehicles/hakea/logs/sdcard/00000033.BIN, sha256 31000576ae9e...)  excitation BNCH, 81197 records
+  params: MOT_PWM_MIN=1000, MOT_PWM_MAX=2000, SERVO_BLH_POLES=14, SERVO_DSHOT_RATE=3, SCHED_LOOP_RATE=400, SERVO1_FUNCTION=33, MOT_PWM_TYPE=6
+  LOAD: no, BPWR: no
+  run np33       316.8-  504.8 s  prop=0 (heuristic (rpm/no-load speed 1.018 >= 0.96 at duty >= 0.6))  tests [0, 1, 2, 3, 4]  voltage: bat_volt
+     steady holds rpm/(Kv*duty*V): 1100:0.996, 1200:0.992, 1300:0.996, 1400:1.019, 1500:1.021, 1600:1.023, 1700:1.018, 1800:1.011, 1500:1.023, 1500:1.024, 1500:1.024
+34  (/home/fred/vehicles/hakea/logs/sdcard/00000034.BIN, sha256 1a8c029de70c...)  excitation BNCH, 85871 records
+  params: MOT_PWM_MIN=1000, MOT_PWM_MAX=2000, SERVO_BLH_POLES=14, SERVO_DSHOT_RATE=3, SCHED_LOOP_RATE=400, SERVO1_FUNCTION=33, MOT_PWM_TYPE=6
+  LOAD: no, BPWR: no
+  run p34        249.0-  437.0 s  prop=1 (heuristic (rpm/no-load speed 0.909 <= 0.94 at duty >= 0.6))  tests [0, 1, 2, 3, 4]  voltage: bat_volt
+     steady holds rpm/(Kv*duty*V): 1100:0.989, 1200:0.978, 1300:0.958, 1400:0.979, 1500:0.962, 1600:0.927, 1700:0.909, 1800:0.892, 1500:0.962, 1500:0.963, 1500:0.962
+32  (/home/fred/vehicles/hakea/logs/sdcard/00000032.BIN, sha256 a08dda27883e...)  excitation SWP, 53287 records
+  params: MOT_PWM_MIN=1000, MOT_PWM_MAX=2000, SERVO_BLH_POLES=14, SERVO_DSHOT_RATE=3, SCHED_LOOP_RATE=400, SERVO1_FUNCTION=33, MOT_PWM_TYPE=6
+  LOAD: no, BPWR: no
+  run p32r1      540.3-  590.9 s  prop=1 (command line)  tests [4]  voltage: bat_volt
+  run p32r2      597.8-  658.0 s  prop=1 (command line)  tests [4]  voltage: bat_volt
+NOTE: no absolute-scale prior given; using R = 0.16 +- 0.04 ohm (Hakea 2307 default). Measure the phase-to-phase resistance and pass --r-phase-phase.
+[stage 1: motor (prop off)] fitting 13 parameters on 1 run(s): np33
+[stage 1: motor (prop off)] cost 1.931e+04 after 37 evaluations (2 passes), 48 s
+[stage 2: prop (motor fixed)] fitting 5 parameters on 1 run(s): p34
+[stage 2: prop (motor fixed)] cost 1.337e+05 after 26 evaluations (2 passes), 12 s
+np33     {"volt_rms": 0.0, "test1": {"rpm_rms": 160.1, "rpm_mean_err": 72.0, "rpm_rel_rms": 0.0, "n": 10103, "role": "fit"}, "test2": {"rpm_rms": 180.0, "rpm_mean_err": 29.0, "rpm_rel_rms": 0.0, "n": 4571, "role": "fit"}, "test3": {"rpm_rms": 255.8, "rpm_mean_err": -28.7, "rpm_rel_rms": 0.0, "n": 25691, "role": "fit"}, "test4": {"rpm_rms": 1231.1, "rpm_mean_err": -511.0, "rpm_rel_rms": 0.1, "n": 25833, "role": "holdout"}, "fit_rpm_rms": 227.4, "holdout_rpm_rms": 1231.1}
+p34      {"volt_rms": 0.1, "test1": {"rpm_rms": 455.3, "rpm_mean_err": 280.2, "rpm_rel_rms": 0.0, "n": 10698, "role": "fit"}, "test2": {"rpm_rms": 183.5, "rpm_mean_err": -18.9, "rpm_rel_rms": 0.0, "n": 4848, "role": "fit"}, "test3": {"rpm_rms": 220.5, "rpm_mean_err": -37.6, "rpm_rel_rms": 0.0, "n": 27199, "role": "fit"}, "test4": {"rpm_rms": 892.5, "rpm_mean_err": 33.9, "rpm_rel_rms": 0.1, "n": 27215, "role": "holdout"}, "fit_rpm_rms": 294.3, "holdout_rpm_rms": 892.5}
+p32r1    {"volt_rms": 0.1, "test4": {"rpm_rms": 796.2, "rpm_mean_err": 98.6, "rpm_rel_rms": 0.1, "n": 22942, "role": "holdout"}, "holdout_rpm_rms": 796.2}
+p32r2    {"volt_rms": 0.1, "test4": {"rpm_rms": 857.8, "rpm_mean_err": -8.1, "rpm_rel_rms": 0.1, "n": 27358, "role": "holdout"}, "holdout_rpm_rms": 857.8}
+wrote /home/fred/vehicles/hakea/notes/motorid/motor_model.json
+wrote /home/fred/vehicles/hakea/notes/motorid/report.md
+done in 70 s

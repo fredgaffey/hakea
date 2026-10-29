@@ -1,0 +1,49 @@
+{
+ "name": "trial_r16_f1000_a200",
+ "target": "FOXEER_F421",
+ "elf": "/home/fred/vehicles/hakea/am32-renode-pr438/variants/FOXEER_F421_prof_ramp16.elf",
+ "elf_sha256": "3b23b9b1360064960e3dfbf948e0db71d4b61623039a8f54980af5cd2e985b54",
+ "model": "/home/fred/vehicles/hakea/scripts/sim/models/hakea_calibrated_prop_24v0.json",
+ "model_sha256": "c92a64cee9d2bb367d1cf1d42aac69203101aef7cfe44ca28c64e9be2988fd05",
+ "model_json": {
+  "motor": {
+   "kv": 1380.0,
+   "poles": 14,
+   "resistance": 0.07715877327818697,
+   "inductance": 1.8e-05,
+   "mutual_inductance": 0.0,
+   "inertia": 6.696786724630156e-06,
+   "damping": 5.792168694968939e-06,
+   "static_friction": 0.002,
+   "load_k_omega2": 1.8425621926787373e-08
+  },
+  "battery": {
+   "voltage": 24.0,
+   "resistance": 0.036977286310262855,
+   "capacitance": 0.0
+  },
+  "esc": {
+   "rds_on": 0.002,
+   "diode_vf": 0.7,
+   "commutation_transfer": 1.0,
+   "temperature_c": 38
+  }
+ },
+ "eeprom": "/home/fred/Downloads/esc1_config.bin",
+ "eeprom_sha256": "a1ce48e4213b20b902d0be020bd412734f831e5e9ae272630bda00ae4268f355",
+ "eeprom_buffer_first48": "[1, 4, 17, 2, 21, 160, 4, 0, 10, 100, 0, 50, 2, 0, 255, 255, 255, 0, 0, 0, 1, 1, 1, 26, 24, 100, 32, 14, 0, 0, 5, 0, 128, 128, 128, 50, 0, 50, 0, 0, 15, 10, 10, 100, 102, 6, 1, 1]",
+ "freq_requested": 1000.0,
+ "amp": 200,
+ "dphase": 219043332,
+ "loop_hz_assumed": 19607.843137254902,
+ "sine_s": 0.4,
+ "baseline_s": 0.3,
+ "post_s": 0.05,
+ "base": 1048,
+ "frame_us": 100,
+ "log_us": 25,
+ "window_ms": 50.0,
+ "bridge_batch_us": 2,
+ "wall_s": 10.460038900375366,
+ "renode_out": "v3 done: sine 3.150000..3.550000 vt=3.6000 rows=30000"
+}

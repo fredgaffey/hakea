@@ -1,0 +1,15 @@
+{
+ "kv": 1380.0,
+ "R_phase": 0.07715877327818697,
+ "L_phase": 1.8e-05,
+ "J_m": 4.167271856614777e-06,
+ "J_p": 2.5295148680153794e-06,
+ "kq": 1.8425621926787373e-08,
+ "T0": 0.002,
+ "b": 5.792168694968939e-06,
+ "Rb": 0.036977286310262855,
+ "rds_on": 0.002,
+ "delay": 0.004980799722555805,
+ "commutation_transfer": 1.0,
+ "_source": "params_v5all.json via sitl_calib.base_from_avg; kv/L/T0 from SITL grid g1; L_phase 18 uH = physics prior (L not identified by bench data <50 Hz; 2306-class ~11 uH ph-ph scaled by Kv^2)"
+}
