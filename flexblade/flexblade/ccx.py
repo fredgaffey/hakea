@@ -288,7 +288,19 @@ def write_inp_model(model: Model, workdir, case: str = "static", rpm: Optional[f
             oname = f", ORIENTATION=O{i}"
         out.append(f"*SOLID SECTION, ELSET={sname}, MATERIAL=M_{si.material.name}{oname}")
     # node sets
-    for nname, ids in model.nsets.items():
+    nsets = dict(model.nsets)
+    if rigid is not None and fixed:
+        # a node cannot be both an SPC node and a dependent node of the rigid-body MPC (ccx
+        # "MPC and SPC"). It happens when the blade-side and hub-side fittings touch and the
+        # conforming mesh merges their nodes: the load then bypasses the flexure, so the
+        # result would be meaningless -> fail early with a geometry message.
+        fx = np.unique(np.concatenate([np.asarray(nsets[ns]) for ns, _, _ in fixed]))
+        both = np.intersect1d(np.asarray(nsets[rigid["nset"]]), fx)
+        if len(both):
+            raise ValueError(f"ccx model: {len(both)} nodes are both fixed and in the rigid blade-side "
+                             "set (fittings touch / share nodes, bypassing the flexure); "
+                             "separate the root and hub fittings in the geometry")
+    for nname, ids in nsets.items():
         out.append(f"*NSET, NSET={nname}")
         out.append(_fmt_nums((np.asarray(ids) + 1).tolist(), 12))
     if rigid is not None:

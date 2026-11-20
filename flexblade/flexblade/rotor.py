@@ -21,6 +21,7 @@ flap = −local ry (DESIGN.md).
 """
 from __future__ import annotations
 
+import dataclasses
 import time
 from dataclasses import dataclass, field
 from typing import Optional
@@ -225,7 +226,16 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 shp = CircleShape(round(t, 9))
             else:
                 shp = RectShape(round(m.width, 9), round(t, 9))
-            return section_properties(shp, m.layup, ori, e1, axes=(e2, e3))
+            sp = section_properties(shp, m.layup, ori, e1, axes=(e2, e3))
+            if m.kind == "blade" and m.shape != "circle" and m.layup.kind == "solid" and m.width > 2 * t:
+                # wide plate clamped at both fittings bends cylindrically: width strain and
+                # in-plane shear are restrained except in a free-edge layer ~ t wide each side
+                mat = get_material(m.layup.material)
+                Eq, E0 = mat.plate_modulus(ori, e1, e2, e3), mat.axial_modulus(ori, e1)
+                phi = 1.0 - 2.0 * t / m.width
+                fq = 1.0 + phi * (Eq / E0 - 1.0)
+                sp = dataclasses.replace(sp, EIy=sp.EIy * fq, EA=sp.EA * fq)
+            return sp
         if m.taper == 1.0 or m.layup.kind != "solid":
             s = sec_at(0.5)
             return [s], None, _ea_fracs(s, m.layup)
