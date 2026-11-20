@@ -1,0 +1,7 @@
+*.egg-info/
+.pytest_cache/
+cfd_runs/
+work/
+*.msh
+*.vtu
+*.npz
