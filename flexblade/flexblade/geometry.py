@@ -30,13 +30,14 @@ from typing import Any, Literal, Optional
 
 import numpy as np
 
-from . import bladegeom
+from . import bladegeom, joint as jointmod
 from .schema import Design, FlexureMember, Layup, PrintOrientation
 
 HUB_MATERIAL = "pa6_cf"          # schema has no hub material; rigid printed hub assumed
 N_CIRCLE = 20                    # circle tessellation for surfaces
 N_AIRFOIL_SURF = 61              # points per airfoil side for viewport/mesh
 N_AIRFOIL_STEP = 41              # points per airfoil side for STEP splines
+JOINT_Z = 0.05                   # m, half-height of the joint clip prism (>> blade thickness)
 FIT_MARGIN = 0.0005              # m, fitting overhang beyond member end faces
 
 Role = Literal["blade", "skin", "core", "rod", "member", "member_core", "member_skin",
@@ -74,6 +75,9 @@ class Part:
     ruled: bool = True
     member: int = -1             # index into members of that blade (members only)
     rotor: str = ""              # "" single, "upper"/"lower" coaxial
+    # interlocking joint: (polygon (N,3) of the B region at constant z, "a"|"b"); the lofted
+    # solid is cut by (a) / intersected with (b) the polygon extruded through +-JOINT_Z
+    clip: Optional[tuple] = None
 
     @property
     def priority(self) -> int:
@@ -353,7 +357,7 @@ def _thickness_at(xy: np.ndarray, xc: float) -> float:
 # =========================================================================== blade stations
 
 
-def _blade_stations(design: Design, r_start: float, n_side: int):
+def _blade_stations(design: Design, r_start: float, n_side: int, extra_r: Optional[float] = None):
     """List of (r, chord, twist, xy) from r_start to tip (interpolated root station)."""
     blade = design.blade
     st = bladegeom.resolve_stations(blade)
@@ -370,6 +374,8 @@ def _blade_stations(design: Design, r_start: float, n_side: int):
     out = []
     keep = r > r_start + 1e-6
     rr = np.concatenate([[r_start], r[keep]]) if r_start > r[0] - 1e-9 else r
+    if extra_r is not None:
+        rr = np.unique(np.concatenate([rr, [extra_r]]))
     for ri in rr:
         c = float(np.interp(ri, r, chord))
         tw = float(np.interp(ri, r, twist))
@@ -495,6 +501,22 @@ def _map_part(p: Part, M: np.ndarray, shift: np.ndarray, prefix: str, rotor: str
     return Part(prefix + p.name, p.role, p.material, o, p.blade, secs, p.ruled, p.member, rotor)
 
 
+def _split_joint(bp: Part, js, Rz: np.ndarray, k: int, stations) -> list[Part]:
+    """Split the blade loft at x_j: outboard loft (material B) + inboard loft cut by the finger
+    prism (rotated to blade k) into fingers (B, name *_jointF) and the rest (A, *_jointA)."""
+    xs = [st[0] for st in stations]
+    i = int(np.argmin(np.abs(np.array(xs) - js.x_j)))
+    sec = bp.sections
+    poly2 = js.polygon(y_big=0.5)
+    poly3 = np.column_stack([poly2, np.full(len(poly2), -JOINT_Z)]) @ Rz.T
+
+    def mk(tag, mat, secs, clip):
+        return Part(f"{bp.name}_joint{tag}", bp.role, mat, bp.orientation, bp.blade, secs,
+                    bp.ruled, bp.member, bp.rotor, clip=clip)
+    return [mk("A", js.mat_a, sec[:i + 1], (poly3, "a")), mk("F", js.mat_b, sec[:i + 1], (poly3, "b")),
+            mk("B", js.mat_b, sec[i:], None)]
+
+
 def build_geometry(design: Design, n_side: int = N_AIRFOIL_SURF,
                    blades: Optional[list[int]] = None) -> RotorGeometry:
     """Part list in frame H. Coaxial layout: upper_* parts (primary rotor, +Ω) and lower_*
@@ -506,7 +528,7 @@ def build_geometry(design: Design, n_side: int = N_AIRFOIL_SURF,
     gl = _build_single(lower_design(design), n_side, blades)
     M, shift = coaxial_map(design)
     parts = [Part("upper_" + p.name, p.role, p.material, p.orientation, p.blade, p.sections,
-                  p.ruled, p.member, "upper") for p in gu.parts]
+                  p.ruled, p.member, "upper", p.clip) for p in gu.parts]
     parts += [_map_part(p, M, shift, "lower_", "lower") for p in gl.parts]
     return RotorGeometry(design, parts, gu.members, gu.hinge, gu.blade_start, gu.members_source,
                          gu.warnings + ["lower: " + w for w in gl.warnings], gl, (M, shift))
@@ -555,7 +577,8 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
                     half=np.array([x_spoke / 2, max(fit_hub.half[1], 0.6 * hub_r), hub_h / 4]))
 
     # ---- blade sections (blade-1 frame)
-    stations = _blade_stations(design, r_start, n_side)
+    jspec = jointmod.resolve(design)
+    stations = _blade_stations(design, r_start, n_side, jspec.x_j if jspec is not None else None)
     ref = blade.elastic_axis_chord_frac
     outer = [_airfoil_section(xy, c, tw, r, ref) for (r, c, tw, xy) in stations]
     lay = blade.layup
@@ -591,6 +614,14 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
             if len(cs) < len(stations):
                 warnings.append(f"rod x/c={pos} ends at r={stations[len(cs)-1][0]*1e3:.1f} mm")
 
+    if jspec is not None:
+        if lay.kind != "solid":
+            raise ValueError("blade.joint requires a solid blade layup")
+        if jspec.x_min < r_start + 0.0005:
+            raise ValueError(f"joint fingers reach r={jspec.x_min*1e3:.1f} mm, inside the flexure "
+                             f"(blade loft starts at {r_start*1e3:.1f} mm); move the joint outboard "
+                             "or shorten the fingers")
+
     # ---- assemble per blade
     parts: list[Part] = []
     members_all: dict[int, list[FlexureMember]] = {}
@@ -613,9 +644,12 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
             return out
 
         bo = _orient_rot(blade.orientation, R)
-        parts += _layup_parts(f"blade{k}", k, lay, bo, [tr_sec(x) for x in outer],
-                              [tr_sec(x) for x in core] if core else None,
-                              [[tr_sec(x) for x in rs] for rs in rods], False, "blade")
+        lp = _layup_parts(f"blade{k}", k, lay, bo, [tr_sec(x) for x in outer],
+                          [tr_sec(x) for x in core] if core else None,
+                          [[tr_sec(x) for x in rs] for rs in rods], False, "blade")
+        if jspec is not None:
+            lp = _split_joint(lp[0], jspec, R, k, stations)
+        parts += lp
         mk = members_for_blade(members1, k, n)
         members_all[k] = mk
         hinge_all[k] = hinge_for_blade(hinge1, k, n)
@@ -631,7 +665,8 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
             return Fitting(R @ c, R @ ax, f.half)
 
         fo = _orient_rot(design.flexure.orientation, R, mirror)
-        parts.append(_box_part(f"blade{k}_root_fitting", "fitting", lay.material, bo, k,
+        parts.append(_box_part(f"blade{k}_root_fitting", "fitting",
+                               jspec.mat_a if jspec is not None else lay.material, bo, k,
                                tr_fit(fit_blade)))
         parts.append(_box_part(f"blade{k}_hub_fitting", "fitting",
                                design.flexure.layup.material, fo, k, tr_fit(fit_hub)))
@@ -751,8 +786,17 @@ def build_surface(design: Design, as_lists: bool = False, n_side: int = N_AIRFOI
     """
     geo = build_geometry(design, n_side=n_side)
     parts = []
+    clipped = [p for p in geo.parts if "_joint" in p.name]
+    cmesh: dict = {}
+    if clipped:
+        st = bladegeom.resolve_stations(design.blade)
+        h = max(0.5 * (design.blade.joint.neck_width), float(np.mean([s.chord for s in st])) / 30)
+        for k in sorted({p.blade for p in clipped}):
+            cmesh.update(clipped_surfaces([p for p in clipped if p.blade == k], h))
     for p in geo.parts:
-        V, F = loft_surface(p)
+        if p.name.endswith("_jointF"):
+            continue                      # merged into *_jointB by clipped_surfaces
+        V, F = cmesh[p.name] if p.name in cmesh else loft_surface(p)
         parts.append(dict(name=p.name, role=p.role, material=p.material, blade=p.blade,
                           member=p.member, rotor=p.rotor, vertices=V, faces=F,
                           orientation=p.orientation.model_dump(mode="json")))
@@ -894,7 +938,81 @@ def _occ_wire(occ, sec: Section) -> int:
 
 def occ_part(occ, part: Part) -> list[tuple[int, int]]:
     wires = [_occ_wire(occ, s) for s in part.sections]
-    return occ.addThruSections(wires, makeSolid=True, makeRuled=part.ruled)
+    dt = occ.addThruSections(wires, makeSolid=True, makeRuled=part.ruled)
+    if part.clip is not None:
+        poly, side = part.clip
+        pts = [occ.addPoint(*p) for p in poly]
+        lines = [occ.addLine(pts[i], pts[(i + 1) % len(pts)]) for i in range(len(pts))]
+        face = occ.addPlaneSurface([occ.addCurveLoop(lines)])
+        tool = [t for t in occ.extrude([(2, face)], 0, 0, 2 * JOINT_Z) if t[0] == 3]
+        # fragment (robust for spline lofts): pieces of the blade that are also pieces of the
+        # tool prism are material B, the rest material A; the tool itself is then discarded
+        _, omap = occ.fragment(dt, tool)
+        tool_pieces = {d for m in omap[len(dt):] for d in m}
+        blade_pieces = [d for m in omap[:len(dt)] for d in m if d[0] == 3]
+        in_b = [d for d in blade_pieces if d in tool_pieces]
+        keep = in_b if side == "b" else [d for d in blade_pieces if d not in tool_pieces]
+        drop = [d for d in tool_pieces | set(blade_pieces) if d not in keep and d[0] == 3]
+        if drop:
+            occ.remove(drop, recursive=True)
+        dt = keep
+    return dt
+
+
+def clipped_surfaces(parts: list[Part], h: float, conformal: bool = False) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Closed, mutually conformal triangle meshes (metres) of joint-clipped parts: all given
+    parts are built in one OCC session, optionally fragmented (shared A/B faces meshed once) and
+    each solid's boundary extracted, outward-oriented. Returns {part.name: (V, F)}.
+    conformal=False skips the (slow) fragment: A/B meshes then only touch at x_j (each closed)."""
+    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    with _Gmsh() as gmsh:
+        occ = gmsh.model.occ
+        dts = [occ_part(occ, p) for p in parts]
+        flat = [d for dt in dts for d in dt]
+        occ.synchronize()
+        if conformal and len(flat) > 1:     # slow for spline lofts (~30 s per blade): STEP only
+            _, omap = occ.fragment(flat, [])
+        else:
+            omap = [[d] for d in flat]
+        occ.synchronize()
+        gmsh.option.setNumber("Mesh.MeshSizeMax", h)
+        gmsh.option.setNumber("Mesh.MeshSizeMin", h * 0.2)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 1)
+        gmsh.model.mesh.generate(2)
+        ntags, coords, _ = gmsh.model.mesh.getNodes()
+        idx = np.zeros(int(ntags.max()) + 1, int)
+        idx[ntags.astype(int)] = np.arange(len(ntags))
+        X = coords.reshape(-1, 3)
+        pos = 0
+        groups: dict[str, list] = {}
+        for p, dt in zip(parts, dts):
+            for _ in dt:
+                groups.setdefault(p.name.replace("_jointF", "_jointB"), []).extend(
+                    d for d in omap[pos] if d[0] == 3)
+                pos += 1
+        for name, vols in groups.items():
+            bnd = gmsh.model.getBoundary(vols, combined=True, oriented=True, recursive=False)
+            tris = []
+            for (_, st) in bnd:
+                _, _, nodes = gmsh.model.mesh.getElements(2, abs(st))
+                for nd in nodes:
+                    T = idx[nd.astype(int)].reshape(-1, 3)
+                    tris.append(T[:, ::-1] if st < 0 else T)
+            F = np.vstack(tris)
+            used = np.unique(F)
+            remap = -np.ones(len(X), int)
+            remap[used] = np.arange(len(used))
+            import trimesh
+            m = trimesh.Trimesh(X[used], remap[F], process=True)
+            comps = m.split(only_watertight=False)
+            for c in comps:                       # orient each closed shell outward
+                trimesh.repair.fix_winding(c)
+                if c.volume < 0:
+                    c.invert()
+            m = trimesh.util.concatenate(comps) if len(comps) > 1 else comps[0]
+            out[name] = (np.asarray(m.vertices), np.asarray(m.faces))
+    return out
 
 
 def _step_geometry(design: Design) -> RotorGeometry:

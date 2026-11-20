@@ -46,6 +46,10 @@ class Material:
     fatigue_stress_ratio: float = 0.3         # fatigue strength ≈ ratio × static, 1e7
     is_elastomer: bool = False
     source: str = ""
+    print_temp: float = 0.0       # deg C nozzle (generic datasheet value); 0 = not a printed material
+    shore_a: float = 0.0          # Shore A hardness for elastomers (0 = n/a)
+    abrasive: bool = False        # CF/GF filled: needs hardened nozzle (+ enclosure for PA)
+    needs_chamber: bool = False   # PA/PPA/PC-CF class: wants a heated chamber to print well
 
     # ------------------------------------------------------------------ frequency
     def storage_scale(self, freq_hz: float) -> float:
@@ -189,27 +193,27 @@ LIBRARY: dict[str, Material] = {
                     Xt=35e6, Yt=30e6, Zt=18e6, S=15e6,
                     creep_strain_allow=0.02, fatigue_strain_amp_allow=0.03,
                     fatigue_stress_ratio=0.25, is_elastomer=True,
-                    source="generic 95A TPU datasheets; DMA trends; rough"),
+                    print_temp=225.0, shore_a=95.0, source="generic 95A TPU datasheets; DMA trends; rough"),
     "tpu_64d": _fdm("tpu_64d", 1220, 90e6, 85e6, 75e6, 0.42, loss_factor=0.10,
                     freq_scale=_TPU_F, freq_loss=_TPU_LOSS,
                     Xt=40e6, Yt=35e6, Zt=20e6, S=18e6,
                     creep_strain_allow=0.015, fatigue_strain_amp_allow=0.02,
                     fatigue_stress_ratio=0.25, is_elastomer=True,
-                    source="stiff TPU (e.g. 64D/72D grades) datasheets; rough"),
+                    print_temp=230.0, shore_a=98.0, source="stiff TPU (e.g. 64D/72D grades) datasheets; rough"),
     "pa6_cf": _fdm("pa6_cf", 1200, 7.5e9, 3.2e9, 2.4e9, 0.35, loss_factor=0.02,
                    freq_scale=((0.01, 1.0), (1000.0, 1.08)),
                    Xt=110e6, Yt=55e6, Zt=35e6, S=35e6,
                    creep_strain_allow=0.004, fatigue_strain_amp_allow=0.003,
                    fatigue_stress_ratio=0.3,
-                   source="PA6-CF / PAHT-CF dry, XY along raster; humidity drops ~30 %"),
+                   print_temp=290.0, abrasive=True, needs_chamber=True, source="PA6-CF / PAHT-CF dry, XY along raster; humidity drops ~30 %"),
     "petg_cf": _fdm("petg_cf", 1300, 4.0e9, 2.4e9, 1.9e9, 0.36, loss_factor=0.02,
                     Xt=55e6, Yt=35e6, Zt=22e6, S=22e6,
                     creep_strain_allow=0.003, fatigue_strain_amp_allow=0.0025,
-                    fatigue_stress_ratio=0.3, source="PETG-CF datasheets; rough"),
+                    fatigue_stress_ratio=0.3, print_temp=260.0, abrasive=True, source="PETG-CF datasheets; rough"),
     "pla": _fdm("pla", 1240, 3.4e9, 3.1e9, 2.8e9, 0.36, loss_factor=0.015,
                 Xt=55e6, Yt=45e6, Zt=28e6, S=25e6,
                 creep_strain_allow=0.003, fatigue_strain_amp_allow=0.002,
-                fatigue_stress_ratio=0.25, source="reference only"),
+                fatigue_stress_ratio=0.25, print_temp=210.0, source="reference only"),
     "cf_rod_pultruded": Material(
         "cf_rod_pultruded", 1550, 125e9, 8e9, 8e9, 4.5e9, 4.5e9, 3e9, 0.3, 0.3, 0.4,
         loss_factor=0.005, Xt=1500e6, Yt=50e6, Zt=50e6, S=60e6,

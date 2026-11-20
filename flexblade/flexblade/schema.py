@@ -70,6 +70,51 @@ class BladeStation(_M):
     layup: Optional[Layup] = Field(None, description="None = blade default layup")
 
 
+class Joint(_M):
+    """Interlocking-tooth joint between an inboard material A (e.g. TPU) and an outboard
+    material B (e.g. CF filament) in the blade, at r = r_frac*R.
+
+    Fingers of B protrude inboard into A (A's complementary fingers are the gaps between
+    them), in the chord-span plane, extruded through the full thickness along z (walls
+    vertical along the build direction). Each finger is a trapezoid: `neck_width` at the
+    material transition (r_joint) widening to `dovetail_width` at the inboard tip.
+    dovetail_width > neck_width is an undercut (mechanical lock against centrifugal pull);
+    equal = straight fingers (bond only).
+
+    material_a / material_b None: derived -- B = blade.layup.material, A = flexure.layup.material.
+    finger_lengths: one length per finger (m, chord order LE->TE); None = `length`, with every
+    odd finger shortened to length*(1 - stagger_frac).
+    bond_factor: A-B interface shear strength as fraction of min(S_A, S_B); None = per-pair
+    default in joint.BOND_FACTORS (a guess until coupon-tested).
+    """
+    r_frac: float = Field(gt=0.0, lt=1.0, description="r/R of the A->B material transition")
+    material_a: Optional[str] = None
+    material_b: Optional[str] = None
+    n_fingers: int = Field(3, ge=1, le=12)
+    finger_lengths: Optional[list[float]] = None
+    length: float = Field(0.006, gt=0, description="finger length, m")
+    stagger_frac: float = Field(0.0, ge=0.0, lt=1.0)
+    neck_width: float = Field(0.0016, gt=0, description="m")
+    dovetail_width: float = Field(0.0024, gt=0, description="m, >= neck_width")
+    bond_factor: Optional[float] = Field(None, gt=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.dovetail_width < self.neck_width:
+            raise ValueError("dovetail_width must be >= neck_width")
+        if self.finger_lengths is not None:
+            if len(self.finger_lengths) != self.n_fingers:
+                raise ValueError("finger_lengths must have n_fingers entries")
+            if min(self.finger_lengths) <= 0:
+                raise ValueError("finger_lengths must be > 0")
+        return self
+
+    def lengths(self) -> list[float]:
+        if self.finger_lengths is not None:
+            return list(self.finger_lengths)
+        return [self.length * (1.0 - self.stagger_frac * (i % 2)) for i in range(self.n_fingers)]
+
+
 class Blade(_M):
     diameter_in: float = Field(5.0, ge=3.0, le=14.0)
     n_blades: int = Field(2, ge=1, le=6)
@@ -83,6 +128,8 @@ class Blade(_M):
     orientation: PrintOrientation = PrintOrientation()
     elastic_axis_chord_frac: float = Field(
         0.25, description="beam reference line position along chord from LE")
+    joint: Optional[Joint] = Field(
+        None, description="interlocking TPU<->CF tooth joint; None = plain bonded face")
 
     @property
     def radius(self) -> float:
@@ -245,6 +292,8 @@ class Design(_M):
     motor: Motor = Motor()
     op: OperatingPoint = OperatingPoint()
     analysis: AnalysisOptions = AnalysisOptions()
+    printer: Optional[str] = Field("bambu_h3c", description="printers.PRINTERS key; None = "
+                                                               "skip printability checks")
     notes: str = ""
 
     def canonical_json(self) -> str:

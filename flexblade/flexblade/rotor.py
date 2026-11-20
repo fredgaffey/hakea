@@ -28,7 +28,7 @@ from typing import Optional
 import numpy as np
 import scipy.linalg as sl
 
-from . import fact
+from . import fact, joint as jointmod
 from .beam import (Element, FEModel, State, _edofs, assemble_inertia, assemble_internal,
                    assemble_Kmat, element_end_forces, element_end_forces_lin, element_point_maps,
                    skew, solve_static, unit, _logm)
@@ -125,7 +125,8 @@ class RotorModel:
         return np.interp(r, self.st_r, self.st_twist)
 
 
-def _blade_section(design: Design, r: float, st_r, stations, coll: float) -> tuple[SectionProps, float, float, Layup]:
+def _blade_section(design: Design, r: float, st_r, stations, coll: float,
+                   layup_override: Layup | None = None) -> tuple[SectionProps, float, float, Layup]:
     b = design.blade
     rr = np.clip(r, st_r[0], st_r[-1])
     chord = float(np.interp(rr, st_r, [s.chord for s in stations]))
@@ -138,7 +139,7 @@ def _blade_section(design: Design, r: float, st_r, stations, coll: float) -> tup
         vals = [t if t is not None else (base or 0.12) for t in tcs]
         tc = float(np.interp(rr, st_r, vals))
     i = int(np.argmin(np.abs(st_r - rr)))
-    layup = stations[i].layup or b.layup
+    layup = layup_override or stations[i].layup or b.layup
     xy = airfoil_coords(b.airfoil, tc, n=61)
     shape = airfoil_shape(xy, round(chord, 7), b.elastic_axis_chord_frac)
     # untwisted chord-frame section for blade 1; axes in H rotated by twist
@@ -146,6 +147,27 @@ def _blade_section(design: Design, r: float, st_r, stations, coll: float) -> tup
     e3 = np.array([0.0, -np.sin(twist), np.cos(twist)])
     sec = section_properties(shape, layup, b.orientation, (1.0, 0.0, 0.0), axes=(e2, e3))
     return sec, chord, twist, layup
+
+
+def _joint_section(design: Design, js, r0: float, r1: float, rr: float, st_r, stations, coll: float,
+                   fracs: dict, i: int):
+    """Blade-element section across the tooth joint: A/B sections blended by the B area
+    fraction averaged over the element [r0, r1] (rule of mixtures, see joint.blend_sections)."""
+    f = js.b_fraction_avg(r0, r1)
+    la, lb = Layup(material=js.mat_a), Layup(material=js.mat_b)
+    if f <= 0.0:
+        out = _blade_section(design, rr, st_r, stations, coll, la)
+        fracs[i] = {js.mat_a: 1.0}
+        return out
+    if f >= 1.0:
+        out = _blade_section(design, rr, st_r, stations, coll, lb)
+        fracs[i] = {js.mat_b: 1.0}
+        return out
+    sa, chord, twist, _ = _blade_section(design, rr, st_r, stations, coll, la)
+    sb = _blade_section(design, rr, st_r, stations, coll, lb)[0]
+    fe = jointmod.ea_fraction_b(sa, sb, f)
+    fracs[i] = {js.mat_a: 1.0 - fe, js.mat_b: fe}
+    return jointmod.blend_sections(sa, sb, f), chord, twist, lb
 
 
 def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
@@ -188,10 +210,18 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
 
     # blade sections (blade-1 frame), per element midpoint
     blade_secs = []
+    js = jointmod.resolve(design)
+    joint_fracs: dict[int, dict] = {}
+    if js is not None and b.layup.kind != "solid":
+        warnings.append("blade.joint with a non-solid blade layup: joint materials override the layup")
     for i in range(len(r_chain) - 1):
         rmid = 0.5 * (r_chain[i] + r_chain[i + 1])
-        blade_secs.append(_blade_section(design, max(rmid, r_aero[0]) if rmid < r_aero[0] else rmid,
-                                         st_r, stations, coll))
+        rr = max(rmid, r_aero[0]) if rmid < r_aero[0] else rmid
+        if js is None:
+            blade_secs.append(_blade_section(design, rr, st_r, stations, coll))
+        else:
+            blade_secs.append(_joint_section(design, js, r_chain[i], r_chain[i + 1], rr, st_r,
+                                             stations, coll, joint_fracs, i))
 
     # flexure member sections (computed per blade below, cached) — gather stiffness scale
     def member_sections(m: FlexureMember, Rk: np.ndarray, xi0: float, xi1: float, e1, e2, e3):
@@ -235,7 +265,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             sec, chord, twist, layup = blade_secs[i]
             e2 = Rk @ np.array([0.0, np.cos(twist), np.sin(twist)])
             kind = "shank" if i < n_sh else "blade"
-            el = Element(chain[i], chain[i + 1], e2, [sec], material_fracs=_ea_fracs(sec, layup),
+            el = Element(chain[i], chain[i + 1], e2, [sec],
+                         material_fracs=joint_fracs.get(i) or _ea_fracs(sec, layup),
                          tag=f"b{k}.{kind}", kind=kind, blade=k)
             blade_elems.append(fe.add_element(el))
         member_elems: dict[str, list[int]] = {}
@@ -980,6 +1011,25 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float):
     return best_e, best_s, float(np.max([abs(eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]))
 
 
+def _joint_checks(model: RotorModel, ss: StaticState, sa) -> list[Check]:
+    js = jointmod.resolve(model.design)
+    if js is None:
+        return []
+    bi = model.blades[0]
+    fe = model.fe
+    r = bi.chain_r
+    ie = None
+    for n, ei in enumerate(bi.blade_elems):          # element containing x_j, else nearest
+        if r[n] <= js.x_j <= r[n + 1]:
+            ie = n
+            break
+    if ie is None:
+        ie = int(np.argmin([abs(0.5 * (r[n] + r[n + 1]) - js.x_j) for n in range(len(bi.blade_elems))]))
+    idx = bi.blade_elems[ie]
+    fa, _ = element_end_forces(fe.elements[idx], sa.cr[idx])
+    return jointmod.joint_checks(js, fa[0], float(np.hypot(fa[4], fa[5])))
+
+
 def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -> list[Check]:
     fe = model.fe
     st = ss.state
@@ -1031,6 +1081,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                              utilisation=g["fat_e"], note="1/rev strain amplitude (design torque)"))
             out.append(Check(name="fatigue_stress", member=name, value=g["fat_s"], allowable=1.0,
                              utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)"))
+    out += _joint_checks(model, ss, sa)
     if hd is not None and hd.drive:
         dr = hd.drive
         out.append(Check(name="esc_duty_slew", member="esc", value=float(dr["slew"]),
@@ -1171,11 +1222,17 @@ def evaluate(design: Design, what: list[str] | None = None) -> Results:
     if "checks" in what:
         t1 = time.perf_counter()
         res.checks = checks(model, ss, hd)
+        pchecks: list[Check] = []
+        if design.printer:
+            from .printers import printer_checks
+            pchecks = printer_checks(design)
+            res.checks += pchecks
         t["checks"] = time.perf_counter() - t1
         if res.checks:
             worst = max(res.checks, key=lambda c: c.utilisation)
             summary["max_utilisation"] = float(worst.utilisation)
-            struct = [c for c in res.checks if c.member not in ("esc", "motor")]
+            pids = {id(c) for c in pchecks}
+            struct = [c for c in res.checks if c.member not in ("esc", "motor") and id(c) not in pids]
             if struct:
                 summary["max_structural_utilisation"] = float(max(c.utilisation for c in struct))
             for c in res.checks:
