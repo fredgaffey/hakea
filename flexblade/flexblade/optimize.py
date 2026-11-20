@@ -12,7 +12,15 @@ Failed evaluations score 1e6. Variables are optimised in normalised [0, 1] coord
 (log-scaled if Variable.log).
 
 Methods: differential_evolution (scipy; parallel via `workers` processes or a
-user `mapper`, e.g. flexblade.remote.HostPool.map), nelder_mead, slsqp.
+`mapper`), nelder_mead, slsqp.
+
+mapper contract (differential_evolution only):
+  * map-like callable `mapper(func, iterable_of_u) -> list[float]` (scipy `workers`
+    contract; func is the picklable objective on normalised u), or
+  * a Design mapper: any object with `map_designs(list[Design]) -> list[dict]` returning
+    records {"results": Results-json} | {"error": str} in order — e.g. an open
+    `flexblade.remote.HostPool` (laptop + Mac). The u → Design adapter (path setter) and
+    scoring then run in this process; every evaluation is recorded in `history`.
 """
 from __future__ import annotations
 
@@ -111,11 +119,11 @@ class Objective:
         return np.clip(np.array(u, float), 0.0, 1.0)
 
     def evaluate(self, u) -> tuple[float, dict, Optional[Results]]:
-        from . import rotor
+        from . import api
         vals = self.to_values(u)
         try:
             design = set_design(Design.model_validate(self.design_json), vals)
-            res = rotor.evaluate(design, WHAT)
+            res = api.evaluate(design, WHAT)      # single or coaxial
         except Exception as ex:  # noqa: BLE001
             return FAIL, {"error": str(ex)[:200], **vals}, None
         return self.score(res), vals, res
@@ -219,7 +227,26 @@ def run(req: OptimizeRequest, progress: Callable | None = None, mapper: Callable
             popsize = max(5, min(15, req.max_evals // max(1, 4 * n)))
             maxiter = max(1, req.max_evals // (popsize * n) - 1)
             workers: Any = 1
-            if mapper is not None:
+            design_mapper = mapper is not None and hasattr(mapper, "map_designs")
+            if design_mapper:
+                def workers(_func, pop):        # u → Design → remote evaluate → score
+                    pop = [np.asarray(u, float) for u in pop]
+                    designs, idx = [], []
+                    Js = [FAIL] * len(pop)
+                    for i, u in enumerate(pop):
+                        try:
+                            designs.append(set_design(req.design, obj.to_values(u)))
+                            idx.append(i)
+                        except Exception:  # noqa: BLE001 (invalid design → FAIL)
+                            pass
+                    recs = mapper.map_designs(designs) if designs else []
+                    for i, rec in zip(idx, recs):
+                        if "results" in rec:
+                            Js[i] = obj.score(rec["results"])
+                    for u, J in zip(pop, Js):
+                        record(u, J, None)
+                    return Js
+            elif mapper is not None:
                 workers = mapper
             elif req.workers > 1:
                 import multiprocessing as mp
@@ -243,7 +270,8 @@ def run(req: OptimizeRequest, progress: Callable | None = None, mapper: Callable
                 r = so.differential_evolution(obj, bounds, maxiter=maxiter, popsize=popsize, seed=req.seed,
                                               x0=u0, polish=False, tol=1e-6, workers=workers,
                                               updating="deferred", callback=cb)
-                n_eval[0] += int(r.nfev)
+                if not design_mapper:
+                    n_eval[0] += int(r.nfev)
                 Jr, _, resr = obj.evaluate(r.x)
                 record(r.x, Jr, resr)
             converged, message = bool(r.success), str(r.message)
@@ -264,8 +292,8 @@ def run(req: OptimizeRequest, progress: Callable | None = None, mapper: Callable
     design = set_design(req.design, obj.to_values(u_best))
     res = best["res"]
     if res is None:
-        from . import rotor
-        res = rotor.evaluate(design, WHAT)
+        from . import api
+        res = api.evaluate(design, WHAT)
     message += f" ({n_eval[0]} evals, {time.perf_counter() - t0:.1f} s)"
     return OptimizeResult(design=design, results=res, objective=float(best["J"]), n_evals=int(n_eval[0]),
                           history=history, converged=converged, message=message)

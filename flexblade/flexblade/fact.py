@@ -145,6 +145,9 @@ def generate_members(design: Design) -> list[FlexureMember]:
         directions l± = cos(γ/2) x' ± sin(γ/2) ŷ (⟂ a), crossing at the hinge point,
         width along a; offset ±(w + cross_gap)/2 along a so they do not touch or fuse when
         printed (Haringx cross-spring). Constraint lines: all lines in either plane → 5-system.
+    skewed_cross_blade_sym: as above but the "−" set is split into two half-width plates
+        either side of the full-width "+" plate, cross_gap clear of it along a (symmetric
+        cross-spring; centrifugal load produces no parasitic couple).
     skewed_single_blade: one plate, length along x' (⟂ a), width along a, centred on
         the hinge point. Constrains 3 (in-plane); bending about a is the hinge, plate
         twist and out-of-plane shear are the parasitic soft DOFs (centrifugal tension
@@ -157,7 +160,8 @@ def generate_members(design: Design) -> list[FlexureMember]:
         the force component along a). Wire diameter = thickness.
     custom             : flexure.members as given.
     rigid              : one rigid member from hub radius to hinge radius + length/2.
-    The optional tension_member is appended for all topologies.
+    The optional tension_member is appended for all topologies, and a radial tension rod
+    (hub edge → blade end, through H0) when flexure.tension_rod_diameter > 0.
     """
     f = design.flexure
     H0, a, xp, n = _frame(design)
@@ -183,6 +187,21 @@ def generate_members(design: Design) -> list[FlexureMember]:
             ldir = unit(ldir - a * (a @ ldir))
             c = H0 + sg * 0.5 * (w + f.cross_gap) * a
             out.append(plate(c, ldir, a, L))
+    elif topo == "skewed_cross_blade_sym":
+        # set "+" : one plate of width w centred on the hinge point; set "−": two plates of
+        # width w/2 centred at ±(w/2 + cross_gap + w/4) along a. Each set's
+        # resultant lies on the hinge point, so axial (centrifugal) load gives no couple.
+        g = np.radians(f.cross_angle_deg) / 2
+        gap = f.cross_gap
+        for sg in (1.0, -1.0):
+            ldir = np.cos(g) * xp + sg * np.sin(g) * np.array([0.0, 1.0, 0.0])
+            ldir = unit(ldir - a * (a @ ldir))
+            if sg > 0:
+                out.append(plate(H0, ldir, a, L))
+            else:
+                for side in (1.0, -1.0):
+                    m = plate(H0 + side * (0.75 * w + gap) * a, ldir, a, L)
+                    out.append(m.model_copy(update=dict(width=0.5 * w)))
     elif topo == "skewed_single_blade":
         out.append(plate(H0, xp, a, L))
     elif topo == "integral_taper":
@@ -233,6 +252,16 @@ def generate_members(design: Design) -> list[FlexureMember]:
         raise ValueError(topo)
     if f.tension_member is not None:
         out.append(f.tension_member)
+    if f.tension_rod_diameter > 0 and out:
+        # radial rod through H0 (on the hinge axis → reciprocal to the hinge twist), from the
+        # hub edge to the outermost blade-end x of the members (where the blade attaches)
+        x1 = max(max(m.p0[0], m.p1[0]) for m in out)
+        d_r = f.tension_rod_diameter
+        out.append(FlexureMember(kind="wire", p0=(float(f.hub_radius), 0.0, 0.0), p1=(float(x1), 0.0, 0.0),
+                                 width=d_r, thickness=d_r, width_dir=(0.0, 0.0, 1.0), shape="circle",
+                                 taper=1.0, layup=Layup(kind="solid", material=f.tension_rod_material),
+                                 orientation=PrintOrientation(build_dir=(0.0, 0.0, 1.0),
+                                                              raster_dir=(1.0, 0.0, 0.0))))
     return out
 
 

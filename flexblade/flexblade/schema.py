@@ -117,6 +117,9 @@ class Flexure(_M):
     topology:
       skewed_cross_blade  two crossed blade flexures whose intersection line is the
                           virtual lag hinge, skewed by skew_deg (FACT: 1 rotational DOF)
+      skewed_cross_blade_sym  as skewed_cross_blade, but one set is split into two outer
+                          half-width plates either side of the other (symmetric "butterfly"
+                          cross-spring): no parasitic couple from the centrifugal load
       skewed_single_blade one thin blade flexure whose bending axis is skewed
       wire_triplet        3+ wire flexures whose lines intersect the hinge axis
                           (FACT constraint lines ⟂-free set) + optional tension member
@@ -130,8 +133,9 @@ class Flexure(_M):
       custom              use `members` as given
       rigid               rigid root (reference / baseline)
     """
-    topology: Literal["skewed_cross_blade", "skewed_single_blade", "wire_triplet",
-                      "integral_taper", "torsion_bar", "custom", "rigid"] = "skewed_cross_blade"
+    topology: Literal["skewed_cross_blade", "skewed_cross_blade_sym", "skewed_single_blade",
+                      "wire_triplet", "integral_taper", "torsion_bar", "custom",
+                      "rigid"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")
@@ -155,6 +159,12 @@ class Flexure(_M):
     orientation: PrintOrientation = PrintOrientation()
     tension_member: Optional[FlexureMember] = Field(
         None, description="optional radial strap/rod carrying centrifugal load")
+    tension_rod_diameter: float = Field(
+        0.0, ge=0.0, description="m; > 0 adds a radial rod (wire member) on the rotor-plane line "
+                                 "through the hinge point, hub radius → blade end of the flexure, "
+                                 "carrying the centrifugal load (split load path; FACT-compatible: "
+                                 "the line intersects the hinge axis). 0 = none")
+    tension_rod_material: str = Field("cf_rod_pultruded", description="material of the tension rod")
     members: list[FlexureMember] = Field(
         default_factory=list, description="explicit members (custom) or fact.py output")
     hub_radius: float = Field(0.006, description="rigid hub outer radius, m")

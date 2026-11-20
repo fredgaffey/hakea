@@ -1107,11 +1107,15 @@ def _strength_along(fb, t_hat) -> float:
 
 
 def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.ndarray):
-    """Max stress utilisation, interlayer utilisation, max tensile strain for section forces."""
+    """Max stress utilisation, interlayer utilisation, max tensile strain, details, and the
+    creep utilisation max(strain / creep_strain_allow) evaluated per fibre with that fibre's
+    own material (a stiff rod near the neutral axis and a compliant matrix at the surface
+    are each judged against their own allowable)."""
     S = sec.stiffness6()
     eps = np.linalg.solve(S, s_force)
     out_static = out_il = 0.0
     max_strain = -np.inf
+    creep_u = 0.0
     tau = abs(sec.tau_per_twist * eps[3])
     det = None
     for fb in sec.fibres:
@@ -1129,7 +1133,8 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
             out_static, det = u1, (sig, Xa, fb.material)
         out_il = max(out_il, u2)
         max_strain = max(max_strain, ex)
-    return out_static, out_il, max_strain, det
+        creep_u = max(creep_u, ex / mat.creep_strain_allow)
+    return out_static, out_il, max_strain, det, creep_u
 
 
 def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float):
@@ -1164,13 +1169,11 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
         fa, fb = element_end_forces(e, c)
         secs = [e.sections[0], e.sections[-1]]
         for sec, sf in zip(secs, (fa, fb)):
-            u_s, u_il, strain, det = _fibre_checks(e, sec, sf, t_hat)
+            u_s, u_il, strain, det, u_cr = _fibre_checks(e, sec, sf, t_hat)
             if u_s > g["static"]:
                 g["static"], g["det"] = u_s, det
             g["il"] = max(g["il"], u_il)
-            mats = {fb_.material for fb_ in sec.fibres}
-            allow = min(get_material(m).creep_strain_allow for m in mats)
-            g["creep"] = max(g["creep"], strain / allow)
+            g["creep"] = max(g["creep"], u_cr)
             g["strain"] = max(g["strain"], strain)
         if hd is not None:
             du = hd.U[_edofs(e)]

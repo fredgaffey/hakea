@@ -427,8 +427,10 @@ def diff(a: Any, b: Any, prefix: str = "") -> dict[str, tuple[Any, Any]]:
     return out
 
 
-def call_optimize(request, progress=None):
+def call_optimize(request, progress=None, hosts=None):
     """api.optimize, passing a progress(i, n, objective, best) callback if the backend accepts one."""
+    if hosts:
+        return api.optimize(request, progress=progress, hosts=hosts)
     import inspect
     fn = api.optimize
     try:

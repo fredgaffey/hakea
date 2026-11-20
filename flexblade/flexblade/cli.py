@@ -173,7 +173,7 @@ def cmd_optimize(a, out):
         if a.progress:
             print(json.dumps({"progress": i, "of": n, "objective": obj, "best": best}), file=sys.stderr)
 
-    res = uc.call_optimize(req, progress)
+    res = uc.call_optimize(req, progress, hosts=a.hosts)
     rj = res.model_dump(mode="json")
     if a.compact:
         rj["results"] = uc.strip_heavy(rj["results"])
@@ -311,6 +311,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("request", nargs="?", default="-")
     s.add_argument("--compact", action="store_true")
     s.add_argument("--progress", action="store_true", help="JSON progress lines on stderr")
+    s.add_argument("--hosts", help="evaluate DE populations over machines, e.g. local:28,mac:10 "
+                                   "(ssh alias:slots; remote code rsynced to /tmp/flexblade-work)")
     s.set_defaults(fn=cmd_optimize)
 
     s = sub.add_parser("export", parents=[common], help="export geometry")

@@ -28,10 +28,18 @@ def evaluate(design: Design | dict, what: list[str] | None = None) -> Results:
     return res
 
 
-def optimize(request: OptimizeRequest | dict) -> OptimizeResult:
+def optimize(request: OptimizeRequest | dict, progress=None, mapper=None,
+             hosts: str | None = None) -> OptimizeResult:
+    """Run an OptimizeRequest. progress(i, n, objective, best); mapper: see optimize.run
+    (map-like or Design mapper); hosts: e.g. "local:28,mac:10" → evaluate over a
+    remote.HostPool (differential_evolution only; overrides mapper/workers)."""
     req = request if isinstance(request, OptimizeRequest) else OptimizeRequest.model_validate(request)
     from . import optimize as opt
-    return opt.run(req)
+    if hosts:
+        from . import remote
+        with remote.HostPool(hosts, what=opt.WHAT) as pool:
+            return opt.run(req, progress=progress, mapper=pool)
+    return opt.run(req, progress=progress, mapper=mapper)
 
 
 def export_geometry(design: Design | dict, fmt: str, path: str) -> str:
