@@ -1031,12 +1031,11 @@ class ModeData:
     parts: list[dict]
 
 
-def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = None,
-          coriolis: bool = True, lin: Linear | None = None, n_basis: int = 40) -> ModeData:
-    fe = model.fe
-    lin = lin or linearize(model, ss, coriolis)
+def modal_basis(model: RotorModel, ss: StaticState, lin: Linear, n_basis: int = 40,
+                n_keep: int = 10) -> tuple[np.ndarray, np.ndarray]:
+    """Undamped real modal basis (λ = ω², Φ over lin.free) of the rotating-frame system."""
     f = lin.free
-    n_modes = n_modes or model.design.analysis.n_modes
+    n_modes = n_keep
     f_ref = max(ss.Omega / (2 * np.pi), 1.0)
     K = K_complex(model, lin, f_ref)
     Kr = np.real(K)[np.ix_(f, f)]
@@ -1058,6 +1057,18 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
     ok[: min(len(ok), n_modes + 2)] = True
     lam, Phi = lam[ok], Phi[:, ok]
     nb = len(lam)
+    return lam, Phi
+
+
+def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = None,
+          coriolis: bool = True, lin: Linear | None = None, n_basis: int = 40) -> ModeData:
+    fe = model.fe
+    lin = lin or linearize(model, ss, coriolis)
+    f = lin.free
+    n_modes = n_modes or model.design.analysis.n_modes
+    lam, Phi = modal_basis(model, ss, lin, n_basis, n_modes)
+    nb = len(lam)
+    w_ref = max(ss.Omega, 2 * np.pi * 10.0)
     G = lin.G[np.ix_(f, f)]
     Gr = Phi.T @ G @ Phi
     # scaled state space  y = [q; q̇/w_ref]:  ẏ = w_ref [[0, I], [−Λ/w², −Gr/w]] y
