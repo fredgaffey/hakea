@@ -43,6 +43,7 @@ from typing import Callable, Optional
 
 import numpy as np
 from numba import njit
+from scipy.linalg import lu_factor as sl_lu_factor, lu_solve as sl_lu_solve
 
 from .section import SectionProps
 
@@ -602,51 +603,90 @@ class NewtonInfo:
 
 
 def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarray] | np.ndarray | None = None,
-                 state0: State | None = None, n_steps: int = 4, tol: float = 1e-8, max_iter: int = 30,
-                 ) -> tuple[State, NewtonInfo]:
+                 state0: State | None = None, n_steps: int = 4, tol: float = 1e-7, max_iter: int = 40,
+                 verbose: bool = False, extra_fixed=()) -> tuple[State, NewtonInfo]:
     """Nonlinear static equilibrium in the rotating frame: f_int(q) = F_cf(q, Ω) + F_ext.
 
-    Load stepping over Ω² (n_steps) with full Newton per step. fext: constant vector or
-    callable(state) (dead loads, may depend on the deformed shape)."""
+    Load stepping over Ω² (n_steps). Newton with the exact (FD) CR tangent, refreshed
+    while convergence is fast-ish and reused otherwise; residual backtracking; rotation
+    increments capped at 0.2 rad. Residual measure = max|r| / max(|F|, |f_int|) on free
+    DOFs; FD derivatives limit attainable accuracy to ~1e-8, so convergence is declared
+    at `tol` or on stagnation below 1e-5 (reported in the message).
+    fext: constant vector or callable(state) (dead loads)."""
     st = state0.copy() if state0 is not None else model.initial_state()
-    free = model.free_dofs()
-    info = NewtonInfo(True, 0, 0.0)
+    free = np.array([d for d in model.free_dofs() if d not in set(extra_fixed)], int)
     total_it = 0
+    res = np.inf
+    mu = 0.0
+    msg = ""
+    ok_all = True
+
+    def residual(s, Om, lam):
+        sa = assemble_internal(model, s, False)
+        ia = assemble_inertia(model, s, Om, False)
+        F = ia.Fcf.copy()
+        if fext is not None:
+            F += lam * (fext(s) if callable(fext) else fext)
+        r = (sa.fint - F)[free]
+        scale = max(np.abs(F[free]).max(), np.abs(sa.fint[free]).max(), 1e-12)
+        return r, np.abs(r).max() / scale
+
     for k in range(1, n_steps + 1):
         lam = k / n_steps
         Om = Omega * np.sqrt(lam)
-        ref = None
+        r, res = residual(st, Om, lam)
+        K = None
+        hist = []
+        conv = False
         for it in range(max_iter):
-            sa = assemble_internal(model, st, True)
-            ia = assemble_inertia(model, st, Om, True)
-            F = ia.Fcf.copy()
-            if fext is not None:
-                F += lam * (fext(st) if callable(fext) else fext)
-            r = (sa.fint - F)[free]
-            K = (assemble_Kmat(model, sa) + sa.Kgeo + ia.Kcf)[np.ix_(free, free)]
-            scale = max(np.abs(F[free]).max(), np.abs(sa.fint[free]).max(), 1e-12)
-            res = np.abs(r).max() / scale
-            if ref is None:
-                ref = res
-            try:
-                dq = np.linalg.solve(K, -r)
-            except np.linalg.LinAlgError:
-                dq = np.linalg.lstsq(K, -r, rcond=None)[0]
-            # limit rotation increments to 0.2 rad per iteration
+            if res < tol:
+                conv = True
+                break
+            if len(hist) >= 4 and res < 1e-5 and res > 0.5 * hist[-4]:
+                conv = True
+                msg = f"stagnated at residual {res:.1e} (FD precision)"
+                break
+            if K is None or len(hist) < 3 or res > 0.2 * hist[-1]:
+                sa = assemble_internal(model, st, True)
+                ia = assemble_inertia(model, st, Om, True)
+                Km = assemble_Kmat(model, sa)
+                K = (Km + sa.Kgeo + ia.Kcf)[np.ix_(free, free)]
+                if mu > 0:   # Levenberg–Marquardt damping for mechanism-like / indefinite starts
+                    K = K + mu * np.diag(np.abs(np.diag(Km)[free]) + 1e-12)
+                try:
+                    lu = sl_lu_factor(K)
+                    dq_fn = lambda b: sl_lu_solve(lu, b)   # noqa: E731
+                except Exception:
+                    Kc = K.copy()
+                    dq_fn = lambda b: np.linalg.lstsq(Kc, b, rcond=None)[0]   # noqa: E731
+            dq = dq_fn(-r)
             du = np.zeros(model.ndof)
             du[free] = dq
             rot = np.abs(du.reshape(-1, 6)[:, 3:]).max()
             if rot > 0.2:
                 du *= 0.2 / rot
-            st = update_state(st, du)
+            hist.append(res)
+            for _ in range(5):
+                st2 = update_state(st, du)
+                r2, res2 = residual(st2, Om, lam)
+                if res2 < 2.0 * res or not np.isfinite(res):
+                    break
+                du *= 0.5
+                K = None
+            if res2 >= res:
+                mu = max(10 * mu, 1e-4)
+                K = None
+            elif mu > 0:
+                mu = mu * 0.1 if mu > 1e-7 else 0.0
+                K = None
+            if verbose:
+                print(f"  step {k} it {it} res {res:.3e} -> {res2:.3e} |du| {np.abs(du).max():.3e} K_new {K is None or len(hist) < 4}")
+            st, r, res = st2, r2, res2
             total_it += 1
-            if res < tol or np.abs(dq).max() < 1e-13:
-                break
-        else:
-            info = NewtonInfo(False, total_it, res, f"Newton did not converge at Ω step {k}")
-    if info.converged:
-        info = NewtonInfo(True, total_it, res)
-    return st, info
+        if not conv and res >= tol:
+            ok_all = False
+            msg = f"Newton did not converge at Ω step {k}/{n_steps} (residual {res:.1e})"
+    return st, NewtonInfo(ok_all, total_it, float(res), msg)
 
 
 # --------------------------------------------------------------------------- element recovery

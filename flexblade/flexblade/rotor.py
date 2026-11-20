@@ -559,7 +559,8 @@ def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_oute
             raise ValueError("no aero model: op.rpm must be given")
     Omega = rpm * 2 * np.pi / 60
     F = aero_load_vector(model, fe.initial_state(), trim) if use_aero_loads else None
-    st, info = solve_static(fe, Omega, F, n_steps=2, tol=1e-9)
+    hubfix = (6 * model.hub + 5,)   # motor holds the hub angle (its torque balances drag)
+    st, info = solve_static(fe, Omega, F, n_steps=2, extra_fixed=hubfix)
     its = info.iterations
     conv = info.converged
     th, be = _blade_shape(model, st)
@@ -572,7 +573,7 @@ def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_oute
             trim = t2
             Omega = trim.omega
             F = aero_load_vector(model, st, trim) if use_aero_loads else None
-            st, info = solve_static(fe, Omega, F, state0=st, n_steps=1, tol=1e-9)
+            st, info = solve_static(fe, Omega, F, state0=st, n_steps=1, extra_fixed=hubfix)
             its += info.iterations
             conv = conv and info.converged
             th2, be2 = _blade_shape(model, st)
@@ -693,9 +694,17 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
     Kr = 0.5 * (Kr + Kr.T)
     M = lin.M[np.ix_(f, f)]
     nb = min(n_basis, len(f))
-    lam, Phi = sl.eigh(Kr, M, subset_by_index=[0, nb - 1])
-    # drop basis vectors far above the band of interest (regularised massless DOFs)
+    # shift-invert Lanczos: accurate low modes despite the huge stiffness/mass range
+    # (stiff links, near-massless rotational DOFs) that ruins Cholesky-based eigh
     w_ref = max(ss.Omega, 2 * np.pi * 10.0)
+    from scipy.sparse.linalg import eigsh
+    try:
+        lam, Phi = eigsh(Kr, k=min(nb, len(f) - 2), M=M, sigma=-(0.05 * w_ref) ** 2, which="LM")
+    except Exception:   # pragma: no cover
+        lam, Phi = sl.eigh(Kr, M, subset_by_index=[0, nb - 1])
+    o = np.argsort(lam)
+    lam, Phi = lam[o], Phi[:, o]
+    # drop basis vectors far above the band of interest (regularised massless DOFs)
     ok = np.sqrt(np.abs(lam)) < 200.0 * w_ref
     ok[: min(len(ok), n_modes + 2)] = True
     lam, Phi = lam[ok], Phi[:, ok]
@@ -759,7 +768,8 @@ def campbell(model: RotorModel, rpm_grid, n_modes: int | None = None) -> Campbel
     for rpm in rpm_grid:
         Om = rpm * 2 * np.pi / 60
         if Om > 0:
-            st, info = solve_static(model.fe, Om, None, state0=st0, n_steps=1 if st0 else 2)
+            st, info = solve_static(model.fe, Om, None, state0=st0, n_steps=1 if st0 else 2,
+                                    extra_fixed=(6 * model.hub + 5,))
             st0 = st
         else:
             st = model.fe.initial_state()

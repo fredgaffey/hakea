@@ -918,7 +918,7 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
             dt = occ_part(occ, p)
             if fuse_by_material:
                 cls = "rod_" if p.role == "rod" else ("core_" if p.role in ("core", "member_core") else "")
-                owner = f"blade{p.blade}" if p.blade else "hub"
+                owner = (f"{p.rotor}_" if p.rotor else "") + (f"blade{p.blade}" if p.blade else "hub")
                 key = f"{owner}_{cls}{p.material}"
             else:
                 key = p.name
@@ -953,6 +953,24 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
             for (dim, tag) in m:
                 if dim == 3 and tag not in tag_name:
                     tag_name[tag] = key
+        # round-trip through BREP importing solids only: drops the loft section wires,
+        # which gmsh keeps as internal OCC shapes and would export as a wireframe product
+        props = {t: (gmsh.model.occ.getCenterOfMass(3, t), gmsh.model.occ.getMass(3, t))
+                 for (_, t) in gmsh.model.getEntities(3)}
+        with tempfile.TemporaryDirectory() as td:
+            bp = os.path.join(td, "solids.brep")
+            gmsh.write(bp)
+            gmsh.model.remove()
+            gmsh.model.add("flexblade_step")
+            occ.importShapes(bp, highestDimOnly=True)
+            occ.synchronize()
+        new_name: dict[int, str] = {}
+        for (_, t) in gmsh.model.getEntities(3):
+            c, m = np.array(occ.getCenterOfMass(3, t)), occ.getMass(3, t)
+            best = min(props, key=lambda k: np.linalg.norm(np.array(props[k][0]) - c)
+                       + abs(props[k][1] - m) / max(m, 1e-30) * 1e-3)
+            new_name[t] = tag_name.get(best, f"solid{t}")
+        tag_name = new_name
         occ.dilate(gmsh.model.getEntities(), 0, 0, 0, 1000.0, 1000.0, 1000.0)   # m -> mm
         occ.synchronize()
         vols = [t for (_, t) in gmsh.model.getEntities(3)]
@@ -972,16 +990,16 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
 def _rename_step_products(path: Path, names: list[str]) -> None:
     import re
     s = path.read_text()
-    pat = re.compile(r"PRODUCT\(\s*'Open CASCADE STEP translator [\d.]+ 1\.(\d+)'\s*,"
-                     r"\s*'Open CASCADE STEP translator [\d.]+ 1\.\d+'")
+    pat = re.compile(r"PRODUCT\(\s*'Open CASCADE STEP translator \d+\.\d+ \d+\.(\d+)'\s*,"
+                     r"\s*'Open CASCADE STEP translator \d+\.\d+ \d+\.\d+'")
 
     def rep(m):
         i = int(m.group(1)) - 1
         nm = names[i] if 0 <= i < len(names) else f"solid{i+1}"
         return f"PRODUCT('{nm}','{nm}'"
     s = pat.sub(rep, s)
-    s = s.replace("PRODUCT('Open CASCADE STEP translator 7.8 1','Open CASCADE STEP translator 7.8 1'",
-                  "PRODUCT('flexblade_rotor','flexblade_rotor'")
+    s = re.sub(r"PRODUCT\(\s*'Open CASCADE STEP translator \d+\.\d+ \d+'\s*,\s*"
+               r"'Open CASCADE STEP translator \d+\.\d+ \d+'", "PRODUCT('flexblade_rotor','flexblade_rotor'", s)
     path.write_text(s)
 
 

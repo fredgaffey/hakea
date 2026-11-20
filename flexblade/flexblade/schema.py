@@ -328,7 +328,7 @@ class CoaxialResult(_M):
     lower: "Results"
     thrust_total: float
     power_total: float
-    yaw_torque_net: float = Field(description="N m, + = about +z, upper minus lower reaction")
+    yaw_torque_net: float = Field(description="N m net torque on the airframe about +z = Q_lower − Q_upper (upper reaction −Q_U, lower +Q_L)")
     thrust_share_upper: float
     rpm_upper: float
     rpm_lower: float
