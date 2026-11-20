@@ -108,6 +108,24 @@ def hinge_axis(design: Design, blade: int = 1) -> tuple[np.ndarray, np.ndarray]:
     return np.array([f.hinge_radius, 0.0, 0.0]), np.array([s * np.sin(d), 0.0, -np.cos(d)])
 
 
+def ideal_K6(design: Design) -> np.ndarray:
+    """6×6 stiffness of the "ideal" topology at the hinge point, blade-1 frame H
+    ([ux,uy,uz,rx,ry,rz] → [F;M]): flexure.ideal.K6 if given, else block-diagonal with
+    translations diag(k_axial, k_inplane, k_outplane) and rotations Q diag(k_hinge, k_cross,
+    k_flap) Qᵀ, Q = [a, a × y, y] (a = skewed hinge axis)."""
+    from .schema import IdealFlexure
+    ip = design.flexure.ideal or IdealFlexure()
+    if ip.K6 is not None:
+        return np.asarray(ip.K6, float)
+    _, a = hinge_axis(design, 1)
+    y = np.array([0.0, 1.0, 0.0])
+    Q = np.column_stack([a, np.cross(a, y), y])
+    K = np.zeros((6, 6))
+    K[:3, :3] = np.diag([ip.k_axial, ip.k_inplane, ip.k_outplane])
+    K[3:, 3:] = Q @ np.diag([ip.k_hinge, ip.k_cross, ip.k_flap]) @ Q.T
+    return K
+
+
 def freedom_space(design: Design, radial: bool = False) -> np.ndarray:
     """6×k twists: rotation about the hinge axis (+ radial translation if requested)."""
     p, a = hinge_axis(design)
@@ -241,7 +259,7 @@ def generate_members(design: Design) -> list[FlexureMember]:
                                  orientation=bar_ori))
         if f.bar_with_plate:
             out.append(plate(H0, xp, a, L))
-    elif topo in ("custom", "topopt"):
+    elif topo in ("custom", "topopt", "ideal"):
         out.extend(f.members)
     elif topo == "rigid":
         r1 = H0[0] + 0.5 * L
