@@ -195,7 +195,8 @@ def distance(K6_real, spec: dict) -> dict:
     y = np.array([0.0, 1.0, 0.0])
     b = np.cross(a, y)
     C = np.linalg.inv(K)[3:, 3:]                      # free (translations released) compliance
-    kh, kc, kf = 1 / (a @ C @ a), 1 / (b @ C @ b), 1 / (y @ C @ y)
+    # abs + floor: an indefinite/ill-conditioned real K6 must not crash the scoring
+    kh, kc, kf = (max(abs(1 / v), 1e-12) for v in (a @ C @ a, b @ C @ b, y @ C @ y))
     Kr = K[3:, 3:]
     terms = dict(k_hinge=math.log10(kh / t["k_hinge"]),
                  k_cross_over_k_hinge=math.log10(kc / kh / t["k_cross_over_k_hinge"]),
@@ -318,7 +319,10 @@ def main(argv=None):
         with ThreadPoolExecutor(max_workers=len(sizes)) as ex:
             specs = list(ex.map(lambda D: run_size(D, pool, log, a.popmult, a.maxiter, a.seed), sizes))
         if a.reference:
-            reference(specs, a.reference, pool)
+            try:
+                reference(specs, a.reference, pool)
+            except Exception as ex:          # scoring a real design must not lose the ideal run
+                print(f"reference scoring failed: {ex!r}")
     log.close()
     for s in specs:
         st = s["stiffness"]

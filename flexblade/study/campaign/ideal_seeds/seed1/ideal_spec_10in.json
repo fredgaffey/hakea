@@ -1,0 +1,143 @@
+{
+ "diameter_in": 10.0,
+ "control_ratio": 0.35941913224638095,
+ "feasible": true,
+ "binding_constraint": "resonance (pitch antisym+hub 0.85/rev vs 1P)",
+ "binding_utilisation": 0.9874396231031383,
+ "violations": {},
+ "motor_thermal_util": 0.29115304089017596,
+ "motor_thermal_enforced": true,
+ "rpm": 8116.140535296067,
+ "thrust": 16.635485123279423,
+ "torque_mod_frac": 1.888787254588388,
+ "capability": {
+  "rpm": 7967.349821115081,
+  "Q": 0.29959421079288745,
+  "dQ_max": 0.5956523440990239,
+  "frac": 1.98819711009304,
+  "limit": "current"
+ },
+ "stiffness": {
+  "frame": "blade-1 frame H at the hinge point: x radial, y in-plane, z rotor axis; [ux,uy,uz,rx,ry,rz] -> [F;M], N/m, N m/rad",
+  "hinge_point": [
+   0.01795685066048272,
+   0.0,
+   0.0
+  ],
+  "hinge_axis": [
+   0.7723323013368678,
+   0.0,
+   -0.6352187153348818
+  ],
+  "skew_deg": 50.56379193758302,
+  "k_hinge": 0.08622379537042707,
+  "k_cross": 9217.143954037441,
+  "k_flap": 58961.820862833956,
+  "k_axial": 3092608.137870677,
+  "k_inplane": 2881888.7315561567,
+  "k_outplane": 83861949.99598858,
+  "k_pitch": 3719.1949760555494,
+  "k_lag": 5498.035201777263,
+  "k_lag_pitch": 4521.887898156296,
+  "loss_eta": 0.13544585878487314,
+  "K6": [
+   [
+    3092608.137870677,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    2881888.7315561567,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    83861949.99598858,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    3719.1949760555494,
+    0.0,
+    4521.887898156296
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    58961.820862833956,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    4521.887898156296,
+    0.0,
+    5498.035201777263
+   ]
+  ]
+ },
+ "mass": {
+  "elastic_axis_chord_frac": 0.38143021976898517,
+  "tip_mass": 0.0019020676901196545,
+  "tip_mass_chord": 0.0093960399272793,
+  "lag_inertia": 3.362788938196641e-08,
+  "hinge_radius": 0.01795685066048272
+ },
+ "dynamics": {
+  "lag_per_rev": 0.398840695314339,
+  "flap_per_rev": 1.1581672260984597,
+  "pitch_per_rev": 0.8480919779898963,
+  "pitch_amp_deg": 3.776331884497645,
+  "lag_amp_deg": 2.451322789246179,
+  "moment_phase_deg": 113.57602592719715,
+  "min_damping": 0.013956477442961596,
+  "res_margin": 0.15190802201010367
+ },
+ "targets": {
+  "skew_deg": 50.56379193758302,
+  "k_hinge": 0.08622379537042707,
+  "k_cross_over_k_hinge": 106897.91506439215,
+  "k_flap_over_k_hinge": 683823.074703768,
+  "k_lag_over_k_flap": 0.09324737807144112,
+  "k_lag_pitch_over_k_lag": 0.8224552466842294,
+  "k_axial": 3092608.137870677,
+  "k_inplane": 2881888.7315561567,
+  "k_outplane": 83861949.99598858,
+  "lag_per_rev": 0.398840695314339
+ },
+ "J": -35.94191322463809,
+ "n_evals": 7930,
+ "generations": 60,
+ "de_message": "Maximum number of iterations has been exceeded.",
+ "wall_s": 525.4947643280029,
+ "x": {
+  "flexure.skew_deg": 50.5637919,
+  "flexure.hinge_radius": 0.0179569,
+  "flexure.ideal.k_hinge": 0.0862238,
+  "flexure.ideal.k_cross": 9217.143954,
+  "flexure.ideal.k_flap": 58961.8208628,
+  "flexure.ideal.k_axial": 3092608.1378707,
+  "flexure.ideal.k_inplane": 2881888.7315562,
+  "flexure.ideal.k_outplane": 83861949.9959886,
+  "flexure.ideal.loss_eta": 0.1354459,
+  "blade.elastic_axis_chord_frac": 0.3814302,
+  "flexure.ideal.tip_mass": 0.0019021,
+  "flexure.ideal.tip_mass_chord": 0.009396,
+  "flexure.ideal.lag_inertia": 0.0
+ }
+}
