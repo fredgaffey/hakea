@@ -146,6 +146,12 @@ class Flexure(_M):
     orientation: PrintOrientation = PrintOrientation()
     tension_member: Optional[FlexureMember] = Field(
         None, description="optional radial strap/rod carrying centrifugal load")
+    tension_rod_diameter: float = Field(
+        0.0, ge=0.0, description="m; > 0 adds a radial rod (wire member) on the rotor-plane line "
+                                 "through the hinge point, hub radius → blade end of the flexure, "
+                                 "carrying the centrifugal load (split load path; FACT-compatible: "
+                                 "the line intersects the hinge axis). 0 = none")
+    tension_rod_material: str = Field("cf_rod_pultruded", description="material of the tension rod")
     members: list[FlexureMember] = Field(
         default_factory=list, description="explicit members (custom) or fact.py output")
     hub_radius: float = Field(0.006, description="rigid hub outer radius, m")

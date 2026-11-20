@@ -30,7 +30,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .schema import Design, Flexure, FlexureMember, PrintOrientation
+from .schema import Design, Flexure, FlexureMember, Layup, PrintOrientation
 
 # --------------------------------------------------------------------------- screw algebra
 
@@ -160,7 +160,8 @@ def generate_members(design: Design) -> list[FlexureMember]:
         the force component along a). Wire diameter = thickness.
     custom             : flexure.members as given.
     rigid              : one rigid member from hub radius to hinge radius + length/2.
-    The optional tension_member is appended for all topologies.
+    The optional tension_member is appended for all topologies, and a radial tension rod
+    (hub edge → blade end, through H0) when flexure.tension_rod_diameter > 0.
     """
     f = design.flexure
     H0, a, xp, n = _frame(design)
@@ -237,6 +238,16 @@ def generate_members(design: Design) -> list[FlexureMember]:
         raise ValueError(topo)
     if f.tension_member is not None:
         out.append(f.tension_member)
+    if f.tension_rod_diameter > 0 and out:
+        # radial rod through H0 (on the hinge axis → reciprocal to the hinge twist), from the
+        # hub edge to the outermost blade-end x of the members (where the blade attaches)
+        x1 = max(max(m.p0[0], m.p1[0]) for m in out)
+        d_r = f.tension_rod_diameter
+        out.append(FlexureMember(kind="wire", p0=(float(f.hub_radius), 0.0, 0.0), p1=(float(x1), 0.0, 0.0),
+                                 width=d_r, thickness=d_r, width_dir=(0.0, 0.0, 1.0), shape="circle",
+                                 taper=1.0, layup=Layup(kind="solid", material=f.tension_rod_material),
+                                 orientation=PrintOrientation(build_dir=(0.0, 0.0, 1.0),
+                                                              raster_dir=(1.0, 0.0, 0.0))))
     return out
 
 
