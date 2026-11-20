@@ -259,6 +259,28 @@ def generate_members(design: Design) -> list[FlexureMember]:
                                  orientation=bar_ori))
         if f.bar_with_plate:
             out.append(plate(H0, xp, a, L))
+    elif topo == "skewed_cruciform":
+        # X-section on the hinge axis: plate lengths along a, widths at ±γ/2 about xp in the
+        # plane ⟂ a; fibres/raster along a; ends embedded in the fittings (no butt joint)
+        Lb = f.bar_length or L
+        g = np.radians(f.cross_angle_deg) / 2
+        p0, p1 = H0 - 0.5 * Lb * a, H0 + 0.5 * Lb * a
+        for sg in (1.0, -1.0):
+            wd = unit(np.cos(g) * xp + sg * np.sin(g) * n)
+            nb = np.cross(a, wd)            # plate normal = build dir (plate printed flat)
+            out.append(FlexureMember(kind="blade", p0=tuple(map(float, p0)), p1=tuple(map(float, p1)),
+                                     width=w, thickness=t, width_dir=tuple(map(float, wd)),
+                                     shape="rect", taper=1.0, layup=lay, anchorage="embedded",
+                                     orientation=PrintOrientation(build_dir=tuple(map(float, nb)),
+                                                                  raster_dir=tuple(map(float, a)))))
+        if f.cruciform_rod_diameter > 0:
+            d_c = f.cruciform_rod_diameter
+            out.append(FlexureMember(kind="wire", p0=tuple(map(float, p0)), p1=tuple(map(float, p1)),
+                                     width=d_c, thickness=d_c, width_dir=tuple(map(float, xp)),
+                                     shape="circle", taper=1.0, anchorage="embedded",
+                                     layup=Layup(kind="solid", material=f.bar_material),
+                                     orientation=PrintOrientation(build_dir=tuple(map(float, n)),
+                                                                  raster_dir=tuple(map(float, a)))))
     elif topo in ("custom", "topopt", "ideal"):
         out.extend(f.members)
     elif topo == "rigid":

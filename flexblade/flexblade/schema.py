@@ -109,6 +109,11 @@ class FlexureMember(_M):
     taper: float = Field(1.0, description="thickness at p1 / thickness at p0")
     layup: Layup = Layup()
     orientation: PrintOrientation = PrintOrientation()
+    anchorage: Literal["butt", "embedded"] = Field(
+        "butt", description="end condition on the fittings: butt = member ends flush on the "
+        "fitting face (anchorage.py punch springs); embedded = member continuous into / bonded "
+        "over a length inside the fitting (printed monolithic with fillets, or rod bonded in a "
+        "blind hole ≥ 3 d deep): no contact interface, ends treated as rigidly joined")
 
 
 class TopoptFlexure(_M):
@@ -174,6 +179,13 @@ class Flexure(_M):
                           bar's own torsion. Optional TPU plate around it (`thickness` > 0,
                           `layup`) tunes stiffness/damping. Bar: bar_diameter, bar_material,
                           bar_length (None = `length`). Needs a thick hub block, not a thin root.
+      skewed_cruciform    X-section torsion hinge: two thin plates (width `width`, thickness
+                          `thickness`, length `bar_length` or `length`) whose LENGTH lies on the
+                          skewed hinge axis, crossing on it at cross_angle_deg. Hinge = torsion
+                          of the open section (∝ b t³, warping-free since all arms meet at one
+                          point), cross/flap = plate bending (∝ t b³), CF = axial. Optional
+                          centroid CF rod (cruciform_rod_diameter, bar_material). Ends embedded
+                          (printed continuous into hub and blade fittings).
       custom              use `members` as given
       rigid               rigid root (reference / baseline)
       topopt              topology-optimised flexure: `topopt` holds its 6×6 stiffness and
@@ -182,7 +194,7 @@ class Flexure(_M):
                           IdealFlexure): the target a real flexure should approximate
     """
     topology: Literal["skewed_cross_blade", "skewed_cross_blade_sym", "skewed_single_blade",
-                      "wire_triplet", "integral_taper", "torsion_bar", "custom",
+                      "wire_triplet", "integral_taper", "torsion_bar", "skewed_cruciform", "custom",
                       "rigid", "topopt", "ideal"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
@@ -198,6 +210,8 @@ class Flexure(_M):
                                         "hinge axis, m; None = `length`")
     bar_with_plate: bool = Field(True, description="torsion_bar: add the TPU plate (layup, "
                                  "thickness, width) around the bar")
+    cruciform_rod_diameter: float = Field(0.0, ge=0.0, description="skewed_cruciform: CF rod "
+                                          "along the section centroid (on the hinge axis), m; 0 = none")
     cross_gap: float = Field(0.001, ge=0.0, description="axial gap between the two crossed plates "
                              "along the hinge axis, m; must exceed ~2 nozzle widths or the plates "
                              "fuse when printed (FEA: fused cross is ~1.9x stiffer)")

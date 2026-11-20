@@ -288,7 +288,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             # member-end anchorage on the printed fittings (zero-length punch springs)
             n_in, n_out = nodes[0], nodes[-1]
             anc = an.member_anchorage
-            if m.kind != "rigid" and anc != "none":
+            if m.kind != "rigid" and anc != "none" and m.anchorage != "embedded":
                 from .anchorage import end_spring
                 from .geometry import HUB_MATERIAL
                 mo = _rot_orient(m.orientation, Rk)
