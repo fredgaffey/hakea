@@ -466,10 +466,20 @@ class FlexureOnly:
         K = assemble_Kmat(fe, sa) + sa.Kgeo
         if extra_K is not None:
             K = K + extra_K
-        return condense_to_point(fe, K, self.master, self.clamp, st.x[self.master], point)
+        fm = sa.fint[6 * self.master:6 * self.master + 6] if state is not None else None
+        return condense_to_point(fe, K, self.master, self.clamp, st.x[self.master], point, fm)
 
 
-def condense_to_point(fe: FEModel, K: np.ndarray, master: int, clamp: list[int], x_master, point) -> np.ndarray:
+def condense_to_point(fe: FEModel, K: np.ndarray, master: int, clamp: list[int], x_master, point,
+                      f_master=None) -> np.ndarray:
+    """Condense K onto the master node and transport it to `point` (rigid offset d = x_master −
+    point). Under a preload (f_master = internal force [F; M] the substructure exerts at the
+    master, i.e. ∂U/∂q_m) the transport is nonlinear: x_m = x_p + R(θ)d, so the Hessian of
+    U(q_m(q_p)) gains F·∂²(R d)/∂θ² = ½(F dᵀ + d Fᵀ) − (F·d) I on the rotation block. Without
+    it a tension T reported at a point a distance d inboard of where it acts shows a spurious
+    pendulum stiffness ≈ T·d (the stiffness of the same structure would depend on the
+    reporting point). With it the 6×6 is the consistent tangent "as if cut at `point`" — what
+    a zero-length 6×6 spring at `point` (topology "ideal") must carry to reproduce it."""
     fixed = set()
     for n in clamp:
         fixed.update(range(6 * n, 6 * n + 6))
@@ -484,6 +494,9 @@ def condense_to_point(fe: FEModel, K: np.ndarray, master: int, clamp: list[int],
     T = np.eye(6)
     T[:3, 3:] = -skew(d)      # u_m = u0 + θ × d = u0 − d × θ
     Kp = T.T @ Kc @ T
+    if f_master is not None:
+        F = np.asarray(f_master, float)[:3]
+        Kp[3:, 3:] += 0.5 * (np.outer(F, d) + np.outer(d, F)) - (F @ d) * np.eye(3)
     return 0.5 * (Kp + Kp.T)
 
 
@@ -1192,7 +1205,15 @@ def blade_local_motion_c(model: RotorModel, U: np.ndarray, bi: BladeInfo):
 
 def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: int = 1) -> np.ndarray:
     """6×6 stiffness of blade `blade`'s flexure (members + stiff links, incl. the
-    centrifugal initial-stress stiffness of the trim state) at its hinge point, frame H."""
+    initial-stress (geometric) stiffness of the trim state) at its hinge point, frame H.
+
+    Loaded (ss given): consistent tangent of the flexure's internal forces, transported from
+    the blade master node to the hinge point with the preload term (see condense_to_point),
+    so a pin at the hinge point + rigid link to the master reports the pin stiffness, not
+    pin + T·d. It is directly comparable with an "ideal" zero-length 6×6 at the hinge point
+    (whose loaded K equals its K6). The rotor CF lag stiffness (Ω² e S) is NOT included: it
+    belongs to the blade and is in the full dynamic model either way. Unloaded (ss None):
+    material stiffness only."""
     fe = model.fe
     bi = model.blades[blade - 1]
     st = ss.state if ss is not None else fe.initial_state()
@@ -1208,7 +1229,8 @@ def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: i
     used = {e.n0 for e in sub.elements} | {e.n1 for e in sub.elements}
     clamp = [model.hub] + [n for n in range(fe.nn) if n not in used]
     sub.fixed = set()
-    return condense_to_point(sub, K, bi.master, clamp, st.x[bi.master], bi.hinge_point)
+    fm = sa.fint[6 * bi.master:6 * bi.master + 6] if ss is not None else None
+    return condense_to_point(sub, K, bi.master, clamp, st.x[bi.master], bi.hinge_point, fm)
 
 
 # =============================================================================== checks
