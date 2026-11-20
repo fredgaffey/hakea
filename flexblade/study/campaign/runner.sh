@@ -4,6 +4,17 @@
 # continues with the first unfinished job (grids resume themselves; DE restarts that case).
 cd "$(dirname "$0")/../.."
 C=study/campaign; mkdir -p $C/done
+# Expiry (Fred away 2 days): after this time the runner removes its own @reboot crontab line,
+# starts no new jobs and exits (a job already running finishes normally).
+EXPIRES="${RUNNER_EXPIRES:-2026-11-23T10:30}"
+expire_check() {
+  if [ "$(date +%s)" -ge "$(date -d "$EXPIRES" +%s)" ]; then
+    crontab -l 2>/dev/null | grep -v "study/campaign/runner.sh" | crontab -
+    echo "=== $(date -Iseconds) EXPIRED ($EXPIRES): removed @reboot crontab entry, runner exiting" >> $C/runner.log
+    exit 0
+  fi
+}
+expire_check
 exec 9>$C/.runner.lock; flock -n 9 || exit 0          # one runner at a time
 while pgrep -f "^/bin/bash study/campaign/queue_steelx.sh" >/dev/null; do sleep 120; done   # let the legacy queue finish
 pgrep -f "study/campaign/memguard.sh" >/dev/null || (setsid nohup $C/memguard.sh </dev/null >/dev/null 2>&1 &)
@@ -14,6 +25,7 @@ while true; do
     [ "$(cat $C/done/$name.fail 2>/dev/null || echo 0)" -ge 3 ] && continue   # gave up after 3 failures
     job="$name"; jcmd="$cmd"; break
   done < $C/jobs.txt
+  expire_check
   [ -z "$job" ] && { sleep 300; continue; }           # idle: re-read jobs.txt (I append new jobs)
   [ -e $C/STOP_BURN ] && { sleep 60; continue; }
   echo "=== $(date -Iseconds) START $job model $(git rev-parse --short HEAD)" >> $C/runner.log
