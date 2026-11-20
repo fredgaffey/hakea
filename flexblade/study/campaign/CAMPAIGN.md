@@ -43,3 +43,4 @@ and only with a clear need. Commit + push results at every check-in.
   rods end inside the flexure so the centrifugal load passes through TPU. First remedy
   candidates: continuous rod into rigid CF blade/hub; CF root fitting; longer rod
   embedment; laminate strip.
+- 2026-11-20 CFD agent merged: coarse 3D hover (262k cells, checkMesh 5 failures) for 5in_tpu_rod_winner gives thrust 4.51 N vs BEM 5.88 N (0.77×) at equal torque (1.00×), FoM 0.48 vs 0.72. If confirmed by the fine mesh, BEM over-predicts thrust ~25 % → hover rpm higher, pulse headroom lower. PENDING on Mac: fine hover (1.3M cells), kOmegaSSTLM 1/rev pitching. Batch runner: cfd.validate.blade_shapes().
