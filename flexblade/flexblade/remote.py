@@ -88,6 +88,8 @@ def worker_main(workers: int) -> None:
     # serial kernels in every evaluating process (inherited by the spawned pool): the host's
     # cores are filled by processes; threaded numba/BLAS on top oversubscribes (Mac load >100)
     os.environ["FLEXBLADE_WORKER"] = "1"
+    os.environ["FLEXBLADE_CACHE"] = "off"     # host-side HostPool.map caches; workers must not
+                                              # hammer the same SQLite file from N processes
     for k in ("NUMBA_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
               "VECLIB_MAXIMUM_THREADS"):
         os.environ[k] = "1"
