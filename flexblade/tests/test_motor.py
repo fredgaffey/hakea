@@ -58,7 +58,7 @@ def test_thermal_limit_caps_pulse():
     from flexblade.motor import MOTOR_LIBRARY
     e = MOTOR_LIBRARY["tmotor_2307_1300kv"]
     m = e[0] if isinstance(e, tuple) else e
-    hot = m.model_copy(update=dict(thermal_resistance_KW=6.0))
+    hot = m.model_copy(update=dict(thermal_resistance_KW=2.5))
     c = capability(hot, 15000, 0.05)
     assert c.dQ_limit == "thermal"
     assert c.dQ_max_1p < capability(hot, 15000, 0.05, thermal=False).dQ_max_1p
