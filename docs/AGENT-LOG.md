@@ -20,3 +20,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | opus-5-5 | lean | Tension-torsion strap concept | tt_strap KEEP as CF path (all checks pass); cruciform ratios ~10 too low -> pair strap with crossed plates | 103k / 51 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | Beam vs ccx gap on cf_flexure | plate modulus Q11 fix: crossed plates beam/ccx 0.54->0.70; torsion_bar ccx mesh merge diagnosed | 80k / 42 calls | green: no |
 | 2026-11-20 | sonnet-5-5 | lean | Beam vs ccx gap on cf_flexure | plate modulus Q11 fix: crossed plates beam/ccx 0.54->0.70; torsion_bar ccx mesh merge diagnosed | 80k / 42 calls | green: no |
+| 2026-11-20 | sonnet-5-5 | lean | Validate vs Hakea bench logs | bench validation: steady rpm 4.5% rms; dynamic gain 2-13% (small), -14..-29% (big sweep); 35-45deg unmodelled phase; Rth not identifiable | 35k / 13 calls | green: yes |
