@@ -250,7 +250,9 @@ def _write_pitch_dicts(case: Path, ci: PitchCase, span: float, np_: int):
             # rotation about +z is nose-DOWN for flow +x; amplitude negative → α = α0 + A sin ωt
             "amplitude": (0.0, 0.0, -ci.alpha_amp_deg),
             "omega": ci.omega}})
-    kf, wf = foam.turbulence_fields_kw(ci.turbulence, V, c, nu=ci.nu)
+    lm = ci.turbulence == "kOmegaSSTLM"
+    Tu = 0.005 if lm else 0.001          # freestream intensity (LM needs a finite Tu)
+    kf, wf = foam.turbulence_fields_kw(ci.turbulence, V, c, intensity=Tu, nu=ci.nu)
     foam.field_file(case, "U", "volVectorField", "[0 1 -1 0 0 0 0]", f"uniform ({V:.6g} 0 0)", {
         "farfield": {"type": "freestreamVelocity", "freestreamValue": RawEntry(f"uniform ({V:.6g} 0 0)")},
         "airfoil": {"type": "movingWallVelocity", "value": RawEntry("uniform (0 0 0)")},
@@ -271,6 +273,15 @@ def _write_pitch_dicts(case: Path, ci: PitchCase, span: float, np_: int):
             "farfield": {"type": "calculated", "value": RawEntry("uniform 0")},
             "airfoil": {"type": "nutLowReWallFunction", "value": RawEntry("uniform 0")},
             "frontAndBack": {"type": "empty"}})
+    if lm:
+        tu = Tu * 100.0                  # Langtry-Menter freestream Re_theta_t correlation (Tu in %)
+        rt = 1173.51 - 589.428 * tu + 0.2196 / tu ** 2 if tu <= 1.3 else 331.5 * (tu - 0.5658) ** -0.671
+        for name, val in (("ReThetat", rt), ("gammaInt", 1.0)):
+            dims = "[0 0 0 0 0 0 0]"
+            foam.field_file(case, name, "volScalarField", dims, f"uniform {val:.6g}", {
+                "farfield": {"type": "inletOutlet", "inletValue": RawEntry(f"uniform {val:.6g}"),
+                             "value": RawEntry(f"uniform {val:.6g}")},
+                "airfoil": {"type": "zeroGradient"}, "frontAndBack": {"type": "empty"}})
     write_every = max(1, int(round(ci.period / ci.dt)))
     foam.write_dict(case, "system/controlDict", f"""application     pimpleFoam;
 startFrom       latestTime;
@@ -317,6 +328,8 @@ divSchemes
     div(phi,U)      Gauss linearUpwindV grad(U);
     div(phi,k)      Gauss upwind;
     div(phi,omega)  Gauss upwind;
+    div(phi,ReThetat) Gauss upwind;
+    div(phi,gammaInt) Gauss upwind;
     div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }
 laplacianSchemes { default Gauss linear limited 0.5; }
@@ -328,8 +341,8 @@ wallDist        { method meshWave; }
 {
     "(p|pcorr)"     { solver GAMG; smoother GaussSeidel; tolerance 1e-7; relTol 0.01; }
     "(p|pcorr)Final" { $p; relTol 0; }
-    "(U|k|omega)"   { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-8; relTol 0.05; maxIter 200; }
-    "(U|k|omega)Final" { $U; relTol 0; }
+    "(U|k|omega|ReThetat|gammaInt)"   { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-8; relTol 0.05; maxIter 200; }
+    "(U|k|omega|ReThetat|gammaInt)Final" { $U; relTol 0; }
 }
 PIMPLE
 {
@@ -344,7 +357,7 @@ PIMPLE
 relaxationFactors
 {
     fields      { p 0.7; pFinal 1; }
-    equations   { "(U|k|omega)" 0.8; "(U|k|omega)Final" 1; }
+    equations   { "(U|k|omega|ReThetat|gammaInt)" 0.8; "(U|k|omega|ReThetat|gammaInt)Final" 1; }
 }
 """)
     foam.decompose_dict(case, np_)

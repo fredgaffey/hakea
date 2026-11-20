@@ -1,0 +1,59 @@
+    faces on cells with determinant < 0.001                : 0
+Masters that need to be restored:0
+
+Merging all points on surface that
+- are used by only two boundary faces and
+- make an angle with a cosine of more than 0.866025.
+
+Removing 1223 straight edge points ...
+
+Edge intersection testing:
+    Number of edges             : 808327
+    Number of edges to retest   : 6776
+    Number of intersected edges : 8217
+
+Undo iteration 0
+----------------
+Checking faces in error :
+    non-orthogonality > 65  degrees                        : 276
+    faces with face pyramid volume < 1e-13                 : 5
+    faces with face-decomposition tet quality < 1e-15      : 27
+    faces with concavity > 80  degrees                     : 2
+    faces with skewness > 4   (internal) or 20  (boundary) : 0
+    faces with interpolation weights (0..1)  < 0.05        : 0
+    faces with volume ratio of neighbour cells < 0.01      : 1
+    faces with face twist < 0.02                           : 1
+    faces on cells with determinant < 0.001                : 0
+Detected 0 error faces on boundaries that have been merged. These will be restored to their original faces.
+
+Detected 312 error faces in mesh. Restoring neighbours of faces in error.
+
+Edge intersection testing:
+    Number of edges             : 808327
+    Number of edges to retest   : 6852
+    Number of intersected edges : 8220
+Snapped mesh : cells:262070  faces:808327  points:285290
+Cells per refinement level:
+    0	24922
+    1	7100
+    2	214740
+    3	6899
+    4	8409
+Writing mesh to time constant
+Wrote mesh in = 0 s.
+Mesh snapped in = 14.51 s.
+Checking final mesh ...
+Checking faces in error :
+    non-orthogonality > 65  degrees                        : 276
+    faces with face pyramid volume < 1e-13                 : 5
+    faces with face-decomposition tet quality < 1e-15      : 27
+    faces with concavity > 80  degrees                     : 2
+    faces with skewness > 4   (internal) or 20  (boundary) : 0
+    faces with interpolation weights (0..1)  < 0.05        : 0
+    faces with volume ratio of neighbour cells < 0.01      : 1
+    faces with face twist < 0.02                           : 1
+    faces on cells with determinant < 0.001                : 0
+Finished meshing with 312 illegal faces (concave, zero area or negative cell pyramid volume)
+Finished meshing in = 20.58 s.
+Memory per-node = (493888)
+End

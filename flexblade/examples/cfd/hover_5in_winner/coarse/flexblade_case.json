@@ -1,0 +1,15 @@
+{
+ "case_dir": "/tmp/fb_hover_l4_ruh_p/coarse",
+ "rpm": 18520.96972397914,
+ "n_blades": 2,
+ "R": 0.0635,
+ "sector_deg": 180.0,
+ "nu": 1.4997137742517478e-05,
+ "bemt_thrust": 5.883989972635669,
+ "bemt_torque": 0.05830160203751454,
+ "n_background_cells": 29184,
+ "surface_level": [
+  3,
+  4
+ ]
+}

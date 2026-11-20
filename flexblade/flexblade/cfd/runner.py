@@ -21,6 +21,9 @@ MAC_ROOT = "/tmp/flexblade-cfd"
 MAC_OPENFOAM = os.environ.get("FLEXBLADE_MAC_OPENFOAM", "openfoam")
 DOCKER_IMAGE = os.environ.get("FLEXBLADE_OF_IMAGE", "opencfd/openfoam-run:2512")
 MIN_FREE_GB = 5.0
+# fail fast when the Mac is offline (Tailscale may drop): short connect timeout, keepalives
+SSH_OPTS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=30",
+            "-o", "ServerAliveCountMax=4"]
 
 _SOURCE_DOCKER = ("for f in /usr/lib/openfoam/openfoam*/etc/bashrc /opt/openfoam*/etc/bashrc; "
                   "do [ -f \"$f\" ] && . \"$f\" && break; done")
@@ -47,8 +50,11 @@ def mac_status(host: str = MAC_HOST) -> dict:
     cmd = ("export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH; "
            f"command -v {MAC_OPENFOAM} || echo NOOPENFOAM; ls -d /Applications/OpenFOAM*.app 2>/dev/null; "
            "df -k /tmp | tail -1; sysctl -n hw.ncpu")
-    r = _sh(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", host, cmd], timeout=60,
-            check=False)
+    try:
+        r = _sh(["ssh", *SSH_OPTS, host, cmd], timeout=90, check=False)
+    except subprocess.TimeoutExpired:
+        return dict(reachable=False, openfoam=False, apps=[], free_gb=None, ncpu=None,
+                    raw="ssh timed out")
     lines = r.stdout.strip().splitlines()
     free_gb = None
     ncpu = None
@@ -102,7 +108,8 @@ def run_case(case_dir: str | Path, where: Literal["mac", "docker", "local"] = "m
     if where == "mac":
         st = mac_status(host)
         if not st["reachable"]:
-            raise RuntimeError(f"ssh {host} failed: {st['raw']}")
+            raise RuntimeError(f"Mac '{host}' unreachable (offline / Tailscale down?); "
+                               f"nothing was run. ssh said: {st['raw'][-300:]}")
         if not st["openfoam"]:
             raise RuntimeError("OpenFOAM not installed on the Mac "
                                "(brew install --cask gerlero/openfoam/openfoam)")
@@ -110,18 +117,18 @@ def run_case(case_dir: str | Path, where: Literal["mac", "docker", "local"] = "m
             raise RuntimeError(f"only {st['free_gb']:.1f} GB free on Mac /tmp")
         remote = f"{MAC_ROOT}/{case.name}"
         rq = shlex.quote(remote)
-        _sh(["ssh", host, f"rm -rf {rq} && mkdir -p {rq}"], timeout=60)
+        _sh(["ssh", *SSH_OPTS, host, f"rm -rf {rq} && mkdir -p {rq}"], timeout=60)
         try:
-            _sh(["rsync", "-a", "--delete", f"{case}/", f"{host}:{remote}/"], timeout=600)
+            _sh(["rsync", "-a", "-e", "ssh " + " ".join(SSH_OPTS), "--delete", f"{case}/", f"{host}:{remote}/"], timeout=600)
             inner = f"cd {rq} && ./Allrun {int(np)}"
             cmd = (f"export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH; "
                    f"{MAC_OPENFOAM} -c {shlex.quote(inner)}")
-            r = _sh(["ssh", host, cmd], timeout=timeout, check=False, retries=0)
+            r = _sh(["ssh", *SSH_OPTS, host, cmd], timeout=timeout, check=False, retries=0)
             ok = r.returncode == 0 and "FAILED" not in r.stdout
-            _sh(["rsync", "-a", "--include=postProcessing/***", "--include=log.*",
+            _sh(["rsync", "-a", "-e", "ssh " + " ".join(SSH_OPTS), "--include=postProcessing/***", "--include=log.*",
                  "--exclude=*", f"{host}:{remote}/", f"{case}/"], timeout=600, check=False)
         finally:
-            _sh(["ssh", host, f"rm -rf {rq}"], timeout=60, check=False)
+            _sh(["ssh", *SSH_OPTS, host, f"rm -rf {rq}"], timeout=60, check=False)
     elif where == "docker":
         uid, gid = os.getuid(), os.getgid()
         inner = f"{_SOURCE_DOCKER}; cd /case && MPIRUN_FLAGS='--oversubscribe' ./Allrun {int(np)}"

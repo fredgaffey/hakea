@@ -93,3 +93,14 @@ def test_theodorsen_limits():
     assert post.theodorsen_pitch_cl(0.0) == pytest.approx(2 * math.pi)
     v = post.theodorsen_pitch_cl(0.1)
     assert abs(v) < 2 * math.pi * 1.05 and np.angle(v) != 0
+
+
+def test_blade_table_and_unreachable_mac(monkeypatch, tmp_path):
+    from flexblade.cfd import runner, validate
+    t = validate.blade_table([dict(kind="hover", design="d", ok=True, seconds=5, T_ratio=0.8,
+                                   Q_ratio=1.0, cfd_FoM=0.5, bem_FoM=0.7)])
+    assert "| d | hover |" in t
+    monkeypatch.setattr(runner, "mac_status", lambda host=None: dict(reachable=False, raw="x"))
+    (tmp_path / "Allrun").write_text("")
+    with pytest.raises(RuntimeError, match="unreachable"):
+        runner.run_case(tmp_path, where="mac")

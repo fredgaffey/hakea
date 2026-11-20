@@ -1,0 +1,59 @@
+
+	Basic statistics
+		Number of internal faces : 3
+		Number of boundary faces : 18
+		Number of defined boundary faces : 18
+		Number of undefined boundary faces : 0
+	Checking patch -> block consistency
+
+Creating block offsets
+Creating merge list (topological search)...
+
+Creating polyMesh from blockMesh
+Creating points with scale (1 1 1)
+    Block 0 cell size :
+        i : 0.00791674 .. 0.00791674
+        j : 0.000817664 .. 0.000817664
+        k : 0.0079375 .. 0.0079375
+
+    Block 1 cell size :
+        i : 0.00791674 .. 0.00791674
+        j : 0.000817664 .. 0.000817664
+        k : 0.0079375 .. 0.0079375
+
+    Block 2 cell size :
+        i : 0.00791674 .. 0.00791674
+        j : 0.000817664 .. 0.000817664
+        k : 0.0079375 .. 0.0079375
+
+    Block 3 cell size :
+        i : 0.00791674 .. 0.00791674
+        j : 0.000817664 .. 0.000817664
+        k : 0.0079375 .. 0.0079375
+
+Creating cells
+Creating patches
+No patch pairs to merge
+
+Detected cyclic patches; ordering boundary faces
+
+Writing polyMesh with 0 cellZones
+----------------
+Mesh Information
+----------------
+  boundingBox: (2.72073e-19 -0.15875 -0.254) (0.15875 0.15875 0.127)
+  nPoints: 32340
+  nCells: 29184
+  nFaces: 90608
+  nInternalFaces: 84496
+----------------
+Patches
+----------------
+  patch 0 (start: 84496 size: 608) name: inlet
+  patch 1 (start: 85104 size: 608) name: outlet
+  patch 2 (start: 85712 size: 1536) name: farfield
+  patch 3 (start: 87248 size: 1536) name: axis
+  patch 4 (start: 88784 size: 912) name: cyc_lo
+  patch 5 (start: 89696 size: 912) name: cyc_hi
+
+End
