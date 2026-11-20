@@ -379,7 +379,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="resize geometry to the design's section stiffnesses (fair comparison)")
     s.add_argument("--torque", default="design", help="design | capability | torque_mod_frac number")
     s.add_argument("--hosts", help="HostPool spec, e.g. local:16,mac:10 (default: local process pool)")
-    s.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2))
+    s.add_argument("--workers", type=int, default=8, help="local worker processes (default 8)")
     s.add_argument("--out", help="write .csv or .jsonl (else JSON lines to stdout)")
     s.add_argument("--format", choices=["jsonl", "csv"], default="jsonl")
     s.add_argument("--sort", default="fitness", help="record key to sort by (descending)")

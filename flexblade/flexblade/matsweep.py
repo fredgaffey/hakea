@@ -308,11 +308,12 @@ def _eval_job(job: dict) -> dict:
 def _pool(workers: int):
     import multiprocessing as mp
     os.environ["FLEXBLADE_WORKER"] = "1"
+    os.environ.setdefault("NUMBA_NUM_THREADS", "1")
     return mp.get_context("spawn").Pool(workers)
 
 
 def run_jobs(fn: Callable, jobs: list, workers: int | None = None, progress=None) -> list:
-    workers = workers or max(1, (os.cpu_count() or 2) - 2)
+    workers = workers or min(8, max(1, (os.cpu_count() or 2) - 2))
     if workers <= 1 or len(jobs) <= 1:
         out = []
         for i, j in enumerate(jobs):

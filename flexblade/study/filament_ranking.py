@@ -70,7 +70,7 @@ def candidates(selector: str, slot: str) -> list[str]:
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 4))
+    ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--quick", action="store_true", help="3 materials per study (smoke test)")
     ap.add_argument("--report-only", action="store_true", help="rebuild FILAMENTS.md from results")
     a = ap.parse_args(argv)
