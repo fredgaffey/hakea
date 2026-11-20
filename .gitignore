@@ -20,3 +20,6 @@ __pycache__/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# large streaming results: keep gzipped snapshots only
+flexblade/study/campaign/full_grid/results.jsonl
