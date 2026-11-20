@@ -12,8 +12,8 @@
 | 7" | rod | 14982/48384 | 7|rod|tpu_95a|d1.2|n3|sk35|t2.0|hr0.8|L1.25|w0.8 | 0.325 | 14.57 | 0.99 | fatigue_strain:flex0 |
 | 7" | strap | 4864/14112 | 7|strap|tpu_64d|d0.9|sk55|t2.5|hr1.2|L0.6|w1.25 | 0.025 | 1.05 | 0.97 | creep_strain:flex0 |
 | 7" | tbar | 741/4200 | 7|tbar|tpu_95a|b1.5|L8|s0.6|p1.0|sk60 | 0.141 | 5.16 | 0.95 | motor_torque_1p:motor |
-| 8" | rod | 1444/2581 | 8|rod|tpu_95a|d1.2|n2|sk30|t1.5|hr0.8|L1.25|w0.8 | 0.159 | 6.05 | 0.96 | interlayer:flex0 |
-| 8" | strap | 180/811 | 8|strap|tpu_95a|d1.2|sk30|t3.0|hr1.2|L0.6|w1.25 | 0.009 | 0.38 | 0.93 | creep_strain:flex0 |
+| 8" | rod | 3765/7137 | 8|rod|tpu_95a|d1.2|n2|sk30|t1.5|hr0.8|L1.25|w0.8 | 0.159 | 6.05 | 0.96 | interlayer:flex0 |
+| 8" | strap | 569/2255 | 8|strap|tpu_95a|d0.9|sk30|t3.5|hr1.2|L0.8|w1.25 | 0.010 | 0.42 | 0.97 | creep_strain:flex0 |
 
 Top 25 feasible overall:
 
@@ -43,4 +43,4 @@ Top 25 feasible overall:
 - 6|rod|tpu_95a|d1.4|n2|sk40|t1.5|hr1.0|L1.25|w0.8: ctrl 0.323, pitch 15.07°, util 0.98 (fatigue_strain:flex0)
 - 6|rod|tpu_95a|d1.6|n2|sk45|t3.0|hr0.8|L1.25|w1.0: ctrl 0.323, pitch 15.20°, util 0.99 (motor_torque_1p:motor)
 
-206000 results, Fri Nov 20 20:35:55 2026
+212000 results, Fri Nov 20 20:42:32 2026

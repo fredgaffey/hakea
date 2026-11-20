@@ -26,10 +26,10 @@ def run(args):
         out = dict(D=D, skew=sk, hr=hr, ea=ea, k=k)
         for f in (0.6, 1.0, 1.5):          # robustness band on hinge stiffness
             hd, ss = ctrl(d, k * f)
-            out[f"ctrl_{f}"] = float(hd.control_ratio)
+            out[f"ctrl_{f}"] = float(hd.result.control_ratio)
             if f == 1.0:
-                out["pitch"] = float(hd.blades[0].pitch_amp_deg)
-                out["cf_N"] = float(getattr(ss, "centrifugal_force_root", 0) or 0)
+                out["pitch"] = float(hd.result.blades[0].pitch_amp_deg)
+                out["rpm"] = float(ss.rpm)
         out["ctrl_robust"] = min(out["ctrl_0.6"], out["ctrl_1.0"], out["ctrl_1.5"])
         return out
     except Exception as e:
