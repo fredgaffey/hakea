@@ -33,7 +33,7 @@ from .beam import (Element, FEModel, State, _edofs, assemble, assemble_internal,
                    assemble_Kmat, element_end_forces, element_end_forces_lin, element_point_maps,
                    skew, solve_static, unit, _logm)
 from .bladegeom import airfoil_coords, resolve_stations
-from .materials import get_material
+from .materials import _get_raw, get_material, part_temperature
 from .schema import (BladeHarmonic, CampbellResult, Check, Design, FlexureMember, HarmonicResult,
                      Layup, Mode, PrintOrientation, Results, TrimResult)
 from .section import (CircleShape, RectShape, SectionProps, airfoil_shape, section_properties)
@@ -1220,6 +1220,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
     st = ss.state
     sa = assemble_internal(fe, st, False)
     groups: dict[str, dict] = {}
+    used: dict[str, set] = {}
     fz = ss.Omega / (2 * np.pi)
     for i, (e, c) in enumerate(zip(fe.elements, sa.cr)):
         if e.kind in ("rigid", "spring") or e.massless:
@@ -1232,6 +1233,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
         t_hat = unit(st.x[e.n1] - st.x[e.n0])
         fa, fb = element_end_forces(e, c)
         secs = [e.sections[0], e.sections[-1]]
+        used.setdefault(name, set()).update(fb_.material for sec in secs for fb_ in sec.fibres)
         for sec, sf in zip(secs, (fa, fb)):
             u_s, u_il, strain, det, u_cr = _fibre_checks(e, sec, sf, t_hat)
             if u_s > g["static"]:
@@ -1248,6 +1250,16 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                 g["fat_s"] = max(g["fat_s"], us)
                 g["famp"] = max(g["famp"], amp)
     out: list[Check] = []
+    T_part = float(model.design.op.ambient_C)
+    for name, mats in used.items():
+        lim = [(_get_raw(m).hdt_C - HDT_MARGIN_C, m) for m in mats if _get_raw(m).hdt_C > 0]
+        if lim:
+            a, m = min(lim)
+            out.append(Check(name="hdt_temperature", member=name, value=T_part, allowable=a,
+                             utilisation=T_part / a if a > 0 else float("inf"),
+                             note=f"part T = ambient (no self-heating) vs HDT {a + HDT_MARGIN_C:.0f} C "
+                                  f"- {HDT_MARGIN_C:.0f} C margin ({m}); moduli/allowables derated "
+                                  "linearly to 0.3 at HDT"))
     for name, g in groups.items():
         det = g["det"]
         note = f"σ={det[0]/1e6:.2f} MPa vs {det[1]/1e6:.1f} MPa ({det[2]})" if det else ""
@@ -1336,7 +1348,17 @@ def _pick(md: ModeData, key: str, Omega: float) -> float:
     return float("nan")
 
 
+HDT_MARGIN_C = 10.0   # part temperature must stay below HDT - margin
+
+
 def evaluate(design: Design, what: list[str] | None = None) -> Results:
+    """Evaluate at part temperature = op.ambient_C: moduli and allowables of every material
+    are derated by materials.temp_knockdown for the whole analysis."""
+    with part_temperature(design.op.ambient_C):
+        return _evaluate(design, what)
+
+
+def _evaluate(design: Design, what: list[str] | None = None) -> Results:
     what = list(what or ["trim", "modes", "harmonic", "checks"])
     t = {}
     t0 = time.perf_counter()

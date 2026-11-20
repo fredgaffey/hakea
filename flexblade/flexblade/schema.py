@@ -235,6 +235,10 @@ class OperatingPoint(_M):
                                           "(fraction); overrides torque_mod_frac when drive='duty'")
     rho: float = 1.225
     temperature_C: float = 25.0
+    ambient_C: float = Field(25.0, description="ambient = part temperature, C: moduli and "
+                             "allowables derated linearly to 0.3 at each material's HDT "
+                             "(materials.temp_knockdown); hdt check fails above HDT - margin. "
+                             "Self-heating not modelled.")
     rpm_grid: list[float] = Field(default_factory=list,
                                   description="Campbell rpm grid; empty = auto")
     thrust_share: Optional[float] = Field(

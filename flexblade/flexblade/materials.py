@@ -17,6 +17,20 @@ import numpy as np
 from .schema import PrintOrientation
 
 
+T_REF_C = 25.0          # reference temperature of all tabulated properties
+DERATE_FLOOR = 0.3      # knock-down at/after HDT (and beyond)
+
+
+def temp_knockdown(T_C: float, hdt_C: float) -> float:
+    """Simple documented derating law, applied to moduli, strengths, creep and fatigue
+    allowables alike: 1 at T <= 25 C, falling linearly to DERATE_FLOOR (0.3) at the
+    heat-deflection temperature, constant beyond (the hdt check fails there instead).
+    hdt_C <= 25 means n/a -> 1. ROUGH: a coupon test at temperature supersedes it."""
+    if hdt_C <= T_REF_C or T_C <= T_REF_C:
+        return 1.0
+    return max(DERATE_FLOOR, 1.0 - (1.0 - DERATE_FLOOR) * (T_C - T_REF_C) / (hdt_C - T_REF_C))
+
+
 @dataclass(frozen=True)
 class Material:
     name: str
@@ -52,6 +66,24 @@ class Material:
     # ROUGH, assumed values (see FORMING_TEMP_C / TG_C below) -- verify with a coupon.
     forming_temp_C: float = 0.0
     tg_C: float = 0.0
+    # heat-deflection temperature (C, ~0.45 MPa); 0 = n/a (rods, wire: no derating)
+    hdt_C: float = 0.0
+    # provenance of creep_strain_allow / fatigue_*: "class default" unless brand-sourced
+    allow_source: str = "class default"
+
+    # ------------------------------------------------------------------ temperature
+    def derated(self, T_C: float) -> "Material":
+        """Copy with moduli and allowables knocked down for part temperature T_C
+        (see temp_knockdown). Returns self at/below 25 C or when hdt_C is n/a."""
+        k = temp_knockdown(T_C, self.hdt_C)
+        if k >= 1.0:
+            return self
+        return dataclasses.replace(
+            self, E1=self.E1 * k, E2=self.E2 * k, E3=self.E3 * k, G12=self.G12 * k,
+            G13=self.G13 * k, G23=self.G23 * k, Xt=self.Xt * k, Yt=self.Yt * k,
+            Zt=self.Zt * k, S=self.S * k, creep_strain_allow=self.creep_strain_allow * k,
+            fatigue_strain_amp_allow=self.fatigue_strain_amp_allow * k,
+            source=self.source + f" [derated x{k:.3f} at {T_C:.0f} C]")
 
     # ------------------------------------------------------------------ frequency
     def storage_scale(self, freq_hz: float) -> float:
@@ -231,10 +263,19 @@ LIBRARY: dict[str, Material] = {
 # assumed: TPU 95A/64D soften ~100-130 C; PETG-CF Tg ~85 C (form ~90-100); PLA Tg ~60 C;
 # PA6-CF needs ~150-170 C; pultruded CF rod epoxy/vinyl-ester matrix Tg ~110 C (ASSUMPTION);
 # steel spring wire does not care below its tempering temperature.
+# ROUGH heat-deflection temperatures of the generic entries (0 = n/a, no derating)
+HDT_C = {"tpu_95a": 90.0, "tpu_64d": 90.0, "petg_cf": 75.0, "pla": 55.0, "pa6_cf": 150.0}
+# class-default HDT (C) for brand entries whose TDS gives none; inserts -> 0 (n/a)
+CLASS_HDT_C = {"pla": 55, "pla_plus": 55, "pla_tough": 55, "pla_ht": 100, "pla_cf": 60, "petg": 70,
+               "petg_cf": 75, "pet_cf": 80, "abs": 95, "abs_cf": 100, "abs_gf": 100, "asa": 95,
+               "asa_cf": 100, "pc": 130, "pc_abs": 105, "pc_cf": 135, "pa": 70, "pa_cf": 150,
+               "pa_gf": 160, "ppa_cf": 200, "onyx": 145, "pp": 60, "pp_cf": 70, "pp_gf": 90,
+               "peek": 150, "peek_cf": 200, "pekk": 160, "pps_cf": 250, "tpu": 90, "tpe": 80}
 FORMING_TEMP_C = {"tpu_95a": 100.0, "tpu_64d": 105.0, "petg_cf": 90.0, "pla": 65.0, "pa6_cf": 160.0}
 TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0}
 for _n, _m in list(LIBRARY.items()):
-    LIBRARY[_n] = dataclasses.replace(_m, forming_temp_C=FORMING_TEMP_C.get(_n, 0.0), tg_C=TG_C.get(_n, 0.0))
+    LIBRARY[_n] = dataclasses.replace(_m, forming_temp_C=FORMING_TEMP_C.get(_n, 0.0), tg_C=TG_C.get(_n, 0.0),
+                                      hdt_C=HDT_C.get(_n, 0.0))
 GENERIC_NAMES = tuple(LIBRARY)
 
 # Metadata of the real-product entries (brand, product, url, price, confidence, …) keyed by
@@ -249,6 +290,10 @@ def _register_filaments() -> None:
         s = e["sim"]
         if e["name"] in LIBRARY and e["name"] not in META:
             raise ValueError(f"filament entry {e['name']!r} clashes with a generic material")
+        hdt = (e.get("tds") or {}).get("hdt_C") or CLASS_HDT_C.get(e["class"], 0.0)
+        dv = e["derived"]
+        sourced = all(not str(dv.get(k, "")).startswith(("class table", "elastomer hardness"))
+                      for k in ("creep_strain_allow", "fatigue_strain_amp_allow"))
         LIBRARY[e["name"]] = Material(
             e["name"], s["rho"], s["E1"], s["E2"], s["E3"], s["G12"], s["G13"], s["G23"],
             s["nu12"], s["nu13"], s["nu23"], loss_factor=s["loss_factor"],
@@ -258,6 +303,7 @@ def _register_filaments() -> None:
             creep_strain_allow=s["creep_strain_allow"],
             fatigue_strain_amp_allow=s["fatigue_strain_amp_allow"],
             fatigue_stress_ratio=s["fatigue_stress_ratio"], is_elastomer=s["is_elastomer"],
+            hdt_C=float(hdt), allow_source="brand" if sourced else "class default",
             source=f"{e['brand']} {e['product']} — {e.get('tds_url') or e['url']} "
                    f"(confidence {e['confidence']}; derived fields: "
                    f"{sum(not v.startswith('tds:') for v in e['derived'].values())})")
@@ -308,7 +354,24 @@ def _variant(name: str) -> Material:
     return v
 
 
-def get_material(name: str) -> Material:
+_PART_T = [T_REF_C]     # part temperature (C) applied by get_material; see part_temperature
+_DERATED: dict = {}
+
+
+class part_temperature:
+    """Context manager: get_material() returns temperature-derated materials inside."""
+    def __init__(self, T_C: float):
+        self.T = float(T_C)
+
+    def __enter__(self):
+        self.prev = _PART_T[0]
+        _PART_T[0] = self.T
+
+    def __exit__(self, *a):
+        _PART_T[0] = self.prev
+
+
+def _get_raw(name: str) -> Material:
     try:
         return LIBRARY[name]
     except KeyError:
@@ -318,6 +381,18 @@ def get_material(name: str) -> Material:
             except KeyError:
                 pass
         raise KeyError(f"unknown material {name!r}; known: {sorted(LIBRARY)}") from None
+
+
+def get_material(name: str) -> Material:
+    m = _get_raw(name)
+    T = _PART_T[0]
+    if T <= T_REF_C or m.hdt_C <= T_REF_C:
+        return m
+    key = (id(m), round(T, 3))
+    d = _DERATED.get(key)
+    if d is None:
+        d = _DERATED[key] = (m, m.derated(T))
+    return d[1]
 
 
 def flexure_indices(m: Material) -> dict:
