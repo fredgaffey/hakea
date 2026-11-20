@@ -4,37 +4,32 @@ Formulation
 -----------
 * 2-node, 12-DOF beam, node DOFs [ux, uy, uz, rx, ry, rz] in hub frame H.
 * Linear element stiffness from the *exact flexibility* of a prismatic/tapered beam
-  with a full 6×6 section stiffness (section.SectionProps.stiffness6): includes
-  shear deformation (Timoshenko), tension-centre and shear-centre offsets from the
-  node line, and bending–bending (EIyz) coupling. Arbitrary orientation via the
-  element frame E0 = [e1 axis, e2, e3].
-* Geometric nonlinearity: co-rotational (CR) element. Local deformations
-  d7 = [ū, θ̄a, θ̄b] are computed from the current node positions and rotation
-  matrices; internal force f = Bᵀ K7 d7 and tangent K = Bᵀ K7 B + Σ f7_k H_k, with
-  B and H (7×12, 7×12×12) obtained by central finite differences of d7 with respect
-  to node perturbations δ = [Δx_a, ω_a, Δx_b, ω_b] (rotations applied as
-  R ← exp(ω) R). The geometric part Σ f7_k H_k is the *exact* (discretised) initial
-  stress stiffness incl. axial force, torque and end moments — it is what makes a
-  rigid rotation about the spin axis stiffness-free in the rotating frame.
-* Rotating frame (constant Ω about +z): all inertial terms are obtained by numerical
-  quadrature of the element mass distribution. Along the element 4 Gauss points;
-  in each cross-section 4 mass points reproducing m, first and second mass moments
-  (incl. mass-centre offset). For each mass point with linear kinematic map
-  L (3×12) and rotation map Nr (3×12):
-      M   += m Lᵀ L
-      G   += m Lᵀ (2Ω[ẑ×]) L                      (Coriolis / gyroscopic, skew)
-      Kcf += −Ω² m (Lᵀ P L + Nrᵀ Q Nr)           (spin softening + offset-mass
-                                                  centrifugal moment, P = diag(1,1,0),
-                                                  Q = sym(s cᵀ) − (s·c) I, c = P r)
-      Fcf += Ω² m Lᵀ P r                         (centrifugal load)
-      Feul += −Ω̇ m Lᵀ (ẑ × r)                    (Euler load from hub acceleration)
-  Kcf's Q-term is the propeller ("tennis racket") moment of chordwise/thickness
-  mass offsets; together with the CR geometric stiffness this reproduces e.g.
-  the classical flap ν² = 1 + 3e/2(1-e) and pitch propeller stiffness.
+  with a full 6×6 section stiffness (section.SectionProps.stiffness6): shear
+  deformation (Timoshenko), tension-centre and shear-centre offsets from the node line,
+  EIyz coupling. Arbitrary orientation via the element frame E0 = [e1 axis, e2, e3].
+* Geometric nonlinearity: co-rotational (CR). Local deformations
+  d7 = [ū, θ̄a, θ̄b] from current node positions/rotations; ū includes the second-order
+  bowing stretch ½∫(v'²+w'²) of the Hermite local deflection and the Wagner/trapeze
+  term ½k²∫θ1'² (k² = (EIy+EIz)/EA), so the initial-stress stiffness is the
+  consistent one (cubic-Hermite Kσ + trapeze torsion) and *derived from a potential*.
+* Rotating frame (constant Ω about +z): the centrifugal potential
+  V = −½Ω² Σ m |P r|² (P = diag(1,1,0)) is summed over mass points (4 Gauss points
+  along the element × 4 section points reproducing m, mass centre and second mass
+  moments). Point positions r(q) use the same CR kinematics (chord + Hermite bowing +
+  rotated section offset), so the centrifugal load, spin softening and the propeller
+  (offset-mass) moment are mutually consistent and a rigid rotation about the spin
+  axis has exactly zero stiffness at equilibrium.
+* All derivatives are central finite differences w.r.t. node perturbations
+  δ = [Δx_a, ω_a, Δx_b, ω_b] with rotations applied as R ← exp(ω)R (numba):
+      B = ∂d7/∂δ,  f_int = Bᵀ K7 d7,  K_mat = Bᵀ K7 B,
+      K_geo = ∂²(f7·d7)/∂δ² + ∂²V/∂δ²   (initial stress + centrifugal),
+      J_p = ∂r_p/∂δ → M = Σ m JᵀJ, G = Σ 2Ω m Jᵀ[ẑ×]J (Coriolis), F_cf = −∂V/∂δ.
+  K_mat is kept per element so it can be scaled by material.complex_scale(f).
 
 Equation of motion (rotating frame, perturbation about a static state):
-    M ü + (G + C) u̇ + (K_mat* + K_geo + K_cf) u = F
-K_mat may be multiplied per element by material.complex_scale(f) (viscoelastic).
+    M ü + G u̇ + (K_mat* + K_geo) u = F
+Zero-length springs (ideal hinges) use the same machinery with
+d = [0, Fᵀ(x_b − x_a), log(Fᵀ R_b E0)], F = R_a E0.
 """
 from __future__ import annotations
 
@@ -76,8 +71,7 @@ def _expm(w):
     K[1, 2] = -w[0]
     K[2, 0] = -w[1]
     K[2, 1] = w[0]
-    R = np.eye(3) + a * K + b * (K @ K)
-    return R
+    return np.eye(3) + a * K + b * (K @ K)
 
 
 @njit(cache=True)
@@ -135,7 +129,8 @@ def _cr_frame(xa, xb, Ra, Rb, E0):
     d = xb - xa
     l = np.sqrt(d @ d)
     r1 = d / l
-    q = 0.5 * (Ra @ E0[:, 1] + Rb @ E0[:, 1])
+    e2 = E0[:, 1].copy()
+    q = 0.5 * (Ra @ e2 + Rb @ e2)
     r3 = _cross(r1, q)
     r3 = r3 / np.sqrt(r3 @ r3)
     r2 = _cross(r3, r1)
@@ -147,74 +142,130 @@ def _cr_frame(xa, xb, Ra, Rb, E0):
 
 
 @njit(cache=True)
-def _d7(xa, xb, Ra, Rb, E0, L0):
+def _eval(xa, xb, Ra, Rb, E0, L0, k2, mpts, d7, pos):
+    """Fill d7 (7) and mass-point positions pos (np,3) for one configuration."""
     if L0 <= 0.0:
-        # zero-length spring: [0, relative translation in node-a frame, relative rotation]
         Fa = Ra @ E0
-        out = np.zeros(7)
-        out[1:4] = Fa.T @ (xb - xa)
-        out[4:7] = _logm(Fa.T @ Rb @ E0)
-        return out
+        d7[0] = 0.0
+        d7[1:4] = Fa.T @ (xb - xa)
+        d7[4:7] = _logm(Fa.T @ Rb @ E0)
+        return
     l, Rr = _cr_frame(xa, xb, Ra, Rb, E0)
-    out = np.empty(7)
-    out[0] = l - L0
-    out[1:4] = _logm(Rr.T @ Ra @ E0)
-    out[4:7] = _logm(Rr.T @ Rb @ E0)
-    return out
+    ta = _logm(Rr.T @ Ra @ E0)
+    tb = _logm(Rr.T @ Rb @ E0)
+    bow = l * (2 * ta[2] ** 2 - ta[2] * tb[2] + 2 * tb[2] ** 2
+               + 2 * ta[1] ** 2 - ta[1] * tb[1] + 2 * tb[1] ** 2) / 30.0
+    d7[0] = l - L0 + bow + 0.5 * k2 * (tb[0] - ta[0]) ** 2 / l
+    d7[1:4] = ta
+    d7[4:7] = tb
+    sl_ = np.zeros(3)
+    loc = np.empty(3)
+    ph = np.empty(3)
+    for p in range(mpts.shape[0]):
+        xi = mpts[p, 0]
+        H2 = xi - 2 * xi**2 + xi**3
+        H4 = -xi**2 + xi**3
+        d2 = 1 - 4 * xi + 3 * xi**2
+        d4 = -2 * xi + 3 * xi**2
+        ph[0] = (1 - xi) * ta[0] + xi * tb[0]
+        ph[1] = d2 * ta[1] + d4 * tb[1]
+        ph[2] = d2 * ta[2] + d4 * tb[2]
+        sl_[1] = mpts[p, 1]
+        sl_[2] = mpts[p, 2]
+        off = _expm(ph) @ sl_
+        loc[0] = xi * l + off[0]
+        loc[1] = l * (H2 * ta[2] + H4 * tb[2]) + off[1]
+        loc[2] = -l * (H2 * ta[1] + H4 * tb[1]) + off[2]
+        pos[p] = xa + Rr @ loc
 
 
 @njit(cache=True)
-def _d7_pert(xa, xb, Ra, Rb, E0, L0, dl):
-    xa2 = xa + dl[0:3]
-    xb2 = xb + dl[6:9]
-    Ra2 = _expm(dl[3:6]) @ Ra
-    Rb2 = _expm(dl[9:12]) @ Rb
-    return _d7(xa2, xb2, Ra2, Rb2, E0, L0)
+def _vcf(pos, pos0, mpts, W2):
+    """Centrifugal potential relative to the base configuration (cancellation-safe)."""
+    v = 0.0
+    for p in range(pos.shape[0]):
+        a = (pos[p, 0] - pos0[p, 0]) * (pos[p, 0] + pos0[p, 0]) \
+            + (pos[p, 1] - pos0[p, 1]) * (pos[p, 1] + pos0[p, 1])
+        v += -0.5 * W2 * mpts[p, 3] * a
+    return v
 
 
 @njit(cache=True)
-def _cr_derivs(xa, xb, Ra, Rb, E0, L0, want_h):
-    """d7, B = ∂d7/∂δ (7×12), H = ∂²d7/∂δ² (7×12×12) by central differences."""
+def _pert(xa, xb, Ra, Rb, dl):
+    return (xa + dl[0:3], xb + dl[6:9], _expm(dl[3:6]) @ Ra, _expm(dl[9:12]) @ Rb)
+
+
+@njit(cache=True)
+def _element_derivs(xa, xb, Ra, Rb, E0, L0, k2, K7, mpts, W2, want_h, fw):
+    """Returns d7, f7, B (7×12), gradV (12), J (np,3,12), pos0 (np,3), Kgeo (12×12)."""
+    npt = mpts.shape[0]
     h = np.empty(12)
     ht = 1e-4 * L0 if L0 > 0.0 else 1e-7
-    hr = 1e-4
     for i in range(12):
-        h[i] = ht if (i % 6) < 3 else hr
-    z = np.zeros(12)
-    f0 = _d7_pert(xa, xb, Ra, Rb, E0, L0, z)
-    fp = np.empty((12, 7))
-    fm = np.empty((12, 7))
+        h[i] = ht if (i % 6) < 3 else 1e-4
+    d0 = np.empty(7)
+    pos0 = np.empty((npt, 3))
+    _eval(xa, xb, Ra, Rb, E0, L0, k2, mpts, d0, pos0)
+    f7 = K7 @ d0
+    fH = f7 if fw.shape[0] != 7 else fw     # Hessian weights (initial-stress predictor)
+    dp = np.empty((12, 7))
+    dm = np.empty((12, 7))
+    Vp = np.empty(12)
+    Vm = np.empty(12)
+    J = np.zeros((npt, 3, 12))
+    B = np.empty((7, 12))
+    gV = np.empty(12)
+    tmpd = np.empty(7)
+    tmpp = np.empty((npt, 3))
+    tmpp2 = np.empty((npt, 3))
     for i in range(12):
         dl = np.zeros(12)
         dl[i] = h[i]
-        fp[i] = _d7_pert(xa, xb, Ra, Rb, E0, L0, dl)
+        a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
+        _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
+        dp[i] = tmpd
+        Vp[i] = _vcf(tmpp, pos0, mpts, W2)
         dl[i] = -h[i]
-        fm[i] = _d7_pert(xa, xb, Ra, Rb, E0, L0, dl)
-    B = np.empty((7, 12))
-    for i in range(12):
-        B[:, i] = (fp[i] - fm[i]) / (2.0 * h[i])
-    H = np.zeros((7, 12, 12))
+        a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
+        _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp2)
+        dm[i] = tmpd
+        Vm[i] = _vcf(tmpp2, pos0, mpts, W2)
+        B[:, i] = (dp[i] - dm[i]) / (2.0 * h[i])
+        gV[i] = (Vp[i] - Vm[i]) / (2.0 * h[i])
+        for p in range(npt):
+            for k in range(3):
+                J[p, k, i] = (tmpp[p, k] - tmpp2[p, k]) / (2.0 * h[i])
+    Kr = np.zeros((12, 12))
     if want_h:
+        phi0 = fH @ d0
         for i in range(12):
-            H[:, i, i] = (fp[i] - 2.0 * f0 + fm[i]) / (h[i] * h[i])
+            Kr[i, i] = ((fH @ dp[i] - 2.0 * phi0 + fH @ dm[i]) + (Vp[i] + Vm[i])) / (h[i] * h[i])
             for j in range(i + 1, 12):
                 dl = np.zeros(12)
                 dl[i] = h[i]
                 dl[j] = h[j]
-                fpp = _d7_pert(xa, xb, Ra, Rb, E0, L0, dl)
+                a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
+                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
+                s = fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
                 dl[j] = -h[j]
-                fpm = _d7_pert(xa, xb, Ra, Rb, E0, L0, dl)
+                a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
+                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
+                s -= fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
                 dl[i] = -h[i]
-                fmm = _d7_pert(xa, xb, Ra, Rb, E0, L0, dl)
+                a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
+                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
+                s += fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
                 dl[j] = h[j]
-                fmp = _d7_pert(xa, xb, Ra, Rb, E0, L0, dl)
-                v = (fpp - fpm - fmp + fmm) / (4.0 * h[i] * h[j])
-                H[:, i, j] = v
-                H[:, j, i] = v
-    return f0, B, H
+                a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
+                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
+                s -= fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
+                v = s / (4.0 * h[i] * h[j])
+                Kr[i, j] = v
+                Kr[j, i] = v
+    return d0, f7, B, gV, J, pos0, Kr
 
 
-# --------------------------------------------------------------------------- shape functions
+# --------------------------------------------------------------------------- shape functions / quadrature
 
 
 def hermite_maps(xi: float, l: float) -> tuple[np.ndarray, np.ndarray]:
@@ -232,21 +283,11 @@ def hermite_maps(xi: float, l: float) -> tuple[np.ndarray, np.ndarray]:
     return Nt, Nr
 
 
-def _blockT(Rr: np.ndarray) -> np.ndarray:
-    T = np.zeros((12, 12))
-    for k in range(4):
-        T[3 * k:3 * k + 3, 3 * k:3 * k + 3] = Rr.T
-    return T
-
-
 GAUSS3 = (np.array([0.5 - np.sqrt(0.15), 0.5, 0.5 + np.sqrt(0.15)]), np.array([5, 8, 5]) / 18.0)
 _g4x = np.array([-0.8611363115940526, -0.3399810435848563, 0.3399810435848563, 0.8611363115940526])
 _g4w = np.array([0.3478548451374538, 0.6521451548625461, 0.6521451548625461, 0.3478548451374538])
 GAUSS4 = (0.5 * (_g4x + 1), 0.5 * _g4w)
 IDX7 = np.array([6, 3, 4, 5, 9, 10, 11])
-
-
-# --------------------------------------------------------------------------- element
 
 
 def local_stiffness(S_list: list[np.ndarray], L: float) -> np.ndarray:
@@ -267,6 +308,9 @@ def local_stiffness(S_list: list[np.ndarray], L: float) -> np.ndarray:
     return Bm.T @ Kbb @ Bm
 
 
+# --------------------------------------------------------------------------- element
+
+
 @dataclass
 class Element:
     n0: int
@@ -276,17 +320,18 @@ class Element:
     mass_sections: Optional[list[SectionProps]] = None   # 4 Gauss pts; None → use sections
     material_fracs: dict = field(default_factory=dict)  # {material: EA fraction} for complex modulus
     tag: str = ""
-    kind: str = "beam"                 # blade | flexure | rigid | tension
+    kind: str = "beam"                 # blade | shank | flexure | rigid | spring
     blade: int = 0                     # 1-based blade index (0 = hub)
     massless: bool = False
-    spring_K: Optional[np.ndarray] = None   # 6×6 [translations; rotations] in frame E0 → zero-length spring
-    spring_frame: Optional[np.ndarray] = None  # 3×3 columns (axis a, e2, e3) in H
+    spring_K: Optional[np.ndarray] = None    # 6×6 [translations; rotations] in frame E0 → zero-length spring
+    spring_frame: Optional[np.ndarray] = None  # 3×3 columns (axis a, e2, ·) in H
     # derived
     L0: float = 0.0
     E0: np.ndarray = None
     K12: np.ndarray = None
     K7: np.ndarray = None
-    mpts: np.ndarray = None            # (n,4): xi, y, z, m·w·L  (local section coords)
+    k2: float = 0.0
+    mpts: np.ndarray = None            # (n,4): xi, y, z, mass (local section coords)
 
     def prepare(self, X0: np.ndarray) -> None:
         if self.spring_K is not None:
@@ -294,7 +339,7 @@ class Element:
             F = np.asarray(self.spring_frame, float)
             e1 = unit(F[:, 0])
             e2 = unit(F[:, 1] - e1 * (e1 @ F[:, 1]))
-            self.E0 = np.column_stack([e1, e2, np.cross(e1, e2)])
+            self.E0 = np.ascontiguousarray(np.column_stack([e1, e2, np.cross(e1, e2)]))
             self.K7 = np.zeros((7, 7))
             self.K7[1:, 1:] = self.spring_K
             self.K12 = np.zeros((12, 12))
@@ -311,10 +356,12 @@ class Element:
             e2 = np.cross(ref, e1)
         e2 = unit(e2)
         e3 = np.cross(e1, e2)
-        self.E0 = np.column_stack([e1, e2, e3])
+        self.E0 = np.ascontiguousarray(np.column_stack([e1, e2, e3]))
         secs = self.sections if len(self.sections) == 3 else [self.sections[0]] * 3
         self.K12 = local_stiffness([s.stiffness6() for s in secs], self.L0)
-        self.K7 = self.K12[np.ix_(IDX7, IDX7)].copy()
+        self.K7 = np.ascontiguousarray(self.K12[np.ix_(IDX7, IDX7)])
+        s0 = secs[1]
+        self.k2 = float((s0.EIy + s0.EIz) / s0.EA) if s0.EA > 0 else 0.0
         pts = []
         if not self.massless:
             ms = self.mass_sections or ([self.sections[0]] * 4 if len(self.sections) == 1 else
@@ -331,7 +378,7 @@ class Element:
                     a = np.sqrt(2 * lam[k]) * V[:, k]
                     for sg in (1, -1):
                         pts.append([xi, c[0] + sg * a[0], c[1] + sg * a[1], m * w * self.L0 / 4])
-        self.mpts = np.array(pts) if pts else np.zeros((0, 4))
+        self.mpts = np.ascontiguousarray(np.array(pts)) if pts else np.zeros((0, 4))
 
     def complex_scale(self, freq_hz: float) -> complex:
         if not self.material_fracs:
@@ -351,25 +398,16 @@ class State:
     def copy(self) -> "State":
         return State(self.x.copy(), self.R.copy())
 
-    def displacement(self, X0: np.ndarray) -> np.ndarray:
-        """Full DOF vector-like (nn,6): translations, rotation vectors (log R)."""
-        out = np.zeros((len(self.x), 6))
-        out[:, :3] = self.x - X0
-        for i, R in enumerate(self.R):
-            out[i, 3:] = _logm(R)
-        return out
-
 
 class FEModel:
     def __init__(self) -> None:
         self.X0: list[np.ndarray] = []
         self.elements: list[Element] = []
         self.fixed: set[int] = set()
-        self.lumped: list[tuple[int, np.ndarray]] = []   # (node, 6×6 lumped mass at node, rotating terms ignored)
+        self.lumped: list[tuple[int, np.ndarray]] = []   # (node, 6×6 lumped mass; no rotating terms)
         self.node_tags: list[str] = []
         self._prepared = False
 
-    # building
     def add_node(self, x, tag: str = "") -> int:
         self.X0.append(np.asarray(x, float))
         self.node_tags.append(tag)
@@ -428,67 +466,84 @@ def _edofs(e: Element) -> np.ndarray:
 class ElementCR:
     d7: np.ndarray
     B: np.ndarray
-    H: np.ndarray
     f7: np.ndarray
+    J: np.ndarray       # (np,3,12) mass-point Jacobians
+    pos: np.ndarray     # (np,3)
+    gV: np.ndarray      # gradient of centrifugal potential (12)
+    Kr: np.ndarray      # initial-stress + centrifugal Hessian (12×12)
 
 
-def element_cr(e: Element, st: State, want_h: bool = True) -> ElementCR:
-    d7, B, H = _cr_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0, e.L0, want_h)
-    return ElementCR(d7, B, H, e.K7 @ d7)
+_NOW = np.zeros(0)
 
 
-def local_geo_correction(e: Element, st: State, N: float) -> np.ndarray:
-    """Initial-stress terms the rigid-chord CR kinematics miss (global 12×12):
-    consistent-minus-string transverse bending terms N/(30l)[6,3l,−6,3l; …] and the
-    trapeze (Wagner) torsion term N k²/l with k² = (EIy+EIz)/EA about the tension centre.
-    Both are orthogonal to rigid-body motion, so rotating-frame consistency is kept."""
-    if N == 0.0 or e.spring_K is not None:
-        return np.zeros((12, 12))
-    l, Rr = _cr_frame(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0)
-    k = np.array([[6, 3 * l, -6, 3 * l], [3 * l, 4 * l * l, -3 * l, -l * l],
-                  [-6, -3 * l, 6, -3 * l], [3 * l, -l * l, -3 * l, 4 * l * l]]) * N / (30 * l)
-    K = np.zeros((12, 12))
-    # v (dir 2) with θ3 = v', w (dir 3) with θ2 = −w'
-    i2 = [1, 5, 7, 11]
-    K[np.ix_(i2, i2)] += k
-    i3 = [2, 4, 8, 10]
-    sg = np.diag([1.0, -1.0, 1.0, -1.0])
-    K[np.ix_(i3, i3)] += sg @ k @ sg
-    s0 = e.sections[len(e.sections) // 2]
-    k2 = (s0.EIy + s0.EIz) / max(s0.EA, 1e-30)
-    kt = N * k2 / l
-    K[np.ix_([3, 9], [3, 9])] += kt * np.array([[1.0, -1.0], [-1.0, 1.0]])
-    T = _blockT(Rr)
-    return T.T @ K @ T
+def element_cr(e: Element, st: State, Omega: float = 0.0, want_h: bool = True, fw=None) -> ElementCR:
+    d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
+                                                e.L0, e.k2, e.K7, e.mpts, float(Omega) ** 2, want_h,
+                                                _NOW if fw is None else np.asarray(fw, float))
+    return ElementCR(d7, B, f7, J, pos, gV, Kr)
+
+
+_ZX = skew([0.0, 0.0, 1.0])
 
 
 @dataclass
-class StaticAssembly:
-    fint: np.ndarray
-    Kmat_e: list[np.ndarray]        # per element 12×12 (global coords), unit material scale
-    Kgeo: np.ndarray
-    cr: list[ElementCR]
+class Assembly:
+    fint: np.ndarray                # Bᵀ f7 assembled
+    Fcf: np.ndarray                 # centrifugal generalised load (−∂V/∂q)
+    Kmat_e: list                    # per-element 12×12 material tangent (unit scale)
+    Kgeo: Optional[np.ndarray]      # initial stress + centrifugal (spin softening, propeller)
+    M: Optional[np.ndarray]
+    G: Optional[np.ndarray]
+    cr: list
 
 
-def assemble_internal(model: FEModel, st: State, want_tangent: bool = True) -> StaticAssembly:
+def assemble(model: FEModel, st: State, Omega: float = 0.0, want_tangent: bool = True,
+             want_mass: bool = False, du_pred: np.ndarray | None = None) -> Assembly:
+    """Assemble at state st. du_pred: if given, the initial-stress Hessian is weighted by
+    the predicted element forces f7 + K7·B·du_pred (prestress predictor for unstressed
+    starts, where spin softening is not yet balanced by tension)."""
     n = model.ndof
     fint = np.zeros(n)
-    Kgeo = np.zeros((n, n))
+    Fcf = np.zeros(n)
+    Kg = np.zeros((n, n)) if want_tangent else None
+    M = np.zeros((n, n)) if want_mass else None
+    G = np.zeros((n, n)) if want_mass else None
     Kmat_e, crs = [], []
     for e in model.elements:
-        c = element_cr(e, st, want_tangent)
         dofs = _edofs(e)
+        if du_pred is not None and want_tangent:
+            c0 = element_cr(e, st, Omega, False)
+            c = element_cr(e, st, Omega, True, c0.f7 + e.K7 @ (c0.B @ du_pred[dofs]))
+        else:
+            c = element_cr(e, st, Omega, want_tangent)
         fint[dofs] += c.B.T @ c.f7
+        Fcf[dofs] -= c.gV
         if want_tangent:
+            ix = np.ix_(dofs, dofs)
+            Kg[ix] += 0.5 * (c.Kr + c.Kr.T)
             Km = c.B.T @ e.K7 @ c.B
-            Kg = np.einsum("k,kij->ij", c.f7, c.H) + local_geo_correction(e, st, c.f7[0])
-            Kgeo[np.ix_(dofs, dofs)] += 0.5 * (Kg + Kg.T)
             Kmat_e.append(0.5 * (Km + Km.T))
+        if want_mass and len(e.mpts):
+            m = e.mpts[:, 3]
+            Me = np.einsum("p,pki,pkj->ij", m, c.J, c.J)
+            Ge = 2.0 * Omega * np.einsum("p,pki,kl,plj->ij", m, c.J, _ZX, c.J)
+            ix = np.ix_(dofs, dofs)
+            M[ix] += 0.5 * (Me + Me.T)
+            G[ix] += 0.5 * (Ge - Ge.T)
         crs.append(c)
-    return StaticAssembly(fint, Kmat_e, Kgeo, crs)
+    if want_mass:
+        for node, Mn in model.lumped:
+            d = np.r_[6 * node:6 * node + 6]
+            M[np.ix_(d, d)] += Mn
+    return Assembly(fint, Fcf, Kmat_e, Kg, M, G, crs)
 
 
-def assemble_Kmat(model: FEModel, sa: StaticAssembly, scales=None) -> np.ndarray:
+def assemble_internal(model: FEModel, st: State, want_tangent: bool = True, Omega: float = 0.0) -> Assembly:
+    """Elastic part only (Ω = 0 by default: no centrifugal terms)."""
+    return assemble(model, st, Omega, want_tangent, False)
+
+
+def assemble_Kmat(model: FEModel, sa: Assembly, scales=None) -> np.ndarray:
     n = model.ndof
     dtype = complex if scales is not None and np.iscomplexobj(np.asarray(scales)) else float
     K = np.zeros((n, n), dtype)
@@ -498,84 +553,35 @@ def assemble_Kmat(model: FEModel, sa: StaticAssembly, scales=None) -> np.ndarray
     return K
 
 
-def element_point_maps(e: Element, st: State, xi: float, s_local_yz) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """For a material point at (xi, local y, z) of element e in the current state:
-    returns (r (3,), s_H (3,) offset from node line, L (3×12) translation map, Nr (3×12) rotation map)."""
+def element_point_maps(e: Element, st: State, xi: float, s_local_yz):
+    """Position r (3,), offset s_H, translation Jacobian L (3×12) and rotation map Nr (3×12)
+    of a material point (xi, local y, z) — same CR kinematics as the mass points."""
+    pts = np.array([[float(xi), float(s_local_yz[0]), float(s_local_yz[1]), 0.0]])
+    _, _, _, _, J, pos, _ = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
+                                            e.L0, e.k2, e.K7, pts, 0.0, False, _NOW)
     xa, xb = st.x[e.n0], st.x[e.n1]
     l, Rr = _cr_frame(xa, xb, st.R[e.n0], st.R[e.n1], e.E0)
-    th_a = _logm(Rr.T @ st.R[e.n0] @ e.E0)
-    th_b = _logm(Rr.T @ st.R[e.n1] @ e.E0)
-    Rloc = _expm((1 - xi) * th_a + xi * th_b)
-    s_H = Rr @ Rloc @ np.array([0.0, s_local_yz[0], s_local_yz[1]])
-    r = (1 - xi) * xa + xi * xb + s_H
-    Nt, Nr = hermite_maps(xi, l)
-    T = _blockT(Rr)
-    Ntg = Rr @ Nt @ T
+    Nt, Nr = hermite_maps(float(xi), l)
+    T = np.zeros((12, 12))
+    for k in range(4):
+        T[3 * k:3 * k + 3, 3 * k:3 * k + 3] = Rr.T
     Nrg = Rr @ Nr @ T
-    L = Ntg - skew(s_H) @ Nrg
-    return r, s_H, L, Nrg
-
-
-@dataclass
-class InertiaAssembly:
-    M: np.ndarray
-    G: np.ndarray
-    Kcf: np.ndarray
-    Fcf: np.ndarray
-
-
-_P = np.diag([1.0, 1.0, 0.0])
-_ZX = skew([0.0, 0.0, 1.0])
-
-
-def assemble_inertia(model: FEModel, st: State, Omega: float, need_matrices: bool = True) -> InertiaAssembly:
-    n = model.ndof
-    M = np.zeros((n, n)) if need_matrices else None
-    G = np.zeros((n, n)) if need_matrices else None
-    Kcf = np.zeros((n, n)) if need_matrices else None
-    Fcf = np.zeros(n)
-    W2 = Omega * Omega
-    for e in model.elements:
-        if e.massless or len(e.mpts) == 0:
-            continue
-        dofs = _edofs(e)
-        Me = np.zeros((12, 12))
-        Ge = np.zeros((12, 12))
-        Ke = np.zeros((12, 12))
-        fe = np.zeros(12)
-        for xi, y, z, m in e.mpts:
-            r, s, L, Nr = element_point_maps(e, st, xi, (y, z))
-            c = _P @ r
-            fe += W2 * m * L.T @ c
-            if need_matrices:
-                Me += m * L.T @ L
-                Ge += 2.0 * Omega * m * L.T @ _ZX @ L
-                Q = 0.5 * (np.outer(s, c) + np.outer(c, s)) - (s @ c) * np.eye(3)
-                Ke -= W2 * m * (L.T @ _P @ L + Nr.T @ Q @ Nr)
-        Fcf[dofs] += fe
-        if need_matrices:
-            ix = np.ix_(dofs, dofs)
-            M[ix] += Me
-            G[ix] += Ge
-            Kcf[ix] += 0.5 * (Ke + Ke.T)
-    if need_matrices:
-        for node, Mn in model.lumped:
-            d = np.r_[6 * node:6 * node + 6]
-            M[np.ix_(d, d)] += Mn
-    return InertiaAssembly(M, G, Kcf, Fcf)
+    r = pos[0]
+    sH = r - ((1 - xi) * xa + xi * xb)
+    return r, sH, J[0], Nrg
 
 
 def euler_load(model: FEModel, st: State, Omega_dot: float) -> np.ndarray:
-    """Generalised load from hub angular acceleration Ω̇ (frame rotating with the hub):
-    −m Ω̇ ẑ × r per mass point."""
+    """Generalised load from hub angular acceleration Ω̇ in the frame rotating with the
+    hub: −m Ω̇ ẑ × r per mass point (+ lumped hub inertia)."""
     F = np.zeros(model.ndof)
     for e in model.elements:
-        if e.massless:
+        if e.massless or len(e.mpts) == 0:
             continue
+        c = element_cr(e, st, 0.0, False)
         dofs = _edofs(e)
-        for xi, y, z, m in e.mpts:
-            r, s, L, Nr = element_point_maps(e, st, xi, (y, z))
-            F[dofs] += -Omega_dot * m * L.T @ np.cross([0.0, 0.0, 1.0], r)
+        for p in range(len(e.mpts)):
+            F[dofs] += -Omega_dot * e.mpts[p, 3] * c.J[p].T @ np.cross([0.0, 0.0, 1.0], c.pos[p])
     for node, Mn in model.lumped:
         F[6 * node + 5] += -Omega_dot * Mn[5, 5]
     return F
@@ -603,73 +609,76 @@ class NewtonInfo:
 
 
 def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarray] | np.ndarray | None = None,
-                 state0: State | None = None, n_steps: int = 4, tol: float = 1e-7, max_iter: int = 40,
-                 verbose: bool = False, extra_fixed=()) -> tuple[State, NewtonInfo]:
-    """Nonlinear static equilibrium in the rotating frame: f_int(q) = F_cf(q, Ω) + F_ext.
+                 state0: State | None = None, n_steps: int = 4, tol: float = 1e-7, max_iter: int = 30,
+                 verbose: bool = False, extra_fixed=(), lam0: float | None = None) -> tuple[State, NewtonInfo]:
+    """Nonlinear static equilibrium in the rotating frame: f_int(q) = F_cf(q, Ω) + λF_ext.
 
-    Load stepping over Ω² (n_steps). Newton with the exact (FD) CR tangent, refreshed
-    while convergence is fast-ish and reused otherwise; residual backtracking; rotation
-    increments capped at 0.2 rad. Residual measure = max|r| / max(|F|, |f_int|) on free
-    DOFs; FD derivatives limit attainable accuracy to ~1e-8, so convergence is declared
-    at `tol` or on stagnation below 1e-5 (reported in the message).
-    fext: constant vector or callable(state) (dead loads)."""
+    Adaptive continuation in λ = (Ω/Ω₀)² (centrifugal and external loads ramp together;
+    first step 1/n_steps from an unloaded state, whole step if state0 is given), Newton
+    with the exact FD tangent of the potential, residual backtracking, 0.2 rad cap on
+    rotation increments, Levenberg–Marquardt damping after rejected steps. Residual =
+    max|r|/max(|F|,|f_int|) on free DOFs; FD derivatives limit it to ~1e-8, so a
+    stagnating residual below 1e-5 is accepted (noted in the message)."""
     st = state0.copy() if state0 is not None else model.initial_state()
-    free = np.array([d for d in model.free_dofs() if d not in set(extra_fixed)], int)
+    xf = set(extra_fixed)
+    free = np.array([d for d in model.free_dofs() if d not in xf], int)
     total_it = 0
-    res = np.inf
-    mu = 0.0
     msg = ""
     ok_all = True
 
     def residual(s, Om, lam):
-        sa = assemble_internal(model, s, False)
-        ia = assemble_inertia(model, s, Om, False)
-        F = ia.Fcf.copy()
+        sa = assemble(model, s, Om, False, False)
+        F = sa.Fcf.copy()
         if fext is not None:
             F += lam * (fext(s) if callable(fext) else fext)
         r = (sa.fint - F)[free]
         scale = max(np.abs(F[free]).max(), np.abs(sa.fint[free]).max(), 1e-12)
         return r, np.abs(r).max() / scale
 
-    for k in range(1, n_steps + 1):
-        lam = k / n_steps
+    def newton_at(st, lam, max_it):
+        nonlocal total_it
         Om = Omega * np.sqrt(lam)
         r, res = residual(st, Om, lam)
         K = None
         hist = []
-        conv = False
-        for it in range(max_iter):
+        mu = 0.0
+        for it in range(max_it):
             if res < tol:
-                conv = True
-                break
+                return st, True, res, ""
             if len(hist) >= 4 and res < 1e-5 and res > 0.5 * hist[-4]:
-                conv = True
-                msg = f"stagnated at residual {res:.1e} (FD precision)"
-                break
-            if K is None or len(hist) < 3 or res > 0.2 * hist[-1]:
-                sa = assemble_internal(model, st, True)
-                ia = assemble_inertia(model, st, Om, True)
+                return st, True, res, f"stagnated at residual {res:.1e} (FD precision)"
+            if K is None or len(hist) < 2 or res > 0.1 * hist[-1]:
+                sa = assemble(model, st, Om, True, False)
                 Km = assemble_Kmat(model, sa)
-                K = (Km + sa.Kgeo + ia.Kcf)[np.ix_(free, free)]
-                if mu > 0:   # Levenberg–Marquardt damping for mechanism-like / indefinite starts
+                if res > 0.2:
+                    # unbalanced state: predict prestress from a linear solve, re-weight Kσ
+                    # regularise near-mechanisms (soft hinges) with ~Ω²·diag(M) so the
+                    # predicted forces are not polluted by huge rigid-body motions
+                    sm = assemble(model, st, Om, False, True)
+                    Kp = Km + (Om * Om + 1e-12) * np.diag(np.diag(sm.M))
+                    du_l = np.zeros(model.ndof)
+                    try:
+                        du_l[free] = np.linalg.solve(Kp[np.ix_(free, free)], -r)
+                        sa = assemble(model, st, Om, True, False, du_pred=du_l)
+                    except np.linalg.LinAlgError:
+                        pass
+                K = (Km + sa.Kgeo)[np.ix_(free, free)]
+                if mu > 0:
                     K = K + mu * np.diag(np.abs(np.diag(Km)[free]) + 1e-12)
-                try:
-                    lu = sl_lu_factor(K)
-                    dq_fn = lambda b: sl_lu_solve(lu, b)   # noqa: E731
-                except Exception:
-                    Kc = K.copy()
-                    dq_fn = lambda b: np.linalg.lstsq(Kc, b, rcond=None)[0]   # noqa: E731
-            dq = dq_fn(-r)
+                lu = sl_lu_factor(K, check_finite=False)
+            dq = sl_lu_solve(lu, -r)
             du = np.zeros(model.ndof)
             du[free] = dq
             rot = np.abs(du.reshape(-1, 6)[:, 3:]).max()
+            if not np.isfinite(rot):
+                return st, False, res, "non-finite Newton step"
             if rot > 0.2:
                 du *= 0.2 / rot
             hist.append(res)
-            for _ in range(5):
+            for _ in range(4):
                 st2 = update_state(st, du)
                 r2, res2 = residual(st2, Om, lam)
-                if res2 < 2.0 * res or not np.isfinite(res):
+                if res2 < 1.5 * res:
                     break
                 du *= 0.5
                 K = None
@@ -680,12 +689,32 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
                 mu = mu * 0.1 if mu > 1e-7 else 0.0
                 K = None
             if verbose:
-                print(f"  step {k} it {it} res {res:.3e} -> {res2:.3e} |du| {np.abs(du).max():.3e} K_new {K is None or len(hist) < 4}")
+                print(f"  lam {lam:.3f} it {it} res {res:.3e} -> {res2:.3e} |du| {np.abs(du).max():.3e} mu {mu:.0e}")
             st, r, res = st2, r2, res2
             total_it += 1
-        if not conv and res >= tol:
-            ok_all = False
-            msg = f"Newton did not converge at Ω step {k}/{n_steps} (residual {res:.1e})"
+            if mu > 1e3:
+                break
+        return st, res < tol, res, ""
+
+    lam = 0.0
+    dlam = 1.0 if state0 is not None else (lam0 or 1.0 / max(n_steps, 1))
+    n_fail = 0
+    res = np.inf
+    while lam < 1.0 - 1e-12:
+        lt = min(1.0, lam + dlam)
+        st_try, ok, res, note = newton_at(st, lt, 15 if lt < 1.0 else max_iter)
+        if ok:
+            st, lam = st_try, lt
+            msg = note or msg
+            dlam = min(1.0, dlam * 2.0)
+        else:
+            n_fail += 1
+            dlam *= 0.35
+            if dlam < 2e-3 or n_fail > 10:
+                st = st_try
+                ok_all = False
+                msg = f"Newton did not converge at λ=(Ω/Ω₀)²={lt:.3f} (residual {res:.1e})"
+                break
     return st, NewtonInfo(ok_all, total_it, float(res), msg)
 
 

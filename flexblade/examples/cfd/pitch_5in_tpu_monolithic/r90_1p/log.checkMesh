@@ -1,0 +1,39 @@
+    Number of regions: 1 (OK).
+
+Checking patch topology for multiply connected surfaces...
+    Patch               Faces    Points     Surface topology
+    frontAndBack        30682    19688    ok (non-closed singly connected)  
+    farfield            84       168      ok (non-closed singly connected)  
+    airfoil             165      330      ok (non-closed singly connected)  
+    ".*"                30931    19688    ok (closed singly connected)      
+
+
+Checking faceZone topology for multiply connected surfaces...
+    No faceZones found.
+
+Checking basic cellZone addressing...
+    CellZone            Cells        Points       Volume       BoundingBox
+    fluid               15341        19688        0.00011375522 (-0.24384 -0.24384 0) (0.24384 0.24384 0.0006096)
+
+Checking basic pointZone addressing...
+    No pointZones found.
+
+Checking geometry...
+    Overall domain bounding box (-0.24384 -0.24384 0) (0.24384 0.24384 0.0006096)
+    Mesh has 2 geometric (non-empty/wedge) directions (1 1 0)
+    Mesh has 2 solution (non-empty) directions (1 1 0)
+    All edges aligned with or perpendicular to non-empty directions.
+    Boundary openness (4.0861431e-20 1.351215e-20 -2.1619445e-19) OK.
+    Max cell openness = 1.3604481e-15 OK.
+    Max aspect ratio = 44.992856 OK.
+    Minimum face area = 1.5430248e-12. Maximum face area = 0.00019208062.  Face area magnitudes OK.
+    Min volume = 9.4062795e-16. Max volume = 1.1709235e-07.  Total volume = 0.00011375522.  Cell volumes OK.
+    Mesh non-orthogonality Max: 28.416443 average: 3.6537308
+    Non-orthogonality check OK.
+    Face pyramids OK.
+    Max skewness = 0.96565984 OK.
+    Coupled point location match (average 0) OK.
+
+Mesh OK.
+
+End

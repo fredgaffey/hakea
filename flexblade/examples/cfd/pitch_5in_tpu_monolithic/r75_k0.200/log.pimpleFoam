@@ -1,0 +1,40 @@
+    Cd(r):	1.4561626e+202	1.4561626e+202	-3.3118647e+100	0
+    Cl:	-2.4983612e+201	-2.4983612e+201	3.0165741e+100	0
+    Cl(f):	-3.026441e+201	-3.026441e+201	5.337154e+100	0
+    Cl(r):	5.2807979e+200	5.2807979e+200	-2.3205799e+100	0
+    CmPitch:	-1.7772604e+201	-1.7772604e+201	3.8288669e+100	0
+    CmRoll:	6.245903e+199	6.245903e+199	-7.5414354e+98	0
+    CmYaw:	7.3120427e+200	7.3120427e+200	-1.6936395e+99	0
+    Cs:	-1.9119819e+184	-1.9119819e+184	-2.2084302e+83	0
+    Cs(f):	7.3120427e+200	7.3120427e+200	-1.6936395e+99	0
+    Cs(r):	-7.3120427e+200	-7.3120427e+200	1.6936395e+99	0
+
+    writing force and moment coefficient files.
+
+Courant Number mean: 2.5312728e+99 max: 5.9165812e+104
+Time = 0.00046246799
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for Ux, Initial residual = 0.7608542, Final residual = 0.036133507, No Iterations 17
+smoothSolver:  Solving for Uy, Initial residual = 0.76379802, Final residual = 0.036628364, No Iterations 23
+GAMG:  Solving for p, Initial residual = 0.053517344, Final residual = 0.00042892244, No Iterations 7
+GAMG:  Solving for p, Initial residual = 0.00025579733, Final residual = 1.9698888e-06, No Iterations 3
+time step continuity errors : sum local = 3.3673926e+96, global = -2.5632987e+95, cumulative = 4.2771623e+95
+GAMG:  Solving for p, Initial residual = 0.0011062979, Final residual = 9.006504e-06, No Iterations 11
+GAMG:  Solving for p, Initial residual = 0.0039332582, Final residual = 6.8696948e-08, No Iterations 28
+time step continuity errors : sum local = 6.8213912e+93, global = 3.8721739e+92, cumulative = 4.2810345e+95
+PIMPLE: iteration 2
+smoothSolver:  Solving for Ux, Initial residual = 0.74570378, Final residual = 9.8736173e-09, No Iterations 922
+smoothSolver:  Solving for Uy, Initial residual = 0.7422983, Final residual = 1.5078964e-08, No Iterations 1000
+[stack trace]
+=============
+#1  Foam::sigFpe::sigHandler(int) (in libOpenFOAM.dylib) + 32
+#2  _sigtramp (in libsystem_platform.dylib)
+#3  Foam::GAMGSolver::scale(Foam::Field<double>&, Foam::Field<double>&, Foam::lduMatrix const&, Foam::FieldField<Foam::Field, double> const&, Foam::UPtrList<Foam::lduInterfaceField const> const&, Foam::Field<double> const&, unsigned char) const (in libOpenFOAM.dylib) + 84
+#4  Foam::GAMGSolver::Vcycle(Foam::PtrList<Foam::lduMatrix::smoother> const&, Foam::Field<double>&, Foam::Field<double> const&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::PtrList<Foam::Field<double>>&, Foam::PtrList<Foam::Field<double>>&, unsigned char) const (in libOpenFOAM.dylib) + 1760
+#5  Foam::GAMGSolver::solve(Foam::Field<double>&, Foam::Field<double> const&, unsigned char) const (in libOpenFOAM.dylib) + 1204
+#6  Foam::fvMatrix<double>::solveSegregated(Foam::dictionary const&) (in libfiniteVolume.dylib) + 1804
+#7  Foam::fvMatrix<double>::solveSegregatedOrCoupled(Foam::dictionary const&) (in libfiniteVolume.dylib) + 1240
+#8  main (in pimpleFoam)
+#9  start (in dyld)
+=============

@@ -29,7 +29,7 @@ import numpy as np
 import scipy.linalg as sl
 
 from . import fact
-from .beam import (Element, FEModel, State, _edofs, assemble_inertia, assemble_internal,
+from .beam import (Element, FEModel, State, _edofs, assemble, assemble_internal,
                    assemble_Kmat, element_end_forces, element_end_forces_lin, element_point_maps,
                    skew, solve_static, unit, _logm)
 from .bladegeom import airfoil_coords, resolve_stations
@@ -604,15 +604,14 @@ class Linear:
 
 def linearize(model: RotorModel, ss: StaticState, coriolis: bool = True) -> Linear:
     fe = model.fe
-    sa = assemble_internal(fe, ss.state, True)
-    ia = assemble_inertia(fe, ss.state, ss.Omega, True)
-    G = ia.G if coriolis else np.zeros_like(ia.G)
-    M = ia.M.copy()
-    # regularise massless DOFs
+    sa = assemble(fe, ss.state, ss.Omega, True, True)
+    G = sa.G if coriolis else np.zeros_like(sa.G)
+    M = sa.M.copy()
+    # regularise massless DOFs (stiff links); modes use shift-invert so this is benign
     dM = np.diag(M).copy()
     eps = 1e-9 * max(dM.max(), 1e-30)
     M[np.diag_indices_from(M)] += np.where(dM < eps, eps, 0.0)
-    return Linear(sa, ia, fe.free_dofs(), sa.Kgeo, ia.Kcf, M, G)
+    return Linear(sa, None, fe.free_dofs(), sa.Kgeo, np.zeros_like(sa.Kgeo), M, G)
 
 
 def K_complex(model: RotorModel, lin: Linear, freq_hz: float, real_only: bool = False) -> np.ndarray:
@@ -1080,12 +1079,11 @@ def _trim_result(model: RotorModel, ss: StaticState) -> TrimResult:
     stretch = float(tipd[0])
     # root centrifugal force: Ω² Σ m r_x over blade-1 mass points (blade + flexure)
     cf = 0.0
-    for e in fe.elements:
-        if e.blade != bi.k or e.massless:
+    sa = assemble_internal(fe, st, False)
+    for e, c in zip(fe.elements, sa.cr):
+        if e.blade != bi.k or e.massless or len(e.mpts) == 0:
             continue
-        for xi, y, z, m in e.mpts:
-            r, s, L, Nr = element_point_maps(e, st, xi, (y, z))
-            cf += m * ss.Omega**2 * (bi.Rk.T @ r)[0]
+        cf += ss.Omega**2 * float(np.sum(e.mpts[:, 3] * (c.pos @ bi.Rk[:, 0])))
     tr = ss.trim
     if tr is not None:
         return TrimResult(rpm=ss.rpm, thrust=float(tr.T), torque=float(tr.Q), power=float(tr.P),

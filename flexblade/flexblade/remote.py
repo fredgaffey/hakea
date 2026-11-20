@@ -73,6 +73,7 @@ def _eval_job(job: dict) -> dict:
 def worker_main(workers: int) -> None:
     """stdin JSON-lines jobs → stdout JSON-lines results, as they complete."""
     import multiprocessing as mp
+    os.environ["FLEXBLADE_WORKER"] = "1"   # inherited by spawned pool processes
     lock = threading.Lock()
     out = sys.stdout
 
