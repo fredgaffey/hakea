@@ -1,0 +1,446 @@
+{
+ "bambu_pla_tough_plus": {
+  "price": {
+   "value": 23.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Stemfinity (US reseller)",
+   "note": "search snippet, regular price; Bambu US store geo-redirects, not checked"
+  },
+  "url": null
+ },
+ "bambu_petg_hf": {
+  "price": {
+   "value": 22.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Ultimate 3D Printing Store (US)",
+   "note": "search snippet; a review reported $19.99 on Bambu US store (May 2026, unverified)"
+  },
+  "url": null
+ },
+ "bambu_petg_basic": {
+  "price": {
+   "value": 22.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Ultimate 3D Printing Store (US)",
+   "note": "search snippet"
+  },
+  "url": null
+ },
+ "bambu_petg_translucent": {
+  "price": {
+   "value": 22.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Ultimate 3D Printing Store (US)",
+   "note": "search snippet"
+  },
+  "url": null
+ },
+ "polymaker_polylite_pla_pro": {
+  "price": {
+   "value": 24.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker (list/MSRP via us-wholesale page)",
+   "note": "search snippet; Amazon US deals ~$14-16 seen Oct 2026"
+  },
+  "url": null
+ },
+ "polymaker_polymax_pla": {
+  "price": {
+   "value": 39.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet; normalised from $29.99 per 0.75 kg"
+  },
+  "url": null
+ },
+ "polymaker_ht_pla": {
+  "price": {
+   "value": 24.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet"
+  },
+  "url": "https://us.polymaker.com/products/polymaker-ht-pla"
+ },
+ "polymaker_polylite_petg": {
+  "price": {
+   "value": 24.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet, list price; $22.99 sale; being discontinued in favour of Polymaker PETG"
+  },
+  "url": null
+ },
+ "polymaker_petg": {
+  "price": {
+   "value": 19.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet; $18.99 on shop.polymaker.com; same at Staples/Amazon"
+  },
+  "url": null
+ },
+ "prusament_pla_blend": {
+  "price": {
+   "value": 37.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Printed Solid",
+   "note": "search snippet (My Silverness colour); likely discontinued at Prusa"
+  },
+  "url": null
+ },
+ "prusament_pla_high_speed": {
+  "price": {
+   "value": 28.61,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Prusa Research store (prusa3d.com)",
+   "note": "search snippet, Black Friday 2026 page; launch price $29.90"
+  },
+  "url": "https://www.prusa3d.com/product/prusament-pla-high-speed-prusa-orange-1kg-nfc/"
+ },
+ "esun_pla_plus": {
+  "price": {
+   "value": 22.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "eSUN official store (esun3dstore.com)",
+   "note": "search snippet, regular price; sale $14.99-16.99 seen"
+  },
+  "url": "https://esun3dstore.com/products/pla-pro"
+ },
+ "esun_pla_st": {
+  "price": {
+   "value": 18.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "eSUN official store (esun3dstore.com)",
+   "note": "search snippet; black backordered; another snapshot $22.04 sale from $28.99"
+  },
+  "url": "https://esun3dstore.com/products/epla-st"
+ },
+ "esun_petg": {
+  "price": {
+   "value": 14.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "eSUN official store (esun3dstore.com)",
+   "note": "search snippet"
+  },
+  "url": "https://esun3dstore.com/products/petg"
+ },
+ "overture_pla": {
+  "price": {
+   "value": 22.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Overture official store",
+   "note": "search snippet, list price; sale $13.99-16.99"
+  },
+  "url": "https://overture3d.com/products/overture-pla"
+ },
+ "overture_pla_plus": {
+  "price": {
+   "value": 23.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Overture official store",
+   "note": "search snippet, list price; sale $16.99"
+  },
+  "url": "https://overture3d.com/products/overture-pla-plus-3d-printer-filament-1-75mm"
+ },
+ "overture_pla_pro": {
+  "price": {
+   "value": 26.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Overture official store",
+   "note": "search snippet, list price; sale $18.99-21.99"
+  },
+  "url": "https://overture3d.com/products/overture-pla-professional-3d-printer-filament-1-75mm"
+ },
+ "overture_petg": {
+  "price": {
+   "value": 22.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Overture official store",
+   "note": "search snippet, list price; sale $14.99"
+  },
+  "url": "https://overture3d.com/products/overture-petg"
+ },
+ "sunlu_pla_plus": {
+  "price": {
+   "value": 18.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "SUNLU official store (store.sunlu.com)",
+   "note": "search snippet, regular price; sale $13.19"
+  },
+  "url": "https://store.sunlu.com/collections/pla-plus-fliament"
+ },
+ "sunlu_petg": {
+  "price": {
+   "value": 18.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "SUNLU official store (store.sunlu.com)",
+   "note": "search snippet, regular price; sale $11.89"
+  },
+  "url": "https://store.sunlu.com/collections/petg"
+ },
+ "fillamentum_petg": {
+  "price": {
+   "value": 48.0,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "search snippet, clearance price (was $56); some colours out of stock"
+  },
+  "url": "https://www.matterhackers.com/store/c/fillamentum-petg"
+ },
+ "spectrum_pctg_premium": {
+  "price": {
+   "value": 35.3,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "RobotShop (US)",
+   "note": "search snippet, regular price; sale $30.89; EU maker shop EUR 25.90"
+  },
+  "url": "https://shop.spectrumfilaments.com/product-eng-1413-Filament-Spectrum-Premium-PCTG-1-75mm-SKY-BLUE-1kg-RAL-5015.html"
+ },
+ "polymaker_polylite_abs": {
+  "price": {
+   "value": 18.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker official shop (shop.polymaker.com, USD)",
+   "note": "search snippet"
+  },
+  "url": "https://shop.polymaker.com/products/polylite-abs"
+ },
+ "polymaker_polylite_asa": {
+  "price": {
+   "value": 32.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet, list price; current $29.99 (now 'Polymaker ASA')"
+  },
+  "url": "https://us.polymaker.com/products/polylite-asa"
+ },
+ "polymaker_polylite_pc": {
+  "price": {
+   "value": 29.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet"
+  },
+  "url": "https://us.polymaker.com/products/polylite-pc"
+ },
+ "polymaker_polymax_pc": {
+  "price": {
+   "value": 51.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet; normalised from $38.99 per 0.75 kg"
+  },
+  "url": "https://us.polymaker.com/products/polymax-pc"
+ },
+ "polymaker_pc_abs": {
+  "price": {
+   "value": 49.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "search snippet; wholesale site says being discontinued"
+  },
+  "url": "https://us.polymaker.com/products/polymaker-pc-abs"
+ },
+ "prusament_pp_gf": {
+  "price": {
+   "value": 82.34,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.85,
+   "date": "2026-11",
+   "store": "Prusa Research store (prusa3d.com)",
+   "note": "search snippet; normalised from $69.99 per 0.85 kg"
+  },
+  "url": "https://www.prusa3d.com/product/prusament-pp-glass-fiber-natural-850g-nfc/"
+ },
+ "esun_easa": {
+  "price": {
+   "value": 19.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "eSUN official store (esun3dstore.com)",
+   "note": "search snippet; store now sells it as 'ASA+' under /products/easa"
+  },
+  "url": "https://esun3dstore.com/products/easa"
+ },
+ "fiberlogy_abs": {
+  "price": {
+   "value": 22.4,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.85,
+   "date": "2026-11",
+   "store": "3DJake (USD, excl. VAT)",
+   "note": "search snippet; normalised from $19.04 per 0.85 kg"
+  },
+  "url": null
+ },
+ "fiberlogy_asa": {
+  "price": {
+   "value": 38.51,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "3DJake (USD, excl. VAT)",
+   "note": "search snippet (Olive Green); normalised from $28.88 per 0.75 kg"
+  },
+  "url": null
+ },
+ "fiberlogy_pc_abs": {
+  "price": {
+   "value": 38.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "3DJake (USD, excl. VAT)",
+   "note": "search snippet; normalised from $29.24 per 0.75 kg"
+  },
+  "url": null
+ },
+ "fiberlogy_pp": {
+  "price": {
+   "value": 69.33,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "Narrow Path 3D (US reseller)",
+   "note": "search snippet via reach.dog mirror; normalised from $52.00 per 0.75 kg"
+  },
+  "url": null
+ },
+ "verbatim_pp": {
+  "price": {
+   "value": 66.04,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "3DJake (USD, excl. VAT)",
+   "note": "search snippet (transparent); normalised from $33.02 per 0.5 kg; discontinued at some EU retailers"
+  },
+  "url": null
+ },
+ "3dxtech_thermax_peek": {
+  "price": {
+   "value": 690.0,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "search snippet, low stock; normalised from $345 per 0.5 kg"
+  },
+  "url": null
+ },
+ "intamsys_peek": {
+  "price": {
+   "value": 680.0,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Profound3D (US reseller)",
+   "note": "search snippet via reach.dog mirror; normalised from $340 per 0.5 kg"
+  },
+  "url": null
+ },
+ "kimya_pekk_a": {
+  "price": {
+   "value": 682.85,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "search snippet, catalog price for 1 kg; product page currently unavailable"
+  },
+  "url": null
+ }
+}

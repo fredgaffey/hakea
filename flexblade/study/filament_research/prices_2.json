@@ -1,0 +1,480 @@
+{
+ "bambu_tpu_95a": {
+  "price": {
+   "value": 41.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Bambu Lab US store",
+   "note": "search snippet of us.store.bambulab.com TPU collection: TPU 95A HF list $41.99 (sale $37.79). Current Bambu 95A product is 'TPU 95A HF'; URL slug from other regional Bambu stores"
+  },
+  "url": "https://us.store.bambulab.com/products/tpu-95a-hf"
+ },
+ "bambu_tpu_90a": {
+  "price": {
+   "value": 41.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Bambu Lab US store",
+   "note": "search snippet: TPU 85A/TPU 90A listing 'from' $41.99 list (sale $37.79); URL slug from JP store"
+  },
+  "url": "https://us.store.bambulab.com/products/tpu-85a-tpu-90a"
+ },
+ "bambu_tpu_85a": {
+  "price": {
+   "value": 41.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Bambu Lab US store",
+   "note": "search snippet: TPU 85A/TPU 90A listing 'from' $41.99 list (sale $37.79); URL slug from JP store"
+  },
+  "url": "https://us.store.bambulab.com/products/tpu-85a-tpu-90a"
+ },
+ "bambu_tpu_for_ams": {
+  "price": {
+   "value": 38.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Bambu Lab US store",
+   "note": "search snippet: TPU for AMS list $38.99 (sale $35.09); URL slug inferred"
+  },
+  "url": "https://us.store.bambulab.com/products/tpu-for-ams"
+ },
+ "polymaker_polyflex_tpu90": {
+  "price": {
+   "value": 53.32,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "Partsbuilt (US reseller)",
+   "note": "normalised from 0.75 kg at 39.99 USD; search snippet; us.polymaker.com returned 429"
+  }
+ },
+ "polymaker_polyflex_tpu95": {
+  "price": {
+   "value": 39.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "Polymaker US store (reach.dog mirror) / Partsbuilt",
+   "note": "normalised from 0.75 kg at 29.99 USD; search snippet; price history $29.99-32.99"
+  }
+ },
+ "polymaker_polyflex_tpu95_hf": {
+  "price": {
+   "value": 49.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Polymaker US store (reach.dog mirror)",
+   "note": "search snippet; $49.99 sale vs $54.99 list; Partsbuilt also $49.99"
+  }
+ },
+ "prusament_tpu_95a": {
+  "price": {
+   "value": 69.98,
+   "currency": "AUD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Prusa Research store (prusa3d.com, AUD ship-to)",
+   "note": "normalised from 0.5 kg at 34.99 AUD; fetched; regular AUD 34.99/500 g (sale AUD 26.24); only 500 g spools sold, old 1kg URL 404s. Alt USD: 3DJake Jet Black $43.52/500 g excl. VAT"
+  },
+  "url": "https://www.prusa3d.com/product/prusament-tpu-95a-jet-black-500g-nfc/"
+ },
+ "ninjatek_ninjaflex": {
+  "price": {
+   "value": 108.5,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "normalised from 0.5 kg at 54.25 USD; fetched category page; 1.75 mm Midnight Black 0.5 kg"
+  },
+  "url": "https://www.matterhackers.com/store/l/ninjatek-ninjaflex-tpu-filament/sk/MV0S1W9G"
+ },
+ "ninjatek_cheetah": {
+  "price": {
+   "value": 108.5,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "normalised from 0.5 kg at 54.25 USD; fetched category page; 1.75 mm Midnight Black 0.5 kg"
+  },
+  "url": "https://www.matterhackers.com/store/l/ninjatek-cheetah-filament/sk/MFRSEX8M"
+ },
+ "ninjatek_chinchilla": {
+  "price": {
+   "value": 98.0,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "search snippet; 1.75 mm Steel Gray 1 kg"
+  },
+  "url": "https://matterhackers.com/store/l/ninjatek-chinchilla-steel-gray-tpe-filament-1kg/sk/M3HGVGT8"
+ },
+ "ninjatek_edge": {
+  "price": {
+   "value": 118.14,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "fetched category page; 1.75 mm Midnight Black 1 kg (0.5 kg is $57.87)"
+  },
+  "url": "https://www.matterhackers.com/store/l/ninjatek-edge-tpe-filament/sk/ML3DZGC9"
+ },
+ "esun_etpu_95a": {
+  "price": {
+   "value": 24.99,
+   "currency": "EUR",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "fetched; EUR excl. VAT, regular 24.99 (sale 17.49); listed as eSUN TPU-95A"
+  },
+  "url": "https://www.3djake.com/esun/tpu-95a-black-2"
+ },
+ "overture_tpu": {
+  "price": {
+   "value": 28.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Overture store (reach.dog mirror)",
+   "note": "search snippet; US resellers $20.69-22.99 on sale"
+  }
+ },
+ "sunlu_tpu_95a": {
+  "price": {
+   "value": 21.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "SUNLU official store",
+   "note": "search snippet; listing tagged 'MOQ: 3KG' (was $22.95); 3DJake $22.36 excl. VAT for a single spool"
+  }
+ },
+ "siraya_flex_tpu_85a": {
+  "price": {
+   "value": 39.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Siraya Tech store",
+   "note": "search snippet; regular $39.99 (sale from $31.19)"
+  },
+  "url": "https://siraya.tech/products/flex-85a-tpu-filament"
+ },
+ "siraya_flex_tpu_95a": {
+  "price": {
+   "value": 32.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Siraya Tech store",
+   "note": "search snippet; regular $32.99 (sale $24.74-29.99)"
+  },
+  "url": "https://siraya.tech/products/flex-tpu-95a-filament"
+ },
+ "siraya_flex_tpu_64d": {
+  "price": {
+   "value": 33.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Siraya Tech store / MatterHackers",
+   "note": "search snippet; regular $33.99 at both (Siraya sale from $27.87)"
+  },
+  "url": "https://www.matterhackers.com/store/l/siraya-tech-flex-tpu-64d-filament/sk/MY18LTHP"
+ },
+ "fillamentum_flexfill_tpu_98a": {
+  "price": {
+   "value": 60.72,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "normalised from 0.5 kg at 30.36 USD; search snippet; Pistachio Green 1.75 mm 500 g regular $30.36 excl. VAT (sale $27.09)"
+  },
+  "url": "https://3djake.com/fillamentum/flexfill-98a-pistachio-green"
+ },
+ "fillamentum_flexfill_tpu_92a": {
+  "price": {
+   "value": 63.86,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "normalised from 0.5 kg at 31.93 USD; search snippet; Traffic Black 1.75 mm 500 g excl. VAT"
+  },
+  "url": "https://3djake.com/fillamentum/flexfill-92a-traffic-black"
+ },
+ "extrudr_flex_hard": {
+  "price": {
+   "value": 38.88,
+   "currency": "EUR",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "normalised from 0.75 kg at 29.16 EUR; fetched; EUR excl. VAT, regular 29.16 (sale 23.33); black/white same price"
+  },
+  "url": "https://www.3djake.com/extrudr/tpu-hard-transparent"
+ },
+ "extrudr_flex_medium": {
+  "price": {
+   "value": 44.95,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "normalised from 0.75 kg at 33.71 USD; search snippet; Black 750 g excl. VAT"
+  },
+  "url": "https://www.3djake.com/extrudr/tpu-medium-black?sai=2192"
+ },
+ "basf_ultrafuse_tpu_64d": {
+  "price": {
+   "value": 73.32,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "normalised from 0.75 kg at 54.99 USD; search snippet; White 1.75 mm 0.75 kg, shown out of stock"
+  },
+  "url": "https://matterhackers.com/store/l/basf-natural-ultrafuse-tpu-64d-filament-075kg/sk/M3ULG3G1"
+ },
+ "basf_ultrafuse_tpu_95a": {
+  "price": {
+   "value": 73.33,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "MatterHackers",
+   "note": "normalised from 0.75 kg at 55.0 USD; search snippet; White 1.75 mm 0.75 kg, shown out of stock"
+  },
+  "url": "https://matterhackers.com/store/l/basf-ultrafuse-tpu-95a/sk/MZGZ2209"
+ },
+ "basf_ultrafuse_tpu_85a": {
+  "price": {
+   "value": 74.6,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "LulzBot store",
+   "note": "normalised from 0.75 kg at 55.95 USD; search snippet; Natural 1.75 mm 0.75 kg (lulzbot page now redirects); MatterHackers range $58.45-68.00, size unclear"
+  }
+ },
+ "polymaker_fiberon_petg_rcf08": {
+  "price": {
+   "value": 39.98,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "normalised from 0.5 kg at 19.99 USD; search snippet; 0.5 kg spool (MatterHackers/3DJake list 0.5 kg)"
+  }
+ },
+ "polymaker_fiberon_asa_cf08": {
+  "price": {
+   "value": 39.98,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "normalised from 0.5 kg at 19.99 USD; search snippet; spool size assumed 0.5 kg like rest of Fiberon line - verify"
+  }
+ },
+ "polymaker_fiberon_petg_esd": {
+  "price": {
+   "value": 65.98,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Polymaker US store",
+   "note": "normalised from 0.5 kg at 32.99 USD; search snippet; standard spool 0.5 kg (CA store 0.5 kg CAD 40.99)"
+  }
+ },
+ "esun_epla_cf": {
+  "price": {
+   "value": 26.52,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "search snippet; eSUN PLA-CF Black 1 kg excl. VAT"
+  },
+  "url": "https://www.3djake.com/esun/pla-cf-black-2"
+ },
+ "esun_eabs_cf": {
+  "price": {
+   "value": 30.85,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "3DJake",
+   "note": "search snippet; Black 1 kg regular $30.85 excl. VAT (sale $27.76)"
+  },
+  "url": "https://3djake.com/esun/eabs-cf-black"
+ },
+ "3dxtech_carbonx_abs_cf": {
+  "price": {
+   "value": 77.33,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "MatterHackers / reach.dog",
+   "note": "normalised from 0.75 kg at 58.0 USD; search snippet; 1.75 mm 0.75 kg"
+  }
+ },
+ "3dxtech_carbonx_ezpc_cf": {
+  "price": {
+   "value": 176.0,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Printed Solid",
+   "note": "normalised from 0.5 kg at 88.0 USD; search snippet; 500 g black (sold out); 3DXTech range $88-228"
+  },
+  "url": "https://www.printedsolid.com/products/3dxtech-carbonx-ezpc-cf"
+ },
+ "3dxtech_carbonx_peek_cf20": {
+  "price": {
+   "value": 750.0,
+   "currency": "EUR",
+   "per_kg": true,
+   "spool_kg": 0.5,
+   "date": "2026-11",
+   "store": "Filament2Print",
+   "note": "normalised from 0.5 kg at 375.0 EUR; search snippet; EUR excl. VAT, 500 g"
+  },
+  "url": "https://filament2print.com/fr/avances/1573-carbonx-peek-cf20.html"
+ },
+ "3dxtech_carbonx_pekk_a_cf15": {
+  "price": {
+   "value": 333.33,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 0.75,
+   "date": "2026-11",
+   "store": "Printed Solid",
+   "note": "normalised from 0.75 kg at 250.0 USD; search snippet; 1.75 mm 750 g black"
+  },
+  "url": "https://www.printedsolid.com/products/3dxtech-carbonx-pekk-a-cf15-1-75mm-750g-black"
+ },
+ "basf_ultrafuse_pp_gf30": {
+  "price": {
+   "value": 114.21,
+   "currency": "EUR",
+   "per_kg": true,
+   "spool_kg": 0.7,
+   "date": "2026-11",
+   "store": "Filament2Print",
+   "note": "normalised from 0.7 kg at 79.95 EUR; search snippet; EUR excl. VAT, 1.75 mm 700 g; no US price found (MatterHackers unavailable)"
+  },
+  "url": "https://filament2print.com/en/pp-polypropylene/894-pp-gf30-ultrafuse.html"
+ },
+ "siraya_fibreheart_pet_cf": {
+  "price": {
+   "value": 49.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Siraya Tech store",
+   "note": "search snippet; regular $49.99 (sale $34.99)"
+  }
+ },
+ "siraya_fibreheart_petg_cf_hf": {
+  "price": {
+   "value": 29.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Siraya Tech store",
+   "note": "search snippet; regular $29.99 (sale $25.49)"
+  }
+ },
+ "siraya_fibreheart_abs_cf": {
+  "price": {
+   "value": 39.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Siraya Tech store (reach.dog mirror)",
+   "note": "search snippet; regular $39.99 (sale $33.99); spool 1 kg assumed; URL inferred from mirror slug - verify"
+  },
+  "url": "https://siraya.tech/products/siraya-tech-fibreheart-abs-cf-3d-printing-filament"
+ },
+ "overture_cf_pla": {
+  "price": {
+   "value": 30.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "Overture store (reach.dog mirror)",
+   "note": "search snippet; resellers $18.99-22.49 on sale"
+  }
+ },
+ "sunlu_petg_cf": {
+  "price": {
+   "value": 19.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "SUNLU official store",
+   "note": "search snippet; regular $19.99 (was $22.99)"
+  },
+  "url": "https://store.sunlu.com/products/petg-cfpetg-carbon-fiber-3d-printer-filament-1kg"
+ },
+ "sunlu_pla_cf": {
+  "price": {
+   "value": 32.99,
+   "currency": "USD",
+   "per_kg": true,
+   "spool_kg": 1.0,
+   "date": "2026-11",
+   "store": "SUNLU official store",
+   "note": "search snippet; regular $32.99 (sale $26.99); listing tagged 'MOQ: 3KG'"
+  }
+ }
+}
