@@ -217,27 +217,100 @@ def write_step(path, parts: dict[str, tuple[np.ndarray, np.ndarray]], name="flex
     return str(path)
 
 
-def export_result(res, dom, out_dir, fields: dict | None = None, iso: float = 0.5,
-                  step: bool = True) -> dict:
-    """Write <name>_<material>.stl per material (+ one multi-product STEP).
-    fields: element fields to contour (default: the final projected fields, smoother than
-    the crisp 0/1 ones; same 0.5 boundary)."""
-    out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
+def _vertex_adjacency(V: np.ndarray, F: np.ndarray):
+    import scipy.sparse as sp
+    i = np.r_[F[:, 0], F[:, 1], F[:, 2], F[:, 1], F[:, 2], F[:, 0]]
+    j = np.r_[F[:, 1], F[:, 2], F[:, 0], F[:, 0], F[:, 1], F[:, 2]]
+    A = sp.csr_matrix((np.ones(len(i)), (i, j)), shape=(len(V), len(V)))
+    A.data[:] = 1.0
+    deg = np.asarray(A.sum(1)).ravel()
+    return sp.diags(1.0 / np.maximum(deg, 1)) @ A
+
+
+def taubin_smooth(V: np.ndarray, F: np.ndarray, iters: int = 20, lam: float = 0.5,
+                  mu: float = -0.53, fixed: np.ndarray | None = None) -> np.ndarray:
+    """Taubin λ|μ smoothing (uniform umbrella Laplacian): a shrink step λ then an inflate
+    step μ per iteration — removes the voxel staircase without the volume loss of plain
+    Laplacian smoothing. fixed: vertex mask kept in place."""
+    if len(F) == 0:
+        return V
+    W = _vertex_adjacency(V, F)
+    X = V.copy()
+    free = np.ones(len(V), bool) if fixed is None else ~fixed
+    for _ in range(iters):
+        for f in (lam, mu):
+            D = W @ X - X
+            X[free] += f * D[free]
+    return X
+
+
+def laplacian_smooth(V, F, iters: int = 5, lam: float = 0.5, fixed=None):
+    return taubin_smooth(V, F, iters, lam, 0.0, fixed) if iters else V
+
+
+def read_stl(path) -> tuple[np.ndarray, np.ndarray]:
+    """Binary STL (mm) → (V m, F) with coincident vertices merged."""
+    data = Path(path).read_bytes()
+    n = int(np.frombuffer(data[80:84], "<u4")[0])
+    rec = np.frombuffer(data[84:84 + 50 * n], dtype=[("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")])
+    P = rec["v"].reshape(-1, 3).astype(float) * 1e-3
+    V, inv = np.unique(np.round(P, 9), axis=0, return_inverse=True)
+    return V, inv.reshape(-1, 3)
+
+
+def material_names(res) -> dict:
+    o = res.options
+    return dict(soft=o.get("soft_material", "tpu_64d"), stiff=o.get("stiff_material", "pa6_cf"))
+
+
+def surface_parts(res, dom, fields: dict | None = None, iso: float = 0.5, smooth_iters: int = 20) -> dict:
+    """{phase: (V, F)} smoothed iso-surfaces of the soft / stiff phase (blade-1 frame H, m)."""
     if fields is None:
         gray = getattr(res, "rho_gray", None) is not None
         fields = dict(rho=res.rho_gray if gray else res.rho, phi=res.phi_gray if gray else res.phi)
-    rho, phi = fields["rho"], fields["phi"]
-    mf = material_fields(rho, phi, dom.hub, dom.plate)
-    files, parts = {}, {}
+    mf = material_fields(fields["rho"], fields["phi"], dom.hub, dom.plate)
+    parts = {}
     for mname, fld in mf.items():
         V, F = isosurface(nodal_field(fld), iso, dom.origin, dom.h)
+        if smooth_iters and len(F):
+            V = taubin_smooth(V, F, smooth_iters)
         parts[mname] = (V, F)
+    return parts
+
+
+def geometry_parts(parts: dict, materials: dict, name: str = "topopt", blade: int = 1) -> list[dict]:
+    """Parts in geometry.build_surface's format (name/role/material/color/vertices/faces)."""
+    from ..geometry import color_hex
+    out = []
+    for ph, (V, F) in parts.items():
+        if not len(F):
+            continue
+        mat = materials[ph]
+        role = "member" if ph == "soft" else "member_core"
+        out.append(dict(name=f"blade{blade}_{name}_{ph}", role=role, material=mat, blade=blade,
+                        member=-1, rotor=None, vertices=V, faces=F, color=color_hex(mat, role),
+                        color_base=color_hex(mat), orientation=None))
+    return out
+
+
+def export_result(res, dom, out_dir, fields: dict | None = None, iso: float = 0.5,
+                  step: bool = True, smooth_iters: int = 20) -> dict:
+    """Write <name>_<phase>.stl per material (smoothed iso-surface, mm) + one multi-product
+    STEP. fields: element fields to contour (default: the final projected fields, smoother
+    than the crisp 0/1 ones; same 0.5 boundary)."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    parts = surface_parts(res, dom, fields, iso, smooth_iters)
+    mats = material_names(res)
+    files = {}
+    for mname, (V, F) in parts.items():
         if len(F):
-            files[f"stl_{mname}"] = write_stl(out / f"{res.design_name}_{mname}.stl", V, F, mname)
+            files[f"stl_{mname}"] = write_stl(out / f"{res.design_name}_{mname}.stl", V, F,
+                                              f"{mname} {mats[mname]}")
     if step:
         files["step"] = write_step(out / f"{res.design_name}_topopt.step", parts, res.design_name)
     files["n_triangles"] = {k: int(len(v[1])) for k, v in parts.items()}
+    files["materials"] = mats
     return files
 
 
@@ -285,9 +358,9 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
         ax.set_ylabel(f"{labels[v]} (mm)")
         ax.set_title(f"mean density along {labels[ax_drop]}" + (" (hub/plate grey)" if ax_drop else ""))
     ax = fig.add_subplot(2, 3, 4, projection="3d")
-    mf = material_fields(rho, phi, dom.hub, dom.plate)
+    sp_ = surface_parts(res, dom)
     for mname, col in (("soft", soft_c), ("stiff", stiff_c)):
-        V, F = isosurface(nodal_field(mf[mname]), 0.5, dom.origin, dom.h)
+        V, F = sp_[mname]
         if len(F):
             P = V[F] * 1e3
             nrm = np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0])
@@ -323,20 +396,60 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
     m, fm, sm = res.metrics, res.fact_metrics, res.seed_metrics
     rows = [("", "FACT beam", "voxel seed", "topopt"),
             ("k_hinge (N m/rad)", f"{fm.get('k_axis', np.nan):.3g}", f"{sm['k_axis']:.3g}", f"{m['k_axis']:.3g}"),
+            ("k softest rot. (N m/rad)", f"{fm.get('k_soft', np.nan):.3g}", f"{sm['k_soft']:.3g}",
+             f"{m['k_soft']:.3g}"),
             ("stiffness ratio", f"{fm.get('stiffness_ratio', np.nan):.3g}", f"{sm['stiffness_ratio']:.3g}",
              f"{m['stiffness_ratio']:.3g}"),
+            ("constrained / hinge", f"{fm.get('constrained_ratio', np.nan):.3g}",
+             f"{sm.get('constrained_ratio', np.nan):.3g}", f"{m.get('constrained_ratio', np.nan):.3g}"),
             ("axis error (deg)", f"{fm.get('axis_error_deg', np.nan):.2f}", f"{sm['axis_error_deg']:.2f}",
              f"{m['axis_error_deg']:.2f}"),
             ("stretch (µm)", f"{res.targets['stretch_limit'] * 1e6:.1f}*", f"{res.responses['seed_stretch'] * 1e6:.1f}",
              f"{res.responses['stretch'] * 1e6:.1f}"),
-            ("stress util", "", f"{res.responses['seed_stress_max']:.2f}", f"{res.responses['stress_max']:.2f}"),
             ("mass (g)", "", "", f"{res.mass_props['mass'] * 1e3:.3f}")]
+    rp = res.responses
+    for k, lab in (("stress_max", "strength util"), ("creep_max", "creep util"),
+                   ("fatigue_max", "fatigue util"), ("interlayer_max", "interlayer util")):
+        if rp.get(k) is not None:
+            rows.append((lab, "", f"{rp.get('seed_fact_loads_' + k) or float('nan'):.2f}†", f"{rp[k]:.2f}"))
     tb = ax.table(cellText=rows, loc="center", cellLoc="center", colWidths=[0.34, 0.22, 0.22, 0.22])
     tb.auto_set_font_size(False)
     tb.set_fontsize(9)
     tb.scale(1, 1.5)
-    ax.set_title("* stretch limit (FACT beam under blade CF)", fontsize=8)
+    ax.set_title("* stretch limit (FACT beam, same steady wrench); † voxelised FACT under its own loads",
+                 fontsize=8)
     fig.tight_layout()
     fig.savefig(path, dpi=110)
+    plt.close(fig)
+    return str(path)
+
+
+def render_util(res, dom, path, title: str | None = None):
+    """PNG: max-through-thickness utilisation (strength, creep, fatigue, interlayer) of the
+    crisp design in two projections (along y: x-z side view; along z: x-y plan view)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    flds = [(k, res.fields[k + "_field"]) for k in ("stress", "creep", "fatigue", "interlayer")
+            if res.fields and (k + "_field") in res.fields]
+    if not flds:
+        return None
+    fig, axs = plt.subplots(2, len(flds), figsize=(3.6 * len(flds), 6.5), squeeze=False)
+    fig.suptitle(title or f"{res.design_name}: utilisation of the optimised flexure (max through depth)")
+    ext = [dom.origin[d] * 1e3 for d in range(3)], [(dom.origin[d] + dom.shape[d] * dom.h[d]) * 1e3 for d in range(3)]
+    vmax = max(1.0, max(float(f.max()) for _, f in flds))
+    for j, (k, f) in enumerate(flds):
+        for i, (drop, (u, v)) in enumerate(((1, (0, 2)), (2, (0, 1)))):
+            ax = axs[i, j]
+            im = ax.imshow(f.max(drop).T, origin="lower", cmap="magma", vmin=0, vmax=vmax,
+                           extent=[ext[0][u], ext[1][u], ext[0][v], ext[1][v]], aspect="equal")
+            sol = (res.rho.max(drop) > 0.5).T
+            ax.contour(sol, levels=[0.5], colors="c", linewidths=0.6,
+                       extent=[ext[0][u], ext[1][u], ext[0][v], ext[1][v]])
+            ax.set_title(f"{k}: max {float(f.max()):.2f}", fontsize=9)
+            ax.set_xlabel(f"{'xyz'[u]} (mm)")
+            ax.set_ylabel(f"{'xyz'[v]} (mm)")
+    fig.colorbar(im, ax=axs, shrink=0.8, label="utilisation")
+    fig.savefig(path, dpi=100)
     plt.close(fig)
     return str(path)

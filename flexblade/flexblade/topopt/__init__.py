@@ -26,7 +26,7 @@ from .problem import Problem, TopoptOptions, layout_metrics  # noqa: F401
 from .run import TopoptResult, run  # noqa: F401
 
 
-def topopt_design(design: Design, res: TopoptResult, source: str = "") -> Design:
+def topopt_design(design: Design, res: TopoptResult, source: str = "", parts: list | None = None) -> Design:
     """Copy of `design` whose flexure is the topopt result (topology "topopt": 6×6 spring +
     lumped mass in rotor.py). FACT members are kept for drawing."""
     from .. import fact
@@ -39,6 +39,7 @@ def topopt_design(design: Design, res: TopoptResult, source: str = "") -> Design
         K6=[[float(v) for v in row] for row in res.K6], mass=float(res.mass_props["mass"]),
         com=tuple(float(v) for v in res.mass_props["com"]),
         inertia=[[float(v) for v in row] for row in res.mass_props["inertia"]], source=source,
+        parts=list(parts or []),
         notes=f"k_hinge {res.metrics['k_axis']:.4g} N m/rad, stiffness ratio "
               f"{res.metrics['stiffness_ratio']:.3g}, axis error {res.metrics['axis_error_deg']:.2f} deg")
     d.name = f"{design.name}_topopt"
@@ -67,11 +68,18 @@ def optimise(design: Design, out_dir: str | Path | None = None, opts: TopoptOpti
         res.responses["validation"] = val
         summary["remesh_stiffness_ratio"] = val["remesh"]["metrics"]["stiffness_ratio"]
         summary["remesh_k_axis"] = val["remesh"]["metrics"]["k_axis"]
-    dtop = topopt_design(design, res, str(out) if out else "")
+    parts = []
+    if out is not None and export:
+        from .export import material_names
+        mats = material_names(res)
+        parts = [dict(name=f"topopt_{ph}", material=mats[ph], role="member" if ph == "soft" else "member_core",
+                      stl=f"{res.design_name}_{ph}.stl") for ph in ("soft", "stiff")]
+    dtop = topopt_design(design, res, str(Path(out).resolve()) if out else "", parts)
     if evaluate:
         from ..rotor import evaluate as rev
         keys = ("control_ratio", "lag_freq_per_rev", "pitch_freq_per_rev", "flap_freq_per_rev",
-                "pitch_lag_coupling", "tan_skew", "max_structural_utilisation")
+                "pitch_lag_coupling", "tan_skew", "pitch_amp_deg", "lag_amp_deg", "radial_stretch",
+                "max_structural_utilisation", "max_utilisation")
         for tag, dd in (("evaluate", dtop), ("evaluate_fact", design)):
             try:
                 r = rev(dd, ["trim", "modes", "harmonic", "checks"])
@@ -83,8 +91,13 @@ def optimise(design: Design, out_dir: str | Path | None = None, opts: TopoptOpti
         if export:
             files = ex.export_result(res, prob.dom, out)
             files["render"] = ex.render(res, prob.dom, out / "render.png")
+            try:
+                files["render_util"] = ex.render_util(res, prob.dom, out / "render_util.png")
+            except Exception as e:  # noqa: BLE001
+                summary.setdefault("warnings", []).append(f"utilisation render failed: {e}")
             summary["files"] = files
         np.savez_compressed(out / "fields.npz", rho=res.rho, phi=res.phi,
+                            **{k: v for k, v in (res.fields or {}).items()},
                             rho_gray=res.rho_gray, phi_gray=res.phi_gray,
                             origin=prob.dom.origin, h=prob.dom.h, hub=prob.dom.hub, plate=prob.dom.plate)
         (out / "result.json").write_text(json.dumps(res.to_json(), indent=1))

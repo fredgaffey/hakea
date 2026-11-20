@@ -216,6 +216,9 @@ def test_adjoint_sensitivities_match_finite_differences(overhang):
     P.stress_corr = 1.0
     x = P.T(x0).requires_grad_(True)
     vals, names = _responses(P, x)
+    assert {"stress", "creep", "fatigue", "interlayer"} <= set(names)
+    assert "target" in P.loads_info, P.warnings          # rotor-model wrenches were used
+    assert np.abs(P.W["W1"]).max() > 0
     grads = [torch.autograd.grad(v, x, retain_graph=True, allow_unused=True)[0] for v in vals]
     d = rng.standard_normal(x0.shape)
     d /= np.linalg.norm(d)
@@ -229,6 +232,26 @@ def test_adjoint_sensitivities_match_finite_differences(overhang):
         assert ad == pytest.approx(fd, rel=2e-4, abs=1e-8 * max(1.0, abs(float(a)))), name
 
 
+def test_batched_adjoint_matches_autograd():
+    """Problem.value_and_grads (one batched, rank-reduced adjoint solve) = per-function
+    autograd through LinearSolve (checked against finite differences above)."""
+    P = _small_problem()
+    rng = np.random.default_rng(5)
+    x0 = np.clip(0.5 * P.x0().numpy() + 0.5 * rng.random(P.x0().shape), 0.05, 0.95)
+    r = P.responses(P.T(x0), 4.0)
+    P.set_reference(dict(c_stiff0=r["c_stiff"].detach(), c_target=float(r["c_soft"]) * 1.2,
+                         stretch_limit=float(r["stretch"]) * 0.9))
+    x = P.T(x0).requires_grad_(True)
+    vals, names = _responses(P, x)
+    ref = [torch.autograd.grad(v, x, retain_graph=True, allow_unused=True)[0] for v in vals]
+    _, f0, g, names2, grads = P.value_and_grads(P.T(x0), 4.0)
+    assert names2 == names[1:]
+    for n, a, b, v1, v2 in zip(names, grads, ref, [f0] + g, vals):
+        assert float(v1) == pytest.approx(float(v2), rel=1e-9), n
+        b = torch.zeros_like(a) if b is None else b
+        assert float((a - b).abs().max()) <= 1e-6 * float(b.abs().max()) + 1e-14, n
+
+
 @pytest.mark.skipif(not CUDA, reason="no CUDA")
 def test_gpu_cpu_parity():
     Pc = _small_problem("cpu", dtype="float64")
@@ -237,7 +260,8 @@ def test_gpu_cpu_parity():
     x0 = Pc.x0().numpy()
     rc = Pc.responses(Pc.T(x0), 4.0)
     rg = Pg.responses(Pg.T(x0), 4.0)
-    for k in ("c_soft", "stretch", "volume", "stress_pnorm"):
+    for k in ("c_soft", "stretch", "volume", "stress_pnorm", "creep_pnorm", "fatigue_pnorm",
+              "interlayer_pnorm"):
         assert float(rg[k]) == pytest.approx(float(rc[k]), rel=2e-4), k
     assert np.allclose(rg["C"].cpu().numpy(), rc["C"].numpy(), rtol=1e-3,
                        atol=1e-4 * np.abs(rc["C"].numpy()).max())
@@ -334,3 +358,65 @@ def test_rotor_hook_full_K6_spring():
     from flexblade.rotor import evaluate
     r = evaluate(d2, ["trim"])
     assert r.trim is not None and r.flexure_stiffness is not None
+
+
+# --------------------------------------------------------------------------- loads / targets
+
+
+def test_rotor_loads_and_lag_target():
+    from flexblade import fact, rotor as rt
+    from flexblade.topopt.loads import k_hinge_for_lag, lag_per_rev, rotor_hinge_loads, with_k_hinge
+    from flexblade.topopt.problem import fact_reference, intent_K6
+    d = all_presets()["5in_cf_flexure"]
+    fr = fact_reference(d)
+    a = fact.hinge_axis(d)[1]
+    K = intent_K6(fr["K6"], a, fr["k_soft"])
+    # with_k_hinge changes only the hinge-axis compliance
+    K2 = with_k_hinge(K, a, 0.5 * fr["k_soft"])
+    e = np.r_[np.zeros(3), a]
+    assert 1 / (e @ np.linalg.inv(K2) @ e) == pytest.approx(0.5 * fr["k_soft"], rel=1e-9)
+    L = rotor_hinge_loads(d, K)
+    # steady radial wrench = blade root CF pull (beam model of the same rotor)
+    r = rt.evaluate(d, ["trim"])
+    assert L["W_steady"][0] == pytest.approx(r.trim.centrifugal_force_root, rel=0.1)
+    assert np.abs(L["W_1p"]).max() > 0
+    kk = k_hinge_for_lag(d, K, a, 0.7)
+    assert kk["lag_per_rev"] == pytest.approx(0.7, abs=0.01)
+    assert lag_per_rev(d, with_k_hinge(K, a, kk["k_hinge"])) == pytest.approx(kk["lag_per_rev"], abs=1e-6)
+
+
+def test_taubin_smoothing_and_viewer_parts(tmp_path):
+    """Smoothed iso-surface keeps its volume, round-trips through STL and replaces the FACT
+    member parts in geometry.build_surface for every blade."""
+    from flexblade.geometry import build_surface
+    from flexblade.schema import TopoptFlexure
+    from flexblade.topopt import export as ex
+    g = np.indices((12, 12, 12)) - 5.5
+    f = (np.sqrt((g ** 2).sum(0)) < 4.0).astype(float)
+    h = 0.4e-3
+    V, F = ex.marching_tets(ex.nodal_field(f), 0.5, np.array([0.008, -0.0025, -0.0025]), np.full(3, h))
+    Vs = ex.taubin_smooth(V, F, 30)
+
+    def vol(X):
+        P = X[F]
+        return np.einsum("ij,ij->i", P[:, 0], np.cross(P[:, 1], P[:, 2])).sum() / 6
+
+    assert vol(Vs) == pytest.approx(vol(V), rel=0.05)
+    # roughness (mean |umbrella Laplacian|) drops
+    W = ex._vertex_adjacency(V, F)
+    assert np.linalg.norm(W @ Vs - Vs, axis=1).mean() < 0.6 * np.linalg.norm(W @ V - V, axis=1).mean()
+    ex.write_stl(tmp_path / "x_soft.stl", Vs, F)
+    V2, F2 = ex.read_stl(tmp_path / "x_soft.stl")
+    assert len(F2) == len(F) and np.abs(V2.min(0) - Vs.min(0)).max() < 1e-6
+    d = all_presets()["5in_cf_flexure"].model_copy(deep=True)
+    d.flexure.topology = "topopt"
+    d.flexure.topopt = TopoptFlexure(K6=np.eye(6).tolist(), source=str(tmp_path),
+                                     parts=[dict(name="topopt_soft", material="tpu_95a", stl="x_soft.stl")])
+    geo = build_surface(d)
+    tp = [p for p in geo["parts"] if "topopt" in p["name"]]
+    assert len(tp) == d.blade.n_blades
+    assert not any("_flex" in p["name"] for p in geo["parts"])
+    for p in tp:
+        assert set(("name", "role", "material", "color", "vertices", "faces")) <= set(p)
+    b2 = [p for p in tp if p["blade"] == 2][0]
+    assert b2["vertices"][:, 0].max() < 0          # rotated to the other side

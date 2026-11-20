@@ -194,7 +194,7 @@ def cmd_topopt(a, out):
         d = uc.set_values(d, uc.parse_assignments(a.set))
     kw = json.loads(a.options) if a.options else {}
     for k in ("n_elem", "h", "max_iter", "envelope", "device", "volfrac", "k_hinge_target",
-              "stretch_limit", "min_feature"):
+              "lag_target", "soft_material", "loads", "stretch_limit", "min_feature"):
         v = getattr(a, k, None)
         if v is not None:
             kw[k] = v
@@ -204,7 +204,8 @@ def cmd_topopt(a, out):
 
     def progress(rec):
         if a.progress:
-            print(json.dumps({k: rec[k] for k in ("it", "beta", "f0", "k_axis", "change", "time")}),
+            print(json.dumps({k: rec.get(k) for k in ("it", "beta", "f0", "k_axis", "creep_max",
+                                                      "fatigue_max", "change", "time")}),
                   file=sys.stderr)
 
     s = optimise(d, a.out, opts, validate=not a.no_validate, evaluate=a.evaluate, callback=progress)
@@ -374,6 +375,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--device", help="cuda | cpu (default: cuda if available)")
     s.add_argument("--volfrac", type=float)
     s.add_argument("--k-hinge-target", dest="k_hinge_target", type=float, help="N m/rad")
+    s.add_argument("--lag-target", dest="lag_target", type=float,
+                   help="lag frequency /rev at hover that sets k_hinge (default 0.7)")
+    s.add_argument("--soft-material", dest="soft_material", help="tpu_95a | tpu_64d (default tpu_64d)")
+    s.add_argument("--loads", choices=["rotor", "cf"], help="creep/fatigue load cases (default rotor)")
     s.add_argument("--stretch-limit", dest="stretch_limit", type=float, help="m")
     s.add_argument("--min-feature", dest="min_feature", type=float, help="m")
     s.add_argument("--overhang", action="store_true", help="Langelaar overhang filter")

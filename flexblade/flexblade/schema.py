@@ -122,6 +122,10 @@ class TopoptFlexure(_M):
     inertia: list[list[float]] = Field(default_factory=lambda: [[0.0] * 3 for _ in range(3)],
                                        description="kg m², about the COM, frame H")
     source: str = Field("", description="result directory / file the data came from")
+    parts: list[dict] = Field(default_factory=list,
+                              description="smoothed per-material surfaces for the viewer: "
+                                          "{name, material, stl} (blade-1 frame H, STL in mm; a "
+                                          "relative stl path is relative to `source`)")
     notes: str = ""
 
 

@@ -2,38 +2,48 @@
 FACT-target responses with autograd + adjoint solves.
 
 Fields (design elements only): ρ (solid density) and φ (stiff-phase fraction of the solid).
-Each is density-filtered (cone, radius r) and Heaviside-projected (β, η = 0.5); optional
-Langelaar overhang filter on ρ. Element stiffness (ordered two-phase SIMP):
+Each is density-filtered (cone, radius r ≥ min feature ≈ 2 nozzle widths) and
+Heaviside-projected (β continuation, η = 0.5); optional Langelaar overhang filter on ρ.
+Element stiffness (ordered two-phase SIMP):
 
     C_e = (ε + ρ^p (1 − φ^p)) C_soft + ρ^p φ^p C_stiff      (void = ε C_soft)
 
 hub/plate passive: plate_factor · C_stiff. Mass density ρ((1−φ) ρ_soft + φ ρ_stiff).
 
-Load cases (one batched solve, B = 7): six unit wrenches at the hinge point through the
-plate (N = G(GᵀG)⁻¹), and centrifugal: outboard-blade CF force (radial through the hinge
-point) + design-dependent body force ρ_m Ω² (x, y, 0) (lumped, 1/8 per node).
+Solves (one batched PCG, B = 7): six unit wrenches at the hinge point through the plate
+(N = G(GᵀG)⁻¹) and the design-dependent centrifugal body force ρ_m Ω² (x, y, 0) of the
+flexure itself (lumped, 1/8 per node). Load states are combinations (no extra solves):
 
-Responses (C = NᵀU, 6×6 compliance at the hinge point; Ch in the hinge frame
-(a, x', n) for both translations and rotations):
+  sustained  U_s = U_body + Σ_i W_s,i U_i     W_s: steady hinge-point wrench of the blade on
+             the flexure at hover trim (root CF pull + steady moments after CF relief), from
+             the rotor model with the target-stiffness hinge (loads.py)
+  1/rev      U_re/im = Σ_i Re/Im(W_1p,i) U_i  complex 1/rev wrench amplitude (design torque)
+
+Responses (C = NᵀU, 6×6 compliance at the hinge point; Ch in the hinge frame (a, x', n)):
   c_soft     = Ch[θa, θa]                         compliance about the hinge axis
   c_stiff    = Ch[t_a,t_a], Ch[t_x',t_x'], Ch[t_n,t_n], Ch[θx',θx'], Ch[θn,θn]
-  tilt       = |Ch[θa, θx',θn]| / c_soft           (soft-axis direction error, rad)
-  offset     = |Ch[t_x',t_n ; θa]| / c_soft / Lc    (soft-axis position error / Lc)
-  stretch    = (Nᵀ U_cf)_x                          radial stretch at the hinge point
-  stress     = p-norm of √FI_e, FI = Tsai-Hill (incl. interlayer Zt) of the centrifugal
-               case, ρ^(2q)-relaxed, phase-mixed, adaptive max-correction
+  tilt/offset  soft-axis direction / position error
+  stretch    = (Nᵀ U_s)_x                         radial stretch at the hinge point
+  stress     = p-norm of √FI_e, FI = Tsai-Hill (incl. interlayer Zt), sustained state
+  creep      = p-norm of ε_eq(U_s) / creep_strain_allow(phase)              (materials.py)
+  fatigue    = p-norm of √(ε_eq(U_re)² + ε_eq(U_im)²) / fatigue_strain_amp_allow(phase)
+  interlayer = p-norm of √FI_il(U_s) + √(FI_il(U_re) + FI_il(U_im)), FI_il = (σ_n/Zt)² +
+               (τ/S)² on the layer plane (build direction), peak of sustained + 1/rev
   volume     = mean ρ over design elements
+Phase mixing of the squared utilisations: ρ^(2q) ((1−φ^p) u_soft² + φ^p u_stiff²) (qp-relaxation;
+φ^p as in the stiffness, so a gray φ is judged like the phase that carries its stiffness).
+Each p-norm carries an adaptive max-correction (ratio of true max to p-norm, damped).
 Objective: f0 = (mean_i (c_stiff_i / c_stiff_i,seed)^4)^(1/4) (soft max of the five
 stiff-direction compliances normalised by the FACT seed). Constraints (≤ 0):
-  k_target/k_soft − 1 (c_soft ≥ 1/k_target), k_soft_band: c_soft/(band c_target) − 1,
-  (tilt² + offset²)/axis_tol² − 1, stretch/limit − 1, stress − 1, volume/volfrac − 1,
-  [mass/limit − 1], [stiff-phase volume/limit − 1].
+  k_target/k_soft − 1, c_soft/(band c_target) − 1, (tilt² + offset²)/axis_tol² − 1,
+  stretch/limit − 1, stress − 1, creep − 1, fatigue − 1, interlayer − 1,
+  volume/volfrac − 1, [mass/limit − 1], [stiff-phase volume/limit − 1].
 """
 from __future__ import annotations
 
 import math
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 import numpy as np
@@ -44,7 +54,10 @@ from ..materials import get_material
 from ..schema import Design, PrintOrientation
 from .fem import MGSolver, default_device, linear_solve
 from .filters import DensityFilter, build_axis, heaviside, overhang_filter
-from .grid import B_matrix, Domain, OFFSETS, build_domain, tsai_hill_form
+from .grid import (B_matrix, Domain, OFFSETS, build_domain, equiv_strain_form, interlayer_form,
+                   tsai_hill_form)
+
+STRAIN_CONSTRAINTS = ("creep", "fatigue", "interlayer")
 
 
 @dataclass
@@ -64,18 +77,24 @@ class TopoptOptions:
     beta_max: float = 32.0
     beta_every: int = 30
     overhang: bool = False                 # Langelaar AM filter (build_dir must be ±x/±y/±z)
-    k_hinge_target: Optional[float] = None  # N m/rad about the hinge axis; None → FACT design
+    k_hinge_target: Optional[float] = None  # N m/rad about the hinge axis; None → lag_target
+    lag_target: Optional[float] = 0.7      # /rev at hover (rotor model); None → FACT k_axis
     k_hinge_band: float = 1.3              # c_soft ≤ band × target compliance
     axis_tol: float = 0.05                 # tilt (rad) / offset (fraction of Lc)
-    stretch_limit: Optional[float] = None  # m; None → seed value
+    stretch_limit: Optional[float] = None  # m; None → FACT beam under the same steady wrench
+    loads: str = "rotor"                   # rotor (trim + 1/rev wrenches) | cf (CF pull only)
     stress_sf: float = 1.5
     stress_P: float = 8.0
     stress_q: float = 0.5
+    strain_sf: float = 1.0                 # on creep / fatigue strain allowables
+    creep: bool = True
+    fatigue: bool = True
+    interlayer: bool = True
     stress_exclude_layers: int = 1         # skip design layers next to hub/plate (singular)
     volfrac: Optional[float] = None        # of design domain; None → clip(2 × seed, .15, .4)
     mass_limit: Optional[float] = None     # kg
     stiff_frac_limit: Optional[float] = None
-    rpm: Optional[float] = None            # None → design rpm / trim
+    rpm: Optional[float] = None            # None → rotor trim rpm (loads=rotor) / design rpm
     max_iter: int = 200
     move: float = 0.1
     tol_change: float = 2e-3
@@ -124,6 +143,23 @@ def fact_reference(design: Design) -> dict:
     return dict(K6=K6, **layout_metrics(K6, design))
 
 
+def intent_K6(K6_fact: np.ndarray, axis, k_hinge: float) -> np.ndarray:
+    """The FACT rigid-body intent as a 6×6 at the hinge point: rotation about `axis` with
+    stiffness k_hinge, the other five directions decoupled at the FACT design's constrained
+    stiffness (translations λmin(Ktt), rotations the second-softest rotation of K6_fact)."""
+    K = 0.5 * (np.asarray(K6_fact) + np.asarray(K6_fact).T)
+    Ktt, Ktr, Krr = K[:3, :3], K[:3, 3:], K[3:, 3:]
+    Kr = Krr - Ktr.T @ np.linalg.solve(Ktt, Ktr)
+    k_r = float(np.linalg.eigvalsh(0.5 * (Kr + Kr.T))[1])
+    k_t = float(np.linalg.eigvalsh(Ktt).min())
+    a = np.asarray(axis, float)
+    xp = np.array([1.0, 0, 0]) - a * a[0]
+    xp /= np.linalg.norm(xp)
+    R = np.column_stack([a, xp, np.cross(a, xp)])
+    T = np.block([[R, np.zeros((3, 3))], [np.zeros((3, 3)), R]])
+    return T @ np.diag([k_t, k_t, k_t, k_hinge, max(k_r, 5 * k_hinge), max(k_r, 5 * k_hinge)]) @ T.T
+
+
 def layout_metrics(K6: np.ndarray, design_or_axis, Lc: Optional[float] = None) -> dict:
     """fact.check_layout's metrics from a 6×6 at the hinge point: k about the target axis
     (other dofs free), softest-rotation stiffness, stiffness ratio, axis error/offset."""
@@ -143,10 +179,29 @@ def layout_metrics(K6: np.ndarray, design_or_axis, Lc: Optional[float] = None) -
     k_tt = float(np.linalg.eigvalsh(Ktt).min()) * Lc ** 2
     C = np.linalg.inv(K6)
     e = np.r_[np.zeros(3), a]
-    return dict(k_axis=float(1.0 / (e @ C @ e)), k_soft=float(lam[0]), k_rot2=float(lam[1]),
+    # stiffness of the five constrained directions, measured against the hinge: the
+    # softest direction orthogonal (in compliance) to the hinge rotation
+    k_axis = float(1.0 / (e @ C @ e))
+    return dict(k_axis=k_axis, k_soft=float(lam[0]), k_rot2=float(lam[1]),
                 k_trans_Lc2=k_tt, stiffness_ratio=float(min(lam[1], k_tt) / max(lam[0], 1e-30)),
+                constrained_ratio=float(min(_k_constrained(K6, a), k_tt) / k_axis),
                 axis_error_deg=float(np.degrees(np.arccos(np.clip(abs(w @ a), 0, 1)))),
                 axis_offset=float(np.linalg.norm(p_perp)), soft_axis=w.tolist())
+
+
+def _k_constrained(K6: np.ndarray, a) -> float:
+    """Softest rotation stiffness ⟂ the intended hinge axis `a` (translations free): the
+    stiffest the FACT 'constrained' rotations are, independent of where the soft axis is."""
+    Ktt, Ktr, Krr = K6[:3, :3], K6[:3, 3:], K6[3:, 3:]
+    Kr = Krr - Ktr.T @ np.linalg.solve(Ktt, Ktr)
+    Cr = np.linalg.inv(Kr)
+    a = np.asarray(a, float)
+    xp = np.array([1.0, 0, 0]) - a * a[0]
+    xp /= np.linalg.norm(xp)
+    Q = np.column_stack([xp, np.cross(a, xp)])
+    # rotations ⟂ a with the a-rotation free: compliance block of the ⟂ plane
+    Cp = Q.T @ Cr @ Q
+    return float(1.0 / np.linalg.eigvalsh(0.5 * (Cp + Cp.T)).max())
 
 
 class Problem:
@@ -169,7 +224,7 @@ class Problem:
         self.Cs = Cs
         op_dtype = getattr(torch, o.op_dtype)
         self.solver = MGSolver(dom.shape, dom.h, Cs, dom.fixed_nodes(), levels=dom.mg_levels,
-                               device=dev, op_dtype=op_dtype)
+                               device=dev, op_dtype=op_dtype, mid_dtype=op_dtype)
         f64 = torch.float64
         T = lambda a, dt=f64: torch.as_tensor(np.ascontiguousarray(a), dtype=dt, device=dev)  # noqa: E731
         self.T = T
@@ -181,18 +236,17 @@ class Problem:
         Xc = dom.elem_centers()
         self.Xc = T(Xc)
         self.filt = DensityFilter(dom.shape, dom.h, max(o.min_feature, 1.01 * float(np.max(dom.h))), dev)
-        # hinge frame / 6×6 rotation
         R = dom.hinge_frame()
         self.T6 = T(np.block([[R, np.zeros((3, 3))], [np.zeros((3, 3)), R]]))
-        # centrifugal
-        self.rpm = _rpm(design, o, self.warnings)
-        self.Omega = self.rpm * 2 * math.pi / 60
-        self.F_cf = _outboard_cf(design, self.Omega, self.warnings)
-        # stress
+        # strain/stress quadratic forms per phase: FI = εᵀ M ε
         self.Bc = T(B_matrix((0.5, 0.5, 0.5), dom.h))                          # (6,24)
-        # FI = εᵀ (Cᵀ M_σ C) ε  (strain-based Tsai-Hill quadratic form per phase)
-        self.Mfi = T(np.stack([C.T @ tsai_hill_form(mn, ori, o.stress_sf) @ C for C, mn in
-                               zip(Cs, (o.soft_material, o.stiff_material))]))
+        names = (o.soft_material, o.stiff_material)
+        self.Mfi = T(np.stack([C.T @ tsai_hill_form(mn, ori, o.stress_sf) @ C for C, mn in zip(Cs, names)]))
+        self.Mcreep = T(np.stack([equiv_strain_form(0.5 if m.is_elastomer else m.nu12)
+                                  / (m.creep_strain_allow / o.strain_sf) ** 2 for m in self.mats]))
+        self.Mfat = T(np.stack([equiv_strain_form(0.5 if m.is_elastomer else m.nu12)
+                                / (m.fatigue_strain_amp_allow / o.strain_sf) ** 2 for m in self.mats]))
+        self.Mil = T(np.stack([C.T @ interlayer_form(mn, ori, o.stress_sf) @ C for C, mn in zip(Cs, names)]))
         sm = dom.design.copy()
         k = o.stress_exclude_layers
         if k > 0:
@@ -205,7 +259,7 @@ class Problem:
             near[max(i1 - k, 0):i1] = True
             sm &= ~near
         self.stress_mask = T(sm, torch.bool)
-        self.stress_corr = 1.0
+        self.corr = {n: 1.0 for n in ("stress",) + STRAIN_CONSTRAINTS}
         self.oh = None
         if o.overhang:
             ax = build_axis(ori.build_dir)
@@ -214,14 +268,75 @@ class Problem:
             else:
                 self.oh = ax
         self.state = dict(tol=o.cg_tol, maxit=o.cg_maxit)
-        self.setup_time = time.perf_counter() - t0
-        # FACT reference and targets
+        # FACT reference, hinge-stiffness target and load cases
         self.fact = None
         try:
             self.fact = fact_reference(design)
         except Exception as e:  # noqa: BLE001
             self.warnings.append(f"FACT beam reference failed: {e}")
+        self._targets_and_loads()
+        self.Omega = self.rpm * 2 * math.pi / 60
         self.ref = None
+        self.setup_time = time.perf_counter() - t0
+
+    @property
+    def stress_corr(self):
+        return self.corr["stress"]
+
+    @stress_corr.setter
+    def stress_corr(self, v):
+        self.corr["stress"] = v
+
+    # ------------------------------------------------------------------ targets / loads
+    def _targets_and_loads(self):
+        o, dom, d = self.opts, self.dom, self.design
+        a = dom.hinge_axis
+        self.lag_info = None
+        Kf = self.fact["K6"] if self.fact else None
+        if o.k_hinge_target is not None:
+            k_t = float(o.k_hinge_target)
+        elif o.lag_target is not None and Kf is not None:
+            from .loads import k_hinge_for_lag
+            try:
+                k0 = self.fact["k_soft"]
+                self.lag_info = k_hinge_for_lag(d, intent_K6(Kf, a, k0), a, o.lag_target)
+                k_t = self.lag_info["k_hinge"]
+            except Exception as e:  # noqa: BLE001
+                self.warnings.append(f"lag-target k_hinge failed ({e}); using the FACT k_soft")
+                k_t = self.fact["k_soft"]
+        elif self.fact:
+            k_t = self.fact["k_axis"]
+        else:
+            k_t = None                         # → voxel seed (run.py)
+        self.k_target = k_t
+        self.loads_info = {}
+        Ws = W1 = None
+        rpm = None
+        if o.loads == "rotor" and Kf is not None and k_t is not None:
+            from .loads import rotor_hinge_loads
+            try:
+                Lt = rotor_hinge_loads(d, intent_K6(Kf, a, k_t))
+                Lf = rotor_hinge_loads(d, Kf)
+                Ws, W1, rpm = Lt["W_steady"], Lt["W_1p"], Lt["rpm"]
+                self.loads_info = dict(target=Lt, fact=Lf)
+            except Exception as e:  # noqa: BLE001
+                self.warnings.append(f"rotor loads failed ({e}); CF pull only")
+        elif o.loads not in ("rotor", "cf"):
+            raise ValueError(f"loads {o.loads!r}: rotor | cf")
+        self.rpm = float(o.rpm) if o.rpm is not None else (rpm or _rpm(d, o, self.warnings))
+        Om = self.rpm * 2 * math.pi / 60
+        self.F_cf = _outboard_cf(d, Om, self.warnings)
+        if Ws is None:
+            Ws, W1 = np.r_[self.F_cf, 0, 0, 0, 0, 0], np.zeros(6, complex)
+            self.loads_info.setdefault("fact", dict(W_steady=Ws, W_1p=W1))
+        self.W = self.wrenches(Ws, W1)
+        lf = self.loads_info.get("fact")
+        self.W_fact = self.wrenches(lf["W_steady"], lf["W_1p"]) if lf else self.W
+
+    def wrenches(self, Ws, W1) -> dict:
+        W1 = np.asarray(W1, complex)
+        return dict(s=self.T(np.asarray(Ws, float)), re=self.T(W1.real), im=self.T(W1.imag),
+                    Ws=np.asarray(Ws, float), W1=W1)
 
     # ------------------------------------------------------------------ fields
     def x0(self) -> torch.Tensor:
@@ -266,25 +381,45 @@ class Problem:
         s_stiff = torch.where(pas, torch.full_like(s_stiff, o.plate_factor), s_stiff)
         return torch.stack([s_soft, s_stiff])
 
-    def centrifugal_load(self, rho, phi):
+    def body_load(self, rho, phi):
+        """Nodal centrifugal body force of the flexure material, ρ_m Ω² (x, y, 0)."""
         ms, mh = self.mats
         dens = rho * ((1 - phi) * ms.rho + phi * mh.rho) * self.vol_e * self.Omega ** 2 / 8.0
         fe = torch.stack([dens * self.Xc[..., 0], dens * self.Xc[..., 1], torch.zeros_like(dens)])
-        nx, ny, nz = self.dom.shape
         out = torch.zeros((3,) + self.dom.node_shape, dtype=rho.dtype, device=rho.device)
         for a, b, c in OFFSETS:
             out = out + torch.nn.functional.pad(fe, (c, 1 - c, b, 1 - b, a, 1 - a))
-        return out + self.F_cf * self.N[0]
+        return out
+
+    def centrifugal_load(self, rho, phi):
+        """Body force + steady wrench (legacy name)."""
+        return self.body_load(rho, phi) + torch.einsum("i,icxyz->cxyz", self.W["s"], self.N)
 
     # ------------------------------------------------------------------ responses
     def responses(self, x: torch.Tensor, beta: float, need_stress: bool = True) -> dict:
         rho, phi = self.fields(x, beta)
         return self.responses_fields(rho, phi, need_stress)
 
-    def responses_fields(self, rho, phi, need_stress: bool = True) -> dict:
+    def _pnorm(self, util2: torch.Tensor, rho, phi, name: str, out: dict):
+        """util2 (2, nx,ny,nz): squared utilisation per phase → relaxed, mixed p-norm."""
+        q, p = self.opts.stress_q, self.opts.penal
+        fp = phi ** p                       # same phase weight as the stiffness interpolation
+        u2 = rho ** (2 * q) * ((1 - fp) * util2[0] + fp * util2[1])
+        util = torch.sqrt(u2[self.stress_mask].clamp_min(0) + 1e-16)
+        P = self.opts.stress_P
+        umax = util.max()
+        out[name + "_pnorm"] = umax.detach() * ((util / umax.detach()) ** P).sum() ** (1 / P)
+        out[name + "_max"] = umax.detach()
+        out[name + "_field"] = torch.zeros_like(rho).masked_scatter(self.stress_mask, util.detach())
+
+    def responses_fields(self, rho, phi, need_stress: bool = True, wrenches: dict | None = None) -> dict:
         s = self.scales(rho, phi)
-        F = torch.cat([self.N, self.centrifugal_load(rho, phi)[None]])
+        F = torch.cat([self.N, self.body_load(rho, phi)[None]])
         U = linear_solve(s, F, self.solver, self.state)
+        return self.responses_from_U(rho, phi, U, need_stress, wrenches)
+
+    def responses_from_U(self, rho, phi, U, need_stress: bool = True, wrenches: dict | None = None) -> dict:
+        W = wrenches or self.W
         C = torch.einsum("bcxyz,dcxyz->bd", self.N, U[:6])
         C = 0.5 * (C + C.T)
         Ch = self.T6.T @ C @ self.T6
@@ -293,7 +428,8 @@ class Problem:
         out["c_stiff"] = torch.stack([Ch[0, 0], Ch[1, 1], Ch[2, 2], Ch[4, 4], Ch[5, 5]])
         out["tilt2"] = (Ch[3, 4] ** 2 + Ch[3, 5] ** 2) / Ch[3, 3] ** 2
         out["offset2"] = (Ch[1, 3] ** 2 + Ch[2, 3] ** 2) / Ch[3, 3] ** 2 / self.dom.Lc ** 2
-        qcf = torch.einsum("bcxyz,cxyz->b", self.N, U[6])
+        Us = U[6] + torch.einsum("i,icxyz->cxyz", W["s"], U[:6])
+        qcf = torch.einsum("bcxyz,cxyz->b", self.N, Us)
         out["stretch"] = qcf[0]
         out["q_cf"] = qcf
         dm = self.design_mask
@@ -302,19 +438,109 @@ class Problem:
         out["mass"] = (rho * ((1 - phi) * ms.rho + phi * mh.rho))[dm].sum() * self.vol_e
         out["stiff_volume"] = (rho * phi)[dm].sum() / self.nd
         if need_stress:
+            o = self.opts
             lev = self.solver.fine
-            ue = lev.gather(U[6:7].to(torch.float64))[0]                       # (24,ne)
-            eps = (self.Bc @ ue).reshape((6,) + self.dom.shape)
-            fi = torch.einsum("axyz,pab,bxyz->pxyz", eps, self.Mfi, eps)
-            fi_e = rho ** (2 * self.opts.stress_q) * ((1 - phi) * fi[0] + phi * fi[1])
-            util = torch.sqrt(fi_e[self.stress_mask].clamp_min(0) + 1e-16)
-            P = self.opts.stress_P
-            umax = util.max()
-            pn = (umax.detach() * ((util / umax.detach()) ** P).sum() ** (1 / P))
-            out["stress_pnorm"] = pn
-            out["stress_max"] = umax.detach()
-            out["util"] = torch.zeros_like(rho).masked_scatter(self.stress_mask, util.detach())
+            shp = (6,) + self.dom.shape
+
+            def strain(u):
+                return (self.Bc @ lev.gather(u[None].to(torch.float64))[0]).reshape(shp)
+
+            def qf(e, M):
+                return torch.einsum("axyz,pab,bxyz->pxyz", e, M, e)
+
+            es = strain(Us)
+            self._pnorm(qf(es, self.Mfi), rho, phi, "stress", out)
+            fat = o.fatigue or o.interlayer
+            if fat:
+                ere = strain(torch.einsum("i,icxyz->cxyz", W["re"], U[:6]))
+                eim = strain(torch.einsum("i,icxyz->cxyz", W["im"], U[:6]))
+            if o.creep:
+                self._pnorm(qf(es, self.Mcreep), rho, phi, "creep", out)
+            if o.fatigue:
+                self._pnorm(qf(ere, self.Mfat) + qf(eim, self.Mfat), rho, phi, "fatigue", out)
+            if o.interlayer:
+                fs = qf(es, self.Mil).clamp_min(0)
+                fa = (qf(ere, self.Mil) + qf(eim, self.Mil)).clamp_min(0)
+                self._pnorm((torch.sqrt(fs + 1e-20) + torch.sqrt(fa + 1e-20)) ** 2, rho, phi,
+                            "interlayer", out)
+            out["util"] = out["stress_field"]
         out["U"] = U
+        return out
+
+    # ------------------------------------------------------------------ batched adjoint
+    def value_and_grads(self, x: torch.Tensor, beta: float, need_stress: bool = True):
+        """Responses, (f0, g, names) and d/dx of every function with ONE forward solve and
+        ONE batched adjoint solve (instead of one adjoint per function): the adjoint loads
+        ∂f_j/∂U of all functions are stacked, reduced to an orthonormal basis (Gram
+        eigen-decomposition; strain p-norms share a few fields), their part in span(F) is
+        answered by U itself, and only the remainder is solved."""
+        xv = x.detach().clone().requires_grad_(True)
+        rho, phi = self.fields(xv, beta)
+        s = self.scales(rho, phi)
+        F = torch.cat([self.N, self.body_load(rho, phi)[None]])
+        sv = self.solver
+        st = self.state
+        with torch.no_grad():
+            sv.set_scales(s.detach())
+            U, it, rel = sv.solve(F.detach(), st.get("U0"), st.get("tol", 1e-6), st.get("maxit", 400))
+        st["U0"], st["iters"], st["relres"] = U.detach(), it, rel.max().item()
+        Ul = U.detach().requires_grad_(True)
+        r = self.responses_from_U(rho, phi, Ul, need_stress)
+        f0, g, names = self.constraints(r)
+        vals = [f0] + list(g)
+        free = sv.fine.free_f.to(torch.float64)
+        gUs = []
+        for v in vals:
+            gu = torch.autograd.grad(v, Ul, retain_graph=True, allow_unused=True)[0]
+            gUs.append(None if gu is None else gu * free)
+        lams = self._adjoint_many(gUs, U, F.detach())
+        grads = []
+        for v, lam in zip(vals, lams):
+            if lam is None:
+                gr = torch.autograd.grad(v, xv, retain_graph=True, allow_unused=True)[0]
+            else:
+                gs = -sv.scale_grad(lam, U).to(s.dtype)
+                gr = torch.autograd.grad([v, s, F], xv, grad_outputs=[torch.ones_like(v), gs, lam],
+                                         retain_graph=True, allow_unused=True)[0]
+            grads.append(torch.zeros_like(xv) if gr is None else gr.detach())
+        return r, f0, g, names, grads
+
+    def _adjoint_many(self, gUs, U, F):
+        B = F.shape[0]
+        idx = [j for j, gu in enumerate(gUs) if gu is not None and bool(gu.abs().max() > 0)]
+        out = [None] * len(gUs)
+        if not idx:
+            return out
+        n = U[0].numel()
+        G = torch.cat([gUs[j].reshape(B, n) for j in idx])                         # (J·B, n)
+        Gram = G @ G.T
+        lam_e, V = torch.linalg.eigh(Gram)
+        keep = lam_e > 1e-13 * lam_e.max().clamp_min(1e-300)
+        V, lam_e = V[:, keep], lam_e[keep]
+        Q = (V / lam_e.sqrt()).T @ G                                                # (r, n) orthonormal
+        coef = G @ Q.T                                                              # G = coef Q
+        Fm = F.reshape(B, n)
+        Fn = torch.linalg.vector_norm(Fm, dim=1).clamp_min(1e-300)
+        Fh = Fm / Fn[:, None]
+        A = torch.linalg.pinv(Fh @ Fh.T, hermitian=True) @ (Fh @ Q.T) / Fn[:, None]  # (B, r)
+        R = Q - A.T @ Fm
+        LQ = A.T @ U.reshape(B, n)
+        rn = torch.linalg.vector_norm(R, dim=1)
+        need = rn > 1e-9
+        if bool(need.any()):
+            ii = torch.nonzero(need).flatten()
+            Rb = R[ii].reshape((len(ii),) + U.shape[1:])
+            x0 = self.state.get("L0")
+            if x0 is not None and x0.shape[0] != len(ii):
+                x0 = None
+            lr, it, rel = self.solver.solve(Rb, x0, self.state.get("tol", 1e-6), self.state.get("maxit", 400))
+            self.state["L0"] = lr.detach()
+            self.state["adj_iters"] = it
+            self.state["adj_rhs"] = len(ii)
+            LQ[ii] = LQ[ii] + lr.reshape(len(ii), n)
+        lam = (coef @ LQ).reshape((len(idx), B) + U.shape[1:])
+        for k, j in enumerate(idx):
+            out[j] = lam[k]
         return out
 
     # ------------------------------------------------------------------ targets
@@ -330,11 +556,18 @@ class Problem:
         g.append(r["c_soft"] / (o.k_hinge_band * ref["c_target"]) - 1.0); names.append("hinge_not_too_soft")
         g.append((r["tilt2"] + r["offset2"]) / o.axis_tol ** 2 - 1.0); names.append("axis")
         g.append(r["stretch"] / ref["stretch_limit"] - 1.0); names.append("stretch")
-        if "stress_pnorm" in r:
-            g.append(self.stress_corr * r["stress_pnorm"] - 1.0); names.append("stress")
+        for n in ("stress",) + STRAIN_CONSTRAINTS:
+            if n + "_pnorm" in r:
+                g.append(self.corr[n] * r[n + "_pnorm"] - 1.0); names.append(n)
         g.append(r["volume"] / self.volfrac() - 1.0); names.append("volume")
         if o.mass_limit is not None:
             g.append(r["mass"] / o.mass_limit - 1.0); names.append("mass")
         if o.stiff_frac_limit is not None:
             g.append(r["stiff_volume"] / o.stiff_frac_limit - 1.0); names.append("stiff_volume")
         return f0, g, names
+
+    def update_corrections(self, r: dict, first: bool):
+        for n in self.corr:
+            if n + "_pnorm" in r:
+                ratio = float(r[n + "_max"]) / max(float(r[n + "_pnorm"]), 1e-30)
+                self.corr[n] = ratio if first else 0.5 * self.corr[n] + 0.5 * ratio

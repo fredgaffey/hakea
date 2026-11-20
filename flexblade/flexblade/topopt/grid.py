@@ -131,6 +131,37 @@ def tsai_hill_form(mat_name: str, orientation: PrintOrientation | None, sf: floa
     return Ti.T @ F @ Ti / sf ** 2
 
 
+def equiv_strain_form(nu: float = 0.5) -> np.ndarray:
+    """6×6 M with ε_eq² = εᵀ M ε: von Mises equivalent strain of the (engineering-shear Voigt)
+    strain, ε_eq = 1/(1+ν') √(½Σ(εi−εj)² + ¾Σγ²). Equals the axial strain in uniaxial
+    tension of a material with Poisson ratio ν' (0.5 for TPU); γ·√3/(2(1+ν')) in pure shear.
+    Volumetric strain is ignored (elastomers; small for PA6-CF)."""
+    M = np.zeros((6, 6))
+    for i, j in ((0, 1), (1, 2), (2, 0)):
+        v = np.zeros(6)
+        v[i], v[j] = 1.0, -1.0
+        M += 0.5 * np.outer(v, v)
+    M[3, 3] = M[4, 4] = M[5, 5] = 0.75
+    return M / (1.0 + nu) ** 2
+
+
+def interlayer_form(mat_name: str, orientation: PrintOrientation | None, sf: float = 1.0) -> np.ndarray:
+    """6×6 Q with FI_il = σ_Hᵀ Q σ_H = (σ_n/Zt)² + (τ/S)² on the layer plane (normal = build
+    direction b): traction t = σ b, σ_n = b·t, τ² = |t|² − σ_n²; divided by sf². Compression
+    counts like tension (smooth, conservative)."""
+    m = get_material(mat_name)
+    b = rotation_matrix(orientation)[:, 2]
+    idx = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
+    A = np.zeros((3, 6))                        # traction t = A σ_voigt
+    for I, (i, j) in enumerate(idx):
+        A[i, I] += b[j]
+        if i != j:
+            A[j, I] += b[i]
+    n = b @ A                                   # σ_n = n · σ_voigt
+    Q = np.outer(n, n) / m.Zt ** 2 + (A.T @ A - np.outer(n, n)) / m.S ** 2
+    return Q / sf ** 2
+
+
 # =========================================================================== domain
 
 

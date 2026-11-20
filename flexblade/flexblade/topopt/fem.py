@@ -75,6 +75,7 @@ class Level:
 
     def set_scales(self, s: torch.Tensor):
         self.s = s.to(self.dtype)
+        self.s64 = s.to(torch.float64)
         self.Kel = None
         sf = self.s.reshape(self.P, 1, self.ne)
         dk = self.l1Ke if self.l1 else self.diagKe
@@ -131,6 +132,17 @@ class Level:
                 ue = self.centered(ue)
             f = self.scatter(self.element_forces(ue)).to(u.dtype)
             out.append(f * self.free_f + ub * (1 - self.free_f))
+        return torch.cat(out, 0)
+
+    def matvec64(self, u):
+        """K u fully in float64 (outer PCG residual when MGSolver.exact_outer): the f32
+        operator's rounding otherwise bounds the attainable accuracy at ~cond × 6e-8."""
+        out = []
+        Kall = self.Ke64.reshape(self.P * 24, 24)
+        for i in range(0, u.shape[0], max(1, self.bchunk // 2)):
+            ub = u[i:i + max(1, self.bchunk // 2)]
+            f = self.scatter(self.element_forces(self.gather(ub), self.s64, Kall))
+            out.append(f * self.free_f.to(u.dtype) + ub * (1 - self.free_f.to(u.dtype)))
         return torch.cat(out, 0)
 
     def dense(self) -> torch.Tensor:
@@ -213,7 +225,8 @@ class MGSolver:
     def __init__(self, shape, h, Cs, fixed_nodes: np.ndarray, levels: int = 4, device=None,
                  op_dtype=torch.float32, nu: int = 2, omega_factor: float = 4.0 / 3.0,
                  mem_budget: float = 1.5e9, galerkin: bool = True,
-                 coarse_dtype=torch.float64):
+                 coarse_dtype=torch.float64, exact_outer: bool = True, mid_dtype=None):
+        self.exact_outer = exact_outer
         self.device = device or default_device()
         self.op_dtype = op_dtype
         self.levels = []
@@ -222,7 +235,8 @@ class MGSolver:
         h = np.asarray(h, float)
         for l in range(levels):
             self.levels.append(Level(shape, h, Cs, fixed, self.device,
-                                     op_dtype if l == 0 else coarse_dtype, mem_budget))
+                                     op_dtype if l == 0 else coarse_dtype if (l == levels - 1 or mid_dtype is None)
+                                     else mid_dtype, mem_budget))
             if l < levels - 1:
                 if (shape % 2).any():
                     raise ValueError(f"grid {shape} not divisible for {levels} levels")
@@ -266,6 +280,9 @@ class MGSolver:
         except RuntimeError:
             Kc = Kc + 1e-10 * torch.diagonal(Kc).mean() * torch.eye(len(Kc), device=Kc.device, dtype=Kc.dtype)
             self.Lc = torch.linalg.cholesky(Kc)
+        # explicit inverse: one GEMM per V-cycle instead of two triangular solves (slow in
+        # float64 on consumer GPUs); preconditioner accuracy is unaffected at this size
+        self.Kc_inv = torch.cholesky_inverse(self.Lc)
 
     def _coarsen(self, lev: Level, s=None) -> torch.Tensor:
         """Galerkin element matrices of the next level: K_E = Σ_children Pcᵀ K_child Pc
@@ -278,7 +295,7 @@ class MGSolver:
                 sc = s[:, ox::2, oy::2, oz::2].reshape(lev.P, nc).to(self.coarse_dtype)
                 out += torch.einsum("pe,pij->eij", sc, self.Q[ci])
             else:
-                K = lev.Kel.reshape(nx, ny, nz, 24, 24)[ox::2, oy::2, oz::2].reshape(nc, 24, 24)
+                K = lev.Kel.reshape(nx, ny, nz, 24, 24)[ox::2, oy::2, oz::2].reshape(nc, 24, 24).to(self.coarse_dtype)
                 out += self.Pc[ci].T @ K @ self.Pc[ci]
         return out
 
@@ -287,7 +304,7 @@ class MGSolver:
         if l == len(self.levels) - 1:
             B = r.shape[0]
             rr = r.reshape(B, -1).to(torch.float64).T
-            x = torch.cholesky_solve(rr, self.Lc).T.reshape(r.shape)
+            x = (self.Kc_inv @ rr).T.reshape(r.shape)
             return x.to(r.dtype)
         w = lev.omega
         x = w * lev.dinv * r
@@ -306,7 +323,10 @@ class MGSolver:
         return self.vcycle(r64.to(self.op_dtype)).to(torch.float64)
 
     def A64(self, x64):
-        return self.fine.matvec(x64.to(torch.float64))
+        x64 = x64.to(torch.float64)
+        if self.exact_outer and self.fine.dtype != torch.float64 and self.fine.Kel is None:
+            return self.fine.matvec64(x64)
+        return self.fine.matvec(x64)
 
     def solve(self, b, x0=None, tol: float = 1e-6, maxit: int = 400):
         """Batched PCG on K x = b; b (B,3,X,Y,Z) float64. Returns (x, iters, relres)."""
