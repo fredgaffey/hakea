@@ -117,6 +117,9 @@ class Flexure(_M):
     topology:
       skewed_cross_blade  two crossed blade flexures whose intersection line is the
                           virtual lag hinge, skewed by skew_deg (FACT: 1 rotational DOF)
+      skewed_cross_blade_sym  as skewed_cross_blade, but one set is split into two outer
+                          half-width plates either side of the other (symmetric "butterfly"
+                          cross-spring): no parasitic couple from the centrifugal load
       skewed_single_blade one thin blade flexure whose bending axis is skewed
       wire_triplet        3+ wire flexures whose lines intersect the hinge axis
                           (FACT constraint lines ⟂-free set) + optional tension member
@@ -125,8 +128,8 @@ class Flexure(_M):
       custom              use `members` as given
       rigid               rigid root (reference / baseline)
     """
-    topology: Literal["skewed_cross_blade", "skewed_single_blade", "wire_triplet",
-                      "integral_taper", "custom", "rigid"] = "skewed_cross_blade"
+    topology: Literal["skewed_cross_blade", "skewed_cross_blade_sym", "skewed_single_blade",
+                      "wire_triplet", "integral_taper", "custom", "rigid"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")

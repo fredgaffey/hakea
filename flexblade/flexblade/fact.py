@@ -145,6 +145,9 @@ def generate_members(design: Design) -> list[FlexureMember]:
         directions l± = cos(γ/2) x' ± sin(γ/2) ŷ (⟂ a), crossing at the hinge point,
         width along a; offset ±(w/2) along a so they do not intersect (Haringx
         cross-spring). Constraint lines: all lines in either plane → 5-system.
+    skewed_cross_blade_sym: as above but the "−" set is split into two half-width plates
+        either side of the full-width "+" plate (symmetric cross-spring; centrifugal load
+        produces no parasitic couple).
     skewed_single_blade: one plate, length along x' (⟂ a), width along a, centred on
         the hinge point. Constrains 3 (in-plane); bending about a is the hinge, plate
         twist and out-of-plane shear are the parasitic soft DOFs (centrifugal tension
@@ -183,6 +186,21 @@ def generate_members(design: Design) -> list[FlexureMember]:
             ldir = unit(ldir - a * (a @ ldir))
             c = H0 + sg * 0.5 * w * a
             out.append(plate(c, ldir, a, L))
+    elif topo == "skewed_cross_blade_sym":
+        # set "+" : one plate of width w centred on the hinge point; set "−": two plates of
+        # width w/2 centred at ±(w/2 + g + w/4) along a (g = 0.1 w clearance). Each set's
+        # resultant lies on the hinge point, so axial (centrifugal) load gives no couple.
+        g = np.radians(f.cross_angle_deg) / 2
+        gap = 0.1 * w
+        for sg in (1.0, -1.0):
+            ldir = np.cos(g) * xp + sg * np.sin(g) * np.array([0.0, 1.0, 0.0])
+            ldir = unit(ldir - a * (a @ ldir))
+            if sg > 0:
+                out.append(plate(H0, ldir, a, L))
+            else:
+                for side in (1.0, -1.0):
+                    m = plate(H0 + side * (0.75 * w + gap) * a, ldir, a, L)
+                    out.append(m.model_copy(update=dict(width=0.5 * w)))
     elif topo == "skewed_single_blade":
         out.append(plate(H0, xp, a, L))
     elif topo == "integral_taper":

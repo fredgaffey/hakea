@@ -35,10 +35,11 @@ DEPS = ("numpy scipy matplotlib numba pydantic neuralfoil aerosandbox scikit-fem
 
 def _ssh(host: str, cmd: str, timeout: float = 900, check: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", host, cmd],
-                          capture_output=True, text=True, timeout=timeout, check=check)
+                          capture_output=True, text=True, timeout=timeout, check=check,
+                          stdin=subprocess.DEVNULL)
 
 
-def bootstrap(host: str, python: str = "/opt/homebrew/bin/python3") -> None:
+def bootstrap(host: str, python: str = "/opt/homebrew/bin/python3", tag: str | None = None) -> None:
     """(Re)create the remote venv + package if the temp dir was wiped."""
     probe = _ssh(host, f"test -x {REMOTE_PY} && {REMOTE_PY} -c 'import flexblade' && echo ok",
                  check=False)
@@ -48,14 +49,25 @@ def bootstrap(host: str, python: str = "/opt/homebrew/bin/python3") -> None:
                    f"{python} -m venv venv; venv/bin/pip install -q --upgrade pip; "
                    f"venv/bin/pip install -q {DEPS}; venv/bin/pip install -q -e hakea/flexblade",
              timeout=1800)
-    sync(host)
+    sync(host, tag)
 
 
-def sync(host: str) -> None:
+def remote_pkg_parent(tag: str | None = None) -> str:
+    """Remote dir holding the `flexblade` package. tag=None: the shared clone (editable
+    install); a tag gives a private copy (several worktrees/agents can share the Mac
+    without overwriting each other's code), put first on PYTHONPATH."""
+    return f"{REMOTE_ROOT}/hakea/flexblade" if not tag else f"{REMOTE_ROOT}/pkg-{tag}"
+
+
+def sync(host: str, tag: str | None = None) -> None:
     """Push the local package source (incl. uncommitted edits) to the remote clone."""
-    dst = f"{host}:{REMOTE_ROOT}/hakea/flexblade/flexblade/"
+    parent = remote_pkg_parent(tag)
+    if tag:
+        _ssh(host, f"mkdir -p {parent}/flexblade", timeout=60)
+    dst = f"{host}:{parent}/flexblade/"
     subprocess.run(["rsync", "-a", "--delete", "--exclude", "__pycache__",
-                    f"{PKG_DIR}/", dst], check=True, capture_output=True, timeout=120)
+                    f"{PKG_DIR}/", dst], check=True, capture_output=True, timeout=120,
+                   stdin=subprocess.DEVNULL)
 
 
 # --------------------------------------------------------------------------- worker side
@@ -111,28 +123,68 @@ class HostPool:
 
     pool.map(fn_jobs) is not generic: it evaluates Designs. `imap(designs)` yields
     (index, record) in completion order; `map(designs)` returns records in order.
+    Safe to call repeatedly (e.g. once per optimiser generation) and from several
+    threads: each host has one persistent reader thread that routes results to the
+    call that submitted the job.
     """
 
     def __init__(self, hosts: str | list[tuple[str, int]] = "local", what: list[str] | None = None,
-                 full: bool = False, setup: bool = True):
+                 full: bool = False, setup: bool = True, tag: str | None = None):
+        """tag: private remote code dir (default env FLEXBLADE_REMOTE_TAG; None = shared clone)."""
         self.hosts = parse_hosts(hosts) if isinstance(hosts, str) else hosts
         self.what, self.full = what, full
+        self.tag = tag if tag is not None else (os.environ.get("FLEXBLADE_REMOTE_TAG") or None)
         self.procs: dict[str, subprocess.Popen] = {}
+        self._sem: dict[str, threading.Semaphore] = {}
+        self._dead: dict[str, threading.Event] = {}
+        self._inflight: dict[int, tuple[str, "queue.Queue", int]] = {}   # gid → host, results q, i
+        self._lock = threading.Lock()
+        self._wlock: dict[str, threading.Lock] = {}
+        self._gid = 0
         if setup:
             for name, _ in self.hosts:
                 if name != "local":
-                    bootstrap(name)
+                    bootstrap(name, tag=self.tag)
 
     def __enter__(self):
         for name, slots in self.hosts:
             if name == "local":
                 cmd = [sys.executable, "-m", "flexblade.remote", "--workers", str(slots)]
             else:
+                env = f"PYTHONPATH={remote_pkg_parent(self.tag)} " if self.tag else ""
                 cmd = ["ssh", "-o", "BatchMode=yes", name,
-                       f"{REMOTE_PY} -m flexblade.remote --workers {slots}"]
-            self.procs[name] = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                                stderr=subprocess.DEVNULL, text=True, bufsize=1)
+                       f"cd {REMOTE_ROOT} && {env}{REMOTE_PY} -m flexblade.remote --workers {slots}"]
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL, text=True, bufsize=1)
+            self.procs[name] = proc
+            self._sem[name] = threading.Semaphore(slots)
+            self._dead[name] = threading.Event()
+            self._wlock[name] = threading.Lock()
+            threading.Thread(target=self._reader, args=(name, proc), daemon=True).start()
         return self
+
+    def _reader(self, name: str, proc: subprocess.Popen) -> None:
+        for line in proc.stdout:
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            with self._lock:
+                ent = self._inflight.pop(rec.get("id"), None)
+            self._sem[name].release()
+            if ent is None:
+                continue
+            _, q, i = ent
+            rec["id"] = i
+            rec["host"] = name
+            q.put((i, rec))
+        self._dead[name].set()
+        with self._lock:      # host died: fail its in-flight jobs
+            lost = [(g, e) for g, e in self._inflight.items() if e[0] == name]
+            for g, _ in lost:
+                self._inflight.pop(g)
+        for _, (_, q, i) in lost:
+            q.put((i, {"id": i, "error": f"host {name} died", "host": name}))
 
     def __exit__(self, *exc):
         for p in self.procs.values():
@@ -154,57 +206,53 @@ class HostPool:
             jobs.put((i, dj))
         results: "queue.Queue[tuple[int, dict]]" = queue.Queue()
 
-        def drive(name: str, slots: int, proc: subprocess.Popen):
-            inflight: dict[int, dict] = {}
-            lock = threading.Lock()
-            done_reading = threading.Event()
-
-            def reader():
-                for line in proc.stdout:
-                    rec = json.loads(line)
-                    with lock:
-                        inflight.pop(rec["id"], None)
-                    rec["host"] = name
-                    results.put((rec["id"], rec))
-                    sem.release()
-                done_reading.set()
-
-            sem = threading.Semaphore(slots)
-            threading.Thread(target=reader, daemon=True).start()
-            while True:
-                sem.acquire()
-                if done_reading.is_set():
-                    break
+        def feed(name: str):
+            sem, dead, proc = self._sem[name], self._dead[name], self.procs[name]
+            while not dead.is_set():
+                if not sem.acquire(timeout=1.0):
+                    continue
                 try:
                     i, dj = jobs.get_nowait()
                 except queue.Empty:
                     sem.release()
-                    break
-                with lock:
-                    inflight[i] = dj
-                try:
-                    proc.stdin.write(json.dumps({"id": i, "design": dj, "what": self.what,
-                                                 "full": self.full}) + "\n")
-                    proc.stdin.flush()
-                except (BrokenPipeError, OSError):
-                    break
-            # wait for this host's in-flight jobs; if the host died, requeue them
-            while True:
-                with lock:
-                    left = dict(inflight)
-                if not left:
                     return
-                if done_reading.wait(timeout=1.0):
-                    for i, dj in left.items():
-                        results.put((i, {"id": i, "error": f"host {name} died", "host": name}))
+                with self._lock:
+                    self._gid += 1
+                    gid = self._gid
+                    self._inflight[gid] = (name, results, i)
+                try:
+                    with self._wlock[name]:
+                        proc.stdin.write(json.dumps({"id": gid, "design": dj, "what": self.what,
+                                                     "full": self.full}) + "\n")
+                        proc.stdin.flush()
+                except (BrokenPipeError, OSError):
+                    with self._lock:
+                        self._inflight.pop(gid, None)
+                    jobs.put((i, dj))            # let another host take it
+                    dead.set()
                     return
 
-        threads = [threading.Thread(target=drive, args=(n, s, self.procs[n]), daemon=True)
-                   for n, s in self.hosts]
+        threads = [threading.Thread(target=feed, args=(n,), daemon=True) for n, _ in self.hosts]
         for t in threads:
             t.start()
         for _ in range(len(designs)):
-            yield results.get()
+            while True:
+                try:
+                    yield results.get(timeout=5.0)
+                    break
+                except queue.Empty:
+                    if all(self._dead[n].is_set() for n, _ in self.hosts):
+                        raise RuntimeError("all hosts died")
+                    # jobs left behind by a host that died while feeding → serve them
+                    if not jobs.empty() and not any(t.is_alive() for t in threads):
+                        threads = [threading.Thread(target=feed, args=(n,), daemon=True)
+                                   for n, _ in self.hosts if not self._dead[n].is_set()]
+                        for t in threads:
+                            t.start()
+
+    def map_designs(self, designs: Iterable[Any]) -> list[dict]:
+        """Alias of `map`; marks this object as a Design mapper for optimize.run."""
+        return self.map(designs)
 
     def map(self, designs: Iterable[Any]) -> list[dict]:
         designs = list(designs)

@@ -32,7 +32,8 @@ def test_hinge_axis_sign(design):
         assert pitch / lag == pytest.approx(s * np.tan(d))
 
 
-@pytest.mark.parametrize("topo,dim,min_ratio", [("skewed_cross_blade", 5, 20), ("wire_triplet", 5, 20),
+@pytest.mark.parametrize("topo,dim,min_ratio", [("skewed_cross_blade", 5, 20), ("skewed_cross_blade_sym", 5, 20),
+                                                ("wire_triplet", 5, 20),
                                                 ("skewed_single_blade", 3, 1.5), ("integral_taper", 3, 1.5)])
 def test_layouts(design, topo, dim, min_ratio):
     d = design.model_copy(deep=True)
