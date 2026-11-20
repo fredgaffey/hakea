@@ -85,7 +85,12 @@ def _eval_job(job: dict) -> dict:
 def worker_main(workers: int) -> None:
     """stdin JSON-lines jobs → stdout JSON-lines results, as they complete."""
     import multiprocessing as mp
-    os.environ["FLEXBLADE_WORKER"] = "1"   # inherited by spawned pool processes
+    # serial kernels in every evaluating process (inherited by the spawned pool): the host's
+    # cores are filled by processes; threaded numba/BLAS on top oversubscribes (Mac load >100)
+    os.environ["FLEXBLADE_WORKER"] = "1"
+    for k in ("NUMBA_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+              "VECLIB_MAXIMUM_THREADS"):
+        os.environ[k] = "1"
     lock = threading.Lock()
     out = sys.stdout
 
@@ -151,7 +156,9 @@ class HostPool:
             if name == "local":
                 cmd = [sys.executable, "-m", "flexblade.remote", "--workers", str(slots)]
             else:
-                env = f"PYTHONPATH={remote_pkg_parent(self.tag)} " if self.tag else ""
+                slots = min(slots, 10)                    # shared Mac: ≤ 10 slots
+                env = "FLEXBLADE_WORKER=1 NUMBA_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
+                env += f"PYTHONPATH={remote_pkg_parent(self.tag)} " if self.tag else ""
                 cmd = ["ssh", "-o", "BatchMode=yes", name,
                        f"cd {REMOTE_ROOT} && {env}{REMOTE_PY} -m flexblade.remote --workers {slots}"]
             proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
