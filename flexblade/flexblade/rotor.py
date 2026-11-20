@@ -1369,11 +1369,16 @@ def strap_anchor_capacity(f) -> tuple[float, str]:
     return cap, f"epoxy pot τ={a['tau'] / 1e6:.0f} MPa, L={f.strap_pot_length * 1e3:.1f} mm"
 
 
-def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.ndarray):
+def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.ndarray,
+                  cable: bool = False):
     """Max stress utilisation, interlayer utilisation, max tensile strain, details, and the
     creep utilisation max(strain / creep_strain_allow) evaluated per fibre with that fibre's
     own material (a stiff rod near the neutral axis and a compliant matrix at the surface
-    are each judged against their own allowable)."""
+    are each judged against their own allowable).
+
+    cable=True (bought unbonded strand, not printed): the filaments follow the strand axis
+    whatever its deflected direction, so the strength is the along-fibre Xt (no off-axis
+    Hill knock-down from the print-orientation frame) and there is no interlayer check."""
     S = sec.stiffness6()
     eps = np.linalg.solve(S, s_force)
     out_static = out_il = 0.0
@@ -1385,13 +1390,13 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
         ex = eps[0] + fb.z * eps[4] - fb.y * eps[5]
         sig = fb.E * ex
         mat = get_material(fb.material)
-        Xa = _strength_along(fb, t_hat)
+        Xa = mat.Xt if cable else _strength_along(fb, t_hat)
         u1 = np.sqrt((sig / Xa) ** 2 + (tau / mat.S) ** 2)
         b = unit(fb.orientation.build_dir)
         c = float(abs(t_hat @ b))
         sn = sig * c * c
         til = abs(sig) * c * np.sqrt(max(0.0, 1 - c * c)) + tau
-        u2 = np.sqrt((max(sn, 0.0) / mat.Zt) ** 2 + (til / mat.S) ** 2)
+        u2 = 0.0 if cable else np.sqrt((max(sn, 0.0) / mat.Zt) ** 2 + (til / mat.S) ** 2)
         if u1 > out_static:
             out_static, det = u1, (sig, Xa, fb.material)
         out_il = max(out_il, u2)
@@ -1400,7 +1405,7 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
     return out_static, out_il, max_strain, det, creep_u
 
 
-def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float):
+def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cable: bool = False):
     S = sec.stiffness6()
     eps = np.linalg.solve(S.astype(complex), s_amp)
     best_e = best_s = 0.0
@@ -1408,7 +1413,7 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float):
         ex = abs(eps[0] + fb.z * eps[4] - fb.y * eps[5])
         mat = get_material(fb.material)
         sa = ex * fb.E * mat.storage_scale(freq_hz)
-        Xa = _strength_along(fb, t_hat)
+        Xa = mat.Xt if cable else _strength_along(fb, t_hat)
         best_e = max(best_e, ex / mat.fatigue_strain_amp_allow)
         best_s = max(best_s, sa / (mat.fatigue_stress_ratio * Xa))
     return best_e, best_s, float(np.max([abs(eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]))
@@ -1421,6 +1426,8 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
     groups: dict[str, dict] = {}
     used: dict[str, set] = {}
     fz = ss.Omega / (2 * np.pi)
+    cables = {k + 1: {f"flex{j}" for j, m in enumerate(bi.members) if m.cable}
+              for k, bi in enumerate(model.blades)}
     for i, (e, c) in enumerate(zip(fe.elements, sa.cr)):
         if e.kind in ("rigid", "spring") or e.massless:
             continue
@@ -1430,11 +1437,12 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
         g = groups.setdefault(name, dict(static=0.0, il=0.0, creep=0.0, fat_e=0.0, fat_s=0.0,
                                          strain=0.0, famp=0.0, det=None))
         t_hat = unit(st.x[e.n1] - st.x[e.n0])
+        is_cable = e.kind == "flexure" and name in cables.get(e.blade, ())
         fa, fb = element_end_forces(e, c)
         secs = [e.sections[0], e.sections[-1]]
         used.setdefault(name, set()).update(fb_.material for sec in secs for fb_ in sec.fibres)
         for sec, sf in zip(secs, (fa, fb)):
-            u_s, u_il, strain, det, u_cr = _fibre_checks(e, sec, sf, t_hat)
+            u_s, u_il, strain, det, u_cr = _fibre_checks(e, sec, sf, t_hat, is_cable)
             if u_s > g["static"]:
                 g["static"], g["det"] = u_s, det
             g["il"] = max(g["il"], u_il)
@@ -1444,7 +1452,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
             du = hd.U[_edofs(e)]
             fa_c, fb_c = element_end_forces_lin(e, c, du)
             for sec, sf in zip(secs, (fa_c, fb_c)):
-                ue, us, amp = _fibre_amp(sec, sf, t_hat, fz)
+                ue, us, amp = _fibre_amp(sec, sf, t_hat, fz, is_cable)
                 g["fat_e"] = max(g["fat_e"], ue)
                 g["fat_s"] = max(g["fat_s"], us)
                 g["famp"] = max(g["famp"], amp)
