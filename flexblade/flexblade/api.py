@@ -17,6 +17,11 @@ def _as_design(d: Design | dict) -> Design:
 def evaluate(design: Design | dict, what: list[str] | None = None) -> Results:
     design = _as_design(design)
     what = what or ["trim", "modes", "harmonic", "checks"]
+    from . import cache
+    kind = "api:" + ",".join(what)
+    hit = cache.get(design, kind)
+    if hit is not None:
+        return Results.model_validate(hit)
     t0 = time.perf_counter()
     if design.layout == "coaxial":
         from . import coaxial
@@ -25,6 +30,7 @@ def evaluate(design: Design | dict, what: list[str] | None = None) -> Results:
         from . import rotor  # noqa: WPS433
         res = rotor.evaluate(design, what)
     res.timings_s.setdefault("total", time.perf_counter() - t0)
+    cache.put(design, res.model_dump(mode="json"), kind)
     return res
 
 

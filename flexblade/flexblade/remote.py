@@ -262,10 +262,30 @@ class HostPool:
         return self.map(designs)
 
     def map(self, designs: Iterable[Any]) -> list[dict]:
+        """Host-side cache: look up, dispatch unique misses only, write back (errors not cached)."""
+        from . import cache
         designs = list(designs)
+        kind = f"remote:{','.join(self.what or [])}:{bool(self.full)}"
         out: list[dict | None] = [None] * len(designs)
-        for i, rec in self.imap(designs):
-            out[i] = rec
+        first: dict[str, int] = {}
+        misses: list[Any] = []
+        slots: list[list[int]] = []
+        for i, d in enumerate(designs):
+            hit = cache.get(d, kind)
+            if hit is not None:
+                out[i] = dict(hit, id=i)
+                continue
+            k = cache.make_key(d, kind)
+            if k not in first:
+                first[k] = len(misses)
+                misses.append(d)
+                slots.append([])
+            slots[first[k]].append(i)
+        for j, rec in self.imap(misses):
+            if isinstance(rec, dict) and "error" not in rec:
+                cache.put(misses[j], rec, kind)
+            for i in slots[j]:
+                out[i] = dict(rec, id=i)
         return out  # type: ignore[return-value]
 
 
