@@ -421,6 +421,38 @@ class OptimizeResult(_M):
     message: str = ""
 
 
+# --------------------------------------------------------------------------- vehicle sizing (optional layer)
+
+
+class BatterySpec(_M):
+    """Battery pack choice (see vehicle.CELLS for the per-chemistry data and its sources)."""
+    chemistry: Literal["lipo", "lihv", "liion_21700", "liion_21700_p50b", "liion_18650"] = "lipo"
+    S: int = Field(4, ge=2, le=8, description="cells in series")
+    P: int = Field(1, ge=1, le=8, description="cells in parallel (Li-ion cell packs)")
+    capacity_Ah: Optional[float] = Field(
+        None, description="pack capacity for lipo/lihv (pouch cells sized freely); ignored for "
+                          "Li-ion where capacity = P x cell capacity")
+    usable_fraction: Optional[float] = Field(None, description="override chemistry default")
+    overhead_frac: Optional[float] = Field(None, description="wiring/BMS/holders mass over cells")
+
+
+class VehicleSpec(_M):
+    name: str = "vehicle"
+    layout: Literal["single", "coaxial"] = "single"
+    diameter_in: float = 6.0
+    rotor: Optional[Design] = Field(
+        None, description="rotor Design (layout/vehicle_mass/motor overwritten by the sizing); "
+                          "None = vehicle.default_rotor(diameter_in, layout)")
+    battery: BatterySpec = BatterySpec()
+    payload_kg: float = 0.0
+    emf_frac: float = Field(0.57, description="hover back-EMF / mid-SoC loaded supply voltage; "
+                                              "motor kv is chosen to meet it")
+    ctrl_mod_typ: float = Field(0.3, description="typical cyclic 1/rev torque amplitude / mean torque")
+    max_mod_frac: float = Field(1.0, description="cap on pulse amplitude/mean torque (no reversal)")
+    thrust_derate: float = Field(1.0, description="actual/BEM thrust (0.77 = BEM 23 % optimistic)")
+    mass_overrides: dict[str, float] = Field(default_factory=dict, description="kg, by budget key")
+
+
 Coaxial.model_rebuild()
 CoaxialResult.model_rebuild()
 Results.model_rebuild()
