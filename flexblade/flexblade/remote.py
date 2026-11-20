@@ -109,8 +109,16 @@ def worker_main(workers: int) -> None:
             pending.append(pool.apply_async(_eval_job, (job,), callback=emit,
                                             error_callback=lambda e, j=job: emit(
                                                 {"id": j["id"], "error": repr(e)})))
+        # stdin EOF: normally the host closed it with nothing pending. If our parent died (host
+        # killed → we are reparented to init), drop queued work instead of finishing it as an
+        # orphan that oversubscribes the machine (seen 2026-11-21: 20 orphan workers for 75 min).
+        ppid0 = os.getppid()
         for p in pending:
-            p.wait()
+            while not p.ready():
+                if os.getppid() != ppid0 or os.getppid() == 1:
+                    pool.terminate()
+                    return
+                p.wait(1.0)
 
 
 # --------------------------------------------------------------------------- client side
