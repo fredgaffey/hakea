@@ -52,6 +52,9 @@ STOCK_SLEW = 160.0
 RES_BAND = 0.15
 SPLIT_MAX = 2.0
 FAIL = 1.0e6
+# reported but never a feasibility violation: root height is already paid for through
+# root drag -> hover power -> motor thermal; the 2x-airfoil envelope is a rule of thumb.
+SOFT_CHECKS = {"root_envelope"}
 CONCEPTS = presets.CONCEPTS + ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
                                "skewed_cruciform", "tt_strap", "tt_strap_xplate", "tt_strap_steelx")
 SIZES = presets.SIZES_IN
@@ -308,7 +311,7 @@ def metrics(d: Design, r: dict) -> dict:
             util[k2] = max(util.get(k2, 0.0), u)
     out["util"] = util
     for k, u in util.items():
-        if not k.startswith("member:") and u > 1:
+        if not k.startswith("member:") and k not in SOFT_CHECKS and u > 1:
             viol["check:" + k] = math.log(u)
     splits, margins, which = [], [], []
     for tag, sub in _sub_results(r):
