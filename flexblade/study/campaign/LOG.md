@@ -54,3 +54,9 @@ Idea backlog (unscreened):
 - HELPERS: tt_strap (opus); beam vs ccx 1.8× gap on crossed plates (sonnet).
 - COMPUTE: robust ideal seeds 1–6 running (5/7/10"), both machines.
 - 4" preset is thermally pulse-limited (real); preset test now checks electrical headroom only.
+
+## 2026-11-21 ~02:10 — iteration 4 (cron)
+- ROBUST IDEAL (seed1, gen ~38, min cr over 0.7–1.4× thrust): 10" 0.174 (bind: flap-antisym resonance 1.15/rev), 7" 0.090 (bind: motor_thermal 0.89), 5" 0.017 (bind: motor_thermal 0.99). ⇒ robustly, bigger rotors win; small rotors are THERMALLY limited, not flexure-limited.
+- REVIEW / I16 MOTOR CONSTANT: pulse copper = ΔQ²/(2·Km²) with Km = Kt/√R (motor constant, ~∝ stator volume). For a thermally-bound design the lever is Km per gram and Rth (cooling), not the flexure. Actions: (a) Fred to measure Rth on Hakea (thermocouple after 2 min hover) — the 5"/7" verdict hinges on it; (b) add motor choice (Km/mass from MOTOR_LIBRARY) as a design variable; (c) consider motor cooling (bell vents / prop-wash duct) as a design lever.
+- I17 FLAP RESONANCE @10": flap-antisym mode at 1.15/rev binds — flap stiffness/hinge offset is a free knob in the ideal; check whether real strap designs can place it ≥1.3/rev.
+- Helpers: tt_strap (opus), beam-vs-ccx crossed plates (sonnet) running. Load: laptop 31/32, Mac ~13/10.
