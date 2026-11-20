@@ -278,16 +278,34 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 ids.append(fe.add_element(Element(nodes[i], nodes[i + 1], e2, secs, msecs, fr, tag=tag,
                                                   kind="flexure", blade=k)))
             member_elems[tag] = ids
+            # member-end anchorage on the printed fittings (zero-length punch springs)
+            n_in, n_out = nodes[0], nodes[-1]
+            anc = an.member_anchorage
+            if m.kind != "rigid" and anc != "none":
+                from .anchorage import end_spring
+                from .geometry import HUB_MATERIAL
+                mo = _rot_orient(m.orientation, Rk)
+                F = np.column_stack([e1, e2, e3])
+                ends = [("hub", HUB_MATERIAL, None)]
+                if anc == "both":
+                    ends.append(("blade", b.layup.material, _rot_orient(b.orientation, Rk)))
+                for side, fmat, fo in ends:
+                    Ka = end_spring(m, mo, e1, e2, e3, fmat, fo)
+                    nd = nodes[0] if side == "hub" else nodes[-1]
+                    s_node = fe.add_node(fe.X0[nd].copy(), f"{tag}.anc_{side}")
+                    pair = (s_node, nd) if side == "hub" else (nd, s_node)
+                    fe.add_element(Element(*pair, np.zeros(3), [], tag=f"{tag}.anc_{side}",
+                                           kind="spring", blade=k, spring_K=Ka, spring_frame=F))
+                    if side == "hub":
+                        n_in = s_node
+                    else:
+                        n_out = s_node
             # spokes and connectors (stiff, massless)
-            if np.linalg.norm(p0) > 1e-9:
-                pending_stiff.append((hub, nodes[0], np.array([0.0, 0.0, 1.0]), f"b{k}.spoke{j}", k))
-            else:
-                # member starts at the hub centre: merge by a very short stiff link
-                pending_stiff.append((hub, nodes[0], np.array([0.0, 0.0, 1.0]), f"b{k}.spoke{j}", k))
+            pending_stiff.append((hub, n_in, np.array([0.0, 0.0, 1.0]), f"b{k}.spoke{j}", k))
             if np.linalg.norm(p1 - fe.X0[master]) > 1e-9:
-                pending_stiff.append((nodes[-1], master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn{j}", k))
+                pending_stiff.append((n_out, master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn{j}", k))
             else:
-                pending_stiff.append((nodes[-1], master, None, f"b{k}.conn{j}", k))
+                pending_stiff.append((n_out, master, None, f"b{k}.conn{j}", k))
         H0, a = fact.hinge_axis(design, k)
         if ideal_hinge is not None:
             A = fe.add_node(Rk @ H0, f"b{k}.hingeA")

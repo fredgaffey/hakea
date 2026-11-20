@@ -260,6 +260,10 @@ class AnalysisOptions(_M):
     nonlinear_static: bool = True
     n_modes: int = 8
     fatigue_cycles: float = 1.0e7
+    member_anchorage: Literal["both", "hub", "none"] = Field(
+        "both", description="flexure member ends: elastic punch-on-fitting anchorage springs "
+        "(anchorage.py) at both ends, hub end only (CalculiX root-stiffness basis: blade side "
+        "rigid), or rigid links (pre-2026-11 behaviour)")
 
 
 class InflowProfile(_M):
