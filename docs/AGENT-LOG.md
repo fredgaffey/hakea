@@ -11,3 +11,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | haiku-5-5 | general-purpose | Lean test: count conflict markers | base-cost test: general-purpose+haiku, 38k ctx | 38k / 2 calls | green: yes |
 | 2026-11-20 | haiku-5-5 | lean | Lean test: count conflict markers | base-cost test: lean+haiku, 9.3k ctx | 9k / 2 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | Diagnose hinge stiffness mismatch | ccx test bound stale (rigid fitting ca47135); found beam 3.4x stiffer than ccx | 20k / 12 calls | green: yes |
+| 2026-11-20 | sonnet-5-5 | lean | Real allowables + temp derating | temp derating + hdt check; brand creep/fatigue all class defaults; winner util up to 0.94 at 40C | 60k / 29 calls | green: yes |
