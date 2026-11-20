@@ -348,6 +348,11 @@ def metrics(d: Design, r: dict) -> dict:
     s = r.get("summary") or {}
     h = r.get("harmonic") or {}
     out["control_ratio"] = float(s.get("control_ratio", h.get("control_ratio", 0.0)) or 0.0)
+    if s.get("trim_ok") is False or not math.isfinite(out["control_ratio"]):
+        # no valid trim (e.g. elastic pitch collapse): infeasible, never a NaN objective
+        out["control_ratio"] = 0.0
+        viol["trim_failed"] = 1.0
+        out["feasible"] = False
     out["tilt_equiv_deg"] = float(h.get("tilt_equiv_deg", float("nan")))
     out["pitch_amp_deg"] = float(s.get("pitch_amp_deg", float("nan")))
     out["lag_amp_deg"] = float(s.get("lag_amp_deg", float("nan")))
