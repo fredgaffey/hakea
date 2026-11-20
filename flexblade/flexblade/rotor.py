@@ -156,7 +156,16 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     ideal_hinge: optional dict(k_hinge, k_rot, k_trans) replacing the flexure by a
     zero-length spring at the hinge point (soft rotation k_hinge about the skewed hinge
     axis, k_rot about the other two axes, k_trans in translation) — the ideal skewed pin
-    hinge reference (validation / Hakea as built)."""
+    hinge reference (validation / Hakea as built).
+    ideal_hinge may instead carry a full "K6" (6×6 at the hinge point, blade-1 frame H,
+    [u; θ] → [f; m]) and optional "mass", "com", "inertia" (lumped on the blade side) — any
+    flexure given its stiffness. Flexure.topology == "topopt" builds this from
+    design.flexure.topopt."""
+    if ideal_hinge is None and design.flexure.topology == "topopt":
+        tp = design.flexure.topopt
+        if tp is None:
+            raise ValueError("flexure.topology == 'topopt' needs flexure.topopt (run `flexblade topopt`)")
+        ideal_hinge = dict(K6=tp.K6, mass=tp.mass, com=tp.com, inertia=tp.inertia)
     an = design.analysis
     b = design.blade
     R = b.radius
@@ -218,6 +227,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     max_GJ = max(s[0].GJ for s in blade_secs)
 
     blades: list[BladeInfo] = []
+    full_springs: list = []
     pending_stiff: list[tuple[int, int, np.ndarray, str, int]] = []
     nfe = max(1, an.n_flexure_elements)
     for k in range(1, B + 1):
@@ -280,14 +290,36 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             A = fe.add_node(Rk @ H0, f"b{k}.hingeA")
             pending_stiff.append((hub, A, np.array([0.0, 0.0, 1.0]), f"b{k}.spoke0", k))
             kh = ideal_hinge
-            Ks = np.diag([kh.get("k_trans", 1e7)] * 3 + [kh["k_hinge"], kh.get("k_rot", 1e4), kh.get("k_rot", 1e4)])
-            frame = np.column_stack([Rk @ a, Rk @ np.array([0.0, 1.0, 0.0]), np.zeros(3)])
+            if "K6" in kh:
+                # full 6×6 in blade-1 frame H; blade k even: mirror z → −z (translations
+                # diag(1,1,−1), rotations (pseudo-vector) diag(−1,−1,1)); then rotate by Rk
+                D = np.diag([1.0, 1, -1, -1, -1, 1]) if k % 2 == 0 else np.eye(6)
+                Ks = D @ np.asarray(kh["K6"], float) @ D
+                Ks = 0.5 * (Ks + Ks.T)
+                frame = np.column_stack([Rk[:, 0], Rk[:, 1], Rk[:, 2]])
+            else:
+                Ks = np.diag([kh.get("k_trans", 1e7)] * 3 + [kh["k_hinge"], kh.get("k_rot", 1e4), kh.get("k_rot", 1e4)])
+                frame = np.column_stack([Rk @ a, Rk @ np.array([0.0, 1.0, 0.0]), np.zeros(3)])
             B_node = master
             if np.linalg.norm(fe.X0[master] - Rk @ H0) > 1e-9:
                 B_node = fe.add_node(Rk @ H0, f"b{k}.hingeB")
                 pending_stiff.append((B_node, master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn0", k))
-            fe.add_element(Element(A, B_node, np.zeros(3), [], tag=f"b{k}.hinge", kind="spring", blade=k,
-                                   spring_K=Ks, spring_frame=frame))
+            ie = fe.add_element(Element(A, B_node, np.zeros(3), [], tag=f"b{k}.hinge", kind="spring",
+                                        blade=k, spring_K=Ks, spring_frame=frame))
+            if "K6" in kh:
+                full_springs.append((k, ie, Ks.copy()))
+            if kh.get("mass", 0.0) > 0.0:
+                Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
+                c = Rk @ (Mt @ np.asarray(kh.get("com", H0), float)) - fe.X0[master]
+                Ic = Rk @ Mt @ np.asarray(kh.get("inertia", np.zeros((3, 3))), float) @ Mt @ Rk.T
+                m_ = float(kh["mass"])
+                S = skew(c)
+                Mn = np.zeros((6, 6))
+                Mn[:3, :3] = m_ * np.eye(3)
+                Mn[:3, 3:] = -m_ * S
+                Mn[3:, :3] = m_ * S
+                Mn[3:, 3:] = Ic + m_ * ((c @ c) * np.eye(3) - np.outer(c, c))
+                fe.add_lumped_inertia(master, Mn)
         blades.append(BladeInfo(k=k, psi0=psi0, Rk=Rk, master=master, chain_nodes=chain,
                                 chain_r=r_chain, aero_nodes=chain[n_sh:], aero_r=r_aero,
                                 blade_elems=blade_elems, member_elems=member_elems, members=mem_H,
@@ -304,7 +336,35 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     fe.prepare()
     model = RotorModel(design, fe, hub, blades, r_aero, b.elastic_axis_chord_frac,
                        st_r, st_chord, st_twist, warnings)
+    if full_springs:
+        _compensate_links(model, full_springs)
     return model
+
+
+def _compensate_links(model: RotorModel, springs) -> None:
+    """A full-6×6 spring (ideal_hinge["K6"]) sits in series with the stiff spoke from the
+    hub node to the hinge point (STIFF_FACTOR × the stiffest section, not rigid): ~5–10 %
+    extra compliance on a stiff flexure. Remove it so flexure_stiffness() at the hinge point
+    returns the stored K6: C_spring = C_target − C_link, C_link = C_measured − C_spring (one
+    linear pass, exact since the link compliance does not depend on the spring)."""
+    fe = model.fe
+    for k, ie, Ks0 in springs:
+        el = fe.elements[ie]
+        Q = np.zeros((6, 6))
+        Q[:3, :3] = Q[3:, 3:] = el.E0
+        Kt = Q @ Ks0 @ Q.T
+        Km = flexure_stiffness(model, blade=k)
+        C_link = np.linalg.inv(Km) - np.linalg.inv(Kt)
+        Cs = np.linalg.inv(Kt) - C_link
+        Cs = 0.5 * (Cs + Cs.T)
+        if np.linalg.eigvalsh(Cs).min() <= 0:
+            model.warnings.append(f"blade {k}: 6×6 spring stiffer than its stiff links; not compensated")
+            continue
+        Kn = Q.T @ np.linalg.inv(Cs) @ Q
+        Kn = 0.5 * (Kn + Kn.T)
+        el.spring_K = Kn
+        el.K7[1:, 1:] = Kn
+    fe._pack = None                     # batched-kernel cache holds the element K7s
 
 
 def _merge_nodes(fe: FEModel, merges, blades) -> None:
@@ -320,6 +380,7 @@ def _merge_nodes(fe: FEModel, merges, blades) -> None:
         return n
     for e in fe.elements:
         e.n0, e.n1 = f(e.n0), f(e.n1)
+    fe.lumped = [(f(n), Mn) for n, Mn in fe.lumped]
     for bi in blades:
         bi.master = f(bi.master)
         bi.chain_nodes = [f(n) for n in bi.chain_nodes]

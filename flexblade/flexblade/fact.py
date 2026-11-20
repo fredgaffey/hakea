@@ -241,7 +241,7 @@ def generate_members(design: Design) -> list[FlexureMember]:
                                  orientation=bar_ori))
         if f.bar_with_plate:
             out.append(plate(H0, xp, a, L))
-    elif topo == "custom":
+    elif topo in ("custom", "topopt"):
         out.extend(f.members)
     elif topo == "rigid":
         r1 = H0[0] + 0.5 * L

@@ -187,6 +187,34 @@ def cmd_export(a, out):
     out.emit({"path": str(p or path), "fmt": a.fmt, "design_hash": d.hash()})
 
 
+def cmd_topopt(a, out):
+    from .topopt import TopoptOptions, optimise
+    d = _design_arg(a.design)
+    if a.set:
+        d = uc.set_values(d, uc.parse_assignments(a.set))
+    kw = json.loads(a.options) if a.options else {}
+    for k in ("n_elem", "h", "max_iter", "envelope", "device", "volfrac", "k_hinge_target",
+              "stretch_limit", "min_feature"):
+        v = getattr(a, k, None)
+        if v is not None:
+            kw[k] = v
+    if a.overhang:
+        kw["overhang"] = True
+    opts = TopoptOptions(**kw)
+
+    def progress(rec):
+        if a.progress:
+            print(json.dumps({k: rec[k] for k in ("it", "beta", "f0", "k_axis", "change", "time")}),
+                  file=sys.stderr)
+
+    s = optimise(d, a.out, opts, validate=not a.no_validate, evaluate=a.evaluate, callback=progress)
+    s.pop("result", None)
+    dt = s.pop("design_topopt")
+    s["design_topopt_path"] = str(Path(a.out) / "design_topopt.json")
+    s["design_topopt_hash"] = dt.hash()
+    out.emit(s)
+
+
 def cmd_sweep(a, out):
     d = _design_arg(a.design)
     if not a.var:
@@ -334,6 +362,27 @@ def build_parser() -> argparse.ArgumentParser:
                                    "remote code synced by rsync into /tmp/flexblade-work")
     s.add_argument("--progress", action="store_true")
     s.set_defaults(fn=cmd_sweep)
+
+    s = sub.add_parser("topopt", parents=[common],
+                       help="3D multi-material topology optimisation of the flexure (GPU)")
+    s.add_argument("design", help=D)
+    s.add_argument("--out", required=True, help="output directory (STL/STEP/PNG/JSON)")
+    s.add_argument("--n-elem", dest="n_elem", type=int, help="target voxel count (default 1e5)")
+    s.add_argument("--h", type=float, help="voxel size, m (overrides --n-elem)")
+    s.add_argument("--max-iter", dest="max_iter", type=int)
+    s.add_argument("--envelope", choices=["box", "airfoil"])
+    s.add_argument("--device", help="cuda | cpu (default: cuda if available)")
+    s.add_argument("--volfrac", type=float)
+    s.add_argument("--k-hinge-target", dest="k_hinge_target", type=float, help="N m/rad")
+    s.add_argument("--stretch-limit", dest="stretch_limit", type=float, help="m")
+    s.add_argument("--min-feature", dest="min_feature", type=float, help="m")
+    s.add_argument("--overhang", action="store_true", help="Langelaar overhang filter")
+    s.add_argument("--options", help="JSON dict of TopoptOptions fields")
+    s.add_argument("--set", action="append", default=[], metavar="PATH=VALUE")
+    s.add_argument("--no-validate", action="store_true", help="skip the P2-tet re-analysis")
+    s.add_argument("--evaluate", action="store_true", help="run rotor 1/rev analysis on the result")
+    s.add_argument("--progress", action="store_true", help="JSON progress lines on stderr")
+    s.set_defaults(fn=cmd_topopt)
 
     s = sub.add_parser("digest", parents=[common], help="text digest of a Results JSON")
     s.add_argument("results", nargs="?", default="-")
