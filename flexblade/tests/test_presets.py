@@ -41,6 +41,6 @@ def test_presets_hover_feasible(D):
     t = AeroModel(d).trim()
     assert 0.55 < t.FoM < 0.85
     assert t.mach[-1] < 0.6
-    c = capability(d.motor, t.rpm, t.Q)
+    c = capability(d.motor, t.rpm, t.Q, thermal=False)   # electrical headroom; 4" is thermally pulse-limited (real)
     assert c.back_emf < 0.8 * c.V_max
     assert c.dQ_max_1p > 0.3 * t.Q      # can pulse ≥ ±30 % of hover torque
