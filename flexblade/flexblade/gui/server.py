@@ -50,7 +50,9 @@ STATIC = Path(__file__).parent / "static"
 KEEL = Path(__file__).resolve().parents[1] / "keel"
 
 DEFAULT_CORS = ["http://127.0.0.1:8787", "http://localhost:8787"]
-MEDIA = {"glb": "model/gltf-binary", "stl": "model/stl", "step": "model/step", "json": "application/json"}
+MEDIA = {"glb": "model/gltf-binary", "stl": "model/stl", "step": "model/step", "json": "application/json",
+         "stl_parts": "application/zip", "3mf": "application/zip"}
+DIR_FORMATS = {"stl_parts", "3mf"}   # exporters write a directory; served zipped
 
 
 def _cors_origins(extra: list[str] | None) -> list[str]:
@@ -289,6 +291,11 @@ def create_app(cors_origins: list[str] | None = None) -> FastAPI:
         fname = f"{d.name or 'flexblade'}.{fmt}"
         try:
             p = api.export_geometry(d, fmt, str(Path(td) / fname))
+            if fmt in DIR_FORMATS:
+                import shutil
+                zbase = str(Path(td) / f"{d.name or 'flexblade'}_{fmt}")
+                p = shutil.make_archive(zbase, "zip", root_dir=str(p or Path(td) / fname))
+                fname = Path(p).name
         except Exception as e:  # noqa: BLE001
             raise _err(e, 500) from e
         return FileResponse(p or str(Path(td) / fname), media_type=MEDIA[fmt], filename=fname,

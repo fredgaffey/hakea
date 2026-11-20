@@ -143,8 +143,8 @@ def generate_members(design: Design) -> list[FlexureMember]:
 
     skewed_cross_blade : two plates, planes both containing the hinge axis a, length
         directions l± = cos(γ/2) x' ± sin(γ/2) ŷ (⟂ a), crossing at the hinge point,
-        width along a; offset ±(w/2) along a so they do not intersect (Haringx
-        cross-spring). Constraint lines: all lines in either plane → 5-system.
+        width along a; offset ±(w + cross_gap)/2 along a so they do not touch or fuse when
+        printed (Haringx cross-spring). Constraint lines: all lines in either plane → 5-system.
     skewed_single_blade: one plate, length along x' (⟂ a), width along a, centred on
         the hinge point. Constrains 3 (in-plane); bending about a is the hinge, plate
         twist and out-of-plane shear are the parasitic soft DOFs (centrifugal tension
@@ -181,7 +181,7 @@ def generate_members(design: Design) -> list[FlexureMember]:
         for sg in (1.0, -1.0):
             ldir = np.cos(g) * xp + sg * np.sin(g) * np.array([0.0, 1.0, 0.0])
             ldir = unit(ldir - a * (a @ ldir))
-            c = H0 + sg * 0.5 * w * a
+            c = H0 + sg * 0.5 * (w + f.cross_gap) * a
             out.append(plate(c, ldir, a, L))
     elif topo == "skewed_single_blade":
         out.append(plate(H0, xp, a, L))
