@@ -183,7 +183,7 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
             thickness=0.0005 * sc, width=0.020 * sc, bar_length=0.020 * sc, cross_angle_deg=90.0,
             cruciform_rod_diameter=0.0, strap_strands=4, strap_strand_diameter=0.0006 * sc,
             strap_radius=0.0007 * sc, strap_material="aramid_yarn", strap_anchor="pin_wrap",
-            strap_pin_diameter=0.003 * sc, axial_release=True))))
+            strap_pin_diameter=0.003 * sc, axial_release=True, pre_lag_deg="auto", pre_lag_axis="pitch"))))
     if concept == "tt_strap_xplate":
         # strap + released crossed plates: PA6-CF plates printed with the build direction along
         # the hinge axis a (layers ⟂ a, rasters along the plate length → bending stress in-layer),
@@ -209,7 +209,7 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
             cross_gap=0.0012 * sc, cruciform_rod_diameter=0.0, strap_strands=1,
             strap_strand_diameter=0.0007 * sc, strap_radius=0.0, strap_length=0.004 * sc,
             strap_material="aramid_yarn", strap_anchor="pin_wrap", strap_pin_diameter=0.003 * sc,
-            axial_release=True))))
+            axial_release=True, pre_lag_deg="auto", pre_lag_axis="pitch"))))
     if concept in ("tpu_split", "tpu95_split"):
         # split load path: TPU plate hinge (bending) + radial CF rod through the hinge point
         # (centrifugal load); PA6-CF blade

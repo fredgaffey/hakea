@@ -204,6 +204,20 @@ class Flexure(_M):
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")
+    pre_lag_deg: float | Literal["auto"] = Field(
+        0.0, description="built-in rotation of the blade-side geometry (fitting + blade) about "
+        "each blade's own (mirrored) skewed hinge axis relative to the unstressed flexure, deg, "
+        "lag-positive: both blades get the same lag, opposite pitch. 'auto' = solved at the "
+        "reference op (pre_lag_ref_mass) so the trimmed hover blade-1 vs blade-2 pitch split "
+        "(elastic + preset) is zero")
+    pre_lag_axis: Literal["hinge", "pitch"] = Field(
+        "hinge", description="pre_lag_deg rotates the blade side about the skewed hinge axis "
+        "(lag + pitch; the centrifugal pendulum restores most of it when k_hinge << K_cf) or "
+        "'pitch': only its pitch component (preset blade pitch about the span axis, ±ψ·sin s "
+        "per blade, no lag/CG shift) — cancels a throttle-invariant split directly")
+    pre_lag_ref_mass: Optional[float] = Field(
+        None, description="pre_lag_deg='auto': vehicle mass of the op it is solved at, kg "
+        "(None = op.vehicle_mass); robust variants pin it to the nominal mass")
     length: float = Field(0.008, description="flexure active length, m")
     thickness: float = Field(0.0012, description="member thickness, m")
     width: float = Field(0.008, description="member width, m")
