@@ -9,9 +9,48 @@ export function maxUtil(r) {
   return (r.checks || []).reduce((m, c) => Math.max(m, c.utilisation), -Infinity);
 }
 
+function coaxialSummary(box, r) {
+  const c = r.coaxial;
+  box.append(el('h3', {}, 'Coaxial totals'), el('div.kpis', {},
+    kpi('control ratio (both pulsed)', fmt(c.control_ratio, 3)),
+    kpi('control moment max', fmt(c.control_moment_max * 1e3, 3), 'mN·m'),
+    kpi('yaw authority', fmt(c.yaw_authority * 1e3, 3), 'mN·m'),
+    kpi('net yaw torque', fmt(c.yaw_torque_net * 1e3, 3), 'mN·m', Math.abs(c.yaw_torque_net) > 0.2 * Math.abs(c.yaw_authority) ? 'bad' : ''),
+    kpi('thrust total', fmt(c.thrust_total, 3), 'N'),
+    kpi('power total', fmt(c.power_total, 3), 'W'),
+    kpi('rpm upper / lower', `${fmt(c.rpm_upper, 5)} / ${fmt(c.rpm_lower, 5)}`),
+    kpi('thrust share upper', fmt(c.thrust_share_upper, 3)),
+    kpi('FM (system)', fmt(c.figure_of_merit, 3)),
+    kpi('interference power ×', fmt(c.interference_power_factor, 3)),
+    kpi('2P combined', fmt(c.moment_2p_combined * 1e3, 3), 'mN·m'),
+  ));
+  const row = (k, f) => el('tr', {}, el('td.l', {}, k), el('td.r', {}, f(c.upper)), el('td.r', {}, f(c.lower)));
+  const mu = (x) => fmt(maxUtil(x), 3);
+  box.append(el('h3', {}, 'Per rotor'), el('table.t', {},
+    el('thead', {}, el('tr', {}, el('th', {}, ''), el('th.r', {}, 'upper'), el('th.r', {}, 'lower'))),
+    el('tbody', {},
+      row('rpm', (x) => fmt(x.trim?.rpm, 5)), row('thrust [N]', (x) => fmt(x.trim?.thrust, 3)),
+      row('power [W]', (x) => fmt(x.trim?.power, 3)), row('torque [mN·m]', (x) => fmt((x.trim?.torque ?? NaN) * 1e3, 3)),
+      row('collective [°]', (x) => fmt(x.trim?.collective_deg, 3)),
+      row('hub moment [mN·m]', (x) => fmt((x.harmonic?.hub_moment_mean ?? NaN) * 1e3, 3)),
+      row('moment phase [°]', (x) => fmt(x.harmonic?.hub_moment_phase_deg, 3)),
+      row('control ratio', (x) => fmt(x.harmonic?.control_ratio, 3)),
+      row('max utilisation', mu))));
+}
+
 export function renderSummary(box, r) {
   box.replaceChildren();
   if (!r) { box.append(el('p.empty', {}, 'Evaluate to see results.')); return; }
+  if (r.coaxial) {
+    coaxialSummary(box, r);
+    if (r.summary && Object.keys(r.summary).length) {
+      box.append(el('h3', {}, 'Summary'), el('table.t', {}, el('tbody', {},
+        ...Object.entries(r.summary).map(([k, v]) => el('tr', {}, el('td.l', {}, k), el('td.r', {}, fmt(v)))))));
+    }
+    if (r.warnings?.length) box.append(el('h3', {}, 'Warnings'), el('ul.warnings', {}, ...r.warnings.map((w) => el('li', {}, w))));
+    box.append(el('div.hint', {}, `design ${r.design_hash} · model ${r.model_version} · coaxial (use the rotor switch on Checks/Campbell/Harmonic)`));
+    return;
+  }
   const t = r.trim, h = r.harmonic;
   const mu = maxUtil(r);
   const nfail = (r.checks || []).filter((c) => c.utilisation > 1).length;

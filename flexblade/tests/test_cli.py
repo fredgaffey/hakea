@@ -166,3 +166,12 @@ def test_subprocess_stdout_is_pure_json(tmp_path):
     assert r.returncode == 0, r.stderr
     assert json.loads(r.stdout)["digest"]
     assert "FAKE backend" in r.stderr
+
+
+def test_coaxial_digest_and_compact(capfd):
+    code, out, _ = run(capfd, "evaluate", PRESET, "--set", "layout=coaxial", "--digest")
+    d = one_json(out)["digest"]
+    assert "COAXIAL TOTALS" in d and "UPPER ROTOR" in d and "LOWER ROTOR" in d and "yaw_authority" in d
+    code, out, _ = run(capfd, "evaluate", PRESET, "--set", "layout=coaxial", "--compact")
+    r = one_json(out)
+    assert "nodes" not in r["coaxial"]["lower"]["harmonic"] and r["coaxial"]["rpm_lower"] > 0

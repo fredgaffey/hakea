@@ -1,6 +1,6 @@
 // flexblade GUI entry point: state, wiring between panels, viewport and server.
 //
-// URL parameters: ?preset=NAME  &eval=1 (evaluate on load)  &tab=campbell  &theme=light|dark
+// URL parameters: ?preset=NAME  &set=path=value (repeatable)  &eval=1 (evaluate on load)  &tab=campbell  &theme=light|dark
 
 import { $, $$, el, clone, setPath, diff, debounce, fmt, toast, download, utilColour } from './util.js';
 import { api } from './api.js';
@@ -110,9 +110,19 @@ function ensureViewer() {
   return viewerPromise;
 }
 
+/** Harmonic fields per rotor slot for the viewer. */
+function harmonicsOf(r) {
+  if (!r) return {};
+  if (r.coaxial) return { upper: r.coaxial.upper?.harmonic, lower: r.coaxial.lower?.harmonic };
+  return { main: r.harmonic };
+}
+const hasNodes = (r) => Object.values(harmonicsOf(r)).some((h) => h?.nodes);
+
 function partUtilColour(part) {
-  const checks = S.results?.checks || [];
-  const name = (part.name || '').toLowerCase(), role = (part.role || '').toLowerCase();
+  const rotor = part.rotor || ((part.name || '').match(/^(upper|lower)/i) || [])[1]?.toLowerCase();
+  const sub = S.results?.coaxial && rotor ? S.results.coaxial[rotor] : S.results;
+  const checks = sub?.checks || [];
+  const name = (part.name || '').toLowerCase().replace(/^(upper|lower)_/, ''), role = (part.role || '').toLowerCase();
   let u = null;
   for (const c of checks) {
     const m = (c.member || '').toLowerCase();
@@ -129,16 +139,15 @@ async function loadGeometry() {
   try {
     const geo = await api.geometry(S.design);
     v.setGeometry(geo, S.design.blade?.n_blades || 2);
-    if (S.results?.harmonic) v.setHarmonic(S.results.harmonic);
+    v.setHarmonics(harmonicsOf(S.results));
     S.updExag?.();
     S.geometryOk = true;
     msg.textContent = '';
     renderLegend(geo);
   } catch (e) {
     S.geometryOk = false;
-    if (S.results?.harmonic?.nodes) {
-      v.setBeamOnly(S.results.harmonic, S.design.blade?.n_blades || 2);
-      v.setHarmonic(S.results.harmonic);
+    if (hasNodes(S.results)) {
+      v.setBeamOnly(harmonicsOf(S.results), S.design.blade?.n_blades || 2);
       msg.textContent = `geometry unavailable (${e.message}); showing beam model`;
     } else {
       v.clear();
@@ -206,19 +215,35 @@ async function evaluate() {
   }
 }
 
+function rotorPicker(box) {
+  if (!S.results?.coaxial) return;
+  box.prepend(el('div.rotor-pick', {}, 'rotor',
+    ...['upper', 'lower'].map((k) => el(`button.small${S.rotorView === k ? '.on' : ''}`, {
+      on: { click: () => { S.rotorView = k; renderRotorTabs(); } } }, k))));
+}
+
+function renderRotorTabs() {
+  const r = S.results;
+  const sub = r.coaxial ? r.coaxial[S.rotorView] : r;
+  renderChecks($('#tab-checks'), sub);
+  renderCampbell($('#tab-campbell'), sub);
+  renderHarmonic($('#tab-harmonic'), sub);
+  for (const t of ['checks', 'campbell', 'harmonic']) rotorPicker($(`#tab-${t}`));
+}
+
 function showResults(r) {
   S.results = r;
   S.resultsHash = r.design_hash;
+  S.rotorView ??= 'upper';
   renderSummary($('#tab-summary'), r);
-  renderChecks($('#tab-checks'), r);
-  renderCampbell($('#tab-campbell'), r);
-  renderHarmonic($('#tab-harmonic'), r);
+  renderRotorTabs();
   renderJSON($('#tab-json'), r);
-  const nfail = (r.checks || []).filter((c) => c.utilisation > 1).length;
+  const allChecks = r.coaxial ? [...(r.coaxial.upper?.checks || []), ...(r.coaxial.lower?.checks || [])] : (r.checks || []);
+  const nfail = allChecks.filter((c) => c.utilisation > 1).length;
   $('#tabs [data-tab=checks]').textContent = nfail ? `Checks (${nfail}✕)` : 'Checks';
   if (S.viewer) {
-    if (!S.geometryOk && r.harmonic?.nodes) loadGeometry();
-    else S.viewer.setHarmonic(r.harmonic);
+    if (!S.geometryOk && hasNodes(r)) loadGeometry();
+    else S.viewer.setHarmonics(harmonicsOf(r));
     S.viewer.recolour();
     S.updExag?.();
   }
@@ -286,6 +311,14 @@ async function boot() {
     const v = await api.validate({});
     setDesign(v.design, { base: v.design, baseName: 'defaults' });
   }
+  for (const kv of qs.getAll('set')) { // ?set=layout=coaxial&set=flexure.thickness=0.001
+    const i = kv.indexOf('=');
+    if (i < 0) continue;
+    let v = kv.slice(i + 1);
+    try { v = JSON.parse(v); } catch { /* keep string */ }
+    setPath(S.design, kv.slice(0, i), v);
+  }
+  if (qs.getAll('set').length) setDesign(S.design);
   status('ready');
   if (qs.get('tab')) showTab(qs.get('tab'));
   if (qs.get('eval') === '1') await evaluate();

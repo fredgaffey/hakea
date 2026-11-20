@@ -116,6 +116,8 @@ if __name__ == "__main__":
              ("harmonic_dark", "eval=1&theme=dark&tab=harmonic"), ("checks_dark", "eval=1&theme=dark&tab=checks"),
              ("optimise_dark", "eval=1&theme=dark&tab=optimise",
               "document.querySelector('#tab-optimise button.primary').click()", 5),
+             ("coaxial_dark", "eval=1&theme=dark&set=layout=coaxial", "document.getElementById('show-nodes').click();", 1),
+             ("coaxial_harmonic_light", "eval=1&theme=light&tab=harmonic&set=layout=coaxial"),
              ("util_colour_light", "eval=1&theme=light&tab=checks",
               "document.getElementById('colour-by').value='util';"
               "document.getElementById('colour-by').dispatchEvent(new Event('change'));"

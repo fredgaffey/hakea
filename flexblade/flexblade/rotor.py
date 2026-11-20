@@ -148,7 +148,13 @@ def _blade_section(design: Design, r: float, st_r, stations, coll: float) -> tup
     return sec, chord, twist, layup
 
 
-def build_model(design: Design) -> RotorModel:
+def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
+    """Build the rotor FE model.
+
+    ideal_hinge: optional dict(k_hinge, k_rot, k_trans) replacing the flexure by a
+    zero-length spring at the hinge point (soft rotation k_hinge about the skewed hinge
+    axis, k_rot about the other two axes, k_trans in translation) — the ideal skewed pin
+    hinge reference (validation / Hakea as built)."""
     an = design.analysis
     b = design.blade
     R = b.radius
@@ -168,10 +174,10 @@ def build_model(design: Design) -> RotorModel:
     st_chord = np.array([s.chord for s in stations])
     st_twist = np.radians([s.twist_deg for s in stations]) + coll
 
-    members1 = fact.generate_members(design)
+    members1 = fact.generate_members(design) if ideal_hinge is None else []
     r_root = b.root_cutout_frac * R
-    r_m = max(max(m.p0[0], m.p1[0]) for m in members1)
-    if r_m >= r_root - 1e-6:
+    r_m = max(max(m.p0[0], m.p1[0]) for m in members1) if members1 else design.flexure.hinge_radius
+    if r_m > r_root + 1e-9:
         warnings.append(f"flexure outer end r={r_m*1e3:.1f} mm ≥ aero root cut-out "
                         f"{r_root*1e3:.1f} mm; aero blade starts at the flexure end")
         r_root = r_m + 0.02 * (R - r_m)
@@ -268,6 +274,18 @@ def build_model(design: Design) -> RotorModel:
             else:
                 pending_stiff.append((nodes[-1], master, None, f"b{k}.conn{j}", k))
         H0, a = fact.hinge_axis(design, k)
+        if ideal_hinge is not None:
+            A = fe.add_node(Rk @ H0, f"b{k}.hingeA")
+            pending_stiff.append((hub, A, np.array([0.0, 0.0, 1.0]), f"b{k}.spoke0", k))
+            kh = ideal_hinge
+            Ks = np.diag([kh.get("k_trans", 1e7)] * 3 + [kh["k_hinge"], kh.get("k_rot", 1e4), kh.get("k_rot", 1e4)])
+            frame = np.column_stack([Rk @ a, Rk @ np.array([0.0, 1.0, 0.0]), np.zeros(3)])
+            B_node = master
+            if np.linalg.norm(fe.X0[master] - Rk @ H0) > 1e-9:
+                B_node = fe.add_node(Rk @ H0, f"b{k}.hingeB")
+                pending_stiff.append((B_node, master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn0", k))
+            fe.add_element(Element(A, B_node, np.zeros(3), [], tag=f"b{k}.hinge", kind="spring", blade=k,
+                                   spring_K=Ks, spring_frame=frame))
         blades.append(BladeInfo(k=k, psi0=psi0, Rk=Rk, master=master, chain_nodes=chain,
                                 chain_r=r_chain, aero_nodes=chain[n_sh:], aero_r=r_aero,
                                 blade_elems=blade_elems, member_elems=member_elems, members=mem_H,
@@ -676,10 +694,17 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
     M = lin.M[np.ix_(f, f)]
     nb = min(n_basis, len(f))
     lam, Phi = sl.eigh(Kr, M, subset_by_index=[0, nb - 1])
+    # drop basis vectors far above the band of interest (regularised massless DOFs)
+    w_ref = max(ss.Omega, 2 * np.pi * 10.0)
+    ok = np.sqrt(np.abs(lam)) < 200.0 * w_ref
+    ok[: min(len(ok), n_modes + 2)] = True
+    lam, Phi = lam[ok], Phi[:, ok]
+    nb = len(lam)
     G = lin.G[np.ix_(f, f)]
     Gr = Phi.T @ G @ Phi
-    # state space  [q̇; q̈] = [[0, I], [−Λ, −Gr]]
-    Aq = np.block([[np.zeros((nb, nb)), np.eye(nb)], [-np.diag(lam), -Gr]])
+    # scaled state space  y = [q; q̇/w_ref]:  ẏ = w_ref [[0, I], [−Λ/w², −Gr/w]] y
+    Aq = w_ref * np.block([[np.zeros((nb, nb)), np.eye(nb)],
+                           [-np.diag(lam) / w_ref**2, -Gr / w_ref]])
     ev, EV = np.linalg.eig(Aq)
     sel = [i for i in range(len(ev)) if ev[i].imag > 1e-6 * max(1.0, abs(ev[i])) or
            (abs(ev[i].imag) <= 1e-6 * max(1.0, abs(ev[i])) and ev[i].real >= -1e-9 and abs(ev[i]) >= 0)]
@@ -901,7 +926,7 @@ def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: i
     sub.X0 = fe.X0
     sub.node_tags = fe.node_tags
     sub.elements = [e for i, e in enumerate(fe.elements)
-                    if e.blade == blade and e.kind in ("flexure", "rigid")]
+                    if e.blade == blade and e.kind in ("flexure", "rigid", "spring")]
     sub._X = fe.Xref
     sub._prepared = True
     sa = assemble_internal(sub, st, True)
@@ -962,7 +987,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
     groups: dict[str, dict] = {}
     fz = ss.Omega / (2 * np.pi)
     for i, (e, c) in enumerate(zip(fe.elements, sa.cr)):
-        if e.kind == "rigid" or e.massless:
+        if e.kind in ("rigid", "spring") or e.massless:
             continue
         name = e.tag.split(".", 1)[1] if "." in e.tag else e.tag
         if e.kind == "blade":

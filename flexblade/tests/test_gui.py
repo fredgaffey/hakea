@@ -130,8 +130,7 @@ def test_cors_and_private_network(client):
     assert r.headers["access-control-allow-origin"] == "http://keel.example"
     assert r.headers["access-control-allow-private-network"] == "true"
     r = client.options("/api/export", headers=dict(h, Origin="http://evil.example"))
-    assert r.headers.get("access-control-allow-origin") != "http://evil.example"
-    assert "access-control-allow-private-network" not in r.headers
+    assert r.status_code == 400 and r.headers.get("access-control-allow-origin") != "http://evil.example"
     r = client.get("/keel/flexblade-keel.js", headers={"Origin": "http://localhost:8787"})
     assert r.status_code == 200 and "export function install" in r.text
     assert r.headers["access-control-allow-origin"] == "http://localhost:8787"
@@ -198,3 +197,17 @@ def test_headless_browser(tmp_path):
         assert r.returncode == 0, r.stdout + r.stderr
     finally:
         srv.terminate()
+
+
+def test_coaxial_evaluate_and_geometry(client):
+    d = {"preset": P, "set": {"layout": "coaxial"}}
+    r = client.post("/api/evaluate", json={"design": d}).json()
+    c = r["coaxial"]
+    assert c["upper"]["harmonic"]["nodes"] and c["lower"]["harmonic"]["nodes"]
+    assert c["rpm_upper"] > 0 and "yaw_authority" in c
+    g = client.post("/api/geometry", json={"design": d}).json()
+    rotors = {p["rotor"] for p in g["parts"]}
+    assert rotors == {"upper", "lower"}
+    assert any(p["name"].startswith("lower_") for p in g["parts"])
+    h = client.get("/api/hints").json()
+    assert "op.extra_inflow" in h["advanced"] and any(gr["key"] == "coaxial" for gr in h["groups"])

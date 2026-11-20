@@ -112,3 +112,8 @@ def test_design_resource():
     res, txt = anyio.run(go)
     assert "flexblade://design" in [str(x.uri) for x in res.resources]
     assert "design contract" in txt.contents[0].text
+
+
+def test_explain_coaxial():
+    r = payload(call("evaluate_design", {"design": {"preset": P, "set": {"layout": "coaxial"}}, "detail": "digest"}))
+    assert "COAXIAL TOTALS" in r["digest"] and "control_ratio" in r["digest"]

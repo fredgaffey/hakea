@@ -133,9 +133,19 @@ label { color: #8592a1; display: inline-flex; gap: 4px; align-items: center; }
 
 /**
  * Add the panel. Options: app (window.solidcraft of the frame), frame (the SolidCraft iframe),
- * server (flexblade URL). Returns {toggle, el}.
+ * server (flexblade URL), run (fn => promise: the host's queue for engine work, e.g. Keel's
+ * `serial`, so our commands never interleave with its document import/export).
+ * Returns {toggle, el}.
  */
 export function install(opts = {}) {
+  // Run engine work through the host's queue; errors come back as values (a queue may swallow them).
+  const engine = async (fn) => {
+    const run = opts.run || ((f) => f());
+    const r = await run(async () => { try { return { value: await fn() }; } catch (error) { return { error }; } });
+    if (!r) throw new Error('engine queue returned nothing');
+    if (r.error) throw r.error;
+    return r.value;
+  };
   const frame = opts.frame || document.getElementById('cad') || document.querySelector('iframe');
   const appOf = () => opts.app || (frame && frame.contentWindow && frame.contentWindow.solidcraft) || window.solidcraft;
   let server = opts.server;
@@ -195,7 +205,7 @@ export function install(opts = {}) {
       const d = await fetchJSON('/api/session/design');
       const name = `${(d.name || 'flexblade').replace(/[^\w.-]+/g, '_')}.step`;
       say(`inserting ${name} (${(text.length / 1024).toFixed(0)} kB)…`);
-      const ok = frame ? await insertStep(app, frame, text, name) : false;
+      const ok = frame ? await engine(() => insertStep(app, frame, text, name)) : false;
       if (ok) say(`inserted ${name} as a new component`);
       else { saveFile(name, text); say(`couldn't insert automatically: downloaded ${name}, drag it onto the model (or SOLID › INSERT › Insert STEP).`, true); }
     } catch (e) { say(`insert failed: ${e.message}`, true); }
@@ -207,7 +217,7 @@ export function install(opts = {}) {
     if (!app) { say('SolidCraft API not found', true); return; }
     try {
       const d = await fetchJSON('/api/session/design');
-      const r = await pushParameters(app, d);
+      const r = await engine(() => pushParameters(app, d));
       lastHash = JSON.stringify(d);
       if (!quiet || r.errors.length) {
         say(`parameters: ${r.added.length} added, ${r.changed.length} updated` + (r.errors.length ? `\n${r.errors.join('\n')}` : ''), !!r.errors.length);

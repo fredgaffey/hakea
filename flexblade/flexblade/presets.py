@@ -26,7 +26,7 @@ import re
 import numpy as np
 
 from .motor import motor_for_diameter
-from .schema import (Airfoil, AnalysisOptions, Blade, BladeStation, Design, Flexure, Layup,
+from .schema import (Airfoil, AnalysisOptions, Blade, BladeStation, Coaxial, Design, Flexure, Layup,
                      OperatingPoint)
 
 SIZES_IN = (4, 5, 7, 10, 12)
@@ -102,11 +102,34 @@ def _fmt(d: float) -> str:
     return str(int(d)) if float(d).is_integer() else f"{d:g}"
 
 
+COAX_SIZES_IN = (5, 7, 10)
+COAX_SPACING_FRAC = 0.25
+COAX_MASS_FACTOR = 1.15
+
+
+def make_coax_preset(diameter_in: float, concept: str, spacing_frac: float = COAX_SPACING_FRAC) -> Design:
+    """Counter-rotating coaxial pair: identical upper/lower rotors and motors, spacing
+    0.25R (typical compact coax 0.2–0.35R; Leishman: interference roughly flat
+    beyond ~0.2R in hover), torque-balanced trim.  Vehicle mass = single-rotor
+    preset mass × 1.15 (second motor + ESC + longer mast)."""
+    d = make_preset(diameter_in, concept)
+    op = d.op.model_copy(update=dict(vehicle_mass=round(d.op.vehicle_mass * COAX_MASS_FACTOR, 4)))
+    return d.model_copy(update=dict(
+        name=f"{_fmt(diameter_in)}in_coax_{concept}", layout="coaxial", op=op,
+        coaxial=Coaxial(spacing_frac=spacing_frac, trim="torque_balance"),
+        notes=d.notes + f"; coaxial pair, spacing {spacing_frac}R, mass ×{COAX_MASS_FACTOR}"))
+
+
 def all_presets() -> dict[str, Design]:
     """{name: Design}: "<D>in_<concept>" for D in 4,5,7,10,12 and every concept,
-    plus "hakea_5in_hinge_equiv" (5" with a stiff-material crossed-blade flexure
-    standing in for Hakea's skewed lag hinge, skew 45°)."""
+    "<D>in_coax_<concept>" for D in 5,7,10, plus "hakea_5in_hinge_equiv" (5" with a
+    stiff-material crossed-blade flexure standing in for Hakea's skewed lag
+    hinge, skew 45°)."""
     out = {}
+    for D in COAX_SIZES_IN:
+        for c in CONCEPTS:
+            d = make_coax_preset(D, c)
+            out[d.name] = d
     for D in SIZES_IN:
         for c in CONCEPTS:
             d = make_preset(D, c)
@@ -158,6 +181,23 @@ def scale_design(design: Design, diameter_in: float) -> Design:
         mem["thickness"] *= s
         mem["layup"] = sl(mem["layup"])
     dm["motor"] = motor_for_diameter(diameter_in).model_dump()
+    cx = dm.get("coaxial")
+    if cx:
+        if cx.get("lower_blade"):
+            lb = cx["lower_blade"]
+            lb["diameter_in"] = lb["diameter_in"] * s
+            for st in lb["stations"]:
+                st["chord"] *= s
+                st["layup"] = sl(st["layup"])
+            lb["layup"] = sl(lb["layup"])
+        if cx.get("lower_flexure"):
+            lf = cx["lower_flexure"]
+            for k in ("hinge_radius", "length", "thickness", "width", "hub_radius"):
+                lf[k] *= s
+            lf["layup"] = sl(lf["layup"])
+        if cx.get("lower_motor"):
+            cx["lower_motor"] = dm["motor"]
+        cx["lower_rpm"] = None
     op = dm["op"]
     op["vehicle_mass"] = round(op["vehicle_mass"] * s ** MASS_EXPONENT, 4)
     op["rpm"] = None

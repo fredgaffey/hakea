@@ -25,6 +25,7 @@ REST (documented at /docs):
 from __future__ import annotations
 
 import importlib
+import inspect
 import ipaddress
 import os
 import tempfile
@@ -147,18 +148,13 @@ def create_app(cors_origins: list[str] | None = None) -> FastAPI:
                               "swashplateless rotor. SI units except *_deg (degrees) and "
                               "diameter_in (inches). See DESIGN.md for frames.")
     origins = _cors_origins(cors_origins)
-    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"],
-                       expose_headers=["Content-Disposition", "X-Design-Hash"])
-
-    @app.middleware("http")
-    async def private_network(request: Request, call_next):
-        # Chrome Private Network Access: an https Keel page calling http://127.0.0.1 sends a
-        # preflight with Access-Control-Request-Private-Network; answer it for allowed origins.
-        resp = await call_next(request)
-        if request.headers.get("access-control-request-private-network") and \
-                request.headers.get("origin") in origins:
-            resp.headers["Access-Control-Allow-Private-Network"] = "true"
-        return resp
+    # allow_private_network: Chrome Private Network Access preflights from an https Keel page
+    # to http://127.0.0.1 (answered only for the allowed origins).
+    cors_kw = dict(allow_origins=origins, allow_methods=["*"], allow_headers=["*"],
+                   expose_headers=["Content-Disposition", "X-Design-Hash"])
+    if "allow_private_network" in inspect.signature(CORSMiddleware.__init__).parameters:
+        cors_kw["allow_private_network"] = True
+    app.add_middleware(CORSMiddleware, **cors_kw)
 
     jobs = Jobs()
     eval_cache: "OrderedDict[tuple, dict]" = OrderedDict()

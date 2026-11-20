@@ -142,7 +142,7 @@ class PairTrim:
     aero_lower: AeroModel = field(repr=False)
 
 
-def pair_trim(design: Design, max_iter: int = 60, tol: float = 1e-4, relax: float = 0.6) -> PairTrim:
+def pair_trim(design: Design, max_iter: int = 60, tol: float = 2e-4, relax: float = 0.85) -> PairTrim:
     """Aero-only coupled trim of the coaxial pair (see module docstring)."""
     cx = design.coaxial
     aU = AeroModel(upper_design(design))
@@ -160,8 +160,8 @@ def pair_trim(design: Design, max_iter: int = 60, tol: float = 1e-4, relax: floa
     for it in range(1, max_iter + 1):
         aU.v_ext, aL.v_ext = vU, vL
         if mode == "torque_balance":
-            tU = aU.trim(thrust=share * W)
-            tL = aL.trim(thrust=(1 - share) * W)
+            tU = aU.trim(thrust=share * W, rpm_guess=tU.rpm if tU else None)
+            tL = aL.trim(thrust=(1 - share) * W, rpm_guess=tL.rpm if tL else None)
             qm = np.sqrt(tU.Q * tL.Q)
             TU = tU.T * (qm / tU.Q) ** (2 / 3)
             TL = tL.T * (qm / tL.Q) ** (2 / 3)
@@ -189,7 +189,8 @@ def pair_trim(design: Design, max_iter: int = 60, tol: float = 1e-4, relax: floa
     # final consistent evaluation with the converged inflows
     aU.v_ext, aL.v_ext = vU, vL
     if mode == "torque_balance":
-        tU, tL = aU.trim(thrust=share * W), aL.trim(thrust=(1 - share) * W)
+        tU = aU.trim(thrust=share * W, rpm_guess=tU.rpm)
+        tL = aL.trim(thrust=(1 - share) * W, rpm_guess=tL.rpm)
     elif mode == "equal_rpm":
         f = lambda n: aU.trim(rpm=n).T + aL.trim(rpm=n).T - W  # noqa: E731
         n = brentq(f, 0.7 * tU.rpm, 1.4 * tU.rpm, xtol=1e-3)
@@ -200,24 +201,31 @@ def pair_trim(design: Design, max_iter: int = 60, tol: float = 1e-4, relax: floa
     return PairTrim(tU, tL, share, vU, vL, wake_contraction(tU, s), it, conv, aU, aL)
 
 
-def yaw_authority(design: Design, pt: PairTrim, n: int = 15) -> tuple[float, float, float]:
+def yaw_authority(design: Design, pt: PairTrim, n: int = 11,
+                  share_range: tuple[float, float] = (0.15, 0.85)) -> tuple[float, float, float]:
     """(authority, yaw_min, yaw_max): net airframe yaw torque range (Q_L − Q_U) over
-    thrust splits that keep T_U + T_L = m g with both motors within their steady
-    torque limit (`motor.capability(...).Q_mean_max` at the new rpm).  Inflows are
-    frozen at the trimmed interference (first-order).  authority = min distance
-    from the trimmed yaw torque to either end (symmetric authority)."""
+    thrust splits in `share_range` that keep T_U + T_L = m g with both motors able
+    to hold Q·(1 + torque_mod_frac) within their steady limit
+    (`motor.capability(...).Q_mean_max` at the new rpm), i.e. cyclic pulsing keeps
+    its headroom.  Inflows are frozen at the trimmed interference (first-order).
+    authority = min distance from the trimmed yaw torque to either end.  The share
+    range (each rotor keeps ≥15 % of the weight) is a placeholder for a real
+    combined yaw/cyclic allocation limit."""
     W = pt.upper.T + pt.lower.T
     aU, aL = pt.aero_upper, pt.aero_lower
     mU = aU.design.motor
     mL = aL.design.motor
     y0 = pt.lower.Q - pt.upper.Q
     ys = [y0]
-    for s in np.linspace(0.05, 0.95, n):
+    kU = 1 + aU.design.op.torque_mod_frac
+    kL = 1 + aL.design.op.torque_mod_frac
+    for s in np.linspace(*share_range, n):
         try:
             tU, tL = aU.trim(thrust=s * W), aL.trim(thrust=(1 - s) * W)
         except ValueError:
             continue
-        if tU.Q <= capability(mU, tU.rpm, 0).Q_mean_max and tL.Q <= capability(mL, tL.rpm, 0).Q_mean_max:
+        if kU * tU.Q <= capability(mU, tU.rpm, 0).Q_mean_max and \
+                kL * tL.Q <= capability(mL, tL.rpm, 0).Q_mean_max:
             ys.append(tL.Q - tU.Q)
     lo, hi = min(ys), max(ys)
     return float(min(y0 - lo, hi - y0)), float(lo), float(hi)

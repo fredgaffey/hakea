@@ -145,8 +145,10 @@ def _orient_rot(o: PrintOrientation, R: np.ndarray, mirror: bool = False) -> Pri
 
 def hinge_axis_fallback(design: Design) -> tuple[np.ndarray, np.ndarray]:
     d = math.radians(design.flexure.skew_deg)
+    # same convention as fact.hinge_axis: a = (sinδ, 0, −cosδ) so that lag ζ (about −z)
+    # about the skewed axis gives pitch θ = +ζ·tanδ (DESIGN.md)
     return (np.array([design.flexure.hinge_radius, 0.0, 0.0]),
-            np.array([math.sin(d), 0.0, math.cos(d)]))
+            np.array([math.sin(d), 0.0, -math.cos(d)]))
 
 
 def _hinge_frame(point, axis):
@@ -933,7 +935,10 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
                 names.append(key)
                 inputs.append(d)
         occ.synchronize()
-        _, omap = occ.fragment(inputs, [])
+        if len(inputs) > 1:
+            _, omap = occ.fragment(inputs, [])
+        else:
+            omap = [[d] for d in inputs]
         occ.synchronize()
         tag_name: dict[int, str] = {}
         for key, m in zip(names, omap):
@@ -1067,7 +1072,10 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
             part_vols.append(occ_part(occ, p))
         occ.synchronize()
         flat = [d for dts in part_vols for d in dts]
-        out, omap = occ.fragment(flat, [])
+        if len(flat) > 1:
+            out, omap = occ.fragment(flat, [])
+        else:
+            omap = [[d] for d in flat]
         occ.synchronize()
         # owner of each resulting volume = highest priority parent
         owner: dict[int, int] = {}

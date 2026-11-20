@@ -421,9 +421,10 @@ class AeroModel:
         keys = ("cl", "cd", "cm") + (("cl_a", "cd_a", "cm_a", "cl_W", "cd_W", "cm_W") if derivs else ())
         out = {k: np.zeros(chord.shape) for k in keys}
         pos = np.arange(len(self.r)) if idx is None else np.asarray(idx)
+        single = len(self._groups) == 1
         for tab, gi in self._groups:
-            m = np.isin(pos, gi)
-            if not np.any(m):
+            m = slice(None) if single else np.isin(pos, gi)
+            if not single and not np.any(m):
                 continue
             e = tab.eval(alpha[m], Re[m], M[m], derivs)
             for k in ("cl", "cd", "cm"):
@@ -491,7 +492,7 @@ class AeroModel:
 
         glo = g(lo)
         ok = (glo < 0) & (g(hi) > 0)
-        for _ in range(48):
+        for _ in range(36):            # bracket ≤ 1.9 rad → 3e-11 rad
             mid = 0.5 * (lo + hi)
             gm = g(mid)
             neg = (gm < 0) == (glo < 0)
@@ -565,7 +566,8 @@ class AeroModel:
 
     def trim(self, rpm: Optional[float] = None, thrust: Optional[float] = None,
              inflow=None, blade_shape: Optional[dict] = None,
-             collective_deg: Optional[float] = None) -> AeroTrim:
+             collective_deg: Optional[float] = None,
+             rpm_guess: Optional[float] = None) -> AeroTrim:
         """Hover BEMT trim.
 
         Modes (collective defaults to ``design.op.collective_deg``):
@@ -583,6 +585,7 @@ class AeroModel:
             ``theta`` elastic pitch [rad, nose-up] added to geometric pitch,
             ``beta`` flap slope dz/dr [rad] (thrust tilts: Fz = N cosβ, Fx = −N sinβ),
             ``r`` radii of those arrays (else they must already be on `self.r`).
+        rpm_guess : optional warm start for the rpm solve (speeds up iterations).
         """
         op = self.design.op
         coll = np.radians(op.collective_deg if collective_deg is None else collective_deg)
@@ -608,6 +611,12 @@ class AeroModel:
                 fv = fb
             raise ValueError(f"thrust {thrust:.2f} N not reachable at {rpm:.0f} rpm by collective")
         f = lambda n: self._evaluate(n, coll, inflow, blade_shape).T - thrust  # noqa: E731
+        if rpm_guess:
+            a, b = rpm_guess * 0.97, rpm_guess * 1.03
+            fa, fb = f(a), f(b)
+            if fa < 0 < fb:
+                n = brentq(f, a, b, xtol=1e-3, rtol=1e-7)
+                return self._evaluate(n, coll, inflow, blade_shape)
         lo, hi = 200.0, 2.0e5
         if f(hi) < 0:
             raise ValueError(f"thrust {thrust:.2f} N not reachable below {hi:.0f} rpm "

@@ -147,6 +147,13 @@ def _cr_frame(xa, xb, Ra, Rb, E0):
 
 @njit(cache=True)
 def _d7(xa, xb, Ra, Rb, E0, L0):
+    if L0 <= 0.0:
+        # zero-length spring: [0, relative translation in node-a frame, relative rotation]
+        Fa = Ra @ E0
+        out = np.zeros(7)
+        out[1:4] = Fa.T @ (xb - xa)
+        out[4:7] = _logm(Fa.T @ Rb @ E0)
+        return out
     l, Rr = _cr_frame(xa, xb, Ra, Rb, E0)
     out = np.empty(7)
     out[0] = l - L0
@@ -168,7 +175,7 @@ def _d7_pert(xa, xb, Ra, Rb, E0, L0, dl):
 def _cr_derivs(xa, xb, Ra, Rb, E0, L0, want_h):
     """d7, B = ∂d7/∂δ (7×12), H = ∂²d7/∂δ² (7×12×12) by central differences."""
     h = np.empty(12)
-    ht = 1e-4 * L0
+    ht = 1e-4 * L0 if L0 > 0.0 else 1e-7
     hr = 1e-4
     for i in range(12):
         h[i] = ht if (i % 6) < 3 else hr
@@ -271,6 +278,8 @@ class Element:
     kind: str = "beam"                 # blade | flexure | rigid | tension
     blade: int = 0                     # 1-based blade index (0 = hub)
     massless: bool = False
+    spring_K: Optional[np.ndarray] = None   # 6×6 [translations; rotations] in frame E0 → zero-length spring
+    spring_frame: Optional[np.ndarray] = None  # 3×3 columns (axis a, e2, e3) in H
     # derived
     L0: float = 0.0
     E0: np.ndarray = None
@@ -279,6 +288,18 @@ class Element:
     mpts: np.ndarray = None            # (n,4): xi, y, z, m·w·L  (local section coords)
 
     def prepare(self, X0: np.ndarray) -> None:
+        if self.spring_K is not None:
+            self.L0 = 0.0
+            F = np.asarray(self.spring_frame, float)
+            e1 = unit(F[:, 0])
+            e2 = unit(F[:, 1] - e1 * (e1 @ F[:, 1]))
+            self.E0 = np.column_stack([e1, e2, np.cross(e1, e2)])
+            self.K7 = np.zeros((7, 7))
+            self.K7[1:, 1:] = self.spring_K
+            self.K12 = np.zeros((12, 12))
+            self.mpts = np.zeros((0, 4))
+            self.massless = True
+            return
         xa, xb = X0[self.n0], X0[self.n1]
         d = xb - xa
         self.L0 = float(np.linalg.norm(d))
@@ -420,7 +441,7 @@ def local_geo_correction(e: Element, st: State, N: float) -> np.ndarray:
     consistent-minus-string transverse bending terms N/(30l)[6,3l,−6,3l; …] and the
     trapeze (Wagner) torsion term N k²/l with k² = (EIy+EIz)/EA about the tension centre.
     Both are orthogonal to rigid-body motion, so rotating-frame consistency is kept."""
-    if N == 0.0:
+    if N == 0.0 or e.spring_K is not None:
         return np.zeros((12, 12))
     l, Rr = _cr_frame(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0)
     k = np.array([[6, 3 * l, -6, 3 * l], [3 * l, 4 * l * l, -3 * l, -l * l],
