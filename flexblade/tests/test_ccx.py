@@ -153,5 +153,5 @@ def test_design_root_stiffness_smoke(tmp_path):
     out = ccx.check(d, rpm=18500.0, workdir=tmp_path, do_modal=False, do_centrifugal=False)
     K = np.array(out["K6"])
     assert np.all(np.linalg.eigvalsh(K) > 0)
-    assert 0.1 < out["k_hinge_Nm_rad"] < 1.0                     # N m/rad (ccx: ~0.32)
+    assert 1.5 < out["k_hinge_Nm_rad"] < 6.0       # N m/rad (ccx: 2.99 since the PA6-CF hub fitting, E02/E08)
     assert out["k_hinge_Nm_rad"] < min(np.diag(K)[3:])
