@@ -4,7 +4,7 @@ Contents
 --------
 * Section polars from NeuralFoil, tabulated once per airfoil shape over
   (alpha, log10 Re), blended to flat-plate post-stall, cached on disk
-  (``~/.cache/flexblade/polars`` or ``$FLEXBLADE_CACHE``) and wrapped in bicubic
+  (``~/.cache/flexblade/polars`` or ``$FLEXBLADE_POLAR_CACHE``) and wrapped in bicubic
   splines (values + analytic d/dalpha, d/dlogRe).  Prandtl–Glauert on cl, cm.
 * :meth:`AeroModel.trim` — hover blade-element-momentum theory (BEMT) with
   Prandtl tip + root loss; solves rpm for a thrust, thrust for an rpm, or
@@ -72,7 +72,7 @@ MACH_CLAMP = 0.7
 
 
 def cache_dir() -> Path:
-    d = Path(os.environ.get("FLEXBLADE_CACHE", Path.home() / ".cache" / "flexblade")) / "polars"
+    d = Path(os.environ.get("FLEXBLADE_POLAR_CACHE", Path.home() / ".cache" / "flexblade")) / "polars"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
