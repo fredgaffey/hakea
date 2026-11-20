@@ -247,7 +247,7 @@ def summarize(res):
 
 
 def stage_robust(keys: list[str]):
-    s = load()["search"]
+    s = load()["search"] | load().get("local", {})
     out = load().get("robust", {})
     for k in keys:
         x = s[k]["x"] if k in s else json.loads(k)
@@ -309,6 +309,119 @@ def stage_tol(n=20):
     save("tol", res)
     print(summarize({k: v for k, v in res.items() if k == "nominal" or k.startswith("random")}))
 
+
+def stage_local(center_key="c29", n=24, seed=5):
+    """local continuous search around a search candidate (nominal, 3 throttles)"""
+    rnd = random.Random(seed)
+    c0 = load()["search"][center_key]["x"]
+    span = {"flexure.width": (0.0085, 0.0115), "flexure.length": (0.018, 0.023),
+            "flexure.hinge_radius": (0.0150, 0.0175), "flexure.skew_deg": (57.0, 66.0),
+            "flexure.cross_angle_deg": (138.0, 160.0), "blade.elastic_axis_chord_frac": (0.35, 0.39)}
+    cands = {}
+    for i in range(n):
+        x = dict(c0)
+        for k, (a, b) in span.items():
+            x[k] = round(rnd.uniform(a, b), 5 if k != "flexure.skew_deg" else 1)
+        x["flexure.thickness"] = rnd.choice([1.3e-4, 1.5e-4])
+        x["flexure.strap_strand_diameter"] = 0.0015
+        cands[f"l{i:02d}"] = x
+    res = run_sets({k: make(x) for k, x in cands.items()})
+    for k in res:
+        res[k]["x"] = cands[k]
+    allr = load().get("local", {}); allr.update(res); save("local", allr)
+    show_good(allr)
+
+
+def show_good(allr):
+    good = sorted((k for k in allr if allr[k]["feasible"] and (allr[k]["res_margin"] or 0) >= 0.22 and allr[k]["fatigue"] <= 0.7),
+                  key=lambda k: -allr[k]["cr_min"])
+    print("n good", len(good))
+    for k in good[:8]:
+        c = allr[k]
+        print(k, round(c["cr_min"], 3), "res", round(c["res_margin"], 3), c["res_which"], "fat", round(c["fatigue"], 2),
+              "hp", round(c["hp_margin"], 3), {a: round(b, 5) for a, b in c["x"].items()})
+
+
+# ------------------------------------------------------------------ 6. finalize / draw / report
+def stage_final(key: str):
+    """save the chosen candidate (robust[key] or local/search key) as the v4 design + drawing"""
+    r = load()
+    x = (r.get("robust", {}).get(key) or r.get("local", {}).get(key) or r["search"][key])["x"]
+    d = make(x)
+    mat, rk, eta = cld_material(d.flexure.thickness, d.flexure.length, **CLD)
+    env = envelope(d)
+    d = d.model_copy(update=dict(name="7in_tt_strap_steelx_v4", notes=V3D.notes.split("; v3 robust")[0] + (
+        f"; v4 (study/verify_v4.py): {json.dumps({k: round(v, 6) for k, v in x.items()})}; crossing gap = strand + 0.4 mm, "
+        f"strap pin 4x strand; strips carry a constrained-layer damper ({CLD['visco']} + {CLD['constrain']} "
+        f"constraining layer on each strip's free length, ends 1 mm short of the clamp lands) modelled as {mat} "
+        f"(RKU composite eta {rk['eta']:.3f} x 0.7 edge/clamp derate, EI x{rk['EI_ratio']:.2f}); "
+        f"member envelope z +-{env['z_max_mm']:.1f} mm vs hub +-{env['hub_mm']:.1f} mm")))
+    OUT.write_text(d.model_dump_json(indent=1))
+    from flexblade import drawing
+    drawing.sheet(d, str(HERE / "results" / "steelx_7in_v4.png"))
+    save("final", dict(key=key, x=x, material=mat, rku=rk, eta=eta, envelope=env))
+    print(mat, env)
+
+
+def _row(name, v):
+    cr = v["cr"]
+    return (f"| {name} | {v['cr_min']:.3f} | {'yes' if v['feasible'] else 'NO'} | {', '.join(v['viol']) or '-'} | "
+            f"{v['res_margin']:.3f} ({v['res_which']}) | {v['fatigue']:.2f} | {v['hp_margin']:.3f} ({v['hp_which']}) | "
+            + " / ".join(f"{cr[t]:.3f}" for t in ("T0.7", "T1", "T1.4")) + " |")
+
+
+def stage_report():
+    r = load(); fin = r["final"]; d = Design.model_validate_json(OUT.read_text())
+    L = [f"# Verification of 7in_tt_strap_steelx_v4 (flexblade/study/verify_v4.py)", "",
+         "Raw data: results/verify_7in_v4.json. cr = control ratio at thrust 0.7/1.0/1.4; feasibility = run_study.metrics "
+         "(robust.combine) over the 3 throttles. res = damping-aware 1P/2P/3P margin; fat = max(fatigue_strain, "
+         "fatigue_stress) utilisation; hp = distance of pitch modes (>2/rev) from 4P/5P/6P.", "",
+         "## Recipe", "", "```", json.dumps(fin["x"], indent=1), "```",
+         f"Strip material in the model: `{fin['material']}`; crossing gap {d.flexure.cross_gap*1e3:.1f} mm for a "
+         f"{d.flexure.strap_strand_diameter*1e3:.1f} mm strand; pin {d.flexure.strap_pin_diameter*1e3:.1f} mm. "
+         f"Member envelope z +-{fin['envelope']['z_max_mm']:.2f} mm (hub +-{fin['envelope']['hub_mm']:.1f} mm), "
+         f"min member x {fin['envelope']['x_min_mm']:.2f} mm.", "",
+         "## 1. Constrained-layer damper (RKU)", "",
+         "| visco layer | constraining | k | eta_c | EI x | g | e3/e1 | mass x |", "|---|---|---|---|---|---|---|---|"]
+    for q in r["rku"]:
+        L.append(f"| {q['visco']} | {q['constrain']} | {q['k_over_piL']:.0f} pi/L | {q['eta']:.3f} | {q['EI_ratio']:.2f} | "
+                 f"{q['g']:.3f} | {q['e3_ratio']:.2f} | {q['mass_ratio']:.2f} |")
+    L += ["", "Eig damping, v3 geometry, bare vs CLD strips (label, per rev, zeta):", ""]
+    for k, v in r["damp"].items():
+        for t, ms in v["modes"].items():
+            L.append(f"- {k} {t}: " + ", ".join(f"{l} {f:.2f} z={z:.4f}" for l, f, z in ms[:5]))
+    L += ["", "## 2. Floquet + anisotropic airframe (f_y = 1.15 f_x), min air-resonance zeta over f_af 50-400 Hz", "",
+          "| design | zeta_af | T0.7 | T1 | T1.4 |", "|---|---|---|---|---|"]
+    for w, pts in r.get("floq", {}).items():
+        for z in (0.02, 0.05):
+            cells = []
+            for t in ("T0.7", "T1", "T1.4"):
+                pp = [p for p in pts if p["tag"] == t and p["zeta_af"] == z and p["air_zeta"] is not None]
+                m = min(pp, key=lambda p: p["air_zeta"])
+                cells.append(f"{m['air_zeta']:.4f} @ {m['f_hz']:.0f} Hz")
+            L.append(f"| {w} | {z} | " + " | ".join(cells) + " |")
+    hdr = ["| case | min cr | feasible | violations | res margin (which) | fat | hp margin (which) | cr 0.7/1.0/1.4 |",
+           "|---|---|---|---|---|---|---|---|"]
+    if "robust" in r and fin["key"] in r["robust"]:
+        rb = r["robust"][fin["key"]]
+        L += ["", "## 3. Search acceptance (nominal + 8 random +-5 %, seed 11)", "", json.dumps(rb["summary"]), ""] + hdr
+        L += [_row(k, v) for k, v in rb["samples"].items()]
+    if "tol" in r:
+        L += ["", "## 4. Tolerance map (one at a time, then 20 random combined +-5 %, seed 7)", ""] + hdr
+        L += [_row(k, v) for k, v in r["tol"].items()]
+        rnd = {k: v for k, v in r["tol"].items() if k == "nominal" or k.startswith("random")}
+        L += ["", "Random set summary: " + json.dumps(summarize(rnd))]
+    (HERE / "results" / "verify_7in_v4.md").write_text("\n".join(L) + "\n")
+
+
+if __name__ == "__main__" and sys.argv[1] in ("final", "report"):
+    stage_final(sys.argv[2]) if sys.argv[1] == "final" else stage_report()
+
+if __name__ == "__main__" and sys.argv[1] == "local":
+    stage_local()
+
+if __name__ == "__main__" and sys.argv[1] == "good":
+    show_good(load()[sys.argv[2]])
 
 if __name__ == "__main__":
     st = sys.argv[1]
