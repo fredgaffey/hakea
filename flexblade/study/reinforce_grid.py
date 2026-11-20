@@ -29,7 +29,12 @@ THICK = (0.0015, 0.0025, 0.0035)
 
 
 def base_for(D):
-    d = presets.all_presets()[f"{D}in_tpu_rod"].model_copy(deep=True)
+    d = presets.make_preset(D, "tpu_rod").model_copy(deep=True)
+    if MOTOR:
+        from flexblade.motor import get_motor
+        d.motor = get_motor(MOTOR)
+    if MASS:
+        d.op.vehicle_mass = MASS
     # stiff PA6-CF blade (TPU blade creeps on its own centrifugal load) + chordwise mass
     # balance (attachment line at 0.43 c removes the static blade-to-blade pitch split)
     d.blade.layup = Layup(kind="solid", material="pa6_cf")
@@ -41,6 +46,8 @@ def base_for(D):
     return d
 
 
+MOTOR = None
+MASS = None
 INSERT_MATS = ("cf_rod_pultruded", "steel_302_spring")
 STRAP_MAT = "cf_rod_pultruded"
 
@@ -133,17 +140,26 @@ def main():
     ap.add_argument("--hosts", default="local:20,mac:9")
     ap.add_argument("--out", default="flexblade/study/reinforce")
     ap.add_argument("--sizes", default=",".join(map(str, SIZES)))
+    ap.add_argument("--motor", help="force one motor for all sizes (motor library name)")
+    ap.add_argument("--mass", type=float, help="force vehicle mass, kg")
     ap.add_argument("--printed", action="store_true",
                     help="fully FDM: rods/strap/bar printed in PA6-CF / PETG-CF instead of inserts")
     a = ap.parse_args()
-    global INSERT_MATS, STRAP_MAT
+    global INSERT_MATS, STRAP_MAT, MOTOR, MASS
+    MOTOR, MASS = a.motor, a.mass
     if a.printed:
         INSERT_MATS, STRAP_MAT = ("pa6_cf", "petg_cf"), "pa6_cf"
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     jobs = []
     for D in map(int, a.sizes.split(",")):
-        jobs += variants(base_for(D), D)
+        try:
+            b = base_for(D)
+        except Exception as e:  # noqa: BLE001
+            print(f"size {D}: base trim failed ({e}); skipped", flush=True)
+            continue
+        print(f"size {D}: rpm {api.evaluate(b, ['trim']).trim.rpm:.0f}, pulse/hover {b.op.torque_mod_frac:.2f}", flush=True)
+        jobs += variants(b, D)
     print(f"{len(jobs)} designs", flush=True)
     from flexblade.remote import HostPool
     rows, t0 = [], time.time()

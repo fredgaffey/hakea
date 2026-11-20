@@ -1,0 +1,37 @@
+| size | method | feasible/total | best design | ctrl | pitch1p° | max util | governing |
+|---|---|---|---|---|---|---|---|
+| 4" | mono | 0/18 | mono|tpu_95a|sk35|t1.5 | 0.000 | 0.00 | inf | motor_torque_1p:motor |
+| 4" | rod | 85/240 | rod|tpu_95a|cf_ro|d2.0|s|sk35|t2.5 | 0.000 | 0.00 | 0.97 | esc_duty_peak:esc |
+| 4" | strap | 1/72 | strap|tpu_64d|d1.6|sk35|t3.5 | 0.000 | 0.00 | 0.98 | esc_duty_peak:esc |
+| 4" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.000 | 0.00 | 2.54 | creep_strain:flex0 |
+| 4" | tbar | 71/162 | tbar|tpu_95a|b1.5|L12|s1.0|sk35 | 0.000 | 0.00 | 0.98 | esc_duty_peak:esc |
+| 5" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.007 | 0.27 | 10.09 | creep_strain:flex0 |
+| 5" | rod | 99/240 | rod|tpu_95a|cf_ro|d1.6|s|sk45|t2.5 | 0.220 | 11.67 | 0.99 | motor_torque_1p:motor |
+| 5" | strap | 21/72 | strap|tpu_64d|d0.9|sk45|t3.5 | 0.005 | 0.26 | 0.93 | motor_torque_1p:motor |
+| 5" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.001 | 0.01 | 2.16 | creep_strain:flex0 |
+| 5" | tbar | 67/162 | tbar|tpu_64d|b2.0|L20|s0.6|sk55 | 0.078 | 2.80 | 0.98 | motor_torque_1p:motor |
+| 6" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.026 | 1.04 | 8.67 | creep_strain:flex0 |
+| 6" | rod | 35/240 | rod|tpu_95a|cf_ro|d1.2|s|sk35|t3.5 | 0.263 | 12.56 | 0.98 | motor_torque_1p:motor |
+| 6" | strap | 21/72 | strap|tpu_64d|d1.2|sk45|t3.5 | 0.007 | 0.41 | 0.94 | motor_torque_1p:motor |
+| 6" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.001 | 0.03 | 1.92 | creep_strain:flex0 |
+| 6" | tbar | 16/162 | tbar|tpu_95a|b2.0|L12|s0.6|sk55 | 0.100 | 3.46 | 0.99 | motor_torque_1p:motor |
+| 7" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.130 | 5.12 | 7.65 | creep_strain:flex0 |
+| 7" | rod | 28/240 | rod|tpu_95a|cf_ro|d1.2|s|sk45|t1.5 | 0.144 | 6.48 | 0.97 | motor_torque_1p:motor |
+| 7" | strap | 22/72 | strap|tpu_64d|d1.2|sk35|t2.5 | 0.009 | 0.57 | 0.88 | creep_strain:flex0 |
+| 7" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.001 | 0.05 | 1.73 | creep_strain:flex0 |
+| 7" | tbar | 18/162 | tbar|tpu_95a|b1.5|L12|s1.0|sk55 | 0.109 | 4.11 | 0.96 | motor_torque_1p:motor |
+| 8" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.039 | 1.49 | 6.88 | creep_strain:flex0 |
+| 8" | rod | 36/240 | rod|tpu_95a|cf_ro|d1.2|s|sk35|t1.5 | 0.066 | 2.90 | 0.94 | motor_torque_1p:motor |
+| 8" | strap | 25/72 | strap|tpu_64d|d0.6|sk35|t3.5 | 0.011 | 0.46 | 0.96 | creep_strain:flex0 |
+| 8" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.001 | 0.06 | 1.58 | creep_strain:flex0 |
+| 8" | tbar | 47/162 | tbar|tpu_95a|b1.5|L12|s0.6|sk55 | 0.113 | 4.24 | 0.93 | motor_torque_1p:motor |
+| 9" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.027 | 1.02 | 6.27 | creep_strain:flex0 |
+| 9" | rod | 42/240 | rod|tpu_95a|cf_ro|d1.2|s|sk35|t1.5 | 0.044 | 1.88 | 0.92 | motor_torque_1p:motor |
+| 9" | strap | 18/72 | strap|tpu_64d|d0.6|sk35|t3.5 | 0.008 | 0.33 | 0.94 | creep_strain:flex0 |
+| 9" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.002 | 0.06 | 1.46 | creep_strain:flex0 |
+| 9" | tbar | 78/162 | tbar|tpu_95a|b1.5|L20|s0.6|sk55 | 0.097 | 3.41 | 0.89 | creep_strain:flex1 |
+| 10" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.022 | 0.82 | 5.78 | creep_strain:flex0 |
+| 10" | rod | 43/240 | rod|tpu_95a|cf_ro|d1.2|s|sk35|t2.5 | 0.031 | 1.33 | 0.91 | motor_torque_1p:motor |
+| 10" | strap | 16/72 | strap|tpu_64d|d0.6|sk45|t3.5 | 0.009 | 0.32 | 0.99 | creep_strain:flex0 |
+| 10" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.001 | 0.06 | 1.36 | creep_strain:flex0 |
+| 10" | tbar | 92/162 | tbar|tpu_95a|b1.5|L20|s0.6|sk55 | 0.071 | 2.43 | 0.88 | creep_strain:flex1 |
