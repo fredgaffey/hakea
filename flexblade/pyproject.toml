@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flexblade"
+version = "0.1.0"
+description = "Flexure / compliant-blade design and simulation for swashplateless cyclic rotors (Hakea)"
+requires-python = ">=3.11"
+dependencies = ["numpy", "scipy", "pydantic>=2", "matplotlib"]
+
+[project.optional-dependencies]
+aero = ["neuralfoil", "aerosandbox"]
+fea = ["scikit-fem", "meshio", "gmsh"]
+gui = ["fastapi", "uvicorn[standard]", "trimesh"]
+mcp = ["mcp"]
+
+[project.scripts]
+flexblade = "flexblade.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["flexblade*"]

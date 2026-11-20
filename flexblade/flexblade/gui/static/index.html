@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flexblade</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Cpath d=%22M8 1l7 7-7 7-7-7z%22 fill=%22%23e9a23b%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="mark">◇</span> flexblade <span class="ver" id="ver"></span></div>
+  <label class="field-inline">preset
+    <select id="preset"></select>
+  </label>
+  <div class="grp">
+    <button id="btn-load" title="Load design JSON">Load</button>
+    <button id="btn-save" title="Download design JSON">Save</button>
+    <input type="file" id="file-load" accept=".json,application/json" hidden>
+  </div>
+  <div class="grp">
+    <button id="btn-eval" class="primary" title="Evaluate (Ctrl+Enter)">Evaluate</button>
+    <label class="toggle" title="Re-evaluate on every change (debounced)"><input type="checkbox" id="live"> live</label>
+  </div>
+  <div class="grp export">
+    <span class="lbl">export</span>
+    <button data-fmt="step">STEP</button><button data-fmt="stl">STL</button><button data-fmt="glb">GLB</button><button data-fmt="json">JSON</button>
+  </div>
+  <div class="spacer"></div>
+  <span id="status" class="status"></span>
+  <a class="link" href="/docs" target="_blank" title="REST API docs">API</a>
+  <button id="btn-theme" class="icon" title="Toggle light/dark">◐</button>
+</header>
+
+<main class="layout">
+  <aside class="params" id="params-pane">
+    <div class="pane-head">
+      <span>Design</span>
+      <input id="design-name" class="name-input" spellcheck="false" aria-label="design name">
+    </div>
+    <div id="params"></div>
+  </aside>
+
+  <section class="viewport-pane">
+    <div id="viewport" class="viewport"></div>
+    <div class="vp-overlay">
+      <div class="vp-row">
+        <label>exaggeration <input type="range" id="exag" min="0" max="3" step="0.01" value="1"><output id="exag-out"></output></label>
+        <label>speed <input type="range" id="speed" min="0" max="2" step="0.01" value="0.5"><output id="speed-out"></output></label>
+      </div>
+      <div class="vp-row">
+        <label class="toggle"><input type="checkbox" id="rotating" checked> fixed frame (spin)</label>
+        <label class="toggle"><input type="checkbox" id="show-nodes"> beam nodes</label>
+        <label>colour <select id="colour-by"><option value="material">material</option><option value="util">utilisation</option></select></label>
+        <button id="btn-reset-view" class="small">reset view</button>
+      </div>
+      <div class="vp-msg" id="vp-msg"></div>
+    </div>
+    <div class="vp-legend" id="vp-legend"></div>
+  </section>
+
+  <aside class="results-pane">
+    <nav class="tabs" id="tabs">
+      <button data-tab="summary" class="on">Summary</button>
+      <button data-tab="checks">Checks</button>
+      <button data-tab="campbell">Campbell</button>
+      <button data-tab="harmonic">Harmonic</button>
+      <button data-tab="optimise">Optimise</button>
+      <button data-tab="diff">Diff</button>
+      <button data-tab="json">JSON</button>
+    </nav>
+    <div class="tab-body">
+      <section data-panel="summary" class="on" id="tab-summary"><p class="empty">Evaluate to see results.</p></section>
+      <section data-panel="checks" id="tab-checks"></section>
+      <section data-panel="campbell" id="tab-campbell"></section>
+      <section data-panel="harmonic" id="tab-harmonic"></section>
+      <section data-panel="optimise" id="tab-optimise"></section>
+      <section data-panel="diff" id="tab-diff"></section>
+      <section data-panel="json" id="tab-json"></section>
+    </div>
+  </aside>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

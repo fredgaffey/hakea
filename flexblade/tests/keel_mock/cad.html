@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- Mock SolidCraft embed: window.solidcraft with request/execute, canvas that accepts drops. -->
+<html><body style="margin:0;background:#222">
+<canvas id="c" width="800" height="600" style="width:100%;height:100vh"></canvas>
+<script>
+const params = {};
+let revision = 1;
+const log = [];
+window.solidcraft = {
+  log, params,
+  async request(method, p = {}) {
+    log.push(['request', method, p]);
+    if (method === 'document.revision') return { revision };
+    if (method === 'engine.execute') return this.execute(p.command, p.params);
+    return {};
+  },
+  async execute(command, p = {}) {
+    log.push(['execute', command, p]);
+    if (command === 'parameters.add') {
+      if (params[p.name]) throw new Error(`a parameter named ${p.name} already exists`);
+      params[p.name] = p.expression; revision++; return { name: p.name };
+    }
+    if (command === 'parameters.change') {
+      const ch = p.changes || { [p.name]: p.expression };
+      for (const [k, v] of Object.entries(ch)) { if (!params[k]) throw new Error(`no parameter ${k}`); params[k] = v; }
+      revision++; return {};
+    }
+    return {};
+  },
+};
+const c = document.getElementById('c');
+c.addEventListener('dragover', (e) => e.preventDefault());
+c.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  for (const f of e.dataTransfer.files) {
+    const t = await f.text();
+    log.push(['drop', f.name, t.length, t.slice(0, 13)]);
+    revision++;
+  }
+});
+</script></body></html>
