@@ -38,9 +38,28 @@ function coaxialSummary(box, r) {
       row('max utilisation', mu))));
 }
 
+/** One-line verdict: PASSES all checks (cyclic pitch, control ratio) / FAILS: governing check at Z x. */
+function verdict(r) {
+  const subs = r.coaxial ? [r.coaxial.upper, r.coaxial.lower].filter(Boolean) : [r];
+  const checks = subs.flatMap((x) => x.checks || []);
+  if (!checks.length) return null;
+  const gov = checks.reduce((a, c) => (c.utilisation > a.utilisation ? c : a));
+  const bl = subs[0].harmonic?.blades || [];
+  const pitch = bl.length ? bl.reduce((a, b) => a + (b.pitch_amp_deg || 0), 0) / bl.length : null;
+  const cr = r.coaxial ? r.coaxial.control_ratio : subs[0].harmonic?.control_ratio;
+  if (gov.utilisation > 1) {
+    return el('div.verdict.bad', {}, `FAILS: ${gov.name}${gov.member ? ` (${gov.member})` : ''} at ${fmt(gov.utilisation, 3)}×`);
+  }
+  const bits = [pitch !== null ? `cyclic pitch ${fmt(pitch, 3)}°` : null, cr !== undefined ? `control ratio ${fmt(cr, 3)}` : null].filter(Boolean);
+  return el('div.verdict.ok', {}, `PASSES all checks${bits.length ? ' — ' + bits.join(', ') : ''}`,
+    el('span.sub', {}, `tightest: ${gov.name} at ${fmt(gov.utilisation, 2)}×`));
+}
+
 export function renderSummary(box, r) {
   box.replaceChildren();
   if (!r) { box.append(el('p.empty', {}, 'Evaluate to see results.')); return; }
+  const vd = verdict(r);
+  if (vd) box.append(vd);
   if (r.coaxial) {
     coaxialSummary(box, r);
     if (r.summary && Object.keys(r.summary).length) {

@@ -89,6 +89,12 @@ async def main(base: str, outdir: str, shots: list[tuple[str, str]]):
                 if action:
                     await cmd("Runtime.evaluate", expression=action[0])
                     await asyncio.sleep(float(action[1]) if len(action) > 1 else 3.0)
+                    if "btn-eval" in action[0]:     # wait for the evaluation to finish
+                        for _ in range(600):
+                            r = await cmd("Runtime.evaluate", expression="!window.flexblade.evaluating", returnByValue=True)
+                            if r.get("result", {}).get("value"):
+                                break
+                            await asyncio.sleep(0.5)
                 await asyncio.sleep(2.0)  # let geometry + animation settle
                 st = await cmd("Runtime.evaluate", expression="document.getElementById('status').textContent + ' | ' + "
                                "document.getElementById('vp-msg').textContent", returnByValue=True)
@@ -110,8 +116,30 @@ async def main(base: str, outdir: str, shots: list[tuple[str, str]]):
 
 
 if __name__ == "__main__":
+    design = None
+    if "--design" in sys.argv:
+        i = sys.argv.index("--design")
+        design = json.load(open(sys.argv[i + 1]))
+        del sys.argv[i:i + 2]
+    results = None
+    if "--results" in sys.argv:        # canned Results JSON (skips a slow live evaluation)
+        i = sys.argv.index("--results")
+        results = json.load(open(sys.argv[i + 1]))
+        del sys.argv[i:i + 2]
     base = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8765"
     out = sys.argv[2] if len(sys.argv) > 2 else "."
+    if design is not None:
+        # design views: material colours, see-through, utilisation colouring
+        load = "flexblade.setDesign(%s);" % json.dumps(design)
+        ev = ("flexblade.showResults(%s);" % json.dumps(results)) if results else \
+            "document.getElementById('btn-eval').click();"
+        st = "document.getElementById('see-through').click();"
+        ut = ("document.getElementById('colour-by').value='util';"
+              "document.getElementById('colour-by').dispatchEvent(new Event('change'));")
+        shots = [("material", "eval=0&tab=summary", load + ev, 6),
+                 ("seethrough", "eval=0&tab=summary", load + ev + st, 6),
+                 ("util", "eval=0&tab=checks", load + ev + ut, 6)]
+        sys.exit(asyncio.run(main(base, out, shots)))
     shots = [("summary_dark", "eval=1&theme=dark"), ("campbell_light", "eval=1&theme=light&tab=campbell"),
              ("harmonic_dark", "eval=1&theme=dark&tab=harmonic"), ("checks_dark", "eval=1&theme=dark&tab=checks"),
              ("optimise_dark", "eval=1&theme=dark&tab=optimise",

@@ -353,8 +353,11 @@ def _thickness_at(xy: np.ndarray, xc: float) -> float:
 # =========================================================================== blade stations
 
 
-def _blade_stations(design: Design, r_start: float, n_side: int):
-    """List of (r, chord, twist, xy) from r_start to tip (interpolated root station)."""
+def _blade_stations(design: Design, r_start: float, n_side: int, n_span: Optional[int] = None):
+    """List of (r, chord, twist, xy) from r_start to tip (interpolated root station).
+
+    n_span: resample to this many sections with a monotone cubic (PCHIP) through the
+    stations (smooth viewport surface); None keeps the design stations."""
     blade = design.blade
     st = bladegeom.resolve_stations(blade)
     R = blade.radius
@@ -370,10 +373,19 @@ def _blade_stations(design: Design, r_start: float, n_side: int):
     out = []
     keep = r > r_start + 1e-6
     rr = np.concatenate([[r_start], r[keep]]) if r_start > r[0] - 1e-9 else r
+    interp = {k: (lambda x, v=v: float(np.interp(x, r, v))) for k, v in
+              (("c", chord), ("tw", twist), ("t", tf))}
+    if n_span and n_span > len(rr) and len(r) >= 3:
+        from scipy.interpolate import PchipInterpolator
+        rr = np.linspace(rr[0], rr[-1], n_span)
+        for k, v in (("c", chord), ("tw", twist), ("t", tf)):
+            if not np.any(np.isnan(v)):
+                f = PchipInterpolator(r, v, extrapolate=True)
+                interp[k] = (lambda x, f=f: float(f(x)))
     for ri in rr:
-        c = float(np.interp(ri, r, chord))
-        tw = float(np.interp(ri, r, twist))
-        t = float(np.interp(ri, r, tf)) if not np.all(np.isnan(tf)) else None
+        c = interp["c"](ri)
+        tw = interp["tw"](ri)
+        t = interp["t"](ri) if not np.all(np.isnan(tf)) else None
         if t is not None and np.isnan(t):
             t = None
         xy = bladegeom.airfoil_coords(blade.airfoil, t, n=n_side)
@@ -452,6 +464,37 @@ def _member_parts(m: FlexureMember, name: str, k: int, idx: int) -> list[Part]:
                         "member" if role == "member" else "fitting", idx)
 
 
+def _shank_sections(fit: Fitting, bg, design: Design, r_start: float, n_side: int) -> list[Section]:
+    """Two rectangular sections (blade-1 frame): the fitting's outer end face and a rectangle
+    placed just inside the blade root section (PCA of the root airfoil in its y-z plane)."""
+    e1, e2, e3 = fit.axes.T
+    h = fit.half
+    c0 = fit.center + h[0] * e1
+    ring0 = _rect_section(c0, e2, e3, 2 * h[1], 2 * h[2]).ring
+    st = _blade_stations(design, r_start, n_side)[0]
+    r, chord, tw, xy = st
+    root = bg.section_polygon_H(_airfoil_ring(xy)[0], chord, tw, r, design.blade.elastic_axis_chord_frac)
+    yz = root[:, 1:]
+    cen = yz.mean(0)
+    u, sv, vt = np.linalg.svd(yz - cen, full_matrices=False)
+    ext = np.ptp((yz - cen) @ vt.T, axis=0)
+    x_end = r + 0.0006
+    ax_maj = np.array([0.0, *vt[0]])
+    ax_min = np.array([0.0, *vt[1]])
+    c1 = np.array([x_end, *cen])
+    ring1 = _rect_section(c1, ax_maj, ax_min, 0.6 * ext[0], 0.7 * ext[1]).ring
+    axis = c1 - c0
+
+    def _wind(r):    # winding sense of a quad about the loft axis
+        return np.sign(np.cross(r[1] - r[0], r[2] - r[1]) @ axis) or 1.0
+    if _wind(ring1) != _wind(ring0):
+        ring1 = ring1[::-1]
+    best = min((float(((np.roll(ring1, sh, axis=0) - ring0) ** 2).sum()), sh) for sh in range(4))
+    best = (best[0], np.roll(ring1, best[1], axis=0))
+    segs = [(i, (i + 1) % 4, "line") for i in range(4)]
+    return [Section(ring=ring0, segments=segs), Section(ring=best[1], segments=segs)]
+
+
 def _fitting_box(corners: np.ndarray, P, s, t, a, extend_out: float, extend_in: float,
                  margin: float) -> Fitting:
     loc = (corners - P) @ np.column_stack([s, t, a])
@@ -496,14 +539,14 @@ def _map_part(p: Part, M: np.ndarray, shift: np.ndarray, prefix: str, rotor: str
 
 
 def build_geometry(design: Design, n_side: int = N_AIRFOIL_SURF,
-                   blades: Optional[list[int]] = None) -> RotorGeometry:
+                   blades: Optional[list[int]] = None, n_span: Optional[int] = None) -> RotorGeometry:
     """Part list in frame H. Coaxial layout: upper_* parts (primary rotor, +Ω) and lower_*
     parts (lower_design mirrored y->-y, at z = -spacing·R). members/hinge refer to the upper
     rotor; geo.lower holds the lower rotor in its own frame and geo.lower_map the mapping."""
     if design.layout != "coaxial":
-        return _build_single(design, n_side, blades)
-    gu = _build_single(design, n_side, blades)
-    gl = _build_single(lower_design(design), n_side, blades)
+        return _build_single(design, n_side, blades, n_span)
+    gu = _build_single(design, n_side, blades, n_span)
+    gl = _build_single(lower_design(design), n_side, blades, n_span)
     M, shift = coaxial_map(design)
     parts = [Part("upper_" + p.name, p.role, p.material, p.orientation, p.blade, p.sections,
                   p.ruled, p.member, "upper") for p in gu.parts]
@@ -513,7 +556,7 @@ def build_geometry(design: Design, n_side: int = N_AIRFOIL_SURF,
 
 
 def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
-                  blades: Optional[list[int]] = None) -> RotorGeometry:
+                  blades: Optional[list[int]] = None, n_span: Optional[int] = None) -> RotorGeometry:
     """Single rotor part list (all blades unless `blades` given) in frame H."""
     blade = design.blade
     n = blade.n_blades
@@ -540,10 +583,13 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
     if r_start >= blade.radius * 0.95:
         raise ValueError("flexure extends beyond the blade")
     L_ref = max(np.linalg.norm(c1.mean(0) - c0.mean(0)), 1e-3)
-    ext_out = max(0.002, 0.25 * L_ref, 0.0015 / cos_sx,
-                  (r_start - x_mem_max + 0.001) / cos_sx)
-    ext_in = max(0.002, 0.25 * L_ref)
+    # compact clamp blocks; the blade-side one is bridged to the blade root by a shank part
+    ext_out = max(0.001, 0.1 * L_ref)
+    ext_in = max(0.001, 0.1 * L_ref)
     fit_blade = _fitting_box(c1, P, s, t, a, ext_out, 0.0, FIT_MARGIN)
+    # bridge: ruled loft from the outer face of the blade-side fitting to a rectangle inside
+    # the blade root section (no gap between flexure and blade)
+    shank_secs = _shank_sections(fit_blade, bladegeom, design, r_start, n_side)
     fit_hub = _fitting_box(c0, P, s, t, a, 0.0, ext_in, FIT_MARGIN)
     hub_r = design.flexure.hub_radius
     hub_corners = fit_hub.center + (np.array([[i, j, k] for i in (-1, 1) for j in (-1, 1)
@@ -555,7 +601,7 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
                     half=np.array([x_spoke / 2, max(fit_hub.half[1], 0.6 * hub_r), hub_h / 4]))
 
     # ---- blade sections (blade-1 frame)
-    stations = _blade_stations(design, r_start, n_side)
+    stations = _blade_stations(design, r_start, n_side, n_span)
     ref = blade.elastic_axis_chord_frac
     outer = [_airfoil_section(xy, c, tw, r, ref) for (r, c, tw, xy) in stations]
     lay = blade.layup
@@ -633,6 +679,8 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
         fo = _orient_rot(design.flexure.orientation, R, mirror)
         parts.append(_box_part(f"blade{k}_root_fitting", "fitting", lay.material, bo, k,
                                tr_fit(fit_blade)))
+        parts.append(Part(f"blade{k}_shank", "fitting", lay.material, bo, k,
+                          [tr_sec(x) for x in shank_secs], ruled=True))
         parts.append(_box_part(f"blade{k}_hub_fitting", "fitting",
                                design.flexure.layup.material, fo, k, tr_fit(fit_hub)))
         parts.append(_box_part(f"blade{k}_spoke", "spoke", HUB_MATERIAL, PrintOrientation(), 0,
@@ -718,43 +766,47 @@ def loft_surface(part: Part) -> tuple[np.ndarray, np.ndarray]:
             faces += [(a, b, c), (a, c, d)]
     F = np.array(faces, int)
     cen = V.mean(0)
-    # orient sides outward: test against local section centroid
-    f0 = F[0]
-    sc = secs[0].ring.mean(0)
-    nrm = np.cross(V[f0[1]] - V[f0[0]], V[f0[2]] - V[f0[0]])
-    if nrm @ (V[f0].mean(0) - sc) < 0:
-        F = F[:, ::-1]
+    # sides keep ring order (consistent by construction); orient each cap against the ring
+    # traversal (cap0 reversed, cap1 forward) so the surface is a consistently wound closed
+    # mesh even for twisted/offset sections, then flip globally if the volume is negative
     caps = []
-    for ci, (sec, other) in enumerate(((secs[0], secs[1]), (secs[-1], secs[-2]))):
+    for ci, sec in enumerate((secs[0], secs[-1])):
         T = _cap(sec.ring) + (0 if ci == 0 else (K - 1) * N)
         if len(T) == 0:
             continue
+        c = sec.ring.mean(0)
+        N_ring = np.cross(sec.ring - c, np.roll(sec.ring, -1, axis=0) - c).sum(0)
         p = V[T[0]]
         nn = np.cross(p[1] - p[0], p[2] - p[0])
-        if nn @ (other.ring.mean(0) - sec.ring.mean(0)) > 0:
+        follows = nn @ N_ring > 0
+        if follows == (ci == 0):
             T = T[:, ::-1]
         caps.append(T)
     F = np.vstack([F] + caps)
-    # global check: signed volume must be positive
     vol = np.einsum("ij,ij->i", V[F[:, 0]] - cen, np.cross(V[F[:, 1]] - cen, V[F[:, 2]] - cen)).sum()
     if vol < 0:
         F = F[:, ::-1]
     return V, F
 
 
-def build_surface(design: Design, as_lists: bool = False, n_side: int = N_AIRFOIL_SURF) -> dict:
+N_SPAN_SURF = 28                 # blade sections in the viewport surface (spline-resampled)
+
+
+def build_surface(design: Design, as_lists: bool = False, n_side: int = N_AIRFOIL_SURF,
+                  n_span: Optional[int] = N_SPAN_SURF) -> dict:
     """Triangle meshes for the viewport.
 
     Returns dict(parts=[{name, role, material, blade, member, vertices (V,3), faces (F,3)}],
     hinges=[{blade, point, dir}], members=[{blade, index, p0, p1}], blade_start, radius,
     members_source, warnings). Arrays are numpy unless as_lists.
     """
-    geo = build_geometry(design, n_side=n_side)
+    geo = build_geometry(design, n_side=n_side, n_span=n_span)
     parts = []
     for p in geo.parts:
         V, F = loft_surface(p)
         parts.append(dict(name=p.name, role=p.role, material=p.material, blade=p.blade,
                           member=p.member, rotor=p.rotor, vertices=V, faces=F,
+                          color=color_hex(p.material, p.role), color_base=color_hex(p.material),
                           orientation=p.orientation.model_dump(mode="json")))
     out = dict(parts=parts,
                hinges=[dict(blade=k, point=geo.hinge[k][0], dir=geo.hinge[k][1])
@@ -797,18 +849,28 @@ def _to_lists(o):
 
 # =========================================================================== material colours
 
-MATERIAL_COLORS = {
-    "tpu_95a": (230, 120, 40, 255), "tpu_64d": (240, 160, 40, 255),
-    "pa6_cf": (60, 60, 66, 255), "petg_cf": (80, 80, 90, 255), "pla": (200, 200, 200, 255),
-    "cf_rod_pultruded": (20, 20, 20, 255), "steel_302_spring": (170, 175, 185, 255),
+MATERIAL_COLORS = {            # one clearly distinct hue per material class (RGB)
+    "tpu_95a": (255, 140, 26), "tpu_64d": (255, 190, 40),          # TPU: orange / amber
+    "pa6_cf": (58, 62, 70), "petg_cf": (84, 98, 120),              # CF nylon / PETG-CF: charcoal / slate
+    "pla": (46, 190, 170),                                         # PLA: teal
+    "cf_rod_pultruded": (225, 25, 35),                             # CF rod / strip: bright red
+    "steel_302_spring": (205, 212, 220),                           # steel: silver
 }
+_ROLE_SHADE = {"hub": -0.30, "spoke": -0.15, "fitting": 0.20, "member": 0.0, "member_core": -0.1,
+               "member_skin": 0.1, "blade": 0.0, "skin": 0.1, "core": -0.1, "rod": 0.0}
+
+
+def color_hex(material: str, role: str = "") -> str:
+    """Material hue with a small role-based lightness shift (hub darker, fittings lighter)."""
+    c = np.array(MATERIAL_COLORS.get(material, (160, 110, 220)), float)
+    sh = _ROLE_SHADE.get(role, 0.0)
+    c = c * (1 + sh) if sh < 0 else c + (255 - c) * sh
+    return "#%02x%02x%02x" % tuple(int(round(min(255, max(0, v)))) for v in c)
 
 
 def _color(material: str, role: str):
-    c = MATERIAL_COLORS.get(material, (150, 150, 200, 255))
-    if role in ("skin", "member_skin"):
-        c = (*c[:3], 120)          # translucent skin to show core
-    return c
+    c = tuple(int(color_hex(material, role)[i:i + 2], 16) for i in (1, 3, 5))
+    return (*c, 120 if role in ("skin", "member_skin") else 255)    # translucent skin shows core
 
 
 # =========================================================================== export

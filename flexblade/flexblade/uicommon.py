@@ -328,10 +328,15 @@ def _digest_single(r: dict, max_checks: int = 12) -> str:
 
 # --------------------------------------------------------------------------- geometry
 
-MATERIAL_COLOURS = {
-    "tpu_95a": "#e9b44c", "tpu_64d": "#d98f2b", "pa6_cf": "#3a3f47", "petg_cf": "#4a515b",
-    "pla": "#9aa6b2", "cf_rod_pultruded": "#1c1f24", "steel_302_spring": "#b8c2cc",
-}
+try:
+    from .geometry import MATERIAL_COLORS, color_hex
+except Exception:  # noqa: BLE001  (geometry deps missing: neutral fallback)
+    MATERIAL_COLORS = {}
+
+    def color_hex(material: str, role: str = "") -> str:
+        return "#8892a0"
+
+MATERIAL_COLOURS = {k: color_hex(k) for k in MATERIAL_COLORS}
 
 
 def load_geometry(design: Design) -> dict:
@@ -389,7 +394,8 @@ def _normalise_geometry(g: dict) -> dict:
         if "rotor" not in p:
             p["rotor"] = "upper" if name.startswith("upper") else "lower" if name.startswith("lower") else None
         if not p.get("color"):
-            p["color"] = MATERIAL_COLOURS.get(p.get("material", ""), "#8892a0")
+            p["color"] = color_hex(p.get("material", ""), p.get("role", ""))
+        p.setdefault("color_base", color_hex(p.get("material", "")))
         parts.append(p)
     g["parts"] = parts
     return g
