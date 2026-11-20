@@ -16,6 +16,7 @@ from typing import Callable
 from .optimize import get_path, set_design
 
 THRUST_FACTORS = (0.7, 1.0, 1.4)
+PULSE_MARGIN = 0.95      # each throttle point pulses at 0.95 x motor capability at its own rpm
 
 
 def variants(design, thrust_factors=THRUST_FACTORS, perturb=None):
@@ -28,7 +29,8 @@ def variants(design, thrust_factors=THRUST_FACTORS, perturb=None):
             if p:
                 d = set_design(d, {k: float(get_path(d, k)) * m for k, m in p.items()})
             d = d.model_copy(update=dict(op=d.op.model_copy(
-                update=dict(vehicle_mass=design.op.vehicle_mass * f, rpm=None))))
+                update=dict(vehicle_mass=design.op.vehicle_mass * f, rpm=None,
+                            pulse_capability_margin=PULSE_MARGIN))))
             out.append((f"T{f:g}" + ("" if ptag == "nom" else ":" + ptag), d))
     return out
 

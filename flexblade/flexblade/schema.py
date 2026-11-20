@@ -258,6 +258,8 @@ class OperatingPoint(_M):
     vehicle_mass: float = Field(0.6, description="kg; hover thrust = m g")
     rpm: Optional[float] = Field(None, description="None = trim rpm to hover thrust")
     collective_deg: float = Field(0.0, description="added to blade twist")
+    pulse_capability_margin: Optional[float] = Field(None, description="if set, the 1/rev pulse is this "
+        "fraction of the motor capability at the trimmed rpm (overrides torque_mod_frac; duty drive)")
     torque_mod_frac: float = Field(0.3, description="1/rev torque amplitude / mean torque. For "
                                    "drive='duty' this sets the duty amplitude giving this torque "
                                    "ratio at locked speed and DC; delivered torque is lower/lagged")

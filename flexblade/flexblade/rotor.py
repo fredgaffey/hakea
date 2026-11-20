@@ -1066,7 +1066,12 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
         dQ = 1.0 + 0j
     elif d.op.drive == "duty":
         from . import motor as mot
-        drive = mot.duty_drive(d.motor, ss.rpm, Q0, d.op.torque_mod_frac, d.op.duty_mod_amp)
+        frac = d.op.torque_mod_frac
+        if d.op.pulse_capability_margin is not None and Q0 > 0:
+            # controller uses what the motor can sustain at THIS rpm/torque (robust throttle sweeps)
+            frac = d.op.pulse_capability_margin * mot.capability(
+                d.motor, ss.rpm, Q0, ambient_C=d.op.temperature_C).mod_frac_max
+        drive = mot.duty_drive(d.motor, ss.rpm, Q0, frac, d.op.duty_mod_amp)
         dQ = complex(drive["Q_drive"])
         Z[hubd, hubd] += drive["k_hub"]
     else:
