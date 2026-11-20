@@ -1,7 +1,7 @@
 #!/bin/bash
 # after the running ideal seed finishes: robust DE on tt_strap_steelx + tt_strap (pitch preset auto), 7/10/5 in
 cd "$(dirname "$0")/../.."
-while pgrep -f "bin/bash.* study/campaign/ideal_seeds.sh" >/dev/null || pgrep -f "bin/python.* study/ideal_spec.py" >/dev/null; do sleep 60; done
+while pgrep -f "^bash study/campaign/ideal_seeds.sh" >/dev/null || pgrep -f "bin/python.* study/ideal_spec.py" >/dev/null; do sleep 60; done
 rm -f study/campaign/STOP_BURN
 H="local:26,mac:9"
 echo "=== $(date -Iseconds) steelx robust DE model $(git rev-parse --short HEAD)" >> study/campaign/steelx_de.log
