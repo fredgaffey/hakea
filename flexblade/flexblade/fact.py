@@ -262,7 +262,8 @@ def generate_members(design: Design) -> list[FlexureMember]:
                                  taper=1.0, layup=Layup(kind="solid", material=f.tension_rod_material),
                                  orientation=PrintOrientation(build_dir=(0.0, 0.0, 1.0),
                                                               raster_dir=(1.0, 0.0, 0.0))))
-    return out
+    from .printsetup import orient_generated_members
+    return orient_generated_members(design, out)
 
 
 def mirror_member(m: FlexureMember) -> FlexureMember:
