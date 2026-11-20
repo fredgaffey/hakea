@@ -97,3 +97,4 @@ Idea backlog (unscreened):
 - FIX = per-blade PITCH preset (pre_lag_axis="pitch", auto): 5" steelx split −0.12/0.00/+0.07° over throttle (pre −2.0°). Split problem SOLVED for CF-dominated hinges — just build the blades with ∓1° incidence difference. Make pitch axis the DE default.
 - 10" steelx hand design: raw split ~−10°, clips at +15° → needs smaller static lag (opus helper reworking 10": buckling, strap, pre-lag).
 - CCX check of steel strips: k_hinge within 20 %, cross/flap ccx ~1.3× beam (conservative), axis err < 1° → beam OK for shim strips.
+- Fred: persistent eval cache (helper running) → then SURROGATE step (approved, after cache lands + steelx DE settles): GP/GBT surrogate on cached evals per concept+model version; surrogate-prescreened DE for steelx; tolerance map (±10 %) of the leader; every predicted optimum verified by a real eval. Keep pace slow and steady.
