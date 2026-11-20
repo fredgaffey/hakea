@@ -10,3 +10,7 @@ study/campaign/STOP_BURN
 study/results/ideal_spec_*in.json
 study/designs/ideal_*in.json
 study/results/ideal_evals.jsonl.gz
+study/campaign/done/
+study/campaign/runner.log
+study/campaign/.runner.lock
+study/campaign/memguard.log
