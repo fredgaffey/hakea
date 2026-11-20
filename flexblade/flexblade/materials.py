@@ -416,21 +416,25 @@ def material_class(name: str) -> str | None:
 
 
 def _variant(name: str) -> Material:
-    """'<base>@E=0.8,S=1.2,rho=1.0' → base material with moduli ×E, strengths ×S, density
-    ×rho (used for datasheet-uncertainty sensitivity; works across worker processes)."""
+    """'<base>@E=0.8,S=1.2,rho=1.0,eta=0.05' → base material with moduli ×E, strengths ×S,
+    density ×rho and (optional) loss factor set to eta (datasheet-uncertainty sensitivity, or a
+    laminate's composite loss factor, e.g. a constrained-layer damped shim; works across worker
+    processes)."""
     from dataclasses import replace
     base, _, spec = name.partition("@")
     m = LIBRARY[base]
-    f = {"E": 1.0, "S": 1.0, "rho": 1.0}
+    f = {"E": 1.0, "S": 1.0, "rho": 1.0, "eta": None}
     for part in spec.split(","):
         k, _, v = part.partition("=")
         if k.strip() not in f:
-            raise KeyError(f"bad material variant key {k!r} in {name!r} (use E, S, rho)")
+            raise KeyError(f"bad material variant key {k!r} in {name!r} (use E, S, rho, eta)")
         f[k.strip()] = float(v)
     e, s = f["E"], f["S"]
     v = replace(m, name=name, rho=m.rho * f["rho"], E1=m.E1 * e, E2=m.E2 * e, E3=m.E3 * e,
                 G12=m.G12 * e, G13=m.G13 * e, G23=m.G23 * e, Xt=m.Xt * s, Yt=m.Yt * s,
                 Zt=m.Zt * s, S=m.S * s, source=m.source + f" [variant {spec}]")
+    if f["eta"] is not None:
+        v = replace(v, loss_factor=f["eta"], freq_loss=())
     LIBRARY[name] = v
     return v
 
