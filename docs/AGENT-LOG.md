@@ -35,3 +35,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | opus-5-5 | lean | Finish Floquet stability module | stability: true damped eig + Floquet airframe, Coleman validated <2%; no air resonance; damping-aware 1P margin -> 7in v2 feasible at hover | 97k / 29 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | Fix 10in trim non-convergence | trim: bracketed Illinois + trim_ok flag; 10in v2 has NO valid trim (elastic pitch collapse branch) | 49k / 36 calls | green: yes |
 | 2026-11-20 | opus-5-5 | lean | Robust re-tune of 7in steelx | 7in steelx v3 ROBUSTLY FEASIBLE: cr 0.354/0.196/0.107 at 0.7/1.0/1.4 | 64k / 40 calls | green: yes |
+| 2026-11-20 | sonnet-5-5 | lean | Verify 7in steelx v3 | verify v3: ccx confirms strips (0.94-1.02); NOT tolerance-robust (9/20 random fail); air resonance unstable band 160-260Hz; 5P on 2nd pitch; clamp issues | 75k / 29 calls | green: yes |
