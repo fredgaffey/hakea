@@ -793,6 +793,61 @@ def loft_surface(part: Part) -> tuple[np.ndarray, np.ndarray]:
 N_SPAN_SURF = 28                 # blade sections in the viewport surface (spline-resampled)
 
 
+_STL_CACHE: dict = {}
+
+
+def _load_topopt_mesh(path: str):
+    from .topopt.export import read_stl
+    st = os.stat(path)
+    key = (path, st.st_mtime_ns, st.st_size)
+    if key not in _STL_CACHE:
+        if len(_STL_CACHE) > 16:
+            _STL_CACHE.clear()
+        _STL_CACHE[key] = read_stl(path)
+    return _STL_CACHE[key]
+
+
+def _with_topopt_meshes(design: Design, parts: list[dict], blades: list[int], warnings: list) -> list[dict]:
+    """Replace the drawn FACT member parts by the topology-optimised flexure surfaces
+    (flexure.topopt.parts: blade-1 STL per material) on every blade (z-mirror for even k)."""
+    tp = design.flexure.topopt
+    if tp is None or not tp.parts:
+        return parts
+    n = design.blade.n_blades
+    meshes = []
+    for pd in tp.parts:
+        path = pd.get("stl", "")
+        if path and not os.path.isabs(path) and tp.source:
+            # source: absolute, relative to the cwd, or relative to the flexblade project dir
+            proj = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            cands = [os.path.join(tp.source, path), os.path.join(proj, tp.source, path)]
+            path = next((c for c in cands if os.path.exists(c)), cands[0])
+        try:
+            meshes.append((pd, *_load_topopt_mesh(path)))
+        except OSError as e:
+            warnings.append(f"topopt mesh {path}: {e}")
+    if not meshes:
+        return parts
+    keep = [p for p in parts if not (p["role"] in ("member", "member_core", "member_skin", "rod", "wire")
+                                     and str(p["name"]).startswith(f"blade{p['blade']}_flex"))]
+    for k in blades:
+        R = _rotz(2 * math.pi * (k - 1) / n)
+        mirror = (k % 2 == 0)
+        for pd, V, F in meshes:
+            Vk = V.copy()
+            Fk = F
+            if mirror:
+                Vk[:, 2] *= -1
+                Fk = F[:, ::-1]
+            mat = pd.get("material", "tpu_95a")
+            role = pd.get("role", "member")
+            keep.append(dict(name=f"blade{k}_{pd.get('name', 'topopt')}", role=role, material=mat,
+                             blade=k, member=-1, rotor="", vertices=Vk @ R.T, faces=np.asarray(Fk),
+                             color=color_hex(mat, role), color_base=color_hex(mat),
+                             orientation=_orient_rot(design.flexure.orientation, R, mirror).model_dump(mode="json")))
+    return keep
+
+
 def build_surface(design: Design, as_lists: bool = False, n_side: int = N_AIRFOIL_SURF,
                   n_span: Optional[int] = N_SPAN_SURF) -> dict:
     """Triangle meshes for the viewport.
@@ -809,6 +864,8 @@ def build_surface(design: Design, as_lists: bool = False, n_side: int = N_AIRFOI
                           member=p.member, rotor=p.rotor, vertices=V, faces=F,
                           color=color_hex(p.material, p.role), color_base=color_hex(p.material),
                           orientation=p.orientation.model_dump(mode="json")))
+    if design.flexure.topology == "topopt" and design.layout != "coaxial":
+        parts = _with_topopt_meshes(design, parts, sorted(geo.hinge), geo.warnings)
     out = dict(parts=parts,
                hinges=[dict(blade=k, point=geo.hinge[k][0], dir=geo.hinge[k][1])
                        for k in sorted(geo.hinge)],

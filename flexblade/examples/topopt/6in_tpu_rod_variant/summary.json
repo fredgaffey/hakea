@@ -1,0 +1,65 @@
+{
+ "name": "6in_tpu_rod_variant",
+ "k_axis": 0.5915660932230612,
+ "stiffness_ratio": 14.93871929311795,
+ "axis_error_deg": 4.038650485964773,
+ "fact_stiffness_ratio": 12.974734905234852,
+ "fact_k_axis": 8.602108832920708,
+ "seed_stiffness_ratio": 1.5074834436524251,
+ "fact_k_soft": 0.6629895799918042,
+ "constrained_ratio": 14.13639620256631,
+ "fact_constrained_ratio": 0.07707291593631127,
+ "stretch": 7.443916231964198e-05,
+ "stress_util_max": 0.13688992762457214,
+ "creep_util_max": 0.8243584318523097,
+ "fatigue_util_max": 2.198168188990268,
+ "interlayer_util_max": 0.17918325755600567,
+ "fact_creep_util_max": 1.6450557281871965,
+ "fact_fatigue_util_max": 6.742846377104486,
+ "fact_interlayer_util_max": 0.693227662729757,
+ "volume": 0.3142703201970443,
+ "mass": 0.00054687681118928,
+ "iterations": 220,
+ "s_per_iter": 23.370221823704547,
+ "evaluate": {
+  "control_ratio": 0.29565048473262456,
+  "lag_freq_per_rev": 0.7098785886620276,
+  "pitch_freq_per_rev": 1.0339048178546948,
+  "flap_freq_per_rev": 1.7107537257686747,
+  "pitch_lag_coupling": 0.9501923681376506,
+  "tan_skew": 0.9999999999999999,
+  "pitch_amp_deg": 10.804976406221266,
+  "lag_amp_deg": 11.074106313961241,
+  "radial_stretch": 0.00010056567006609674,
+  "max_structural_utilisation": 0.6903965082734762,
+  "max_utilisation": 0.9858146615692848
+ },
+ "evaluate_fact": {
+  "control_ratio": 0.09454680282917446,
+  "lag_freq_per_rev": 0.7668219025893871,
+  "pitch_freq_per_rev": 1.118263813431749,
+  "flap_freq_per_rev": 1.9644634196595256,
+  "pitch_lag_coupling": -0.8410872526678124,
+  "tan_skew": 0.9999999999999999,
+  "pitch_amp_deg": 4.646730463225613,
+  "lag_amp_deg": 5.264745927248828,
+  "radial_stretch": 6.726174399028506e-05,
+  "max_structural_utilisation": 0.4608099207331107,
+  "max_utilisation": 0.9957806624066223
+ },
+ "files": {
+  "stl_soft": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/6in_tpu_rod_variant_soft.stl",
+  "stl_stiff": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/6in_tpu_rod_variant_stiff.stl",
+  "step": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/6in_tpu_rod_variant_topopt.step",
+  "n_triangles": {
+   "soft": 8252,
+   "stiff": 114932
+  },
+  "materials": {
+   "soft": "tpu_95a",
+   "stiff": "pa6_cf"
+  },
+  "render": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/render.png",
+  "render_util": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/render_util.png"
+ }
+}

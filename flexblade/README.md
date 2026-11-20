@@ -106,6 +106,33 @@ The GUI, REST and MCP also accept `{"preset": NAME, "set": {path: value}}` for t
 `flexblade optimize` only accepts `{"preset": NAME}` with no `set`: that path validates the
 request directly, so to change values first, run `flexblade set` and pass the full design.
 
+### Topology optimisation (GPU)
+
+When the parametric FACT flexure cannot meet its targets, `flexblade topopt` runs a 3D
+two-material (soft TPU / stiff PA6-CF, both print-anisotropic) density topology
+optimisation of the hub-to-blade-root region on a voxel grid (PyTorch, CUDA if present),
+seeded from the voxelised FACT layout. The hinge stiffness about the skewed FACT axis is
+set from the rotor model (`--lag-target`, default lag mode at 0.7/rev at hover); the other
+five directions are maximised (`min_ratio` adds a constrained/hinge ratio floor). Loads come
+from the rotor model with the flexure as a 6×6: the steady hinge-point wrench at trim (blade
+root CF pull + steady moments) plus the flexure's own body force ρΩ²r is the sustained (creep)
+case, the complex 1/rev wrench the fatigue case. Constraints (p-norms with adaptive
+max-correction): equivalent-strain creep and 1/rev fatigue against each material's
+`creep_strain_allow` / `fatigue_strain_amp_allow`, interlayer (σ_n/Zt, τ/S on the layer
+plane) and Tsai-Hill strength, axis alignment, radial stretch, volume:
+
+```
+flexblade topopt preset:5in_cf_flexure --out out/5in --n-elem 100000 --soft-material tpu_95a --evaluate
+```
+
+Writes `render.png` / `render_util.png`, Taubin-smoothed `<name>_soft.stl` / `_stiff.stl` and
+a faceted `<name>_topopt.step` (mm), `result.json` (6×6 at the hinge point, history, loads,
+validation against a P2-tet re-analysis) and `design_topopt.json` (`flexure.topology =
+"topopt"`, the stored 6×6 + mass properties + STL parts, so `flexblade evaluate` runs the
+1/rev analysis on it and the GUI draws the optimised flexure on every blade). Creep study vs
+the FACT plate (5" winner, 6" 2307 variant): `examples/topopt/creep_study.py`, results in
+`examples/topopt/comparison.md`.
+
 ## MCP server (for LLM agents)
 
 ```bash
