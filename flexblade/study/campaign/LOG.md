@@ -91,3 +91,9 @@ Idea backlog (unscreened):
 - COMPACT ROOT landed: root height = flexure member width (20 mm skewed plate), not fittings; fairing caps cut strap_hand hover power 134.8→123.7 W (thermal 0.98 pass). root_envelope made SOFT in run_study (drag already charged via power/thermal).
 - COMPUTE: stopped stale strap DE (envelope-bound, pre-fix); robust ideal seeds 3–4 running; strap + steelx DE to be queued after pre-lag lands (split binds steelx without it).
 - Helpers: pre-lag (opus), ccx check of steel strips (sonnet).
+
+## 2026-11-21 ~09:30 — iteration 9 (session restarted 08:40; compute idle ~01:45–08:40)
+- PRE-LAG RESULT: hinge-axis pre-lag (rest-angle preset) FAILS (clips ±15°): with k ≪ K_cf the equilibrium is set by CF+drag, not by the spring's rest angle — the I22 premise itself made that knob useless. BUT the raw split IS throttle-invariant where k ≪ K_cf (5" steelx +2.78/+2.88/+2.92° at 0.7/1.0/1.4; tt_strap_hand with k≈K_cf drifts 1.39→2.10) ⇒ I22 holds.
+- FIX = per-blade PITCH preset (pre_lag_axis="pitch", auto): 5" steelx split −0.12/0.00/+0.07° over throttle (pre −2.0°). Split problem SOLVED for CF-dominated hinges — just build the blades with ∓1° incidence difference. Make pitch axis the DE default.
+- 10" steelx hand design: raw split ~−10°, clips at +15° → needs smaller static lag (opus helper reworking 10": buckling, strap, pre-lag).
+- CCX check of steel strips: k_hinge within 20 %, cross/flap ccx ~1.3× beam (conservative), axis err < 1° → beam OK for shim strips.
