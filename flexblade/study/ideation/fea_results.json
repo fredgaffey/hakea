@@ -1,0 +1,528 @@
+[
+ {
+  "id": "B01",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 1.1564189947117383,
+    "util_interlayer": 0.7506897121693787
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.2191229440974821,
+    "util_interlayer": 0.23271847288642777
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.6324158893300953,
+    "util_interlayer": 2.277128817514832
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.7515524731284063,
+    "util_interlayer": 2.6441317779589437
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 2.407938695105912,
+    "util_interlayer": 2.6805162627826404
+   }
+  },
+  "max_util": 2.6805162627826404,
+  "max_util_printlayers": 2.6805162627826404,
+  "radial_stretch_tip": 0.0002893427751852271,
+  "warnings": [
+   "blade loft starts at r=16.7 mm (flexure outer end) instead of root station r=14.1 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "B04",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 1.287369015760122,
+    "util_interlayer": 0.7517861228501477
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.18003265957825373,
+    "util_interlayer": 0.18952571975105864
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.5416530905838072,
+    "util_interlayer": 1.8132410375168848
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.6553398974675699,
+    "util_interlayer": 2.738828008263372
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 2.6155404024361157,
+    "util_interlayer": 2.613774198162273
+   }
+  },
+  "max_util": 2.738828008263372,
+  "max_util_printlayers": 2.6155404024361157,
+  "radial_stretch_tip": 0.00025929829029119374,
+  "warnings": [
+   "blade loft starts at r=16.7 mm (flexure outer end) instead of root station r=15.6 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "B06",
+  "ok": false,
+  "error": "exit -11: "
+ },
+ {
+  "id": "B05",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 0.21993894509920342,
+    "util_interlayer": 0.11667311828795805
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.15583269952823617,
+    "util_interlayer": 0.16759849053833284
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.4835325487400139,
+    "util_interlayer": 2.0891818072245254
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.5094235351899864,
+    "util_interlayer": 1.7547769124522283
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 1.8345531050652872,
+    "util_interlayer": 1.391776983887152
+   },
+   "blade1_shank": {
+    "material": "pa6_cf",
+    "util_principal": 0.4362810776529513,
+    "util_interlayer": 0.16073941982524348
+   }
+  },
+  "max_util": 2.0891818072245254,
+  "max_util_printlayers": 1.8345531050652872,
+  "radial_stretch_tip": 0.0002119713713101859,
+  "warnings": []
+ },
+ {
+  "id": "C19",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 0.4862755909606495,
+    "util_interlayer": 0.3434938501326548
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.1785029772858975,
+    "util_interlayer": 0.1901370959592896
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.4813244127110044,
+    "util_interlayer": 2.104744736634999
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.5681460739010133,
+    "util_interlayer": 2.8820746391635774
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 1.8922778460678815,
+    "util_interlayer": 2.2472687145722476
+   }
+  },
+  "max_util": 2.8820746391635774,
+  "max_util_printlayers": 2.2472687145722476,
+  "radial_stretch_tip": 0.0002711873596548155,
+  "warnings": [
+   "blade loft starts at r=16.7 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "C05",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 2.2393633760865232,
+    "util_interlayer": 1.346132754349301
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.12675129971882024,
+    "util_interlayer": 0.10029397576816595
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.3768381642166053,
+    "util_interlayer": 1.9896992463285446
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.4813728005448173,
+    "util_interlayer": 3.385881158818897
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 3.310614737983689,
+    "util_interlayer": 3.052051078598411
+   }
+  },
+  "max_util": 3.385881158818897,
+  "max_util_printlayers": 3.310614737983689,
+  "radial_stretch_tip": 0.00020257742803436501,
+  "warnings": [
+   "blade loft starts at r=16.5 mm (flexure outer end) instead of root station r=14.0 mm",
+   "rod at x/c=0.43 does not fit (diameter vs thickness)",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "B03",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 1.1370440604656606,
+    "util_interlayer": 0.6390599898214102
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.2197331916311962,
+    "util_interlayer": 0.23821137802552794
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.4949339666376389,
+    "util_interlayer": 1.703242984917518
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.5991455207203277,
+    "util_interlayer": 2.3595072907159214
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 2.3424796306382354,
+    "util_interlayer": 2.5005423763240686
+   }
+  },
+  "max_util": 2.5005423763240686,
+  "max_util_printlayers": 2.5005423763240686,
+  "radial_stretch_tip": 0.00024873725007798497,
+  "warnings": [
+   "blade loft starts at r=16.7 mm (flexure outer end) instead of root station r=14.4 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "B02",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 0.09852833088000543,
+    "util_interlayer": 0.2946656017962647
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.0022296590860272857,
+    "util_interlayer": 0.0020258763008160776
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.009502775953928028,
+    "util_interlayer": 0.033604825701204294
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.009770347291831303,
+    "util_interlayer": 0.019437625371717945
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 0.0192515595818237,
+    "util_interlayer": 0.025983533494326055
+   }
+  },
+  "max_util": 0.2946656017962647,
+  "max_util_printlayers": 0.2946656017962647,
+  "radial_stretch_tip": -0.05681869718602015,
+  "warnings": [
+   "linear small-strain assumption violated (max |u| 57.30 mm, flexure stretch 0.00 mm on 8.0 mm length); stresses are indicative only"
+  ]
+ },
+ {
+  "id": "C01",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 0.7507511079809451,
+    "util_interlayer": 0.42648324279123023
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.19767533519004035,
+    "util_interlayer": 0.16942763684566522
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 1.0125112812470503,
+    "util_interlayer": 2.759545815403167
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 1.0726993110566667,
+    "util_interlayer": 3.4854037616033335
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 4.194568295584572,
+    "util_interlayer": 4.296218285577352
+   }
+  },
+  "max_util": 4.296218285577352,
+  "max_util_printlayers": 4.296218285577352,
+  "radial_stretch_tip": 0.00040752717865835404,
+  "warnings": [
+   "blade loft starts at r=19.6 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)",
+   "linear small-strain assumption violated (max |u| 0.49 mm, flexure stretch 0.36 mm on 8.5 mm length); stresses are indicative only"
+  ]
+ },
+ {
+  "id": "C18",
+  "ok": false,
+  "error": "Exception: HXT 3D mesh failed",
+  "tb": "  model = model_from_design(design, \"blade1\", h=h, h_member=h_member)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/fred/vehicles/hakea/.claude/worktrees/agent-a6d1dadac77d77e11/flexblade/flexblade/fea.py\", line 322, in model_from_design\n    sm = build_solid_mesh(design, region=region, h=h, h_member=h_member, skip_shank=True)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/fred/vehicles/hakea/.claude/worktrees/agent-a6d1dadac77d77e11/flexblade/flexblade/geometry.py\", line 1418, in build_solid_mesh\n    gmsh.model.mesh.generate(3)\n  File \"/home/fred/venv-flexblade/lib/python3.12/site-packages/gmsh.py\", line 2189, in generate\n    raise Exception(logger.getLastError())\nException: HXT 3D mesh failed\n"
+ },
+ {
+  "id": "C03",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 0.4344014187680481,
+    "util_interlayer": 0.2572566789546138
+   },
+   "blade1_flex0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.49857005496900647,
+    "util_interlayer": 0.5377408140480204
+   },
+   "blade1_flex1": {
+    "material": "tpu_95a",
+    "util_principal": 0.2994425722934851,
+    "util_interlayer": 0.2944587761223875
+   },
+   "blade1_flex2": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.025986163232086325,
+    "util_interlayer": 0.08165849644564258
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 0.6580197974279962,
+    "util_interlayer": 0.5449552337071983
+   }
+  },
+  "max_util": 0.6580197974279962,
+  "max_util_printlayers": 0.6580197974279962,
+  "radial_stretch_tip": 0.00021659980989210262,
+  "warnings": [
+   "blade loft starts at r=20.1 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "C10",
+  "ok": false,
+  "error": "Exception: HXT 3D mesh failed",
+  "tb": "  model = model_from_design(design, \"blade1\", h=h, h_member=h_member)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/fred/vehicles/hakea/.claude/worktrees/agent-a6d1dadac77d77e11/flexblade/flexblade/fea.py\", line 322, in model_from_design\n    sm = build_solid_mesh(design, region=region, h=h, h_member=h_member, skip_shank=True)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/fred/vehicles/hakea/.claude/worktrees/agent-a6d1dadac77d77e11/flexblade/flexblade/geometry.py\", line 1418, in build_solid_mesh\n    gmsh.model.mesh.generate(3)\n  File \"/home/fred/venv-flexblade/lib/python3.12/site-packages/gmsh.py\", line 2189, in generate\n    raise Exception(logger.getLastError())\nException: HXT 3D mesh failed\n"
+ },
+ {
+  "id": "C15",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 0.5347812662103707,
+    "util_interlayer": 0.5236257139046762
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.07303640620741333,
+    "util_interlayer": 0.07793593156216044
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.42189882640135484,
+    "util_interlayer": 1.2539834556575373
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.3640729615811251,
+    "util_interlayer": 0.3687600937539279
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 1.2402909276747016,
+    "util_interlayer": 0.9058652110288433
+   }
+  },
+  "max_util": 1.2539834556575373,
+  "max_util_printlayers": 1.2402909276747016,
+  "radial_stretch_tip": 0.00012762462564169447,
+  "warnings": [
+   "blade loft starts at r=15.6 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "C09",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 237.01294505323227,
+    "util_interlayer": 346.2720974491842
+   },
+   "blade1_flex0": {
+    "material": "tpu_95a",
+    "util_principal": 0.3001983770112034,
+    "util_interlayer": 0.31580385412616085
+   },
+   "blade1_flex0_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 1.2799626999365632,
+    "util_interlayer": 1.872125108897512
+   },
+   "blade1_flex0_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 1.2278577399382358,
+    "util_interlayer": 1.2963344095035758
+   },
+   "blade1_flex1": {
+    "material": "tpu_95a",
+    "util_principal": 0.2368942059453667,
+    "util_interlayer": 0.2673446599427446
+   },
+   "blade1_flex1_rod0": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.9466824933286591,
+    "util_interlayer": 0.7424682963278126
+   },
+   "blade1_flex1_rod1": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 1.1801110430444466,
+    "util_interlayer": 2.512155104164889
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 111.57813238958539,
+    "util_interlayer": 335.0829620825938
+   }
+  },
+  "max_util": 346.2720974491842,
+  "max_util_printlayers": 346.2720974491842,
+  "radial_stretch_tip": 0.0019378765307949196,
+  "warnings": [
+   "stress stiffening not converged: max|u| history [0.07959337570466084, 0.010637661478943258, 0.006708142628492648, 0.010124962266509037, 0.011445306708244164, 0.009234049340661852, 0.016383741275783625]",
+   "blade loft starts at r=20.5 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)",
+   "linear small-strain assumption violated (max |u| 12.79 mm, flexure stretch 0.48 mm on 10.1 mm length); stresses are indicative only"
+  ]
+ },
+ {
+  "id": "C17",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 1.0407026796262255,
+    "util_interlayer": 0.41677357788784547
+   },
+   "blade1_flex0": {
+    "material": "steel_302_spring",
+    "util_principal": 1.2159207724501897,
+    "util_interlayer": 0.5937235348387643
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 2.114319734862293,
+    "util_interlayer": 1.111174360733075
+   }
+  },
+  "max_util": 2.114319734862293,
+  "max_util_printlayers": 2.114319734862293,
+  "radial_stretch_tip": 6.73295268529711e-05,
+  "warnings": [
+   "blade loft starts at r=19.3 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ },
+ {
+  "id": "C08",
+  "ok": true,
+  "parts": {
+   "blade1": {
+    "material": "pa6_cf",
+    "util_principal": 1.511957833684503,
+    "util_interlayer": 0.5450208606819934
+   },
+   "blade1_flex0": {
+    "material": "pa6_cf",
+    "util_principal": 3.158071599798257,
+    "util_interlayer": 0.6574635243372955
+   },
+   "blade1_flex1": {
+    "material": "pa6_cf",
+    "util_principal": 0.34270560518594717,
+    "util_interlayer": 0.20680660774396065
+   },
+   "blade1_flex2": {
+    "material": "pa6_cf",
+    "util_principal": 0.41634334078310564,
+    "util_interlayer": 0.27160427441556934
+   },
+   "blade1_flex3": {
+    "material": "cf_rod_pultruded",
+    "util_principal": 0.50936333117925,
+    "util_interlayer": 0.4548977962699413
+   },
+   "blade1_root_fitting": {
+    "material": "pa6_cf",
+    "util_principal": 0.9543637840203518,
+    "util_interlayer": 0.5585209117456464
+   }
+  },
+  "max_util": 3.158071599798257,
+  "max_util_printlayers": 3.158071599798257,
+  "radial_stretch_tip": 0.00014960431256626303,
+  "warnings": [
+   "blade loft starts at r=23.1 mm (flexure outer end) instead of root station r=14.0 mm",
+   "blade-root shank omitted from the solid mesh (meshing fallback)"
+  ]
+ }
+]
