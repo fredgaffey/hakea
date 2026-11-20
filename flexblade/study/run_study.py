@@ -253,6 +253,9 @@ def _sub_results(r: dict) -> list[tuple[str, dict]]:
     return [("", r)]
 
 
+from flexblade.stability import margin_1p_eff  # noqa: E402
+
+
 def resonance_margin(r1: dict) -> tuple[float, str]:
     rpm = (r1.get("summary") or {}).get("rpm") or (r1.get("trim") or {}).get("rpm")
     if not rpm or not r1.get("modes"):
@@ -263,8 +266,13 @@ def resonance_margin(r1: dict) -> tuple[float, str]:
         f = m["freq_hz"]
         if f < 0.05 * f1:          # rigid spin
             continue
+        z = m.get("damping_ratio")
         for k in (1, 2, 3):
             mg = abs(f / (k * f1) - 1.0)
+            # damping-aware (stability.margin_1p_eff): a well-damped mode near kP counts as the
+            # undamped margin with the same amplification, so it is not rejected outright
+            if z is not None and math.isfinite(z) and z > 0:
+                mg = max(mg, margin_1p_eff(f / (k * f1), z))
             if mg < best:
                 best, which = mg, f"{m['label']} {f / f1:.2f}/rev vs {k}P"
     return best, which
