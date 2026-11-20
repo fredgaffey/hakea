@@ -5,3 +5,5 @@ work/
 *.msh
 *.vtu
 *.npz
+study/campaign/burn.log
+study/campaign/STOP_BURN
