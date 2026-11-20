@@ -257,14 +257,51 @@ LIBRARY: dict[str, Material] = {
                              Xt=1300e6, Yt=1300e6, Zt=1300e6, S=700e6,
                              creep_strain_allow=0.005, fatigue_strain_amp_allow=0.002,
                              fatigue_stress_ratio=0.35, source="spring-temper stainless wire"),
+    # ---- tension-torsion strap strands (unbonded yarn/tow/braid; fibre along raster_dir =
+    # strand axis). E1/Xt are for the *fibre-equivalent* solid diameter (strand diameter given
+    # as the solid fibre area equivalent, not the bulky yarn envelope). Transverse values are
+    # nominal (dry strands have ~no shear/transverse strength; rotor.py scales strand EI/GJ by
+    # the strap bend factor, so they barely enter). creep_strain_allow = sustained-stress
+    # fraction × Xt / E1 (the creep check compares elastic strain at trim with it).
+    # Kevlar 49 yarn (DuPont Kevlar technical guide): ρ 1440, E 112 GPa, yarn UTS ~3.0 GPa,
+    # 2.4 % elongation; Xt knocked to 2.4 GPa for strand translation efficiency. Creep is low
+    # (~0.03 % over 1e4 h at 50 % UTS) and creep-rupture life is long at ≤ 40-50 % UTS → allow
+    # 0.4 × 2.4/112 ≈ 0.0086. Poor in transverse compression/abrasion (pin bends!).
+    "aramid_yarn": Material(
+        "aramid_yarn", 1440, 112e9, 2.5e9, 2.5e9, 1.5e9, 1.5e9, 1.0e9, 0.36, 0.36, 0.4,
+        loss_factor=0.02, Xt=2.4e9, Yt=20e6, Zt=20e6, S=30e6,
+        creep_strain_allow=0.0086, fatigue_strain_amp_allow=0.004, fatigue_stress_ratio=0.4,
+        source="Kevlar 49 yarn (DuPont guide): E 112 GPa, UTS 3.0 GPa (2.4 used, strand eff.); "
+               "creep allow at 40 % Xt"),
+    # Dyneema SK75 fibre (DSM datasheet): ρ 975, E 109-132 GPa, UTS 3.4-3.6 GPa; as a 12-strand
+    # braid the helix angle drops it to ~E 70 GPa, UTS ~2.0 GPa (braid efficiency ~0.6).
+    # FLAG: UHMWPE CREEPS — SK75 creeps several % over years at 20 % UTS at 20 C and creep
+    # rate rises ~10x per +20 C (motor heat). Sustained load must stay ≲ 10 % UTS (SK78/SK99
+    # ~3-5x better): allow 0.10 × 2.0/70 ≈ 0.0029. Melts 144-152 C; bonds poorly to epoxy.
+    "uhmwpe_braid": Material(
+        "uhmwpe_braid", 975, 70e9, 1.5e9, 1.5e9, 0.8e9, 0.8e9, 0.6e9, 0.4, 0.4, 0.45,
+        loss_factor=0.03, Xt=2.0e9, Yt=10e6, Zt=10e6, S=15e6,
+        creep_strain_allow=0.0029, fatigue_strain_amp_allow=0.006, fatigue_stress_ratio=0.35,
+        source="Dyneema SK75 (DSM): E 109-132 GPa, UTS 3.5 GPa; braid E 70 GPa, UTS 2.0 GPa; "
+               "CREEP-LIMITED: sustained ≤ 10 % UTS"),
+    # T700S 12K carbon tow (Toray datasheet): ρ 1800, E 230 GPa, UTS 4.9 GPa. Dry unbonded tow:
+    # filament misalignment and abrasion → E ~200 GPa, strength efficiency ~0.5 → 2.5 GPa.
+    # Negligible creep (allow 0.65 × 2.5/200 ≈ 0.008). Brittle over small bend radii (pin
+    # wrap needs D/d ≫ 10) and filaments fret at the anchor under 1/rev motion.
+    "cf_tow": Material(
+        "cf_tow", 1800, 200e9, 3.0e9, 3.0e9, 1.5e9, 1.5e9, 1.0e9, 0.3, 0.3, 0.4,
+        loss_factor=0.005, Xt=2.5e9, Yt=20e6, Zt=20e6, S=30e6,
+        creep_strain_allow=0.008, fatigue_strain_amp_allow=0.003, fatigue_stress_ratio=0.5,
+        source="Toray T700S 12K: E 230 GPa, UTS 4.9 GPa; dry tow E 200 GPa, Xt 2.5 GPa"),
 }
+STRAP_MATERIALS = ("aramid_yarn", "uhmwpe_braid", "cf_tow")
 
 
 # assumed: TPU 95A/64D soften ~100-130 C; PETG-CF Tg ~85 C (form ~90-100); PLA Tg ~60 C;
 # PA6-CF needs ~150-170 C; pultruded CF rod epoxy/vinyl-ester matrix Tg ~110 C (ASSUMPTION);
 # steel spring wire does not care below its tempering temperature.
 # ROUGH heat-deflection temperatures of the generic entries (0 = n/a, no derating)
-HDT_C = {"tpu_95a": 90.0, "tpu_64d": 90.0, "petg_cf": 75.0, "pla": 55.0, "pa6_cf": 150.0}
+HDT_C = {"uhmwpe_braid": 100.0, "tpu_95a": 90.0, "tpu_64d": 90.0, "petg_cf": 75.0, "pla": 55.0, "pa6_cf": 150.0}
 # class-default HDT (C) for brand entries whose TDS gives none; inserts -> 0 (n/a)
 CLASS_HDT_C = {"pla": 55, "pla_plus": 55, "pla_tough": 55, "pla_ht": 100, "pla_cf": 60, "petg": 70,
                "petg_cf": 75, "pet_cf": 80, "abs": 95, "abs_cf": 100, "abs_gf": 100, "asa": 95,

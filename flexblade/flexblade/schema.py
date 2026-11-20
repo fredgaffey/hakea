@@ -114,6 +114,11 @@ class FlexureMember(_M):
         "fitting face (anchorage.py punch springs); embedded = member continuous into / bonded "
         "over a length inside the fitting (printed monolithic with fillets, or rod bonded in a "
         "blind hole ≥ 3 d deep): no contact interface, ends treated as rigidly joined")
+    cable: bool = Field(False, description="unbonded strand (tension-torsion strap): axial "
+                        "stiffness of the fibre area, bending/torsion scaled by cable_bend_factor; "
+                        "hinge stiffness then comes from the tension (geometric stiffness)")
+    cable_bend_factor: float = Field(1e-3, gt=0.0, description="EI, GJ multiplier of a cable "
+                                     "member vs the solid fibre-equivalent rod (≈ 1/filaments)")
 
 
 class TopoptFlexure(_M):
@@ -227,6 +232,26 @@ class Flexure(_M):
                                  "carrying the centrifugal load (split load path; FACT-compatible: "
                                  "the line intersects the hinge axis). 0 = none")
     tension_rod_material: str = Field("cf_rod_pultruded", description="material of the tension rod")
+    # ---- tension-torsion strap (fact.py appends cable members; rotor.py checks the anchors)
+    strap_strands: int = Field(0, ge=0, description="number of unbonded strands in the radial "
+                               "tension-torsion strap carrying the centrifugal load; 0 = none")
+    strap_strand_diameter: float = Field(0.0005, gt=0.0, description="m, fibre-area-equivalent "
+                                         "solid diameter of one strand")
+    strap_radius: float = Field(0.0, ge=0.0, description="m, radius of the circle the strands sit "
+                                "on about the radial line through the hinge point (trapeze arm)")
+    strap_material: str = Field("aramid_yarn", description="aramid_yarn | uhmwpe_braid | cf_tow")
+    strap_length: float = Field(0.0, ge=0.0, description="m, free strand length centred on the "
+                                "hinge point; 0 = hub radius → blade end of the flexure")
+    strap_bend_factor: float = Field(1e-3, gt=0.0, description="strand EI/GJ vs solid rod")
+    strap_anchor: Literal["pin_wrap", "knot", "epoxy_pot"] = Field(
+        "pin_wrap", description="strand end anchorage: wrapped round a pin (loop), knotted, or "
+        "potted in epoxy")
+    strap_pin_diameter: float = Field(0.003, gt=0.0, description="m, pin for pin_wrap")
+    strap_pot_length: float = Field(0.006, gt=0.0, description="m, bonded length for epoxy_pot")
+    axial_release: bool = Field(False, description="printed flexure members get a radial slider "
+                                "at the blade end so the strap carries the centrifugal load")
+    axial_release_stiffness: float = Field(0.0, ge=0.0, description="N/m radial stiffness of the "
+                                           "release (0 = free slider; > 0 = zig-zag spring)")
     members: list[FlexureMember] = Field(
         default_factory=list, description="explicit members (custom) or fact.py output")
     hub_radius: float = Field(0.006, description="rigid hub outer radius, m")

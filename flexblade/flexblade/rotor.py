@@ -225,7 +225,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 shp = CircleShape(round(t, 9))
             else:
                 shp = RectShape(round(m.width, 9), round(t, 9))
-            return section_properties(shp, m.layup, ori, e1, axes=(e2, e3))
+            sp = section_properties(shp, m.layup, ori, e1, axes=(e2, e3))
+            return _cable_section(sp, m.cable_bend_factor) if m.cable else sp
         if m.taper == 1.0 or m.layup.kind != "solid":
             s = sec_at(0.5)
             return [s], None, _ea_fracs(s, m.layup)
@@ -307,6 +308,17 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                         n_in = s_node
                     else:
                         n_out = s_node
+            if design.flexure.axial_release and not m.cable and m.kind != "rigid":
+                # radial slider / zig-zag at the blade end: soft along the rotor radial
+                # direction, stiff otherwise → the printed member carries ~no centrifugal load
+                Lr = max(design.flexure.length, 1e-3)
+                kt, kr = STIFF_FACTOR * max_EA / Lr, STIFF_FACTOR * max_EI / Lr
+                Ka = np.diag([design.flexure.axial_release_stiffness, kt, kt, kr, kr, kr])
+                s_node = fe.add_node(fe.X0[n_out].copy(), f"{tag}.release")
+                fe.add_element(Element(n_out, s_node, np.zeros(3), [], tag=f"{tag}.release",
+                                       kind="spring", blade=k, spring_K=Ka,
+                                       spring_frame=np.column_stack([Rk[:, 0], Rk[:, 1], Rk[:, 2]])))
+                n_out = s_node
             # spokes and connectors (stiff, massless)
             pending_stiff.append((hub, n_in, np.array([0.0, 0.0, 1.0]), f"b{k}.spoke{j}", k))
             if np.linalg.norm(p1 - fe.X0[master]) > 1e-9:
@@ -1211,6 +1223,42 @@ def _strength_along(fb, t_hat) -> float:
     return v
 
 
+def _cable_section(sp: SectionProps, f: float) -> SectionProps:
+    """Unbonded strand: keep EA and mass, scale EI/GJ by f (≈ 1/filaments) and fibre offsets
+    by √f so a curvature gives the (small) filament-level bending strain."""
+    import dataclasses as _dc
+    q = np.sqrt(f)
+    return _dc.replace(sp, EIy=sp.EIy * f, EIz=sp.EIz * f, EIyz=sp.EIyz * f, GJ=sp.GJ * f,
+                       tau_per_twist=sp.tau_per_twist * q,
+                       fibres=[_dc.replace(fb, y=fb.y * q, z=fb.z * q) for fb in sp.fibres])
+
+
+# strand anchorage (per strand leg). Pin wrap: rope bend efficiency η = 1 − c/√(D/d)
+# (Cordage-Institute-style D/d rule; c = 0.5 for aramid/UHMWPE, 1.0 for brittle CF tow).
+# Knot efficiency (typical figure-8/bowline in HMPF/aramid: 0.35-0.5; CF tow ~0.25).
+# Epoxy pot: pull-out = τ π d L with τ ≈ 15 MPa aramid, 2 MPa UHMWPE (poor adhesion),
+# 20 MPa CF tow; capped at the strand strength. All ROUGH: verify with a pull coupon.
+STRAP_ANCHOR = {"aramid_yarn": dict(c_pin=0.5, knot=0.45, tau=15e6),
+                "uhmwpe_braid": dict(c_pin=0.5, knot=0.35, tau=2e6),
+                "cf_tow": dict(c_pin=1.0, knot=0.25, tau=20e6)}
+
+
+def strap_anchor_capacity(f) -> tuple[float, str]:
+    """Pull-out/anchor capacity (N) of one strap strand of design.flexure f, and a note."""
+    mat = get_material(f.strap_material)
+    d = f.strap_strand_diameter
+    A = np.pi * d * d / 4
+    P = mat.Xt * A
+    a = STRAP_ANCHOR.get(f.strap_material, dict(c_pin=0.7, knot=0.35, tau=5e6))
+    if f.strap_anchor == "pin_wrap":
+        eta = max(0.05, 1.0 - a["c_pin"] / np.sqrt(max(f.strap_pin_diameter / d, 1e-9)))
+        return eta * P, f"pin wrap D/d={f.strap_pin_diameter / d:.1f}, η={eta:.2f}"
+    if f.strap_anchor == "knot":
+        return a["knot"] * P, f"knot η={a['knot']:.2f}"
+    cap = min(P, a["tau"] * np.pi * d * f.strap_pot_length)
+    return cap, f"epoxy pot τ={a['tau'] / 1e6:.0f} MPa, L={f.strap_pot_length * 1e3:.1f} mm"
+
+
 def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.ndarray):
     """Max stress utilisation, interlayer utilisation, max tensile strain, details, and the
     creep utilisation max(strain / creep_strain_allow) evaluated per fibre with that fibre's
@@ -1317,6 +1365,21 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                              utilisation=g["fat_e"], note="1/rev strain amplitude (design torque)"))
             out.append(Check(name="fatigue_stress", member=name, value=g["fat_s"], allowable=1.0,
                              utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)"))
+    f = model.design.flexure
+    if f.strap_strands > 0 and model.blades:
+        cable_tags = {f"flex{j}" for j, m in enumerate(model.blades[0].members) if m.cable}
+        Nmax = 0.0
+        for e, c in zip(fe.elements, sa.cr):
+            if e.kind == "flexure" and e.tag.split(".", 1)[-1] in cable_tags:
+                fa, fb = element_end_forces(e, c)
+                Nmax = max(Nmax, float(abs(fa[0])), float(abs(fb[0])))
+        mat = get_material(f.strap_material)
+        P = mat.Xt * np.pi * f.strap_strand_diameter ** 2 / 4
+        out.append(Check(name="strap_tension", member="strap", value=Nmax, allowable=P,
+                         utilisation=Nmax / P, note=f"max strand tension vs strength ({f.strap_material})"))
+        cap, note = strap_anchor_capacity(f)
+        out.append(Check(name="strap_anchor", member="strap", value=Nmax, allowable=cap,
+                         utilisation=Nmax / cap, note=note))
     if hd is not None and hd.drive:
         dr = hd.drive
         out.append(Check(name="esc_duty_slew", member="esc", value=float(dr["slew"]),

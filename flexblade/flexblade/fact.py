@@ -303,7 +303,40 @@ def generate_members(design: Design) -> list[FlexureMember]:
                                  orientation=PrintOrientation(build_dir=(0.0, 0.0, 1.0),
                                                               raster_dir=(1.0, 0.0, 0.0))))
     from .printsetup import orient_generated_members
-    return orient_generated_members(design, out)
+    out = orient_generated_members(design, out)
+    if f.strap_strands > 0 and out:     # strands: not printed, fibre along the strand
+        out.extend(strap_members(design, out))
+    return out
+
+
+def strap_members(design: Design, others: list[FlexureMember] | None = None) -> list[FlexureMember]:
+    """Tension-torsion strap: flexure.strap_strands unbonded strands (cable members) parallel to
+    the radial line through the hinge point H0, on a circle of radius strap_radius about it,
+    spanning strap_length centred on H0 (0 = hub radius → outermost blade-end x of `others`).
+    Each strand carries axial load only (EI, GJ × strap_bend_factor); its hinge stiffness is the
+    geometric (tension) stiffness from the co-rotational beam: ≈ T r²/L per strand about the
+    radial axis, and −T L1 L2/(L1+L2) (destabilising) for rotation about an axis ⟂ to it."""
+    f = design.flexure
+    H0, _ = hinge_axis(design)
+    if f.strap_length > 0:
+        x0, x1 = H0[0] - 0.5 * f.strap_length, H0[0] + 0.5 * f.strap_length
+    else:
+        x0 = f.hub_radius
+        x1 = max((max(m.p0[0], m.p1[0]) for m in (others or [])), default=H0[0] + 0.5 * f.length)
+    n, r, d = f.strap_strands, f.strap_radius if f.strap_strands > 1 else 0.0, f.strap_strand_diameter
+    out = []
+    for i in range(n):
+        ph = 2 * np.pi * (i + 0.5) / n
+        o = np.array([0.0, r * np.cos(ph), r * np.sin(ph)])
+        out.append(FlexureMember(kind="wire", p0=tuple(map(float, H0 + o + [x0 - H0[0], 0, 0])),
+                                 p1=tuple(map(float, H0 + o + [x1 - H0[0], 0, 0])),
+                                 width=d, thickness=d, width_dir=(0.0, 0.0, 1.0), shape="circle",
+                                 taper=1.0, anchorage="embedded", cable=True,
+                                 cable_bend_factor=f.strap_bend_factor,
+                                 layup=Layup(kind="solid", material=f.strap_material),
+                                 orientation=PrintOrientation(build_dir=(0.0, 0.0, 1.0),
+                                                              raster_dir=(1.0, 0.0, 0.0))))
+    return out
 
 
 def mirror_member(m: FlexureMember) -> FlexureMember:
