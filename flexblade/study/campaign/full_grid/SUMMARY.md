@@ -4,8 +4,8 @@
 | 5" | rod | 30955/48384 | 5|rod|tpu_95a|d1.4|n3|sk45|t3.5|hr1.2|L1.25|w0.8 | 0.319 | 16.54 | 0.99 | motor_torque_1p:motor |
 | 5" | strap | 4318/14112 | 5|strap|tpu_64d|d1.2|sk45|t2.0|hr1.2|L0.8|w1.25 | 0.013 | 0.86 | 0.94 | esc_duty_peak:esc |
 | 5" | tbar | 2341/4200 | 5|tbar|tpu_64d|b1.5|L8|s0.6|p1.5|sk60 | 0.095 | 3.23 | 0.95 | motor_torque_1p:motor |
-| 6" | rod | 7521/20476 | 6|rod|tpu_95a|d1.4|n3|sk35|t3.5|hr0.8|L1.25|w0.8 | 0.384 | 18.48 | 0.99 | fatigue_strain:flex0 |
-| 6" | strap | 1491/5988 | 6|strap|tpu_95a|d1.2|sk50|t4.0|hr1.2|L0.6|w1.25 | 0.010 | 0.55 | 0.95 | motor_torque_1p:motor |
+| 6" | rod | 10779/29704 | 6|rod|tpu_95a|d1.4|n3|sk35|t3.5|hr0.8|L1.25|w0.8 | 0.384 | 18.48 | 0.99 | fatigue_strain:flex0 |
+| 6" | strap | 2310/8760 | 6|strap|tpu_64d|d0.9|sk30|t2.5|hr1.0|L0.8|w1.0 | 0.011 | 0.54 | 0.99 | fatigue_strain:flex1 |
 
 Top 25 feasible overall:
 
@@ -35,4 +35,4 @@ Top 25 feasible overall:
 - 6|rod|tpu_95a|d1.2|n3|sk40|t2.0|hr1.2|L1.25|w0.8: ctrl 0.322, pitch 15.32°, util 0.99 (motor_torque_1p:motor)
 - 6|rod|tpu_95a|d1.4|n3|sk40|t1.5|hr0.8|L1.25|w1.0: ctrl 0.321, pitch 15.13°, util 0.98 (motor_torque_1p:motor)
 
-94000 results, Fri Nov 20 18:51:58 2026
+106000 results, Fri Nov 20 19:05:22 2026
