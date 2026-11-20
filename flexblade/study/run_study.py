@@ -53,7 +53,7 @@ RES_BAND = 0.15
 SPLIT_MAX = 2.0
 FAIL = 1.0e6
 CONCEPTS = presets.CONCEPTS + ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
-                               "skewed_cruciform", "tt_strap")
+                               "skewed_cruciform", "tt_strap", "tt_strap_xplate")
 SIZES = presets.SIZES_IN
 
 RESULTS = HERE / "results"
@@ -104,6 +104,14 @@ def variables(concept: str, D: float) -> list[Variable]:
               Variable(path="flexure.strap_strand_diameter", lo=0.0003, hi=0.0012 * s, log=True),
               Variable(path="flexure.strap_radius", lo=0.0002, hi=0.002 * s, log=True),
               Variable(path="flexure.strap_pin_diameter", lo=0.002, hi=0.006 * s)]
+    elif concept == "tt_strap_xplate":
+        # thin wide axially-released crossed plates (cross-axis pivot, k_cross/k_hinge ~ (w/t)²)
+        # + a short single-strand strap on the crossing line carrying the centrifugal load
+        V += [Variable(path="flexure.thickness", lo=0.0005, hi=0.0008 * s, log=True),
+              Variable(path="flexure.width", lo=0.010 * s, hi=0.025 * s),
+              Variable(path="flexure.cross_angle_deg", lo=50.0, hi=110.0),
+              Variable(path="flexure.strap_strand_diameter", lo=0.0004, hi=0.0012 * s, log=True),
+              Variable(path="flexure.strap_length", lo=0.002 * s, hi=0.012 * s, log=True)]
     elif concept in ("tpu_split", "tpu95_split"):
         V += [Variable(path="flexure.thickness", lo=0.0008, hi=0.006 * s, log=True),
               Variable(path="flexure.width", lo=0.004 * s, hi=0.022 * s),
@@ -137,7 +145,7 @@ def capability_frac(d: Design) -> dict:
 
 def base_design(D: float, concept: str, coax: bool = False, frac_margin: float = 0.95) -> tuple[Design, dict]:
     pc = "cf_flexure" if concept in ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
-                                         "skewed_cruciform", "tt_strap") else concept
+                                         "skewed_cruciform", "tt_strap", "tt_strap_xplate") else concept
     d = presets.make_coax_preset(D, pc) if coax else presets.make_preset(D, pc)
     if concept == "torsion_bar":
         # Fred's torsion bar: pultruded CF bar on the skewed hinge axis (hinge = bar torsion) +
@@ -166,6 +174,19 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
             cruciform_rod_diameter=0.0, strap_strands=4, strap_strand_diameter=0.0006 * sc,
             strap_radius=0.0007 * sc, strap_material="aramid_yarn", strap_anchor="pin_wrap",
             strap_pin_diameter=0.003 * sc, axial_release=True))))
+    if concept == "tt_strap_xplate":
+        # strap + released crossed plates: PA6-CF plates printed with the build direction along
+        # the hinge axis a (layers ⟂ a, rasters along the plate length → bending stress in-layer),
+        # crossing on a with cross_gap ≥ strand Ø so one aramid strand runs radially through H0
+        # (short strap_length: the tensioned strand's geometric stiffness ∝ T·strap_length)
+        sc = D / 5.0
+        d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
+            topology="skewed_cross_blade", layup=Layup(kind="solid", material="pa6_cf"),
+            thickness=0.0006, width=0.025 * sc, length=0.008 * sc, cross_angle_deg=70.0,
+            cross_gap=0.0012 * sc, cruciform_rod_diameter=0.0, strap_strands=1,
+            strap_strand_diameter=0.0007 * sc, strap_radius=0.0, strap_length=0.004 * sc,
+            strap_material="aramid_yarn", strap_anchor="pin_wrap", strap_pin_diameter=0.003 * sc,
+            axial_release=True))))
     if concept in ("tpu_split", "tpu95_split"):
         # split load path: TPU plate hinge (bending) + radial CF rod through the hinge point
         # (centrifugal load); PA6-CF blade
