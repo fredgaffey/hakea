@@ -30,13 +30,23 @@ THICK = (0.0015, 0.0025, 0.0035)
 
 def base_for(D):
     d = presets.all_presets()[f"{D}in_tpu_rod"].model_copy(deep=True)
+    # stiff PA6-CF blade (TPU blade creeps on its own centrifugal load) + chordwise mass
+    # balance (attachment line at 0.43 c removes the static blade-to-blade pitch split)
+    d.blade.layup = Layup(kind="solid", material="pa6_cf")
+    d.blade.elastic_axis_chord_frac = 0.43
+    d.motor.duty_slew_max = 2550.0   # AM32 max_ramp 255 (stock 16 -> 160/s clips the 1/rev pulse)
     r0 = api.evaluate(d, ["trim"])
     cap = motor.capability(d.motor, r0.trim.rpm, r0.trim.torque)
     d.op.torque_mod_frac = float(cap.dQ_max_1p / r0.trim.torque)
     return d
 
 
-def strap(d, dia, mat="cf_rod_pultruded"):
+INSERT_MATS = ("cf_rod_pultruded", "steel_302_spring")
+STRAP_MAT = "cf_rod_pultruded"
+
+
+def strap(d, dia, mat=None):
+    mat = mat or STRAP_MAT
     H0 = fact.hinge_axis(d)[0]
     f = d.flexure
     x0, x1 = f.hub_radius, 2 * H0[0] - f.hub_radius
@@ -65,7 +75,7 @@ def variants(base, D):
     for tpu, sk, t in itertools.product(TPUS, SKEWS, THICK):
         mk(f"mono|{tpu}|sk{sk:.0f}|t{t*1e3:.1f}", topology="integral_taper", skew_deg=sk, thickness=t,
            layup=Layup(kind="solid", material=tpu))
-        for mat, dia, pos in itertools.product(("cf_rod_pultruded", "steel_302_spring"),
+        for mat, dia, pos in itertools.product(INSERT_MATS,
                                                (0.0008, 0.0012, 0.0016, 0.002), ((0.5,), (0.3, 0.7))):
             if dia >= t:
                 continue
@@ -83,7 +93,7 @@ def variants(base, D):
     for tpu, sk, bd, bl, sd in itertools.product(TPUS, SKEWS, (0.0015, 0.002, 0.0025),
                                                  (0.012, 0.016, 0.02), (0.0, 0.0006, 0.001)):
         mk(f"tbar|{tpu}|b{bd*1e3:.1f}|L{bl*1e3:.0f}|s{sd*1e3:.1f}|sk{sk:.0f}", topology="torsion_bar",
-           skew_deg=sk, bar_diameter=bd, bar_length=bl, thickness=0.0015,
+           skew_deg=sk, bar_diameter=bd, bar_length=bl, thickness=0.0015, bar_material=STRAP_MAT,
            layup=Layup(kind="solid", material=tpu), tension=sd or None)
     return out
 
@@ -123,7 +133,12 @@ def main():
     ap.add_argument("--hosts", default="local:20,mac:9")
     ap.add_argument("--out", default="flexblade/study/reinforce")
     ap.add_argument("--sizes", default=",".join(map(str, SIZES)))
+    ap.add_argument("--printed", action="store_true",
+                    help="fully FDM: rods/strap/bar printed in PA6-CF / PETG-CF instead of inserts")
     a = ap.parse_args()
+    global INSERT_MATS, STRAP_MAT
+    if a.printed:
+        INSERT_MATS, STRAP_MAT = ("pa6_cf", "petg_cf"), "pa6_cf"
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     jobs = []

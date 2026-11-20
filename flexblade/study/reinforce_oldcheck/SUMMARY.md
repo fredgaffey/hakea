@@ -1,0 +1,17 @@
+| size | method | feasible/total | best design | ctrl | pitch1p° | max util | governing |
+|---|---|---|---|---|---|---|---|
+| 5" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.006 | 0.32 | 15.56 | creep_strain:flex0 |
+| 5" | rod | 0/240 | rod|tpu_95a|cf_ro|d1.2|s|sk55|t2.5 | 0.020 | 0.47 | 3.06 | creep_strain:blade |
+| 5" | strap | 0/72 | strap|tpu_95a|d0.6|sk35|t1.5 | 0.000 | 0.14 | 1.03 | static_stress:flex1 |
+| 5" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.003 | 0.78 | 3.53 | creep_strain:flex0 |
+| 5" | tbar | 0/162 | tbar|tpu_95a|b2.5|L20|s0.6|sk35 | 0.058 | 2.98 | 2.92 | esc_duty_slew:esc |
+| 7" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.025 | 1.07 | 19.33 | creep_strain:flex0 |
+| 7" | rod | 0/240 | rod|tpu_95a|cf_ro|d1.6|s|sk55|t2.5 | 0.147 | 4.00 | 2.51 | creep_strain:blade |
+| 7" | strap | 0/72 | strap|tpu_95a|d0.6|sk35|t1.5 | 0.000 | 0.70 | 0.67 | creep_strain:flex0 |
+| 7" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.008 | 1.01 | 4.46 | creep_strain:flex0 |
+| 7" | tbar | 0/162 | tbar|tpu_95a|b2.5|L20|s0.6|sk35 | 0.186 | 9.38 | 2.37 | creep_strain:blade |
+| 10" | mono | 0/18 | mono|tpu_64d|sk35|t3.5 | 0.073 | 2.96 | 25.45 | creep_strain:flex0 |
+| 10" | rod | 0/240 | rod|tpu_95a|cf_ro|d2.0|s|sk55|t3.5 | 0.213 | 6.16 | 2.12 | creep_strain:blade |
+| 10" | strap | 0/72 | strap|tpu_95a|d0.9|sk35|t1.5 | 0.000 | 0.20 | 0.49 | creep_strain:flex0 |
+| 10" | skin | 0/36 | skin|tpu_64d|s0.4|sk35|t3.5 | 0.019 | 1.61 | 5.93 | creep_strain:flex0 |
+| 10" | tbar | 0/162 | tbar|tpu_64d|b2.5|L12|s1.0|sk35 | 0.258 | 13.70 | 2.03 | creep_strain:blade |
