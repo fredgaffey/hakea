@@ -45,7 +45,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
 
 import run_study as R                                   # noqa: E402
-from flexblade import fact, presets                     # noqa: E402
+from flexblade import fact, presets, robust            # noqa: E402
 from flexblade.optimize import set_design               # noqa: E402
 from flexblade.schema import Design, IdealFlexure       # noqa: E402
 
@@ -249,13 +249,13 @@ def run_size(D: float, pool, log, popmult: int, maxiter: int, seed: int) -> dict
         pop = [np.asarray(u, float) for u in pop]
         vals = [to_values(V, u) for u in pop]
         designs = [set_design(base, v) for v in vals]
-        recs = pool.map(designs)
+        recs = robust.map_metrics(pool, designs, metrics, R.ROBUST, None)
         Js = []
-        for v, dsg, rec in zip(vals, designs, recs):
-            if "results" not in rec:
-                J, m = R.FAIL, dict(error=rec.get("error", "?")[:200])
+        for v, dsg, (mm, err) in zip(vals, designs, recs):
+            if mm is None or "error" in mm:
+                J, m = R.FAIL, dict(error=err or mm["error"])
             else:
-                m = metrics(dsg, rec["results"])
+                m = mm
                 J = R.score(m)
             Js.append(J)
             with lock:
@@ -300,12 +300,15 @@ def main(argv=None):
     ap.add_argument("--popmult", type=int, default=10)
     ap.add_argument("--maxiter", type=int, default=60)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--robust", nargs="?", const="0.7,1.0,1.4", default=None,
+                    help="thrust factors, e.g. 0.7,1,1.4: min control_ratio, constraints at every point")
     ap.add_argument("--enforce-thermal", action="store_true")
     ap.add_argument("--reference", default="tpu_rod",
                     help="stored study/designs/<D>in_<concept>.json to compare against ('' = none)")
     a = ap.parse_args(argv)
     global ENFORCE_THERMAL
     ENFORCE_THERMAL = a.enforce_thermal
+    R.ROBUST = tuple(float(x) for x in a.robust.split(",")) if a.robust else None
     os.environ.setdefault("FLEXBLADE_REMOTE_TAG", "study")
     RESULTS.mkdir(parents=True, exist_ok=True)
     from flexblade import remote

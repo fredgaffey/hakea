@@ -43,7 +43,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
-from flexblade import api, fact, motor as mot, presets            # noqa: E402
+from flexblade import api, fact, motor as mot, presets, robust    # noqa: E402
 from flexblade.optimize import Objective, set_design               # noqa: E402
 from flexblade.schema import Design, Layup, OptimizeRequest, Target, Variable  # noqa: E402
 
@@ -305,6 +305,9 @@ def _round(v: dict) -> dict:
     return {k: (round(x, 7) if isinstance(x, float) else x) for k, x in v.items()}
 
 
+ROBUST = None   # thrust factors tuple when --robust
+
+
 def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, popmult: int,
              maxiter: int, seed: int) -> dict:
     from scipy.optimize import differential_evolution
@@ -321,14 +324,14 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
         designs = [set_design(base, obj.to_values(u)) for u in pop]
-        recs = pool.map(designs)
+        recs = robust.map_metrics(pool, designs, metrics, ROBUST, None)
         Js = []
-        for u, dsg, rec in zip(pop, designs, recs):
+        for u, dsg, (mm, err) in zip(pop, designs, recs):
             vals = obj.to_values(u)
-            if "results" not in rec:
-                J, m = FAIL, dict(error=rec.get("error", "?")[:200])
+            if mm is None or "error" in mm:
+                J, m = FAIL, dict(error=err or mm["error"])
             else:
-                m = metrics(dsg, rec["results"])
+                m = mm
                 J = score(m)
             Js.append(J)
             with lock:
@@ -423,6 +426,8 @@ def main(argv=None):
     ap.add_argument("--sizes", default=",".join(str(s) for s in SIZES))
     ap.add_argument("--concepts", default=",".join(presets.CONCEPTS))
     ap.add_argument("--coax", action="append", default=[], help="D:concept for a coaxial case")
+    ap.add_argument("--robust", nargs="?", const="0.7,1.0,1.4", default=None,
+                    help="evaluate at several thrust factors (min control_ratio, constraints at every point)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
     ap.add_argument("--maxiter", type=int, default=40)
@@ -431,6 +436,8 @@ def main(argv=None):
     ap.add_argument("--redo", action="store_true", help="re-run cases already in cases.jsonl")
     ap.add_argument("--salvage", nargs="*", help="rebuild these cases from evals.jsonl.gz and exit")
     a = ap.parse_args(argv)
+    global ROBUST
+    ROBUST = tuple(float(x) for x in a.robust.split(",")) if a.robust else None
     if a.salvage:
         salvage(a.salvage)
         return
