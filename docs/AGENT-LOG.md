@@ -21,3 +21,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | sonnet-5-5 | lean | Beam vs ccx gap on cf_flexure | plate modulus Q11 fix: crossed plates beam/ccx 0.54->0.70; torsion_bar ccx mesh merge diagnosed | 80k / 42 calls | green: no |
 | 2026-11-20 | sonnet-5-5 | lean | Beam vs ccx gap on cf_flexure | plate modulus Q11 fix: crossed plates beam/ccx 0.54->0.70; torsion_bar ccx mesh merge diagnosed | 80k / 42 calls | green: no |
 | 2026-11-20 | sonnet-5-5 | lean | Validate vs Hakea bench logs | bench validation: steady rpm 4.5% rms; dynamic gain 2-13% (small), -14..-29% (big sweep); 35-45deg unmodelled phase; Rth not identifiable | 35k / 13 calls | green: yes |
+| 2026-11-20 | opus-5-5 | lean | Strap + released crossed plates | tt_strap_xplate KILL for now: plates still loaded (k_hinge +0.4), pitch split binds; robust ideal ~ pin joint (ratios 3e3-3e4) | 84k / 43 calls | green: no |
