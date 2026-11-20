@@ -211,8 +211,8 @@ def test_member_dims_and_blade_connected_to_flexure():
     # shank starts on the fitting's outer face and ends centred inside the blade root section
     assert np.linalg.norm(shank.sections[0].ring.mean(0) - fit.sections[1].ring.mean(0)) < 2e-3
     root = blade.sections[0].ring
-    assert np.linalg.norm(shank.sections[1].ring.mean(0)[1:] - root.mean(0)[1:]) < 0.5e-3
-    assert abs(shank.sections[1].ring[:, 0].min() - root[:, 0].min()) < 1e-3
+    assert np.linalg.norm(shank.sections[-1].ring.mean(0)[1:] - root.mean(0)[1:]) < 0.5e-3
+    assert abs(shank.sections[-1].ring[:, 0].min() - root[:, 0].min()) < 1e-3
 
 
 def test_surface_colours_distinct_per_material():

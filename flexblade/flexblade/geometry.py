@@ -37,15 +37,19 @@ HUB_MATERIAL = "pa6_cf"          # schema has no hub material; rigid printed hub
 N_CIRCLE = 20                    # circle tessellation for surfaces
 N_AIRFOIL_SURF = 61              # points per airfoil side for viewport/mesh
 N_AIRFOIL_STEP = 41              # points per airfoil side for STEP splines
-FIT_MARGIN = 0.0005              # m, fitting overhang beyond member end faces
+WALL_MIN = 0.0005                # m, minimum printed wall around a clamped member
+FIT_MARGIN = WALL_MIN            # m, fitting overhang beyond member end faces (= one wall)
+BOND_TAU = 5.0e6                 # Pa, allowable shear on a bonded/clamped member-fitting interface
+FAIR_SKIN = 0.0004               # m, faired skin thickness
+FAIR_GAP = 0.0                   # m, clearance between member envelope and fairing skin
 MM = 1000.0                      # OCC booleans are done in mm (robustness), see _occ_bodies
 
 Role = Literal["blade", "skin", "core", "rod", "member", "member_core", "member_skin",
-               "fitting", "spoke", "hub"]
+               "fitting", "fairing", "spoke", "hub"]
 
 # fragment priority: an overlap volume is given to the highest-priority parent
 PRIORITY = {"rod": 6, "core": 5, "member_core": 5, "member": 4, "member_skin": 4,
-            "skin": 4, "blade": 4, "fitting": 3, "spoke": 1, "hub": 1}
+            "skin": 4, "blade": 4, "fitting": 3, "fairing": 0, "spoke": 1, "hub": 1}
 
 
 # =========================================================================== data
@@ -491,9 +495,33 @@ def _shank_sections(fit: Fitting, bg, design: Design, r_start: float, n_side: in
     if _wind(ring1) != _wind(ring0):
         ring1 = ring1[::-1]
     best = min((float(((np.roll(ring1, sh, axis=0) - ring0) ** 2).sum()), sh) for sh in range(4))
-    best = (best[0], np.roll(ring1, best[1], axis=0))
+    ring1 = np.roll(ring1, best[1], axis=0)
+    # smooth (C1, zero-slope ends) blend of the quad corners from the fitting face to the root
+    # section, so the hub-fitting -> airfoil transition has no step in height or width
     segs = [(i, (i + 1) % 4, "line") for i in range(4)]
-    return [Section(ring=ring0, segments=segs), Section(ring=best[1], segments=segs)]
+    out = []
+    for f in np.linspace(0.0, 1.0, 5):
+        u = f * f * (3 - 2 * f)
+        out.append(Section(ring=(1 - u) * ring0 + u * ring1, segments=segs))
+    return out
+
+
+def _clamp_length(design: Design, members, r_start: float) -> float:
+    from .materials import get_material
+    b = design.blade
+    try:
+        rho = get_material(b.layup.material).rho
+    except Exception:
+        rho = 1300.0
+    st = bladegeom.resolve_stations(b)
+    ch = float(np.mean([x.chord for x in st])) if hasattr(st[0], "chord") else 0.012
+    from .rootdrag import root_thickness
+    m_bl = 0.6 * rho * ch * root_thickness(design) * 0.5 * (b.radius - r_start)
+    om = 2 * math.pi * (design.op.rpm or 12000.0) / 60.0
+    F = m_bl * om ** 2 * 0.5 * (b.radius + r_start)
+    per = sum(2 * (m.width + m.thickness) if m.shape == "rect" else math.pi * m.thickness
+              for m in members if m.kind != "rigid") or 0.02
+    return float(np.clip(F / (per * BOND_TAU), 2 * WALL_MIN, 0.1 * 0.02 + 0.004))
 
 
 def _fitting_box(corners: np.ndarray, P, s, t, a, extend_out: float, extend_in: float,
@@ -585,8 +613,9 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
         raise ValueError("flexure extends beyond the blade")
     L_ref = max(np.linalg.norm(c1.mean(0) - c0.mean(0)), 1e-3)
     # compact clamp blocks; the blade-side one is bridged to the blade root by a shank part
-    ext_out = max(0.001, 0.1 * L_ref)
-    ext_in = max(0.001, 0.1 * L_ref)
+    # clamp/bond length from requirements: centrifugal load of the blade carried through the
+    # member-fitting interface / (bonded perimeter x allowable shear), at least 2 walls
+    ext_out = ext_in = _clamp_length(design, flex_members, r_start)
     fit_blade = _fitting_box(c1, P, s, t, a, ext_out, 0.0, FIT_MARGIN)
     # bridge: ruled loft from the outer face of the blade-side fitting to a rectangle inside
     # the blade root section (no gap between flexure and blade)
@@ -686,10 +715,45 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
                                HUB_MATERIAL, PrintOrientation(), k, tr_fit(fit_hub)))   # rigid: a TPU hub fitting made the real part ~24x softer than modelled (CalculiX, E01/E02)
         parts.append(_box_part(f"blade{k}_spoke", "spoke", HUB_MATERIAL, PrintOrientation(), 0,
                                tr_fit(spoke)))
+        if design.flexure.fairing:
+            parts += _fairing_parts(design, [k], fit_hub, fit_blade, c0, c1, r_start, tr_fit, tr_sec)
     hub_secs = [_circle_section(np.array([0, 0, z]), [0, 0, 1.0], hub_r, [1.0, 0, 0])
                 for z in (-hub_h / 2, hub_h / 2)]
     parts.append(Part("hub", "hub", HUB_MATERIAL, PrintOrientation(), 0, hub_secs, True))
     return RotorGeometry(design, parts, members_all, hinge_all, r_start, src, warnings)
+
+
+def _fairing_parts(design, blades, fit_hub, fit_blade, c0, c1, r_start, tr_fit, tr_sec) -> list[Part]:
+    """Thin faired skin: a top and a bottom lens-shaped cap (FAIR_SKIN thick, FAIR_GAP clear of
+    the hardware envelope, smooth thickness taper to the ends) from the hub fitting to the blade
+    root. The skin carries no load; it only streamlines the root hardware (Cd 0.4)."""
+    pts = []
+    for f in (fit_hub, fit_blade):
+        pts.append(f.center + (np.array([[i, j, k] for i in (-1, 1) for j in (-1, 1) for k in (-1, 1)])
+                               * f.half) @ f.axes.T)
+    cc = [c0[i] + (c1[i] - c0[i]) * f for i in range(min(len(c0), len(c1))) for f in np.linspace(0, 1, 15)]
+    pts = np.vstack(pts + [c0, c1, np.array(cc)])
+    x0, x1 = float(pts[:, 0].min()), float(r_start + 0.0006)
+    y0, y1 = float(pts[:, 1].min()), float(pts[:, 1].max())
+    xs = x0 + (x1 - x0) * np.linspace(0.0, 1.0, 13)
+    win = 0.6 * (x1 - x0) / 12
+    zhi, zlo = [], []
+    for xi in xs:
+        zz = pts[np.abs(pts[:, 0] - xi) <= win, 2]
+        zhi.append(float(zz.max(initial=0.0)))
+        zlo.append(float(zz.min(initial=0.0)))
+    out = []
+    for k in blades:
+        for sgn, nm in ((1, "top"), (-1, "bot")):
+            secs = []
+            for xi, zh, zl in zip(xs, zhi, zlo):
+                f = (xi - x0) / (x1 - x0)
+                th = FAIR_SKIN * (0.25 + 0.75 * math.sin(math.pi * min(max(f, 0.0), 1.0)) ** 0.5)
+                z0, z1 = (zh, zh + th) if sgn > 0 else (zl - th, zl)
+                ring = np.array([[xi, y0, z0], [xi, y1, z0], [xi, y1, z1], [xi, y0, z1]])
+                secs.append(tr_sec(Section(ring=ring, segments=[(i, (i + 1) % 4, "line") for i in range(4)])))
+            out.append(Part(f"blade{k}_fairing_{nm}", "fairing", "tpu_95a", PrintOrientation(), k, secs, ruled=True))
+    return out
 
 
 # =========================================================================== surface triangulation
@@ -914,7 +978,7 @@ MATERIAL_COLORS = {            # one clearly distinct hue per material class (RG
     "cf_rod_pultruded": (225, 25, 35),                             # CF rod / strip: bright red
     "steel_302_spring": (205, 212, 220),                           # steel: silver
 }
-_ROLE_SHADE = {"hub": -0.30, "spoke": -0.15, "fitting": 0.20, "member": 0.0, "member_core": -0.1,
+_ROLE_SHADE = {"hub": -0.30, "spoke": -0.15, "fitting": 0.20, "fairing": 0.35, "member": 0.0, "member_core": -0.1,
                "member_skin": 0.1, "blade": 0.0, "skin": 0.1, "core": -0.1, "rod": 0.0}
 
 
