@@ -175,6 +175,8 @@ def run(design: Design, opts: TopoptOptions | None = None, callback: Callable | 
     t_loop = time.perf_counter()
     for it in range(1, opts.max_iter + 1):
         ti = time.perf_counter()
+        if beta >= opts.beta_max:
+            mma.move = min(mma.move, opts.move_final)
         r, f0, g, names, grads = prob.value_and_grads(x, beta)
         prob.update_corrections(r, it == 1)          # adaptive p-norm max-corrections
         gv = np.array([_f(v) for v in g])

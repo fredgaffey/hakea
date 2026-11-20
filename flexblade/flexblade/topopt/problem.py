@@ -99,6 +99,7 @@ class TopoptOptions:
     rpm: Optional[float] = None            # None → rotor trim rpm (loads=rotor) / design rpm
     max_iter: int = 200
     move: float = 0.1
+    move_final: float = 0.03               # MMA move limit once β = β_max (damps oscillation)
     tol_change: float = 2e-3
     cg_tol: float = 1e-6
     cg_maxit: int = 500

@@ -818,7 +818,10 @@ def _with_topopt_meshes(design: Design, parts: list[dict], blades: list[int], wa
     for pd in tp.parts:
         path = pd.get("stl", "")
         if path and not os.path.isabs(path) and tp.source:
-            path = os.path.join(tp.source, path)
+            # source: absolute, relative to the cwd, or relative to the flexblade project dir
+            proj = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            cands = [os.path.join(tp.source, path), os.path.join(proj, tp.source, path)]
+            path = next((c for c in cands if os.path.exists(c)), cands[0])
         try:
             meshes.append((pd, *_load_topopt_mesh(path)))
         except OSError as e:

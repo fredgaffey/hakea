@@ -1,0 +1,114 @@
+[
+ {
+  "design": "5in_tpu95a_2xCFrod_winner",
+  "grid": [
+   32,
+   40,
+   56
+  ],
+  "n_elem": 71680,
+  "iterations": 220,
+  "s_per_iter": 6.868732425013637,
+  "gpu_mem_peak_MB": 1346.269184,
+  "k_target": 0.38537590216001505,
+  "fact": {
+   "k_axis": 10.155230727859765,
+   "k_soft": 0.7952426379096682,
+   "stiffness_ratio": 12.770010431228549,
+   "constrained_ratio": 0.07830868829940137,
+   "axis_error_deg": 89.97325003400682,
+   "creep": 1.9837660425222599,
+   "fatigue": 37.29395980395087,
+   "interlayer": 3.4363991317493467,
+   "strength": 0.22160115477856535,
+   "control_ratio": 0.22038186918409317,
+   "lag_per_rev": 0.8415897882371637
+  },
+  "topopt": {
+   "k_axis": 0.4926863031195472,
+   "k_soft": 0.4907505525285027,
+   "stiffness_ratio": 19.349511855830993,
+   "constrained_ratio": 18.04258038512868,
+   "axis_error_deg": 3.6813082097738135,
+   "creep": 2.0576902069413734,
+   "fatigue": 1.1627447112667009,
+   "interlayer": 0.2186690140309002,
+   "strength": 0.3003699078397348,
+   "mass_g": 0.44034006571583373,
+   "control_ratio": 0.05307726165709863,
+   "lag_per_rev": 0.7209697385989176
+  },
+  "files": {
+   "stl_soft": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/5in_tpu95a_2xCFrod_winner/5in_tpu95a_2xCFrod_winner_soft.stl",
+   "stl_stiff": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/5in_tpu95a_2xCFrod_winner/5in_tpu95a_2xCFrod_winner_stiff.stl",
+   "step": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/5in_tpu95a_2xCFrod_winner/5in_tpu95a_2xCFrod_winner_topopt.step",
+   "n_triangles": {
+    "soft": 10576,
+    "stiff": 106872
+   },
+   "materials": {
+    "soft": "tpu_95a",
+    "stiff": "pa6_cf"
+   },
+   "render": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/5in_tpu95a_2xCFrod_winner/render.png",
+   "render_util": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/5in_tpu95a_2xCFrod_winner/render_util.png",
+   "render_viewer": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/5in_tpu95a_2xCFrod_winner/viewer_parts.png"
+  }
+ },
+ {
+  "design": "6in_tpu_rod_variant",
+  "grid": [
+   32,
+   40,
+   56
+  ],
+  "n_elem": 71680,
+  "iterations": 220,
+  "s_per_iter": 23.370221823704547,
+  "gpu_mem_peak_MB": 1345.555456,
+  "k_target": 0.46939060570563906,
+  "fact": {
+   "k_axis": 8.602108832920708,
+   "k_soft": 0.6629895799918042,
+   "stiffness_ratio": 12.974734905234852,
+   "constrained_ratio": 0.07707291593631127,
+   "axis_error_deg": 89.9871113826106,
+   "creep": 1.6450557281871965,
+   "fatigue": 6.742846377104486,
+   "interlayer": 0.693227662729757,
+   "strength": 0.1963591872845559,
+   "control_ratio": 0.09454680282917446,
+   "lag_per_rev": 0.7668219025893871
+  },
+  "topopt": {
+   "k_axis": 0.5915660932230612,
+   "k_soft": 0.5887867594027122,
+   "stiffness_ratio": 14.93871929311795,
+   "constrained_ratio": 14.13639620256631,
+   "axis_error_deg": 4.038650485964773,
+   "creep": 0.8243584318523097,
+   "fatigue": 2.198168188990268,
+   "interlayer": 0.17918325755600567,
+   "strength": 0.13688992762457214,
+   "mass_g": 0.54687681118928,
+   "control_ratio": 0.29565048473262456,
+   "lag_per_rev": 0.7098785886620276
+  },
+  "files": {
+   "stl_soft": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/6in_tpu_rod_variant_soft.stl",
+   "stl_stiff": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/6in_tpu_rod_variant_stiff.stl",
+   "step": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/6in_tpu_rod_variant_topopt.step",
+   "n_triangles": {
+    "soft": 8252,
+    "stiff": 114932
+   },
+   "materials": {
+    "soft": "tpu_95a",
+    "stiff": "pa6_cf"
+   },
+   "render": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/render.png",
+   "render_util": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/render_util.png",
+   "render_viewer": "/home/fred/vehicles/hakea/.claude/worktrees/agent-ad82e2b86f984f79e/flexblade/examples/topopt/6in_tpu_rod_variant/viewer_parts.png"
+  }
+ }
+]

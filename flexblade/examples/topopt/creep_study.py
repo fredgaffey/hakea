@@ -97,6 +97,10 @@ def main():
                           min_ratio=min_ratio or None)
         s = optimise(d, HERE / d.name, o, validate=False, evaluate=True)
         res = s["result"]
+        # repo-relative mesh source so design_topopt.json loads in the GUI from any checkout
+        dt = s["design_topopt"]
+        dt.flexure.topopt.source = str((HERE / d.name).relative_to(ROOT))
+        (HERE / d.name / "design_topopt.json").write_text(json.dumps(dt.model_dump(mode="json"), indent=1))
         s.setdefault("files", {})["render_viewer"] = render_viewer_parts(s["design_topopt"], HERE / d.name / "viewer_parts.png")
         m, fm, rp = res.metrics, res.fact_metrics, res.responses
         ev, evf = s.get("evaluate", {}), s.get("evaluate_fact", {})
