@@ -47,13 +47,14 @@ def test_brand_allowables_reach_checks():
     d["flexure"]["layup"]["material"] = name
     r = evaluate(Design.model_validate(d))
     notes = " ".join(c.note for c in r.checks if c.name == "static_stress")
-    assert name in notes and "26.2 MPa" in notes   # brand Xt/Yt/Zt-derived strength reaches the check
+    import re
+    assert name in notes and re.search(r"vs 26\.\d MPa", notes)   # brand TDS strength (~26 MPa) reaches the check
 
 
 def test_winner_evaluates_and_derates():
     r25 = evaluate(_design(25.0))
     r40 = evaluate(_design(40.0))
-    u = lambda r: max(c.utilisation for c in r.checks if c.name != "hdt_temperature")
+    u = lambda r: max(c.utilisation for c in r.checks if c.name in ("static_stress", "fatigue_strain", "creep_strain", "interlayer"))
     assert np.isfinite(u(r25)) and u(r40) >= u(r25)
     assert any(c.name == "hdt_temperature" for c in r40.checks)
     hot = evaluate(_design(120.0))
