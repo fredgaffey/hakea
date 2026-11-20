@@ -41,14 +41,25 @@ class Layup(_M):
     rod_insert: `material` base with circular rods of `insert_material`,
                 `insert_diameter`, placed at chord fractions `insert_positions`
                 (from leading edge) on the section mid-line.
+    laminate_strip: `material` base with a thin rectangular `insert_material` strip on the
+                mid-thickness plane (see strip_* fields).
     """
-    kind: Literal["solid", "core_skin", "rod_insert"] = "solid"
+    kind: Literal["solid", "core_skin", "rod_insert", "laminate_strip"] = "solid"
     material: str = "tpu_64d"
     skin_material: Optional[str] = None
     skin_thickness: float = 0.0
     insert_material: Optional[str] = None
     insert_diameter: float = 0.0
     insert_positions: list[float] = Field(default_factory=list)
+    # laminate_strip: thin rectangular strip of `insert_material` (pultruded CF/GF, aramid tow)
+    # centred on the bending neutral plane (mid-thickness) of a flexure plate, spanning
+    # `strip_width_frac` of the plate width. The TPU keeps a matching channel (print-pause insert).
+    strip_thickness: float = Field(0.0, ge=0.0, description="m")
+    strip_width_frac: float = Field(1.0, gt=0.0, le=1.0)
+    strip_offset: float = Field(0.0, description="m, strip centre offset from mid-thickness "
+                                                 "(+ along the section thickness axis)")
+    strip_hole_frac: float = Field(0.0, ge=0.0, lt=0.9, description="perforation: fraction of the "
+                                   "strip area removed (smeared in the section; TPU locks through)")
 
 
 # --------------------------------------------------------------------------- blade

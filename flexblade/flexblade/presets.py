@@ -83,6 +83,28 @@ def _concept(concept: str, s: float) -> tuple[Layup, Flexure]:
     raise KeyError(f"unknown concept {concept!r}; known {CONCEPTS}")
 
 
+LAMINATE_SIZES_IN = (7, 10)
+
+
+def make_laminate_preset(diameter_in: float, topology: str = "skewed_single_blade",
+                         tpu: str = "tpu_64d", strip_mm: float = 0.25) -> Design:
+    """TPU flexure plate with an embedded thin CF strip on the mid-thickness plane
+    (laminate_strip layup; strip_width_frac 0.8, flexure thickness 1.6 mm x s^0.5 so the
+    0.2-0.3 mm strip stays a thin insert). Blade is plain TPU; r_cutout/flexure as other presets.
+    topology: skewed_single_blade | integral_taper."""
+    s = diameter_in / 5.0
+    d = make_preset(diameter_in, "tpu_monolithic")
+    lam = Layup(kind="laminate_strip", material=tpu, insert_material="cf_rod_pultruded",
+                strip_thickness=strip_mm * 1e-3 * s, strip_width_frac=0.8)
+    flex = d.flexure.model_copy(update=dict(
+        topology=topology, thickness=0.0016 * s, layup=lam, taper=1.0 if topology != "integral_taper" else 0.8))
+    blade = d.blade.model_copy(update=dict(layup=Layup(kind="solid", material=tpu)))
+    tag = "tpu_laminate" if topology == "skewed_single_blade" else "tpu_laminate_integral"
+    return d.model_copy(update=dict(
+        name=f"{_fmt(diameter_in)}in_{tag}", flexure=flex, blade=blade,
+        notes=f"preset: TPU ({tpu}) plate + {strip_mm:g} mm CF strip, {topology}; placeholder dims"))
+
+
 def make_preset(diameter_in: float, concept: str) -> Design:
     s = diameter_in / 5.0
     layup, flex = _concept(concept, s)
@@ -134,6 +156,11 @@ def all_presets() -> dict[str, Design]:
         for c in CONCEPTS:
             d = make_preset(D, c)
             out[d.name] = d
+    for D in LAMINATE_SIZES_IN:
+        for topo in ("skewed_single_blade", "integral_taper"):
+            d = make_laminate_preset(D, topo, "tpu_64d" if topo == "skewed_single_blade" else "tpu_95a",
+                                     0.25 if topo == "skewed_single_blade" else 0.2)
+            out[d.name] = d
     h = make_preset(5, "cf_flexure")
     h = h.model_copy(update=dict(
         name="hakea_5in_hinge_equiv",
@@ -162,6 +189,8 @@ def scale_design(design: Design, diameter_in: float) -> Design:
             return lay
         lay["insert_diameter"] *= s
         lay["skin_thickness"] *= s
+        lay["strip_thickness"] *= s
+        lay["strip_offset"] *= s
         return lay
 
     b = dm["blade"]

@@ -214,6 +214,21 @@ LIBRARY: dict[str, Material] = {
                 Xt=55e6, Yt=45e6, Zt=28e6, S=25e6,
                 creep_strain_allow=0.003, fatigue_strain_amp_allow=0.002,
                 fatigue_stress_ratio=0.25, print_temp=210.0, source="reference only"),
+    # Generic fibre strips/tows (embedded insert, not printed). Rough datasheet-class values for
+    # unidirectional pultruded / wet-in-tpu laminate: GF ~ E 40 GPa, Xt 900 MPa; aramid tow in
+    # resin ~ E 55 GPa, Xt 1000 MPa, very low compressive strength (kinks) -> Yt/Zt low.
+    # Fibre along raster_dir (set raster_dir = strip axis). Creep/fatigue allowables conservative.
+    "gf_strip_pultruded": Material(
+        "gf_strip_pultruded", 2000, 40e9, 8e9, 8e9, 3.5e9, 3.5e9, 3e9, 0.28, 0.28, 0.4,
+        loss_factor=0.008, Xt=900e6, Yt=40e6, Zt=40e6, S=50e6,
+        creep_strain_allow=0.008, fatigue_strain_amp_allow=0.006, fatigue_stress_ratio=0.4,
+        source="generic UD pultruded glass strip; rough, verify with supplier datasheet"),
+    "aramid_tow": Material(
+        "aramid_tow", 1350, 55e9, 4e9, 4e9, 2.0e9, 2.0e9, 1.5e9, 0.34, 0.34, 0.4,
+        loss_factor=0.01, Xt=1000e6, Yt=25e6, Zt=25e6, S=30e6,
+        creep_strain_allow=0.006, fatigue_strain_amp_allow=0.005, fatigue_stress_ratio=0.35,
+        source="generic aramid tow in resin (Vf ~0.5); rough; compression weak -- keep strip "
+               "on the tension side or use CF"),
     "cf_rod_pultruded": Material(
         "cf_rod_pultruded", 1550, 125e9, 8e9, 8e9, 4.5e9, 4.5e9, 3e9, 0.3, 0.3, 0.4,
         loss_factor=0.005, Xt=1500e6, Yt=50e6, Zt=50e6, S=60e6,

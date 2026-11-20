@@ -427,6 +427,12 @@ def _layup_parts(prefix: str, blade_k: int, layup: Layup, orient: PrintOrientati
                                   raster_dir=tuple(axis))
             parts.append(Part(f"{prefix}_rod{i}", "rod", layup.insert_material, ro, blade_k,
                               rs, True, member))
+    if layup.kind == "laminate_strip" and layup.insert_material:
+        for rs in rods:      # strip: role "rod" (highest priority -> channel in the base material)
+            axis = _unit((rs[-1].ring.mean(0)) - (rs[0].ring.mean(0)))
+            ro = PrintOrientation(build_dir=tuple(_perp(axis, [0, 0, 1.0])), raster_dir=tuple(axis))
+            parts.append(Part(f"{prefix}_strip", "rod", layup.insert_material, ro, blade_k,
+                              rs, True, member))
     return parts
 
 
@@ -453,6 +459,15 @@ def _member_parts(m: FlexureMember, name: str, k: int, idx: int) -> list[Part]:
             off = (pos - 0.5) * m.width * w
             rods.append([_circle_section(p0 + off + f * (p1 - p0), t, lay.insert_diameter / 2, w)
                          for f in (0.0, 1.0)])
+    if lay.kind == "laminate_strip" and lay.strip_thickness > 0 and m.shape == "rect" \
+            and m.kind != "rigid":
+        strip = []
+        for f in (0.0, 1.0):
+            th = m.thickness * (1 + (m.taper - 1) * f)
+            c = p0 + f * (p1 - p0) + lay.strip_offset * n
+            strip.append(_rect_section(c, w, n, m.width * lay.strip_width_frac,
+                                       min(lay.strip_thickness, 0.9 * th)))
+        rods.append(strip)
     role = "fitting" if m.kind == "rigid" else "member"
     return _layup_parts(name, k, lay, m.orientation, secs,
                         core if len(core) == len(secs) else None, rods, True,
@@ -1030,7 +1045,7 @@ def _step_geometry(design: Design) -> RotorGeometry:
 def _body_key(p: Part, per_part: bool = False, per_blade: bool = True) -> str:
     if per_part:
         return p.name
-    cls = "rod_" if p.role == "rod" else ("core_" if p.role in ("core", "member_core") else "")
+    cls = ("strip_" if p.name.endswith("_strip") else "rod_") if p.role == "rod" else ("core_" if p.role in ("core", "member_core") else "")
     owner = (f"{p.rotor}_" if p.rotor else "") + (f"blade{p.blade}" if p.blade else "hub")
     return f"{owner}_{cls}{p.material}" if per_blade else f"{cls}{p.material}"
 
@@ -1209,7 +1224,8 @@ def export_print_parts(design: Design, out_dir: str | os.PathLike, blades: str =
     if blades != "all":
         parts = [p for p in parts if not p.name.endswith("hub_fitting")] + \
             [p for p in parts if p.name.endswith("hub_fitting")]
-    keyfn = lambda p: "rod_channels" if p.role == "rod" else p.material  # noqa: E731
+    keyfn = lambda p: (("strip" if p.name.endswith("_strip") else "rod_channels")   # noqa: E731
+                       if p.role == "rod" else p.material)
     h = mesh_size or 0.5 * auto_mesh_size(design)
     Rp = print_transform(design)
     meshes: dict[str, trimesh.Trimesh] = {}
@@ -1443,7 +1459,11 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
             role = parts[pi].role
             sz = h_member if role in ("member", "member_core", "member_skin") else h
             if role == "rod":
-                sz = min(sz, 0.6 * parts[pi].sections[0].radius * 2)
+                rr = parts[pi].sections[0].radius
+                if rr > 0:
+                    sz = min(sz, 0.6 * rr * 2)
+                else:       # rectangular strip: resolve its thickness (middle extent of the ring)
+                    sz = min(sz, float(np.sort(np.ptp(parts[pi].sections[0].ring, axis=0))[1]))
             if role in ("skin", "member_skin"):
                 # skins are thin; resolve thickness
                 lay = design.blade.layup if role == "skin" else None

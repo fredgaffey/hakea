@@ -76,7 +76,7 @@ def printed_materials(design: Design) -> list[str]:
     names: list[str] = []
     for l in _layups(design):
         names += [l.material] + ([l.skin_material] if l.kind == "core_skin" else []) + \
-                 ([l.insert_material] if l.kind == "rod_insert" else [])
+                 ([l.insert_material] if l.kind in ("rod_insert", "laminate_strip") else [])
     j = design.blade.joint
     if j is not None:
         names += [j.material_a or design.flexure.layup.material,

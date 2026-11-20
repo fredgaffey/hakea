@@ -441,6 +441,9 @@ def _closed_form(shape, mc: _MatCell) -> SectionProps:
 
 
 def _grid_section(shape, layup, orientation, t, e2, e3, base, n_thin, max_cells, h) -> SectionProps:
+    strip = layup.kind == "laminate_strip" and layup.insert_material and layup.strip_thickness > 0
+    if strip:      # resolve the thin strip with >= 3 cells through its thickness
+        h = min(h or 1e9, layup.strip_thickness / 3.0)
     Y, Z, mask, dy, dz = _rasterize(shape, h, n_thin, max_cells)
     mats = [base]
     matid = np.zeros(mask.shape, int)
@@ -462,6 +465,14 @@ def _grid_section(shape, layup, orientation, t, e2, e3, base, n_thin, max_cells,
                 sel = np.zeros_like(mask)
                 sel.flat[k] = True
             matid[sel & mask] = 1
+    elif strip:
+        sm = _mat_cell(layup.insert_material, rod_orientation(t), t, e2, e3)
+        hf = layup.strip_hole_frac          # perforation smeared: strip cell = (1-hf) strip + hf base
+        mats.append(_MatCell(sm.name, (1 - hf) * sm.E + hf * base.E, (1 - hf) * sm.Gy + hf * base.Gy,
+                             (1 - hf) * sm.Gz + hf * base.Gz, (1 - hf) * sm.rho + hf * base.rho,
+                             sm.orientation))
+        sel = _strip_mask(shape, layup, Y, Z, dz)
+        matid[sel & mask] = 1
     E = np.array([m.E for m in mats])[matid]
     Gy = np.array([m.Gy for m in mats])[matid]
     Gz = np.array([m.Gz for m in mats])[matid]
@@ -492,6 +503,31 @@ def _grid_section(shape, layup, orientation, t, e2, e3, base, n_thin, max_cells,
                         Iyz_mass=Iyz_m, centroid=(yc, zc), shear_centre=(ys, zs),
                         mass_centre=(my / m, mz / m), area=float(w.sum()), tau_per_twist=tau,
                         fibres=fib, kappa_shear=kap, method="grid")
+
+
+def _strip_mask(shape, layup, Y, Z, dz) -> np.ndarray:
+    """Cells inside the strip rectangle: thickness strip_thickness about the mid-thickness plane
+    (+ strip_offset), width strip_width_frac of the section width, centred. At least one cell
+    row is always marked. Polygon (blade) sections follow the camber mid-line."""
+    ts = layup.strip_thickness
+    if isinstance(shape, RectShape):
+        zc = np.full(Z.shape, shape.cz + layup.strip_offset)
+        yc, w = shape.cy, shape.width
+    elif isinstance(shape, PolygonShape) and shape.midline:
+        ml = np.asarray(shape.midline)
+        zc = np.interp((shape.le_y - Y) / shape.chord, ml[:, 0], ml[:, 1]) + layup.strip_offset
+        yc, w = shape.le_y - 0.5 * shape.chord, shape.chord
+    else:
+        p = shape.array if hasattr(shape, "array") else None
+        lo, hi = (p.min(0), p.max(0)) if p is not None else (np.array([-1e9, -1e9]), np.array([1e9, 1e9]))
+        zc = np.full(Z.shape, 0.5 * (lo[1] + hi[1]) + layup.strip_offset)
+        yc, w = 0.5 * (lo[0] + hi[0]), hi[0] - lo[0]
+    sel = (np.abs(Z - zc) <= ts / 2) & (np.abs(Y - yc) <= layup.strip_width_frac * w / 2)
+    if not sel.any():
+        k = np.argmin(np.abs(Z - zc) + np.abs(Y - yc))
+        sel = np.zeros_like(sel)
+        sel.flat[k] = True
+    return sel
 
 
 def _insert_point(shape, frac: float) -> tuple[float, float]:

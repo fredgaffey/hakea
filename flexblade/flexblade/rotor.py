@@ -62,6 +62,11 @@ def _ea_fracs(sec: SectionProps, layup: Layup) -> dict:
     if layup.kind == "solid":
         return {layup.material: 1.0}
     other = layup.skin_material if layup.kind == "core_skin" else layup.insert_material
+    if layup.kind == "laminate_strip" and other:
+        Eb, Eo = get_material(layup.material).E1, get_material(other).E1
+        Ao = float(np.clip((sec.EA - Eb * sec.area) / (Eo - Eb), 0.0, sec.area))   # from EA, area
+        fo = Eo * Ao / max(sec.EA, 1e-30)
+        return {layup.material: 1.0 - fo, other: fo}
     if not other:
         return {layup.material: 1.0}
     # estimate from section: rods/skin share by modulus × area proxy
