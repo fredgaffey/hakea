@@ -204,7 +204,6 @@ function wireViewerControls() {
   $('#show-nodes').onchange = (e) => (v.showNodes = e.target.checked);
   $('#see-through').onchange = (e) => v.setSeeThrough(e.target.checked);
   $('#colour-by').onchange = (e) => { v.colourBy = e.target.value; v.recolour(); renderLegend(S.lastGeo); };
-  $('#xray').onchange = (e) => v.setXray(e.target.checked);
   $('#btn-reset-view').onclick = () => v.resetView();
   v.rotating = $('#rotating').checked;
   v.showNodes = $('#show-nodes').checked;
