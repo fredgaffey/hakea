@@ -24,3 +24,8 @@ Idea backlog (unscreened):
 - I8 drilled post-insert rods (standard 1–3.175 mm) after forming, no print pause
 - I9 LET (lamina-emergent torsion) hinge in printed CF-nylon
 - I10 spring-steel or FR4 strip flexure, bought part, bolted/glued
+
+## Idealise-then-realise track (Fred 23:55)
+1. IDEAL: "ideal" flexure topology = generalised 6x6 spring + free mass placement; DE on control_ratio with only aero/motor/ESC/resonance/stability constraints → spec card per size (study/results/ideal_spec_<D>in.json). (helper launched)
+2. FEW IDEALS: run multi-seed; cluster optima → expect a handful of distinct ideal families.
+3. REALISE: score every concept by distance to its ideal spec (stiffness ratios, mass placement); inverse-design real geometry to hit the spec (FACT constraint spaces, material choice, rods/strips); log gap ideal→real per concept.
