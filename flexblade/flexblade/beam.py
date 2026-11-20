@@ -37,7 +37,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 from scipy.linalg import lu_factor as sl_lu_factor, lu_solve as sl_lu_solve
 
 from .section import SectionProps
@@ -237,32 +237,63 @@ def _element_derivs(xa, xb, Ra, Rb, E0, L0, k2, K7, mpts, W2, want_h, fw):
                 J[p, k, i] = (tmpp[p, k] - tmpp2[p, k]) / (2.0 * h[i])
     Kr = np.zeros((12, 12))
     if want_h:
+        # second-order mixed differences reusing the ±h_i evaluations:
+        # H_ij ≈ [f(+i+j) − f(+i) − f(+j) + 2f0 − f(−i) − f(−j) + f(−i−j)] / (2 h_i h_j)
         phi0 = fH @ d0
+        fp = np.empty(12)
+        fm = np.empty(12)
         for i in range(12):
-            Kr[i, i] = ((fH @ dp[i] - 2.0 * phi0 + fH @ dm[i]) + (Vp[i] + Vm[i])) / (h[i] * h[i])
+            fp[i] = fH @ dp[i] + Vp[i]
+            fm[i] = fH @ dm[i] + Vm[i]
+            Kr[i, i] = (fp[i] - 2.0 * phi0 + fm[i]) / (h[i] * h[i])
+        npos = npt if W2 != 0.0 else 0
+        mp = mpts[:npos]
+        tq = np.empty((npos, 3))
+        p0 = pos0[:npos]
+        for i in range(12):
             for j in range(i + 1, 12):
                 dl = np.zeros(12)
                 dl[i] = h[i]
                 dl[j] = h[j]
                 a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
-                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
-                s = fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
+                _eval(a, b, c, d, E0, L0, k2, mp, tmpd, tq)
+                spp = fH @ tmpd + _vcf(tq, p0, mp, W2)
+                dl[i] = -h[i]
                 dl[j] = -h[j]
                 a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
-                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
-                s -= fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
-                dl[i] = -h[i]
-                a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
-                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
-                s += fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
-                dl[j] = h[j]
-                a, b, c, d = _pert(xa, xb, Ra, Rb, dl)
-                _eval(a, b, c, d, E0, L0, k2, mpts, tmpd, tmpp)
-                s -= fH @ tmpd + _vcf(tmpp, pos0, mpts, W2)
-                v = s / (4.0 * h[i] * h[j])
+                _eval(a, b, c, d, E0, L0, k2, mp, tmpd, tq)
+                smm = fH @ tmpd + _vcf(tq, p0, mp, W2)
+                v = (spp - fp[i] - fp[j] + 2.0 * phi0 - fm[i] - fm[j] + smm) / (2.0 * h[i] * h[j])
                 Kr[i, j] = v
                 Kr[j, i] = v
     return d0, f7, B, gV, J, pos0, Kr
+
+
+
+@njit(cache=True, parallel=True)
+def _all_derivs(XA, XB, RA, RB, E0s, L0s, k2s, K7s, MP, NP, W2, want_h, FW, use_fw):
+    ne = XA.shape[0]
+    npmax = MP.shape[1]
+    D7 = np.zeros((ne, 7))
+    F7 = np.zeros((ne, 7))
+    Bs = np.zeros((ne, 7, 12))
+    GV = np.zeros((ne, 12))
+    Js = np.zeros((ne, npmax, 3, 12))
+    POS = np.zeros((ne, npmax, 3))
+    KR = np.zeros((ne, 12, 12))
+    for k in prange(ne):
+        n = NP[k]
+        fw = FW[k] if use_fw[k] else np.zeros(0)
+        d0, f7, B, gV, J, pos, Kr = _element_derivs(XA[k], XB[k], RA[k], RB[k], E0s[k], L0s[k], k2s[k],
+                                                    K7s[k], MP[k, :n], W2, want_h, fw)
+        D7[k] = d0
+        F7[k] = f7
+        Bs[k] = B
+        GV[k] = gV
+        Js[k, :n] = J
+        POS[k, :n] = pos
+        KR[k] = Kr
+    return D7, F7, Bs, GV, Js, POS, KR
 
 
 # --------------------------------------------------------------------------- shape functions / quadrature
@@ -439,6 +470,7 @@ class FEModel:
         for e in self.elements:
             e.prepare(X)
         self._X = X
+        self._pack = None
         self._prepared = True
 
     @property
@@ -497,44 +529,81 @@ class Assembly:
     cr: list
 
 
+def _pack(model: FEModel):
+    """Static per-element arrays for the batched kernel (cached on the model)."""
+    pk = getattr(model, "_pack", None)
+    if pk is not None and pk[0] == len(model.elements):
+        return pk[1]
+    els = model.elements
+    ne = len(els)
+    npmax = max([len(e.mpts) for e in els] + [1])
+    MP = np.zeros((ne, npmax, 4))
+    NP = np.zeros(ne, np.int64)
+    for k, e in enumerate(els):
+        NP[k] = len(e.mpts)
+        if NP[k]:
+            MP[k, :NP[k]] = e.mpts
+    d = dict(n0=np.array([e.n0 for e in els]), n1=np.array([e.n1 for e in els]),
+             E0=np.ascontiguousarray(np.array([e.E0 for e in els])), L0=np.array([e.L0 for e in els]),
+             k2=np.array([e.k2 for e in els]), K7=np.ascontiguousarray(np.array([e.K7 for e in els])),
+             MP=MP, NP=NP, dofs=np.array([_edofs(e) for e in els]))
+    model._pack = (ne, d)
+    return d
+
+
 def assemble(model: FEModel, st: State, Omega: float = 0.0, want_tangent: bool = True,
              want_mass: bool = False, du_pred: np.ndarray | None = None) -> Assembly:
-    """Assemble at state st. du_pred: if given, the initial-stress Hessian is weighted by
-    the predicted element forces f7 + K7·B·du_pred (prestress predictor for unstressed
-    starts, where spin softening is not yet balanced by tension)."""
+    """Assemble at state st (all elements in one parallel numba call).
+    du_pred: if given, the initial-stress Hessian is weighted by the predicted element
+    forces f7 + K7·B·du_pred (prestress predictor for unstressed starts)."""
     n = model.ndof
+    pk = _pack(model)
+    ne = len(model.elements)
+    n0, n1 = pk["n0"], pk["n1"]
+    XA, XB = np.ascontiguousarray(st.x[n0]), np.ascontiguousarray(st.x[n1])
+    RA, RB = np.ascontiguousarray(st.R[n0]), np.ascontiguousarray(st.R[n1])
+    W2 = float(Omega) ** 2
+    FW = np.zeros((ne, 7))
+    use_fw = np.zeros(ne, np.bool_)
+    if du_pred is not None and want_tangent:
+        D7, F7, Bs, *_ = _all_derivs(XA, XB, RA, RB, pk["E0"], pk["L0"], pk["k2"], pk["K7"], pk["MP"],
+                                     pk["NP"], W2, False, FW, use_fw)
+        FW = F7 + np.einsum("eij,ejk,ek->ei", pk["K7"], Bs, du_pred[pk["dofs"]])
+        use_fw[:] = True
+    D7, F7, Bs, GV, Js, POS, KR = _all_derivs(XA, XB, RA, RB, pk["E0"], pk["L0"], pk["k2"], pk["K7"],
+                                              pk["MP"], pk["NP"], W2, want_tangent, FW, use_fw)
+    dofs = pk["dofs"]
     fint = np.zeros(n)
     Fcf = np.zeros(n)
-    Kg = np.zeros((n, n)) if want_tangent else None
-    M = np.zeros((n, n)) if want_mass else None
-    G = np.zeros((n, n)) if want_mass else None
-    Kmat_e, crs = [], []
-    for e in model.elements:
-        dofs = _edofs(e)
-        if du_pred is not None and want_tangent:
-            c0 = element_cr(e, st, Omega, False)
-            c = element_cr(e, st, Omega, True, c0.f7 + e.K7 @ (c0.B @ du_pred[dofs]))
-        else:
-            c = element_cr(e, st, Omega, want_tangent)
-        fint[dofs] += c.B.T @ c.f7
-        Fcf[dofs] -= c.gV
-        if want_tangent:
-            ix = np.ix_(dofs, dofs)
-            Kg[ix] += 0.5 * (c.Kr + c.Kr.T)
-            Km = c.B.T @ e.K7 @ c.B
-            Kmat_e.append(0.5 * (Km + Km.T))
-        if want_mass and len(e.mpts):
-            m = e.mpts[:, 3]
-            Me = np.einsum("p,pki,pkj->ij", m, c.J, c.J)
-            Ge = 2.0 * Omega * np.einsum("p,pki,kl,plj->ij", m, c.J, _ZX, c.J)
-            ix = np.ix_(dofs, dofs)
-            M[ix] += 0.5 * (Me + Me.T)
-            G[ix] += 0.5 * (Ge - Ge.T)
-        crs.append(c)
+    np.add.at(fint, dofs, np.einsum("eij,ei->ej", Bs, F7))
+    np.add.at(Fcf, dofs, -GV)
+    Kg = M = G = None
+    Kmat_e = []
+    if want_tangent:
+        Kg = np.zeros((n, n))
+        KRs = 0.5 * (KR + KR.transpose(0, 2, 1))
+        Kme = np.einsum("eki,ekl,elj->eij", Bs, pk["K7"], Bs)
+        Kme = 0.5 * (Kme + Kme.transpose(0, 2, 1))
+        rows = np.repeat(dofs, 12, axis=1)
+        cols = np.tile(dofs, (1, 12))
+        np.add.at(Kg, (rows.ravel(), cols.ravel()), KRs.reshape(ne, -1).ravel())
+        Kmat_e = list(Kme)
     if want_mass:
+        M = np.zeros((n, n))
+        G = np.zeros((n, n))
+        m = pk["MP"][:, :, 3]
+        Me = np.einsum("ep,epki,epkj->eij", m, Js, Js)
+        Ge = 2.0 * Omega * np.einsum("ep,epki,kl,eplj->eij", m, Js, _ZX, Js)
+        Ge = 0.5 * (Ge - Ge.transpose(0, 2, 1))
+        rows = np.repeat(dofs, 12, axis=1).ravel()
+        cols = np.tile(dofs, (1, 12)).ravel()
+        np.add.at(M, (rows, cols), (0.5 * (Me + Me.transpose(0, 2, 1))).ravel())
+        np.add.at(G, (rows, cols), Ge.ravel())
         for node, Mn in model.lumped:
             d = np.r_[6 * node:6 * node + 6]
             M[np.ix_(d, d)] += Mn
+    crs = [ElementCR(D7[k], Bs[k], F7[k], Js[k, :pk["NP"][k]], POS[k, :pk["NP"][k]], GV[k], KR[k])
+           for k in range(ne)]
     return Assembly(fint, Fcf, Kmat_e, Kg, M, G, crs)
 
 
@@ -547,9 +616,15 @@ def assemble_Kmat(model: FEModel, sa: Assembly, scales=None) -> np.ndarray:
     n = model.ndof
     dtype = complex if scales is not None and np.iscomplexobj(np.asarray(scales)) else float
     K = np.zeros((n, n), dtype)
-    for i, (e, Ke) in enumerate(zip(model.elements, sa.Kmat_e)):
-        dofs = _edofs(e)
-        K[np.ix_(dofs, dofs)] += Ke * (1.0 if scales is None else scales[i])
+    if not sa.Kmat_e:
+        return K
+    dofs = np.array([_edofs(e) for e in model.elements])
+    Ke = np.array(sa.Kmat_e).astype(dtype)
+    if scales is not None:
+        Ke = Ke * np.asarray(scales, dtype)[:, None, None]
+    rows = np.repeat(dofs, 12, axis=1).ravel()
+    cols = np.tile(dofs, (1, 12)).ravel()
+    np.add.at(K, (rows, cols), Ke.ravel())
     return K
 
 
@@ -609,8 +684,9 @@ class NewtonInfo:
 
 
 def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarray] | np.ndarray | None = None,
-                 state0: State | None = None, n_steps: int = 4, tol: float = 1e-7, max_iter: int = 30,
-                 verbose: bool = False, extra_fixed=(), lam0: float | None = None) -> tuple[State, NewtonInfo]:
+                 state0: State | None = None, n_steps: int = 4, tol: float = 1e-6, max_iter: int = 30,
+                 verbose: bool = False, extra_fixed=(), lam0: float | None = None,
+                 ext_tangent: Callable[[State], np.ndarray] | None = None) -> tuple[State, NewtonInfo]:
     """Nonlinear static equilibrium in the rotating frame: f_int(q) = F_cf(q, Ω) + λF_ext.
 
     Adaptive continuation in λ = (Ω/Ω₀)² (centrifugal and external loads ramp together;
@@ -636,65 +712,77 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
         return r, np.abs(r).max() / scale
 
     def newton_at(st, lam, max_it):
+        """Full Newton (non-monotone: centrifugal problems overshoot before settling),
+        fresh tangent each iteration, 0.1 rad rotation cap, step halving only on blow-up."""
         nonlocal total_it
         Om = Omega * np.sqrt(lam)
         r, res = residual(st, Om, lam)
-        K = None
+        best = (res, st)
         hist = []
-        mu = 0.0
+        K = None
         for it in range(max_it):
             if res < tol:
                 return st, True, res, ""
-            if len(hist) >= 4 and res < 1e-5 and res > 0.5 * hist[-4]:
+            if len(hist) >= 3 and res < 1e-5 and res > 0.3 * hist[-3]:
                 return st, True, res, f"stagnated at residual {res:.1e} (FD precision)"
-            if K is None or len(hist) < 2 or res > 0.1 * hist[-1]:
-                sa = assemble(model, st, Om, True, False)
-                Km = assemble_Kmat(model, sa)
-                if res > 0.2:
-                    # unbalanced state: predict prestress from a linear solve, re-weight Kσ
-                    # regularise near-mechanisms (soft hinges) with ~Ω²·diag(M) so the
-                    # predicted forces are not polluted by huge rigid-body motions
-                    sm = assemble(model, st, Om, False, True)
-                    Kp = Km + (Om * Om + 1e-12) * np.diag(np.diag(sm.M))
-                    du_l = np.zeros(model.ndof)
-                    try:
-                        du_l[free] = np.linalg.solve(Kp[np.ix_(free, free)], -r)
-                        sa = assemble(model, st, Om, True, False, du_pred=du_l)
-                    except np.linalg.LinAlgError:
-                        pass
-                K = (Km + sa.Kgeo)[np.ix_(free, free)]
-                if mu > 0:
-                    K = K + mu * np.diag(np.abs(np.diag(Km)[free]) + 1e-12)
+            if K is not None and res < 1e-2 and len(hist) and res < 0.3 * hist[-1]:
+                dq = lu_solve_(-r)
+                du = np.zeros(model.ndof)
+                du[free] = dq
+                hist.append(res)
+                st = update_state(st, du)
+                r, res = residual(st, Om, lam)
+                if res < best[0]:
+                    best = (res, st)
+                total_it += 1
+                if verbose:
+                    print(f"  lam {lam:.3f} it {it} (modified) res {hist[-1]:.3e} -> {res:.3e}")
+                continue
+            sa = assemble(model, st, Om, True, False)
+            Km = assemble_Kmat(model, sa)
+            if res > 0.2 and it == 0:
+                # unbalanced state: predict prestress from a (mass-regularised) linear
+                # solve and weight the initial-stress Hessian with it
+                sm = assemble(model, st, Om, False, True)
+                Kp = Km + (Om * Om + 1e-12) * np.diag(np.diag(sm.M))
+                du_l = np.zeros(model.ndof)
+                try:
+                    du_l[free] = np.linalg.solve(Kp[np.ix_(free, free)], -r)
+                    sa = assemble(model, st, Om, True, False, du_pred=du_l)
+                except np.linalg.LinAlgError:
+                    pass
+            Kt = Km + sa.Kgeo
+            if ext_tangent is not None:
+                Kt = Kt - lam * ext_tangent(st)          # d(F_ext)/dq (e.g. aero stiffness)
+            K = Kt[np.ix_(free, free)]
+            try:
                 lu = sl_lu_factor(K, check_finite=False)
-            dq = sl_lu_solve(lu, -r)
+                lu_solve_ = lambda b, lu=lu: sl_lu_solve(lu, b)   # noqa: E731
+            except Exception:
+                Kc = K.copy()
+                lu_solve_ = lambda b, Kc=Kc: np.linalg.lstsq(Kc, b, rcond=None)[0]   # noqa: E731
+            dq = lu_solve_(-r)
             du = np.zeros(model.ndof)
             du[free] = dq
             rot = np.abs(du.reshape(-1, 6)[:, 3:]).max()
             if not np.isfinite(rot):
-                return st, False, res, "non-finite Newton step"
-            if rot > 0.2:
-                du *= 0.2 / rot
+                return best[1], False, best[0], "non-finite Newton step"
+            if rot > 0.1:
+                du *= 0.1 / rot
             hist.append(res)
-            for _ in range(4):
+            for _ in range(6):
                 st2 = update_state(st, du)
                 r2, res2 = residual(st2, Om, lam)
-                if res2 < 1.5 * res:
+                if np.isfinite(res2) and res2 < max(1e3 * res, 10.0):
                     break
-                du *= 0.5
-                K = None
-            if res2 >= res:
-                mu = max(10 * mu, 1e-4)
-                K = None
-            elif mu > 0:
-                mu = mu * 0.1 if mu > 1e-7 else 0.0
-                K = None
+                du *= 0.25
             if verbose:
-                print(f"  lam {lam:.3f} it {it} res {res:.3e} -> {res2:.3e} |du| {np.abs(du).max():.3e} mu {mu:.0e}")
+                print(f"  lam {lam:.3f} it {it} res {res:.3e} -> {res2:.3e} |du| {np.abs(du).max():.3e}")
             st, r, res = st2, r2, res2
+            if res < best[0]:
+                best = (res, st)
             total_it += 1
-            if mu > 1e3:
-                break
-        return st, res < tol, res, ""
+        return best[1], best[0] < tol, best[0], ""
 
     lam = 0.0
     dlam = 1.0 if state0 is not None else (lam0 or 1.0 / max(n_steps, 1))
@@ -702,7 +790,7 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
     res = np.inf
     while lam < 1.0 - 1e-12:
         lt = min(1.0, lam + dlam)
-        st_try, ok, res, note = newton_at(st, lt, 15 if lt < 1.0 else max_iter)
+        st_try, ok, res, note = newton_at(st, lt, 20 if lt < 1.0 else max_iter)
         if ok:
             st, lam = st_try, lt
             msg = note or msg

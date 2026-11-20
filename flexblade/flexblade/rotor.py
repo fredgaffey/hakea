@@ -39,6 +39,8 @@ from .schema import (BladeHarmonic, CampbellResult, Check, Design, FlexureMember
 from .section import (CircleShape, RectShape, SectionProps, airfoil_shape, section_properties)
 
 G0 = 9.80665
+import os as _os
+_DEBUG = bool(_os.environ.get("FLEXBLADE_DEBUG"))
 STIFF_FACTOR = 1.0e3
 
 
@@ -544,48 +546,100 @@ def _blade_shape(model: RotorModel, st: State):
     return np.array(th), np.array(be)
 
 
-def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_outer: int = 4) -> StaticState:
+def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_outer: int = 6) -> StaticState:
+    """Nonlinear aeroelastic hover trim.
+
+    Inner: at fixed rpm, Newton on the structure with aero loads that follow the
+    deformed blade (elastic pitch θ_el(r) and flap slope from the current state fed to
+    aero.trim(rpm, blade_shape)) and the quasi-steady aero pitch stiffness in the tangent.
+    Outer: secant on rpm for thrust = vehicle weight (unless op.rpm is given).
+    The hub angle is held (the motor's mean torque balances drag)."""
     d = model.design
     fe = model.fe
     warn: list[str] = []
     use_aero_loads = aero is not None and d.analysis.aero != "none"
-    trim = None
-    if aero is not None:
-        trim = aero.trim(rpm=rpm) if rpm is not None else aero.trim()
-        rpm = trim.rpm
-    elif rpm is None:
-        rpm = d.op.rpm
+    hubfix = (6 * model.hub + 5,)
+    if aero is None:
+        rpm = rpm if rpm is not None else d.op.rpm
         if rpm is None:
             raise ValueError("no aero model: op.rpm must be given")
-    Omega = rpm * 2 * np.pi / 60
-    F = aero_load_vector(model, fe.initial_state(), trim) if use_aero_loads else None
-    hubfix = (6 * model.hub + 5,)   # motor holds the hub angle (its torque balances drag)
-    st, info = solve_static(fe, Omega, F, n_steps=2, extra_fixed=hubfix)
-    its = info.iterations
-    conv = info.converged
-    th, be = _blade_shape(model, st)
-    if aero is not None and d.analysis.nonlinear_static:
-        for _ in range(max_outer):
-            shape = dict(theta=th.mean(0), beta=be.mean(0) if use_aero_loads else 0 * be[0], r=model.r_aero)
-            t2 = aero.trim(rpm=rpm if d.op.rpm is not None else None, blade_shape=shape) \
-                if d.op.rpm is not None else aero.trim(blade_shape=shape)
-            drpm = abs(t2.rpm - trim.rpm) / trim.rpm
-            trim = t2
-            Omega = trim.omega
-            F = aero_load_vector(model, st, trim) if use_aero_loads else None
-            st, info = solve_static(fe, Omega, F, state0=st, n_steps=1, extra_fixed=hubfix)
+        Om = rpm * 2 * np.pi / 60
+        st, info = solve_static(fe, Om, None, n_steps=2, extra_fixed=hubfix)
+        w = [] if info.converged else [f"nonlinear static did not converge: {info.message}"]
+        th, be = _blade_shape(model, st)
+        return StaticState(st, Om, rpm, None, None, info.converged, info.iterations, w, th, be)
+    trim0 = aero.trim(rpm=rpm) if rpm is not None else aero.trim()
+    fixed_rpm = rpm is not None or d.op.rpm is not None
+    W = trim0.T if fixed_rpm else d.op.vehicle_mass * G0
+    if not fixed_rpm:
+        W = float(trim0.T)     # aero.trim() trims to its own thrust target (incl. thrust share)
+
+    def shape_of(s):
+        th, be = _blade_shape(model, s)
+        return dict(theta=th.mean(0), beta=be.mean(0), r=model.r_aero), th, be
+
+    cache = {}
+
+    def aero_at(s, rpm_x):
+        shp, _, _ = shape_of(s)
+        return aero.trim(rpm=rpm_x, blade_shape=shp)
+
+    def solve_at(rpm_x, st0):
+        Om = rpm_x * 2 * np.pi / 60
+        if not use_aero_loads:
+            s1, inf = solve_static(fe, Om, None, state0=st0, n_steps=2, extra_fixed=hubfix)
+            return s1, inf, aero_at(s1, rpm_x)
+
+        def fext(s):
+            tr = aero_at(s, rpm_x)
+            cache["tr"] = tr
+            return aero_load_vector(model, s, tr)
+
+        def ktan(s):
+            tr = cache.get("tr") or aero_at(s, rpm_x)
+            return np.real(aero_linear(model, s, aero, tr, 0.0, False).Ka)
+
+        its0 = 0
+        if st0 is None:   # cold start: dead loads of the rigid-blade trim first
+            st0, inf0 = solve_static(fe, Om, aero_load_vector(model, fe.initial_state(), aero_at(fe.initial_state(), rpm_x)),
+                                     n_steps=2, extra_fixed=hubfix)
+            its0 = inf0.iterations
+        s1, inf = solve_static(fe, Om, fext, state0=st0, extra_fixed=hubfix)
+        inf.iterations += its0
+        return s1, inf, aero_at(s1, rpm_x)
+
+    x = float(trim0.rpm)
+    st, info, tr = solve_at(x, None)
+    its, conv = info.iterations, info.converged
+    xs, fs = [x], [tr.T - W]
+    ok_outer = fixed_rpm
+    if not fixed_rpm:
+        for k in range(max_outer):
+            if abs(fs[-1]) < 1e-3 * W:
+                ok_outer = True
+                break
+            if len(xs) == 1:
+                xn = x * np.sqrt(W / max(tr.T, 1e-9))
+            else:
+                xn = xs[-1] - fs[-1] * (xs[-1] - xs[-2]) / (fs[-1] - fs[-2])
+            x = float(np.clip(xn, 0.7 * xs[-1], 1.4 * xs[-1]))
+            st, info, tr = solve_at(x, st)
             its += info.iterations
             conv = conv and info.converged
-            th2, be2 = _blade_shape(model, st)
-            dth = np.abs(th2 - th).max()
-            th, be = th2, be2
-            if drpm < 2e-4 and dth < 2e-4:
-                break
+            xs.append(x)
+            fs.append(tr.T - W)
+            if _DEBUG:
+                print(f"trim outer: rpm {x:.1f} T-W {fs[-1]:+.4f} N  newton its {info.iterations} {info.message}")
         else:
-            warn.append("trim (aero ↔ elastic pitch) outer iteration not fully converged")
+            ok_outer = abs(fs[-1]) < 1e-3 * W
+    if not ok_outer:
+        warn.append(f"trim rpm iteration not converged (T−W = {fs[-1]:+.3f} N)")
     if not conv:
         warn.append(f"nonlinear static did not converge: {info.message}")
-    return StaticState(st, Omega, Omega * 60 / (2 * np.pi), trim, F, conv, its, warn, th, be)
+    _, th, be = shape_of(st)
+    Om = x * 2 * np.pi / 60
+    F = aero_load_vector(model, st, tr) if use_aero_loads else None
+    return StaticState(st, Om, x, tr, F, conv, its, warn, th, be)
 
 
 # =============================================================================== linearisation

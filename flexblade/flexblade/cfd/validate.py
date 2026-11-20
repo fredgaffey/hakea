@@ -63,20 +63,24 @@ def compare_case(case_dir, design=None) -> dict:
 
 
 def pitch_sweep(design, specs: list[dict], out_dir, where: str = "mac",
-                max_parallel: int = 10, timeout: float = 4 * 3600) -> list[dict]:
+                max_parallel: int = 10, timeout: float = 4 * 3600,
+                total_cores: int = 10) -> list[dict]:
+    """Cases run concurrently; each is decomposed over total_cores // n_cases processes
+    (scotch) so the machine stays loaded when there are fewer cases than cores."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="fb_pitch_"))
 
     # mesh generation (gmsh) is not thread-safe: generate all cases first, then run
+    np_each = max(1, total_cores // max(len(specs), 1))
     for spec in specs:
         sp = dict(spec)
-        pitching_airfoil_case(design, work / sp.pop("name"), np_=1, **sp)
+        pitching_airfoil_case(design, work / sp.pop("name"), np_=np_each, **sp)
 
     def one(spec):
         name = spec["name"]
         cdir = work / name
-        r = run_case(cdir, where=where, np=1, timeout=timeout)
+        r = run_case(cdir, where=where, np=np_each, timeout=timeout)
         keep = out_dir / name
         keep.mkdir(parents=True, exist_ok=True)
         shutil.copy(cdir / "flexblade_case.json", keep)

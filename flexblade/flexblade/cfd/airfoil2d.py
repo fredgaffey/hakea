@@ -315,8 +315,8 @@ divSchemes
 {
     default         none;
     div(phi,U)      Gauss linearUpwindV grad(U);
-    div(phi,k)      bounded Gauss upwind;
-    div(phi,omega)  bounded Gauss upwind;
+    div(phi,k)      Gauss upwind;
+    div(phi,omega)  Gauss upwind;
     div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }
 laplacianSchemes { default Gauss linear limited 0.5; }

@@ -199,7 +199,8 @@ addLayersControls
     maxFaceThicknessRatio 0.5; maxThicknessToMedialRatio 0.3; minMedialAxisAngle 90;
     nBufferCellsNoExtrude 0; nLayerIter 50;
 }}
-meshQualityControls {{ #includeEtc "caseDicts/mesh/generation/meshQualityDict" }}
+meshQualityControls {{ #includeEtc "caseDicts/meshQualityDict"
+    nSmoothScale 4; errorReduction 0.75; relaxed {{ maxNonOrtho 75; }} }}
 mergeTolerance 1e-6;
 """)
     foam.write_dict(case, "system/surfaceFeatureExtractDict", "")
