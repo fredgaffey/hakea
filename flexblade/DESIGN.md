@@ -189,3 +189,9 @@ its own mirrored frame by the same single-rotor code, results mirrored back. Cou
 `op.extra_inflow` (InflowProfile, m/s down, ADDED to own induced velocity inside
 aero.trim — aero must honour it) and `op.thrust_share`. Structures/rotor code needs no
 coaxial awareness beyond passing design.op through to AeroModel.
+
+## BLAS threads (binding)
+BLAS is pinned to 1 thread at import (multithreaded BLAS on our ~300-DOF matrices was
+~500× slower under load). For dense work with n ≳ 500 wrap it in
+`with parallel.blas_threads_for(n): ...` — it stays at 1 inside parallel workers
+(FLEXBLADE_WORKER=1). Sparse solvers (splu/eigsh) are unaffected.

@@ -37,11 +37,11 @@ def test_pitching_case_laminar(tmp_path):
 def test_rotor_case_generation(tmp_path):
     r = cfd.rotor_sector_case(Design(), tmp_path / "r", rpm=15000)
     for f in ("Allrun", "system/blockMeshDict", "system/snappyHexMeshDict",
-              "constant/triSurface/blade.stl", "constant/SRFProperties", "0/Urel", "0/p"):
+              "constant/triSurface/blade.stl", "constant/MRFProperties", "system/topoSetDict", "0/U", "0/p"):
         assert (tmp_path / "r" / f).exists(), f
     bm = (tmp_path / "r/system/blockMeshDict").read_text()
     assert bm.count("hex (") == 4 and "cyclic" in bm and "rotationAngle 180" in bm
-    assert "rpm             15000" in (tmp_path / "r/constant/SRFProperties").read_text()
+    assert "omega" in (tmp_path / "r/constant/MRFProperties").read_text()
     assert r.sector_deg == 180.0
 
 

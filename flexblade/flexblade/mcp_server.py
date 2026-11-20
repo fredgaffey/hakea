@@ -263,7 +263,7 @@ async def sweep(design: DesignArg, variables: dict[str, Any], what: list[str] | 
 @tool(description="Export geometry of a design: fmt glb|stl|step|json (json = surface mesh parts with "
                       "vertices in metres, frame H). Writes to `path` (default: a temp file) and returns "
                       "the absolute path. " + DESIGN_DOC)
-async def export_geometry(design: DesignArg, fmt: Literal["glb", "stl", "step", "json"] = "step",
+async def export_geometry(design: DesignArg, fmt: Literal["glb", "stl", "step", "json", "stl_parts", "3mf"] = "step",
                           path: str | None = None) -> dict:
     d = _design(design)
     if not path:

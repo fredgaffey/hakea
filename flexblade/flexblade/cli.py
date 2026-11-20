@@ -202,7 +202,23 @@ def cmd_sweep(a, out):
     n_err = 0
     fh = open(a.out, "w") if a.out else None
     try:
-        for rec in uc.run_sweep(d, variables, _what(a.what), workers=a.workers, full=a.full):
+        if a.hosts:
+            from . import remote
+            grid = uc.sweep_grid(variables)
+            designs = [uc.set_values(d, v) for v in grid]
+
+            def _remote_records():
+                with remote.HostPool(a.hosts, what=_what(a.what), full=a.full) as pool:
+                    for i, r in pool.imap(designs):
+                        rec = {"values": grid[i], "design_hash": designs[i].hash(), "index": i,
+                               "host": r.get("host")}
+                        rec.update({"results": r["results"]} if "results" in r
+                                   else {"error": r.get("error")})
+                        yield rec
+            records = _remote_records()
+        else:
+            records = uc.run_sweep(d, variables, _what(a.what), workers=a.workers, full=a.full)
+        for rec in records:
             n_err += "error" in rec
             if fh:
                 fh.write(json.dumps(uc.to_jsonable(rec), default=str) + "\n")
@@ -299,7 +315,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("export", parents=[common], help="export geometry")
     s.add_argument("design", nargs="?", default="-", help=D)
-    s.add_argument("--fmt", choices=["glb", "stl", "step", "json"], default="step")
+    s.add_argument("--fmt", choices=["glb", "stl", "step", "json", "stl_parts", "3mf"], default="step")
     s.add_argument("-o", "--output", help="output path (default <name>.<fmt>)")
     s.set_defaults(fn=cmd_export)
 
@@ -312,6 +328,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     s.add_argument("--full", action="store_true", help="keep nodal arrays / mode shapes")
     s.add_argument("--max-points", type=int, default=5000)
+    s.add_argument("--hosts", help="spread over machines, e.g. local:31,mac:10 (ssh alias:slots); "
+                                   "remote code synced by rsync into /tmp/flexblade-work")
     s.add_argument("--progress", action="store_true")
     s.set_defaults(fn=cmd_sweep)
 

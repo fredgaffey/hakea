@@ -1,0 +1,39 @@
+GAMG:  Solving for p, Initial residual = 0.065932743, Final residual = 0.0006046326, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.0037636617, Final residual = 3.4857491e-05, No Iterations 7
+time step continuity errors : sum local = 1.5494571e-10, global = 2.3709512e-11, cumulative = 1.265656e-08
+GAMG:  Solving for p, Initial residual = 0.020767174, Final residual = 0.00014220655, No Iterations 3
+GAMG:  Solving for p, Initial residual = 0.0016865545, Final residual = 8.7402127e-08, No Iterations 30
+time step continuity errors : sum local = 3.8846105e-13, global = -5.296784e-14, cumulative = 1.2656507e-08
+smoothSolver:  Solving for omega, Initial residual = 3.3480052e-09, Final residual = 3.3480052e-09, No Iterations 0
+smoothSolver:  Solving for k, Initial residual = 4.6019362e-07, Final residual = 7.9075263e-09, No Iterations 1
+PIMPLE: iteration 3
+smoothSolver:  Solving for Ux, Initial residual = 1.9717922e-06, Final residual = 1.3655925e-09, No Iterations 2
+smoothSolver:  Solving for Uy, Initial residual = 2.725199e-05, Final residual = 9.7765648e-09, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.24372205, Final residual = 0.002310555, No Iterations 3
+GAMG:  Solving for p, Initial residual = 0.014407364, Final residual = 0.00012927277, No Iterations 10
+time step continuity errors : sum local = 4.669541e-10, global = 8.2446229e-11, cumulative = 1.2738953e-08
+GAMG:  Solving for p, Initial residual = 0.018237605, Final residual = 0.00015223918, No Iterations 6
+GAMG:  Solving for p, Initial residual = 0.0038696168, Final residual = 7.0186821e-08, No Iterations 27
+time step continuity errors : sum local = 2.5265591e-13, global = -3.8487934e-15, cumulative = 1.2738949e-08
+smoothSolver:  Solving for omega, Initial residual = 4.9253788e-09, Final residual = 4.9253788e-09, No Iterations 0
+smoothSolver:  Solving for k, Initial residual = 1.6680923e-07, Final residual = 6.6359438e-09, No Iterations 1
+ExecutionTime = 1232.29 s  ClockTime = 1375 s
+
+forceCoeffs forceCoeffs write:
+    Coefficient	Total	Pressure	Viscous	Internal
+    Cd:	0.028690553	0.017123947	0.011566606	0
+    Cd(f):	-0.0016216859	-0.0073822378	0.0057605519	0
+    Cd(r):	0.030312239	0.024506185	0.0058060537	0
+    Cl:	0.63867849	0.63776846	0.00091003521	0
+    Cl(f):	0.23565077	0.23451075	0.0011400202	0
+    Cl(r):	0.40302772	0.40325771	-0.00022998495	0
+    CmPitch:	-0.083688477	-0.08437348	0.00068500255	0
+    CmRoll:	-0.015966962	-0.015944211	-2.275088e-05	0
+    CmYaw:	0.00071726383	0.00042809869	0.00028916514	0
+    Cs:	-4.1833809e-17	2.5276435e-20	-4.1859086e-17	0
+    Cs(f):	0.00071726383	0.00042809869	0.00028916514	0
+    Cs(r):	-0.00071726383	-0.00042809869	-0.00028916514	0
+
+    writing force and moment coefficient files.
+
+End

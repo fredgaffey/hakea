@@ -476,13 +476,18 @@ def _clamp_hub_side(model: FEModel, sm, hub_radius: float = 0.0) -> np.ndarray:
 
 
 def static_centrifugal(design: Design, rpm: Optional[float] = None, h: Optional[float] = None,
-                       h_member: Optional[float] = None, return_model: bool = False) -> dict:
+                       h_member: Optional[float] = None, return_model: bool = False,
+                       stress_stiffening: bool = True, max_iter: int = 6, tol: float = 0.01) -> dict:
     """Linear static centrifugal load case of blade 1 + flexure (hub side clamped).
 
     Returns max von Mises, max principal, max interlayer normal stress (σ along the print
     build_dir, tension +), per-part maxima + utilisation vs material strength, radial
     stretch (tip and flexure blade-end mean u_x), centrifugal root force and max strain.
     Linear small-strain: for soft TPU with >~5 % strain treat as indicative only.
+    stress_stiffening: iterate (K + K_σ(σ_k) − Ω² M_xy) u_{k+1} = f (centrifugal stiffening
+    and spin softening, i.e. the propeller-moment / tennis-racket restoring effect) until the
+    max displacement changes < tol. Without it a soft skewed hinge has no centrifugal
+    restoring stiffness and deflections/stresses are grossly overestimated.
     """
     warnings: list[str] = []
     rpm = _rpm_or_default(design, rpm, warnings)
@@ -494,10 +499,24 @@ def static_centrifugal(design: Design, rpm: Optional[float] = None, h: Optional[
     K = model.stiffness()
     f = model.centrifugal_load(om)
     T, _ = _transform(model, fixed)
-    q = _solve((T.T @ K @ T).tocsc(), T.T @ f)
-    u = T @ q
+    fr = T.T @ f
+    u = T @ _solve((T.T @ K @ T).tocsc(), fr)
     sig = model.stress_qp(u)
+    history = [float(np.abs(u).max())]
+    if stress_stiffening and om > 0:
+        Ksoft = -om ** 2 * model.mass(comps=(0, 1))
+        for _ in range(max_iter):
+            Ke = K + model.geometric_stiffness(sig) + Ksoft
+            u_new = T @ _solve((T.T @ Ke @ T).tocsc(), fr)
+            history.append(float(np.abs(u_new).max()))
+            u = 0.5 * (u + u_new) if len(history) > 3 else u_new     # damp late oscillation
+            sig = model.stress_qp(u)
+            if abs(history[-1] - history[-2]) < tol * history[-1]:
+                break
+        else:
+            warnings.append(f"stress stiffening not converged: max|u| history {history}")
     res = _stress_summary(model, sig)
+    res["max_u_history"] = history
     X = model.doflocs
     R = design.blade.radius
     tip = X[:, 0] > 0.98 * R

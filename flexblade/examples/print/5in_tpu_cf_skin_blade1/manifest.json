@@ -1,0 +1,47 @@
+{
+ "design": "5in_tpu_cf_skin",
+ "design_hash": "37797ad9da4ea1ed",
+ "units": "mm",
+ "blades": "one",
+ "print_frame": "build_dir->+Z, raster_dir->+X, on bed (z>=0)",
+ "print_rotation": [
+  [
+   1.0,
+   0.0,
+   0.0
+  ],
+  [
+   0.0,
+   1.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "shift_mm": [
+  -32.50735931288072,
+  3.648388922002879,
+  8.485281374238571
+ ],
+ "files": {
+  "pa6_cf": "examples/print/5in_tpu_cf_skin_blade1/5in_tpu_cf_skin_pa6_cf.stl",
+  "tpu_64d": "examples/print/5in_tpu_cf_skin_blade1/5in_tpu_cf_skin_tpu_64d.stl"
+ },
+ "parts": {
+  "pa6_cf": {
+   "watertight": true,
+   "volume_mm3": 501.1940656386143,
+   "occ_volume_mm3": 496.4523558321826,
+   "n_triangles": 68318
+  },
+  "tpu_64d": {
+   "watertight": true,
+   "volume_mm3": 553.383468035798,
+   "occ_volume_mm3": 553.7459282995912,
+   "n_triangles": 25758
+  }
+ }
+}

@@ -17,3 +17,6 @@ __pycache__/
 *.pyc
 *.nbc
 *.nbi
+
+# Claude Code agent worktrees
+.claude/worktrees/
