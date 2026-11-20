@@ -97,6 +97,23 @@ def capability(motor: Motor, rpm: float, mean_torque: float = 0.0,
         mod_frac_max=(K * dI / mean_torque) if mean_torque > 0 else float("inf"))
 
 
+def thermal(motor: Motor, rpm: float, mean_torque: float, dI_amp: float = 0.0,
+            ambient_C: float = 25.0) -> dict:
+    """Steady winding temperature with a 1/rev current pulse of amplitude `dI_amp` [A].
+
+    copper = I0^2 R + 1/2 dI^2 R (I0 = Q/Kt);  total = copper + b w^2 (iron/friction, lumped
+    into the winding path).  T = ambient + total * Rth.  utilisation = rise / (max - ambient).
+    """
+    w = rpm * 2 * np.pi / 60.0
+    I0 = mean_torque / kt(motor)
+    cu = motor.R * (I0**2 + 0.5 * dI_amp**2)
+    P = cu + motor.b * w**2
+    T = ambient_C + P * motor.thermal_resistance_KW
+    room = motor.max_winding_C - ambient_C
+    return dict(copper_W=float(cu), total_W=float(P), T_winding_C=float(T),
+                utilisation=float((T - ambient_C) / room) if room > 0 else float("inf"))
+
+
 def max_rpm(motor: Motor, mean_torque: float, duty_max: float = DUTY_MAX) -> float:
     """Highest rpm at which `mean_torque` can still be produced (voltage limit)."""
     K = kt(motor)
@@ -139,21 +156,26 @@ def _J(d_mm, h_mm):
     return 4.17e-6 * (d_mm / 23.0) ** 3 * (h_mm / 7.0)
 
 
+def _Rth(d_mm, h_mm):
+    """Winding->ambient K/W, scaled from 3.0 K/W (2307) by 1/stator area (d*h); +-50 %."""
+    return 3.0 * (23.0 * 7.0) / (d_mm * h_mm)
+
+
 MOTOR_LIBRARY: dict[str, tuple[Motor, str]] = {
-    "1804_2450kv_4s": (Motor(name="1804_2450kv_4s", kv=2450, L=estimate_L(2450, 18, 4), R=0.20, J_rotor=_J(18, 4),
+    "1804_2450kv_4s": (Motor(name="1804_2450kv_4s", kv=2450, L=estimate_L(2450, 18, 4), R=0.20, J_rotor=_J(18, 4), thermal_resistance_KW=_Rth(18, 4),
                              J_hub=2.0e-6 * (4 / 5) ** 3, supply_V=16.0, max_current=22.0),
                        "typical 3-4\" 4S motor; datasheet Rm ~0.1 Ω"),
-    "2004_1700kv_6s": (Motor(name="2004_1700kv_6s", kv=1700, L=estimate_L(1700, 20, 4), R=0.20, J_rotor=_J(20, 4),
+    "2004_1700kv_6s": (Motor(name="2004_1700kv_6s", kv=1700, L=estimate_L(1700, 20, 4), R=0.20, J_rotor=_J(20, 4), thermal_resistance_KW=_Rth(20, 4),
                              J_hub=2.0e-6 * (4 / 5) ** 3, supply_V=24.0, max_current=28.0),
                        "4\" 6S (e.g. 2004 1700KV class); datasheet Rm ~0.1 Ω"),
     "tmotor_2307_1300kv": (Motor(), "Hakea fitted motor (R, kv, J from motor-ID)"),
-    "2806.5_1100kv_6s": (Motor(name="2806.5_1100kv_6s", kv=1100, L=estimate_L(1100, 28, 6.5), R=0.10, J_rotor=_J(28, 6.5),
+    "2806.5_1100kv_6s": (Motor(name="2806.5_1100kv_6s", kv=1100, L=estimate_L(1100, 28, 6.5), R=0.10, J_rotor=_J(28, 6.5), thermal_resistance_KW=_Rth(28, 6.5),
                                J_hub=2.0e-6 * (7 / 5) ** 3, supply_V=24.0, max_current=50.0),
                          "7\" long-range 6S class (1050-1300KV sold); datasheet Rm ~0.05 Ω"),
-    "3115_640kv_6s": (Motor(name="3115_640kv_6s", kv=640, L=estimate_L(640, 31, 15), R=0.09, J_rotor=_J(31, 15),
+    "3115_640kv_6s": (Motor(name="3115_640kv_6s", kv=640, L=estimate_L(640, 31, 15), R=0.09, J_rotor=_J(31, 15), thermal_resistance_KW=_Rth(31, 15),
                             J_hub=2.0e-6 * (10 / 5) ** 3, supply_V=24.0, max_current=60.0),
                       "9-10\" 6S class (3115 640/900KV sold); datasheet Rm ~0.05 Ω"),
-    "4010_475kv_6s": (Motor(name="4010_475kv_6s", kv=475, L=estimate_L(475, 40, 10), R=0.12, J_rotor=_J(40, 10),
+    "4010_475kv_6s": (Motor(name="4010_475kv_6s", kv=475, L=estimate_L(475, 40, 10), R=0.12, J_rotor=_J(40, 10), thermal_resistance_KW=_Rth(40, 10),
                             J_hub=2.0e-6 * (12 / 5) ** 3, supply_V=24.0, max_current=45.0),
                       "12-13\" 6S class (4010 ~370-580KV sold); datasheet Rm ~0.06 Ω"),
 }

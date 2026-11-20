@@ -212,6 +212,11 @@ class Motor(_M):
     T0: float = Field(1.3e-6, description="Coulomb friction, N m")
     voltage_gain: float = Field(1.04, description="AM32 effective duty->voltage gain g(rpm)")
     poles: int = 14
+    thermal_resistance_KW: float = Field(3.0, description="winding->ambient thermal resistance with "
+                                         "prop wash, K/W. Guess for 2307 class (+-50 %); library "
+                                         "motors scale ~ 1/stator area (d*h)")
+    max_winding_C: float = Field(120.0, description="max continuous winding temperature, C "
+                                 "(enamel class ~130-155 C, magnets N-grade ~80-150 C; guess)")
     duty_slew_max: float = Field(160.0, description="AM32 max duty change per second (fraction/s); "
                                                     "max_ramp 16 per 50 us tick of 2000 -> 160/s")
 

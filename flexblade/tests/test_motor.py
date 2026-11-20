@@ -37,3 +37,18 @@ def test_library_and_sizes():
         assert mot.kv > 0 and mot.J_rotor > 0 and note
     assert motor_for_diameter(5).name == "tmotor_2307_1300kv"
     assert motor_for_diameter(12).J_rotor > motor_for_diameter(4).J_rotor
+
+
+def test_thermal_zero_pulse_is_I0sq_R():
+    from flexblade.motor import thermal
+    m = Motor()
+    th = thermal(m, 18500, 0.058, 0.0)
+    assert np.isclose(th["copper_W"], m.R * (0.058 / kt(m)) ** 2)
+    assert th["T_winding_C"] > 25 and th["utilisation"] > 0
+
+
+def test_thermal_grows_with_pulse():
+    from flexblade.motor import thermal
+    m = Motor()
+    u = [thermal(m, 18500, 0.058, f * 0.058 / kt(m))["utilisation"] for f in (0, 0.3, 0.6)]
+    assert u[0] < u[1] < u[2]

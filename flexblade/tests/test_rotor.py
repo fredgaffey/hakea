@@ -101,3 +101,17 @@ def test_dynamic_inflow_reduces_moment():
     d.analysis.dynamic_inflow = False
     off = rotor.harmonic_1p(m, ss, aero, lin=lin).result.hub_moment_mean
     assert on < off
+
+
+def test_motor_thermal_check_grows_with_mod():
+    out = []
+    for f in (0.0, 0.5):
+        d = presets.all_presets()["hakea_5in_hinge_equiv"].model_copy(deep=True)
+        d.analysis.n_blade_elements = 8
+        d.analysis.n_flexure_elements = 3
+        d.op.torque_mod_frac = f
+        r = rotor.evaluate(d)
+        c = [c for c in r.checks if c.name == "motor_thermal"][0]
+        assert "T_winding_C" in r.summary and "copper_W" in r.summary
+        out.append(c.utilisation)
+    assert out[1] > out[0] > 0

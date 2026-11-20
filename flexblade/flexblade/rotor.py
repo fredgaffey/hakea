@@ -1281,6 +1281,14 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                              allowable=float(cap.dQ_max_1p),
                              utilisation=float(dq / cap.dQ_max_1p) if cap.dQ_max_1p > 0 else float("inf"),
                              note=f"limit: {cap.dQ_limit}"))
+            th = mot.thermal(model.design.motor, ss.rpm, float(ss.trim.Q), dq / cap.Kt,
+                             model.design.op.temperature_C)
+            ss.thermal = th
+            out.append(Check(name="motor_thermal", member="motor", value=th["T_winding_C"],
+                             allowable=float(model.design.motor.max_winding_C),
+                             utilisation=th["utilisation"],
+                             note=f"copper {th['copper_W']:.1f} W, total {th['total_W']:.1f} W, "
+                                  f"Rth {model.design.motor.thermal_resistance_KW:.2f} K/W (guess)"))
         except Exception as ex:   # pragma: no cover
             model.warnings.append(f"motor capability check failed: {ex}")
     return out
@@ -1426,6 +1434,11 @@ def evaluate(design: Design, what: list[str] | None = None) -> Results:
             res.checks += _pc
             res.warnings += _pw
             res.summary.update(_ps)
+        for _c in res.checks:
+            if _c.name == "motor_thermal":
+                _n = _c.note
+                summary["T_winding_C"] = float(_c.value)
+                summary["copper_W"] = float(_n.split("copper ")[1].split(" W")[0])
         t["checks"] = time.perf_counter() - t1
         if res.checks:
             worst = max(res.checks, key=lambda c: c.utilisation)
