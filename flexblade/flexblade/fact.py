@@ -31,6 +31,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .schema import Design, Flexure, FlexureMember, Layup, PrintOrientation
+from .materials import SHEET_MATERIALS
 
 # --------------------------------------------------------------------------- screw algebra
 
@@ -193,9 +194,12 @@ def generate_members(design: Design) -> list[FlexureMember]:
         wd = _rot_about(wdir, ldir, tw)
         p0 = c - 0.5 * length * ldir if start is None else start
         p1 = p0 + length * ldir
+        # sheet stock (spring-steel shim, FR4) is clamped in the printed fittings, not butted
+        anc = "embedded" if (layup.kind == "solid" and layup.material.split("@")[0]
+                             in SHEET_MATERIALS) else "butt"
         return FlexureMember(kind="blade", p0=tuple(map(float, p0)), p1=tuple(map(float, p1)),
                              width=w, thickness=t, width_dir=tuple(map(float, wd)), shape="rect",
-                             taper=taper, layup=layup, orientation=orientation)
+                             taper=taper, layup=layup, orientation=orientation, anchorage=anc)
 
     topo = f.topology
     if topo == "skewed_cross_blade":
