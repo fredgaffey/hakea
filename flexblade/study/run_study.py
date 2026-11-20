@@ -53,7 +53,7 @@ RES_BAND = 0.15
 SPLIT_MAX = 2.0
 FAIL = 1.0e6
 CONCEPTS = presets.CONCEPTS + ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
-                               "skewed_cruciform", "tt_strap", "tt_strap_xplate")
+                               "skewed_cruciform", "tt_strap", "tt_strap_xplate", "tt_strap_steelx")
 SIZES = presets.SIZES_IN
 
 RESULTS = HERE / "results"
@@ -112,6 +112,15 @@ def variables(concept: str, D: float) -> list[Variable]:
               Variable(path="flexure.cross_angle_deg", lo=50.0, hi=110.0),
               Variable(path="flexure.strap_strand_diameter", lo=0.0004, hi=0.0012 * s, log=True),
               Variable(path="flexure.strap_length", lo=0.002 * s, hi=0.012 * s, log=True)]
+    elif concept == "tt_strap_steelx":
+        # crossed spring-steel shim strips (cross-spring pivot on the hinge axis, clamped in
+        # printed fittings, radially released) + single-strand strap on the crossing line;
+        # thickness: shim stock 0.05-0.20 mm (snap to SHIM_THICKNESSES when building)
+        V += [Variable(path="flexure.thickness", lo=0.00005, hi=0.0002, log=True),
+              Variable(path="flexure.width", lo=0.004 * s, hi=0.016 * s),
+              Variable(path="flexure.cross_angle_deg", lo=50.0, hi=110.0),
+              Variable(path="flexure.strap_strand_diameter", lo=0.0004, hi=0.0012 * s, log=True),
+              Variable(path="flexure.strap_length", lo=0.002 * s, hi=0.012 * s, log=True)]
     elif concept in ("tpu_split", "tpu95_split"):
         V += [Variable(path="flexure.thickness", lo=0.0008, hi=0.006 * s, log=True),
               Variable(path="flexure.width", lo=0.004 * s, hi=0.022 * s),
@@ -145,7 +154,8 @@ def capability_frac(d: Design) -> dict:
 
 def base_design(D: float, concept: str, coax: bool = False, frac_margin: float = 0.95) -> tuple[Design, dict]:
     pc = "cf_flexure" if concept in ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
-                                         "skewed_cruciform", "tt_strap", "tt_strap_xplate") else concept
+                                         "skewed_cruciform", "tt_strap", "tt_strap_xplate",
+                                         "tt_strap_steelx") else concept
     d = presets.make_coax_preset(D, pc) if coax else presets.make_preset(D, pc)
     if concept == "torsion_bar":
         # Fred's torsion bar: pultruded CF bar on the skewed hinge axis (hinge = bar torsion) +
@@ -183,6 +193,19 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
         d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
             topology="skewed_cross_blade", layup=Layup(kind="solid", material="pa6_cf"),
             thickness=0.0006, width=0.025 * sc, length=0.008 * sc, cross_angle_deg=70.0,
+            cross_gap=0.0012 * sc, cruciform_rod_diameter=0.0, strap_strands=1,
+            strap_strand_diameter=0.0007 * sc, strap_radius=0.0, strap_length=0.004 * sc,
+            strap_material="aramid_yarn", strap_anchor="pin_wrap", strap_pin_diameter=0.003 * sc,
+            axial_release=True))))
+    if concept == "tt_strap_steelx":
+        # strap + crossed spring-steel shim strips (Haringx cross-spring pivot, crossing line =
+        # skewed hinge axis), strips clamped (embedded) in printed hub/blade fittings; the blade
+        # fitting rides a radial slider along the strap line (axial_release) so the strap
+        # carries the centrifugal load; one aramid strand through the crossing gap
+        sc = D / 5.0
+        d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
+            topology="skewed_cross_blade", layup=Layup(kind="solid", material="steel_1095_shim"),
+            thickness=0.0001, width=0.008 * sc, length=0.008 * sc, cross_angle_deg=90.0,
             cross_gap=0.0012 * sc, cruciform_rod_diameter=0.0, strap_strands=1,
             strap_strand_diameter=0.0007 * sc, strap_radius=0.0, strap_length=0.004 * sc,
             strap_material="aramid_yarn", strap_anchor="pin_wrap", strap_pin_diameter=0.003 * sc,

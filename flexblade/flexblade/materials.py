@@ -272,6 +272,28 @@ LIBRARY: dict[str, Material] = {
                              Xt=1300e6, Yt=1300e6, Zt=1300e6, S=700e6,
                              creep_strain_allow=0.005, fatigue_strain_amp_allow=0.002,
                              fatigue_stress_ratio=0.35, source="spring-temper stainless wire"),
+    # ---- sheet stock clamped in printed fittings (not printed; isotropic) ----------------
+    # Spring-steel shim / feeler-gauge stock, AISI 1095 blue-tempered (HRC 48-52) or 301
+    # stainless full-hard: E 193-207 GPa (200 used), ν 0.29, ρ 7850; yield 1.2-1.6 GPa
+    # (1095 blue-tempered UTS ~1.7 GPa, 301 FH UTS ≥ 1.28 GPa, yield ≥ 0.96 GPa; Xt = 1.4 GPa
+    # used). Fully reversed bending fatigue of polished spring strip at 1e8+ cycles ~550-700
+    # MPa → strain amplitude 0.25-0.35 % (0.28 % used; edges deburred/stoned — sheared edges
+    # cut it by ~30 %). Stock thicknesses: SHIM_THICKNESSES. Creep: none at rotor temperatures.
+    "steel_1095_shim": _iso("steel_1095_shim", 7850, 200e9, 0.29, loss_factor=0.001,
+                            Xt=1400e6, Yt=1400e6, Zt=1400e6, S=800e6,
+                            creep_strain_allow=0.005, fatigue_strain_amp_allow=0.0028,
+                            fatigue_stress_ratio=0.40,
+                            source="AISI 1095 / 301 FH spring shim (feeler stock): E 200 GPa, "
+                                   "Xt 1.4 GPa, fatigue ε_a 0.28 % at 1e8"),
+    # FR4 / G10 glass-epoxy sheet (NEMA LI-1; e.g. Isola/Rogers G10 datasheets): in-plane
+    # E 17-24 GPa (20 used), through-thickness ~10 GPa, ρ 1850, flexural strength ~400 MPa,
+    # tensile ~300 MPa; flexural fatigue at 1e7-1e8 ~ 25-30 % static → ε_a ~0.4 %. Sheets
+    # 0.2/0.4/0.8 mm. Moisture and edge delamination: seal cut edges.
+    "fr4_g10": Material("fr4_g10", 1850, 20e9, 20e9, 10e9, 8e9, 5e9, 5e9, 0.13, 0.3, 0.3,
+                        loss_factor=0.01, Xt=300e6, Yt=300e6, Zt=40e6, S=60e6,
+                        creep_strain_allow=0.006, fatigue_strain_amp_allow=0.004,
+                        fatigue_stress_ratio=0.27,
+                        source="FR4/G10 sheet: E 20 GPa in-plane, Xt 300 MPa, ε_a 0.4 % (1e8)"),
     # ---- tension-torsion strap strands (unbonded yarn/tow/braid; fibre along raster_dir =
     # strand axis). E1/Xt are for the *fibre-equivalent* solid diameter (strand diameter given
     # as the solid fibre area equivalent, not the bulky yarn envelope). Transverse values are
@@ -310,6 +332,10 @@ LIBRARY: dict[str, Material] = {
         source="Toray T700S 12K: E 230 GPa, UTS 4.9 GPa; dry tow E 200 GPa, Xt 2.5 GPa"),
 }
 STRAP_MATERIALS = ("aramid_yarn", "uhmwpe_braid", "cf_tow")
+# sheet stock cut into strips and clamped (embedded) in the printed fittings, not printed
+SHEET_MATERIALS = ("steel_1095_shim", "fr4_g10")
+SHIM_THICKNESSES = {"steel_1095_shim": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
+                    "fr4_g10": (2e-4, 4e-4)}
 
 
 # assumed: TPU 95A/64D soften ~100-130 C; PETG-CF Tg ~85 C (form ~90-100); PLA Tg ~60 C;
@@ -324,10 +350,12 @@ CLASS_HDT_C = {"pla": 55, "pla_plus": 55, "pla_tough": 55, "pla_ht": 100, "pla_c
                "pa_gf": 160, "ppa_cf": 200, "onyx": 145, "pp": 60, "pp_cf": 70, "pp_gf": 90,
                "peek": 150, "peek_cf": 200, "pekk": 160, "pps_cf": 250, "tpu": 90, "tpe": 80}
 FORMING_TEMP_C = {"tpu_95a": 100.0, "tpu_64d": 105.0, "petg_cf": 90.0, "pla": 65.0, "pa6_cf": 160.0}
-TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0}
+TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0, "steel_1095_shim": 400.0}
+# FR4 Tg ~130-140 C: HDT-type derating applies
+HDT_C_SHEET = {"fr4_g10": 130.0}
 for _n, _m in list(LIBRARY.items()):
     LIBRARY[_n] = dataclasses.replace(_m, forming_temp_C=FORMING_TEMP_C.get(_n, 0.0), tg_C=TG_C.get(_n, 0.0),
-                                      hdt_C=HDT_C.get(_n, 0.0))
+                                      hdt_C=HDT_C.get(_n, HDT_C_SHEET.get(_n, 0.0)))
 GENERIC_NAMES = tuple(LIBRARY)
 
 # Metadata of the real-product entries (brand, product, url, price, confidence, …) keyed by
@@ -376,7 +404,8 @@ _register_filaments()
 
 # generic entries: class/group for grouping in the GUI and class filters
 _GENERIC_CLASS = {"tpu_95a": "tpu", "tpu_64d": "tpu", "pa6_cf": "pa_cf", "petg_cf": "petg_cf",
-                  "pla": "pla", "cf_rod_pultruded": "cf_rod", "steel_302_spring": "steel_wire"}
+                  "pla": "pla", "cf_rod_pultruded": "cf_rod", "steel_302_spring": "steel_wire",
+                  "steel_1095_shim": "steel_shim", "fr4_g10": "fr4"}
 
 
 def material_class(name: str) -> str | None:
