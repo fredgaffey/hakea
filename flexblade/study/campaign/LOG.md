@@ -46,3 +46,11 @@ Idea backlog (unscreened):
 - COMPUTE: grid/burn STOPPED (thermally unsustainable pulse, not throttle-robust, low returns). Replaced by targeted ideal_seeds.sh (multi-seed ideal DE, 5/7/10") → cluster ideal families.
 - HELPERS: robust multi-throttle objective (sonnet); realise-ideal: skewed cruciform torsion hinge vs cross-axis pivot (opus).
 - NEXT: cluster ideal seeds; realise best family with embedded anchorage; robust re-run; verify with ccx.
+
+## 2026-11-21 ~01:40 — iteration 3
+- MODEL: robust objective merged; each throttle point pulses at 0.95× motor capability at its own rpm (op.pulse_capability_margin). 7" ideal (seed1, hover-trained) stays feasible 0.7–1.4× thrust: cr 0.54 / 0.22 / 0.18.
+- DESIGN: skewed cruciform KILLED. Key insight: CF load (~1 kN @5") must NOT pass through any member that sets hinge stiffness: tension adds trapeze stiffness T·b²/12L, capping k_cross/k_hinge ≈ 1/axial strain; creep forces thick sections. Best real hand design 5" cr 0.0096 vs ideal 0.030.
+- ⇒ NEW DIRECTION (helicopter practice): TENSION-TORSION STRAP — unbonded aramid/UHMWPE/CF-tow strands carry all CF; the printed flexure carries shear/bending only (axial release). Helper (opus) implementing tt_strap.
+- HELPERS: tt_strap (opus); beam vs ccx 1.8× gap on crossed plates (sonnet).
+- COMPUTE: robust ideal seeds 1–6 running (5/7/10"), both machines.
+- 4" preset is thermally pulse-limited (real); preset test now checks electrical headroom only.
