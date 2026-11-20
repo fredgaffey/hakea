@@ -442,7 +442,16 @@ export class Viewer {
     const now = performance.now();
     const dt = Math.min(0.1, (now - this.last) / 1000);
     this.last = now;
-    this.psi = (this.psi + dt * this.speed * 2 * Math.PI) % (2 * Math.PI);
+    if (this.strobe) {
+      // stroboscope / slow-mo: lock to one azimuth and sweep back and forth (boomerang,
+      // eased at the ends) through ±range around it, at strobeRate sweeps per second
+      this.strobeT = ((this.strobeT || 0) + dt * (this.strobeRate || 0.25)) % 1;
+      const x = -Math.cos(2 * Math.PI * this.strobeT);
+      this.psi = (((this.strobeCentre || 0) + (this.strobeRange || 0) * x) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+      if (this.onPhase) this.onPhase(this.psi);
+    } else {
+      this.psi = (this.psi + dt * this.speed * 2 * Math.PI) % (2 * Math.PI);
+    }
     for (const s of Object.values(this.slots)) {
       s.group.rotation.z = this.rotating ? s.sign * this.psi : 0;
       if (s.nodePts) s.nodePts.visible = this.showNodes;

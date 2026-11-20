@@ -56,6 +56,13 @@
         <label>exaggeration <input type="range" id="exag" min="0" max="3" step="0.01" value="1"><output id="exag-out"></output></label>
         <label>speed <input type="range" id="speed" min="0" max="2" step="0.01" value="0.5"><output id="speed-out"></output></label>
       </div>
+      <div class="vp-row" title="Stroboscope / slow-motion: freeze the rotor near one azimuth and sweep back and forth through part of the cycle">
+        <label class="toggle"><input type="checkbox" id="strobe"> strobe</label>
+        <label>phase <input type="range" id="strobe-centre" min="0" max="360" step="1" value="90"><output id="strobe-centre-out"></output></label>
+        <label>window ± <input type="range" id="strobe-range" min="0" max="180" step="1" value="30"><output id="strobe-range-out"></output></label>
+        <label>slow-mo <input type="range" id="strobe-rate" min="0.02" max="1" step="0.01" value="0.2"><output id="strobe-rate-out"></output></label>
+        <output id="strobe-psi" class="mono"></output>
+      </div>
       <div class="vp-row">
         <label class="toggle"><input type="checkbox" id="rotating" checked> fixed frame (spin)</label>
         <label class="toggle"><input type="checkbox" id="see-through"> see-through</label>

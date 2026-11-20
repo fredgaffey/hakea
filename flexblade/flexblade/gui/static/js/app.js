@@ -122,11 +122,16 @@ function partUtilColour(part) {
   const rotor = part.rotor || ((part.name || '').match(/^(upper|lower)/i) || [])[1]?.toLowerCase();
   const sub = S.results?.coaxial && rotor ? S.results.coaxial[rotor] : S.results;
   const checks = sub?.checks || [];
-  const name = (part.name || '').toLowerCase().replace(/^(upper|lower)_/, ''), role = (part.role || '').toLowerCase();
+  // part names look like [upper_|lower_]blade1_flex0_rod1; check members like flex0, blade, shank
+  const role = (part.role || '').toLowerCase();
+  const local = (part.name || '').toLowerCase().replace(/^(upper|lower)_/, '').replace(/^blade\d+_?/, '');
   let u = null;
   for (const c of checks) {
     const m = (c.member || '').toLowerCase();
-    const hit = m === name || name.includes(m) || (m.includes(role) && role !== 'other') || ((role === 'flexure' || role === 'member') && m.startsWith('flex'));
+    let hit;
+    if (m === 'blade') hit = role === 'blade';                       // the aerodynamic blade only
+    else if (m === 'hub') hit = role === 'hub' || role === 'spoke';
+    else hit = local === m || local.startsWith(m + '_') || local.endsWith('_' + m);  // flex0, flex0_rod1, shank
     if (hit) u = Math.max(u ?? 0, c.utilisation);
   }
   return utilColour(u);
@@ -200,6 +205,24 @@ function wireViewerControls() {
   speed.oninput = upd;
   upd();
   S.updExag = upd;
+  const sc = $('#strobe-centre'), sr = $('#strobe-range'), srt = $('#strobe-rate');
+  const updStrobe = () => {
+    v.strobe = $('#strobe').checked;
+    v.strobeCentre = (Number(sc.value) * Math.PI) / 180;
+    v.strobeRange = (Number(sr.value) * Math.PI) / 180;
+    v.strobeRate = Number(srt.value);
+    $('#strobe-centre-out').textContent = `${sc.value}°`;
+    $('#strobe-range-out').textContent = `${sr.value}°`;
+    $('#strobe-rate-out').textContent = `${fmt(v.strobeRate, 2)} sweeps/s`;
+    if (!v.strobe) $('#strobe-psi').textContent = '';
+  };
+  for (const e of [$('#strobe'), sc, sr, srt]) e.oninput = e.onchange = updStrobe;
+  updStrobe();
+  let lastShown = 0;
+  v.onPhase = (psi) => {
+    const now = performance.now();
+    if (now - lastShown > 80) { $('#strobe-psi').textContent = `ψ = ${((psi * 180) / Math.PI).toFixed(0)}°`; lastShown = now; }
+  };
   $('#rotating').onchange = (e) => (v.rotating = e.target.checked);
   $('#show-nodes').onchange = (e) => (v.showNodes = e.target.checked);
   $('#see-through').onchange = (e) => v.setSeeThrough(e.target.checked);
