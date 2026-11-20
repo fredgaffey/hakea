@@ -129,6 +129,32 @@ class TopoptFlexure(_M):
     notes: str = ""
 
 
+class IdealFlexure(_M):
+    """topology == "ideal": material-free generalised root spring ("idealise then realise").
+    Zero-length 6×6 spring at the hinge point H0 (blade-1 frame H: x radial, y in-plane /
+    chordwise, z rotor axis), plus blade mass-placement knobs. Rotations: principal stiffnesses
+    about the skewed hinge axis a = (sin s, 0, −cos s) (s = flexure.skew_deg), about
+    b = a × y (the complementary skewed axis in the x–z plane) and about y (flap). Lag (z) and
+    pitch (x) are therefore coupled through the skew. Translations: axial x, in-plane y,
+    out-of-plane z. `K6` (if given) overrides all stiffness parameters (any flexure's K).
+    No material: strain / creep / fatigue checks do not apply."""
+    k_hinge: float = Field(0.05, gt=0, description="N m/rad about the skewed hinge axis a")
+    k_cross: float = Field(20.0, gt=0, description="N m/rad about b = a × y")
+    k_flap: float = Field(20.0, gt=0, description="N m/rad about y (flap)")
+    k_axial: float = Field(1e6, gt=0, description="N/m radial (x)")
+    k_inplane: float = Field(1e6, gt=0, description="N/m in-plane / chordwise (y)")
+    k_outplane: float = Field(1e6, gt=0, description="N/m out-of-plane (z)")
+    K6: Optional[list[list[float]]] = Field(None, description="explicit 6×6 at H0, frame H, "
+                                            "[ux,uy,uz,rx,ry,rz] → [F;M]; overrides the k_*")
+    loss_eta: float = Field(0.0, ge=0.0, description="hysteretic loss factor of the spring")
+    mass: float = Field(0.0, ge=0.0, description="kg lumped at the hinge point (blade side)")
+    lag_inertia: float = Field(0.0, ge=0.0, description="kg m² extra about z at the hinge "
+                               "point (blade side), e.g. a lag-tuning mass")
+    tip_mass: float = Field(0.0, ge=0.0, description="kg point mass at the blade tip")
+    tip_mass_chord: float = Field(0.0, description="m, tip mass offset along +y (frame H) "
+                                  "from the elastic axis")
+
+
 class Flexure(_M):
     """Root compliance between hub and aerodynamic blade.
 
@@ -152,10 +178,12 @@ class Flexure(_M):
       rigid               rigid root (reference / baseline)
       topopt              topology-optimised flexure: `topopt` holds its 6×6 stiffness and
                           mass properties (flexblade topopt); `members` are only drawn
+      ideal               material-free generalised 6×6 spring + mass knobs (`ideal`,
+                          IdealFlexure): the target a real flexure should approximate
     """
     topology: Literal["skewed_cross_blade", "skewed_cross_blade_sym", "skewed_single_blade",
                       "wire_triplet", "integral_taper", "torsion_bar", "custom",
-                      "rigid", "topopt"] = "skewed_cross_blade"
+                      "rigid", "topopt", "ideal"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")
@@ -189,6 +217,8 @@ class Flexure(_M):
         default_factory=list, description="explicit members (custom) or fact.py output")
     hub_radius: float = Field(0.006, description="rigid hub outer radius, m")
     topopt: Optional[TopoptFlexure] = Field(None, description="topology == topopt: stored result")
+    ideal: Optional[IdealFlexure] = Field(None, description="topology == ideal: spring + masses "
+                                          "(None = IdealFlexure defaults)")
 
 
 # --------------------------------------------------------------------------- operating point / motor

@@ -169,6 +169,13 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
         if tp is None:
             raise ValueError("flexure.topology == 'topopt' needs flexure.topopt (run `flexblade topopt`)")
         ideal_hinge = dict(K6=tp.K6, mass=tp.mass, com=tp.com, inertia=tp.inertia)
+    if ideal_hinge is None and design.flexure.topology == "ideal":
+        from .schema import IdealFlexure
+        ip = design.flexure.ideal or IdealFlexure()
+        ideal_hinge = dict(K6=fact.ideal_K6(design).tolist(), mass=ip.mass,
+                           com=fact.hinge_axis(design, 1)[0].tolist(),
+                           inertia=np.diag([0.0, 0.0, ip.lag_inertia]).tolist(),
+                           loss_eta=ip.loss_eta, tip_mass=ip.tip_mass, tip_mass_chord=ip.tip_mass_chord)
     an = design.analysis
     b = design.blade
     R = b.radius
@@ -327,9 +334,20 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 pending_stiff.append((B_node, master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn0", k))
             ie = fe.add_element(Element(A, B_node, np.zeros(3), [], tag=f"b{k}.hinge", kind="spring",
                                         blade=k, spring_K=Ks, spring_frame=frame))
+            fe.elements[ie].loss_eta = float(kh.get("loss_eta", 0.0))
             if "K6" in kh:
                 full_springs.append((k, ie, Ks.copy()))
-            if kh.get("mass", 0.0) > 0.0:
+            if kh.get("tip_mass", 0.0) > 0.0:
+                c = Rk @ np.array([0.0, float(kh.get("tip_mass_chord", 0.0)), 0.0])
+                S = skew(c)
+                m_ = float(kh["tip_mass"])
+                Mn = np.zeros((6, 6))
+                Mn[:3, :3] = m_ * np.eye(3)
+                Mn[:3, 3:] = -m_ * S
+                Mn[3:, :3] = m_ * S
+                Mn[3:, 3:] = m_ * ((c @ c) * np.eye(3) - np.outer(c, c))
+                fe.add_lumped_inertia(chain[-1], Mn)
+            if kh.get("mass", 0.0) > 0.0 or np.any(np.asarray(kh.get("inertia", 0.0), float)):
                 Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
                 c = Rk @ (Mt @ np.asarray(kh.get("com", H0), float)) - fe.X0[master]
                 Ic = Rk @ Mt @ np.asarray(kh.get("inertia", np.zeros((3, 3))), float) @ Mt @ Rk.T

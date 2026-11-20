@@ -359,6 +359,7 @@ class Element:
     massless: bool = False
     spring_K: Optional[np.ndarray] = None    # 6×6 [translations; rotations] in frame E0 → zero-length spring
     spring_frame: Optional[np.ndarray] = None  # 3×3 columns (axis a, e2, ·) in H
+    loss_eta: float = 0.0                    # hysteretic loss factor (no material_fracs)
     # derived
     L0: float = 0.0
     E0: np.ndarray = None
@@ -416,7 +417,7 @@ class Element:
 
     def complex_scale(self, freq_hz: float) -> complex:
         if not self.material_fracs:
-            return 1.0 + 0j
+            return 1.0 + 1j * self.loss_eta
         from .materials import get_material
         return sum(fr * get_material(m).complex_scale(freq_hz) for m, fr in self.material_fracs.items())
 
