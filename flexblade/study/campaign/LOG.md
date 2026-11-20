@@ -60,3 +60,9 @@ Idea backlog (unscreened):
 - REVIEW / I16 MOTOR CONSTANT: pulse copper = ΔQ²/(2·Km²) with Km = Kt/√R (motor constant, ~∝ stator volume). For a thermally-bound design the lever is Km per gram and Rth (cooling), not the flexure. Actions: (a) Fred to measure Rth on Hakea (thermocouple after 2 min hover) — the 5"/7" verdict hinges on it; (b) add motor choice (Km/mass from MOTOR_LIBRARY) as a design variable; (c) consider motor cooling (bell vents / prop-wash duct) as a design lever.
 - I17 FLAP RESONANCE @10": flap-antisym mode at 1.15/rev binds — flap stiffness/hinge offset is a free knob in the ideal; check whether real strap designs can place it ≥1.3/rev.
 - Helpers: tt_strap (opus), beam-vs-ccx crossed plates (sonnet) running. Load: laptop 31/32, Mac ~13/10.
+
+## 2026-11-21 ~03:00 — iteration 5
+- LANDED: tt_strap (KEEP as CF path: aramid 4×Ø0.6 mm, all checks pass at ~10% util; cruciform as stiffness element ~KILL, ratios ≈10 vs ideal ~1900). Plate modulus fix (Q11 for wide clamped plates): crossed-plate beam/ccx 0.54→0.70, residual ~30 % unexplained (beam conservative-soft). torsion_bar ccx failure = root/hub fittings touch → merged mesh (geometry needs a gap).
+- HELPERS: strap + released thin crossed plates (opus; k_cross/k_hinge ~ (b/t)² ≈ 1600 expected); validation vs Hakea bench logs incl. Rth estimate (sonnet).
+- COMPUTE: queue_strap.sh — after ideal seed 1: robust tt_strap DE 5/7/10", then ideal seeds 2–3.
+- REVIEW / I18: the strap makes CF and hinge stiffness independent → the design space is now "pick k_hinge, k_cross, k_flap freely" = close to the ideal spring. Remaining real constraints: plate strain at lag amplitude (thin plates help), plate buckling under compressive transients (check!), strap creep (aramid ok), and fitting size/drag. Add a plate-buckling check next if strap+xplate is KEEP.
