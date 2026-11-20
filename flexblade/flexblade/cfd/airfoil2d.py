@@ -187,7 +187,7 @@ def pitching_airfoil_case(design: Design, case_dir: str | Path, r_frac: float = 
                           rpm: Optional[float] = None, alpha_mean_deg: Optional[float] = None,
                           alpha_amp_deg: float = 2.0, pivot_chord_frac: float = 0.25,
                           k: Optional[float] = None, n_periods: float = 5.0,
-                          steps_per_period: int = 720, turbulence: str = "kOmegaSST",
+                          steps_per_period: int = 1440, turbulence: str = "kOmegaSST",
                           np_: int = 4, first_cell_chords: Optional[float] = None,
                           farfield_chords: float = 20.0, overwrite: bool = True) -> PitchCase:
     """Write an OpenFOAM case for a pitching section of `design` at r = r_frac·R.
@@ -315,8 +315,8 @@ divSchemes
 {
     default         none;
     div(phi,U)      Gauss linearUpwindV grad(U);
-    div(phi,k)      Gauss linearUpwind grad(k);
-    div(phi,omega)  Gauss linearUpwind grad(omega);
+    div(phi,k)      Gauss upwind;
+    div(phi,omega)  Gauss upwind;
     div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }
 laplacianSchemes { default Gauss linear limited 0.5; }
@@ -328,19 +328,24 @@ wallDist        { method meshWave; }
 {
     "(p|pcorr)"     { solver GAMG; smoother GaussSeidel; tolerance 1e-7; relTol 0.01; }
     "(p|pcorr)Final" { $p; relTol 0; }
-    "(U|k|omega)"   { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-8; relTol 0.05; }
+    "(U|k|omega)"   { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-8; relTol 0.05; maxIter 200; }
     "(U|k|omega)Final" { $U; relTol 0; }
 }
 PIMPLE
 {
     momentumPredictor yes;
-    nOuterCorrectors 2;
+    nOuterCorrectors 3;
     nCorrectors     2;
     nNonOrthogonalCorrectors 1;
     correctPhi      no;
     moveMeshOuterCorrectors no;
+    turbOnFinalIterOnly false;
 }
-relaxationFactors { equations { ".*" 1; } }
+relaxationFactors
+{
+    fields      { p 0.7; pFinal 1; }
+    equations   { "(U|k|omega)" 0.8; "(U|k|omega)Final" 1; }
+}
 """)
     foam.decompose_dict(case, np_)
     foam.write_allrun(case, [

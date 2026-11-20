@@ -38,6 +38,7 @@ N_CIRCLE = 20                    # circle tessellation for surfaces
 N_AIRFOIL_SURF = 61              # points per airfoil side for viewport/mesh
 N_AIRFOIL_STEP = 41              # points per airfoil side for STEP splines
 FIT_MARGIN = 0.0005              # m, fitting overhang beyond member end faces
+MM = 1000.0                      # OCC booleans are done in mm (robustness), see _occ_bodies
 
 Role = Literal["blade", "skin", "core", "rod", "member", "member_core", "member_skin",
                "fitting", "spoke", "hub"]
@@ -815,12 +816,19 @@ def _color(material: str, role: str):
 
 
 def export(design: Design, fmt: str, path: str | os.PathLike) -> str:
-    """Export geometry. fmt in {glb, stl, obj, step, json}. Returns the path written."""
+    """Export geometry. fmt in {glb, stl, obj, step, json, stl_parts, 3mf}. Returns the path
+    written. stl/obj: outer shells only (viewing). stl_parts / 3mf: multi-material print set
+    in a directory (see export_print_parts; use that function for blades='one')."""
     fmt = fmt.lower().lstrip(".")
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "step" or fmt == "stp":
         return export_step(design, path)
+    if fmt in ("stl_parts", "3mf", "3mf_parts"):
+        # path = output directory (a file-like path's suffix is stripped)
+        d = path.with_suffix("") if path.suffix else path
+        export_print_parts(design, d, blades="all", fmt="stl" if fmt == "stl_parts" else "3mf")
+        return str(d)
     surf = build_surface(design)
     if fmt == "json":
         path.write_text(json.dumps(_to_lists(surf)))
@@ -901,6 +909,66 @@ def _step_geometry(design: Design) -> RotorGeometry:
     return build_geometry(design, n_side=N_AIRFOIL_STEP)
 
 
+def _body_key(p: Part, per_part: bool = False, per_blade: bool = True) -> str:
+    if per_part:
+        return p.name
+    cls = "rod_" if p.role == "rod" else ("core_" if p.role in ("core", "member_core") else "")
+    owner = (f"{p.rotor}_" if p.rotor else "") + (f"blade{p.blade}" if p.blade else "hub")
+    return f"{owner}_{cls}{p.material}" if per_blade else f"{cls}{p.material}"
+
+
+def _occ_bodies(gmsh, parts: list[Part], keyfn, fuse: bool = True) -> dict[int, str]:
+    """Build OCC solids of `parts` and group them by keyfn(part).
+
+    All raw part solids are fragmented together once (disjoint, conformal pieces); each
+    piece belongs to its highest-priority parent (rod > core > member/blade/skin > fitting >
+    hub), so overlaps are resolved exactly once. Geometry is scaled to MILLIMETRES. (core removed from skin, rod cavities from
+    the matrix). With fuse=True the pieces of each group are then fused into as few solids
+    as possible (shared internal faces removed). Returns {volume tag: group key}.
+    (A fuse-then-cut pipeline was abandoned: OCC cut of thin rods through spline lofts
+    returned spurious extra solids.)"""
+    occ = gmsh.model.occ
+    vols = []
+    for p in parts:
+        vols.append((p, occ_part(occ, p)))
+    occ.synchronize()
+    flat = [d for _, dts in vols for d in dts]
+    # booleans in millimetres: in metres OCC fragment of thin rods through spline lofts
+    # produced duplicate pieces (sum of pieces 1 % above the union); in mm it is exact
+    occ.dilate(flat, 0, 0, 0, MM, MM, MM)
+    occ.synchronize()
+    if len(flat) > 1:
+        _, omap = occ.fragment(flat, [])
+    else:
+        omap = [[d] for d in flat]
+    occ.synchronize()
+    owner: dict[int, Part] = {}
+    k = 0
+    for p, dts in vols:
+        for _ in dts:
+            for (dim, tag) in omap[k]:
+                if dim == 3 and (tag not in owner or p.priority > owner[tag].priority):
+                    owner[tag] = p
+            k += 1
+    tag_name = {t: keyfn(p) for t, p in owner.items()}
+    if not fuse:
+        return tag_name
+    out: dict[int, str] = {}
+    for key in dict.fromkeys(tag_name.values()):
+        dts = [(3, t) for t, kk in tag_name.items() if kk == key]
+        if len(dts) > 1:
+            try:
+                res, _ = occ.fuse(dts[:1], dts[1:])
+                occ.synchronize()
+                dts = [d for d in res if d[0] == 3]
+            except Exception:  # noqa: BLE001  (keep pieces; still disjoint)
+                pass
+        for d in dts:
+            out[d[1]] = key
+    occ.synchronize()
+    return out
+
+
 def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> str:
     """STEP (millimetres) of all solids for CAD (Keel / SolidCraft insert).
 
@@ -913,49 +981,27 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
     geo = _step_geometry(design)
     with _Gmsh() as gmsh:
         occ = gmsh.model.occ
-        groups: dict[str, list] = {}
-        for p in sorted(geo.parts, key=lambda q: -q.priority):
-            dt = occ_part(occ, p)
-            if fuse_by_material:
-                cls = "rod_" if p.role == "rod" else ("core_" if p.role in ("core", "member_core") else "")
-                owner = f"blade{p.blade}" if p.blade else "hub"
-                key = f"{owner}_{cls}{p.material}"
-            else:
-                key = p.name
-            groups.setdefault(key, []).extend(dt)
-        occ.synchronize()
-        # fuse each group, then make groups disjoint (lower priority cut by higher),
-        # then fragment for conformal shared faces (rod holes, core/skin interface)
-        done: list[tuple[str, list]] = []
-        for key, dts in groups.items():          # insertion order = priority (high first)
-            if len(dts) > 1:
-                try:
-                    dts, _ = occ.fuse(dts[:1], dts[1:])
-                except Exception:  # noqa: BLE001  (keep unfused on OCC failure)
-                    pass
-            tools = [d for _, prev in done for d in prev]
-            if tools:
-                try:
-                    dts, _ = occ.cut(dts, tools, removeObject=True, removeTool=False)
-                except Exception:  # noqa: BLE001
-                    pass
-            done.append((key, [d for d in dts if d[0] == 3]))
-        occ.synchronize()
-        names = [k for k, dts in done for _ in dts]
-        inputs = [d for _, dts in done for d in dts]
-        if len(inputs) > 1:
-            _, omap = occ.fragment(inputs, [])
-        else:
-            omap = [[d] for d in inputs]
-        occ.synchronize()
-        tag_name: dict[int, str] = {}
-        for key, m in zip(names, omap):
-            for (dim, tag) in m:
-                if dim == 3 and tag not in tag_name:
-                    tag_name[tag] = key
-        occ.dilate(gmsh.model.getEntities(), 0, 0, 0, 1000.0, 1000.0, 1000.0)   # m -> mm
-        occ.synchronize()
-        vols = [t for (_, t) in gmsh.model.getEntities(3)]
+        tag_name = _occ_bodies(gmsh, geo.parts,
+                               lambda p: _body_key(p, per_part=not fuse_by_material))
+        # round-trip through BREP importing solids only: drops the loft section wires,
+        # which gmsh keeps as internal OCC shapes and would export as a wireframe product
+        props = {t: (gmsh.model.occ.getCenterOfMass(3, t), gmsh.model.occ.getMass(3, t))
+                 for (_, t) in gmsh.model.getEntities(3)}
+        with tempfile.TemporaryDirectory() as td:
+            bp = os.path.join(td, "solids.brep")
+            gmsh.write(bp)
+            gmsh.model.remove()
+            gmsh.model.add("flexblade_step")
+            occ.importShapes(bp, highestDimOnly=True)
+            occ.synchronize()
+        new_name: dict[int, str] = {}
+        for (_, t) in gmsh.model.getEntities(3):
+            c, m = np.array(occ.getCenterOfMass(3, t)), occ.getMass(3, t)
+            best = min(props, key=lambda k: np.linalg.norm(np.array(props[k][0]) - c)
+                       + abs(props[k][1] - m) / max(m, 1e-30) * 1e-3)
+            new_name[t] = tag_name.get(best, f"solid{t}")
+        tag_name = new_name
+        vols = [t for (_, t) in gmsh.model.getEntities(3)]      # already mm (_occ_bodies)
         with _quiet_stdout():
             gmsh.write(str(path))
     # name products (written in volume-tag order)
@@ -969,19 +1015,187 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
     return str(path)
 
 
+def _point_inside(mesh, p) -> bool:
+    """Ray-parity point-in-closed-mesh test (vectorised Möller–Trumbore, no rtree)."""
+    d = np.array([0.5773, 0.5774, 0.5775])
+    d /= np.linalg.norm(d)
+    T = np.asarray(mesh.triangles)
+    e1, e2 = T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]
+    h = np.cross(d, e2)
+    a = np.einsum("ij,ij->i", e1, h)
+    ok = np.abs(a) > 1e-14
+    f = np.zeros_like(a)
+    f[ok] = 1.0 / a[ok]
+    sv = np.asarray(p, float) - T[:, 0]
+    u = f * np.einsum("ij,ij->i", sv, h)
+    q = np.cross(sv, e1)
+    v = f * (q @ d)
+    t = f * np.einsum("ij,ij->i", e2, q)
+    hit = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 1e-12)
+    return bool(hit.sum() % 2 == 1)
+
+
+def _orient_shells(m):
+    """Orient a multi-shell closed mesh: outer shells outward, enclosed cavity shells (e.g.
+    rod holes) inward, by nesting depth. (trimesh.fix_normals alone turns every shell
+    outward and would add cavity volumes.)"""
+    import trimesh
+    comps = m.split(only_watertight=False)
+    if len(comps) <= 1:
+        trimesh.repair.fix_winding(m)
+        if m.volume < 0:
+            m.invert()
+        return m
+    for c in comps:
+        trimesh.repair.fix_winding(c)
+        if c.volume < 0:
+            c.invert()
+    out = []
+    for i, c in enumerate(comps):
+        p = c.vertices[:1]
+        depth = sum(1 for j, o in enumerate(comps)
+                    if j != i and o.volume > c.volume and _point_inside(o, p[0]))
+        if depth % 2 == 1:
+            c.invert()
+        out.append(c)
+    return trimesh.util.concatenate(out)
+
+
+def print_transform(design: Design) -> np.ndarray:
+    """3×3 rotation H -> print frame: blade print raster_dir -> +X, build_dir -> +Z."""
+    from .materials import rotation_matrix
+    return rotation_matrix(design.blade.orientation).T
+
+
+def export_print_parts(design: Design, out_dir: str | os.PathLike, blades: str = "all",
+                       fmt: str = "stl", mesh_size: Optional[float] = None) -> dict:
+    """Multi-material print export from the conformal OCC bodies (same as STEP).
+
+    One closed, non-overlapping triangle mesh per print material (all parts of that material
+    fused, higher-priority materials subtracted: core removed from skin, rod cavities removed
+    from the matrix) plus ``rod_channels`` (= the insert volumes, i.e. cavities to leave for
+    print-pause rods). Shared coordinate system, mm, positioned for printing: blade print
+    orientation build_dir -> +Z, raster_dir -> +X, min z = 0, centred in XY.
+    blades: 'all' (full rotor incl. hub) or 'one' (blade 1 + its flexure/fittings, no hub).
+    fmt: 'stl' -> <out_dir>/<name>_<material>.stl per material; '3mf' -> <out_dir>/<name>.3mf
+    with one named object per material. Returns a manifest (also written as manifest.json);
+    occ_volume_mm3 there is informational (OCC getMass of fused thin-shell bodies was seen to
+    be ~10 % off; the mesh volumes were verified against loft volumes).
+    """
+    import trimesh
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    geo = _step_geometry(design)
+    parts = [p for p in geo.parts if blades == "all" or (p.blade == 1 and p.role != "spoke"
+                                                          and p.rotor in ("", "upper"))]
+    if blades != "all":
+        parts = [p for p in parts if not p.name.endswith("hub_fitting")] + \
+            [p for p in parts if p.name.endswith("hub_fitting")]
+    keyfn = lambda p: "rod_channels" if p.role == "rod" else p.material  # noqa: E731
+    h = mesh_size or 0.5 * auto_mesh_size(design)
+    Rp = print_transform(design)
+    meshes: dict[str, trimesh.Trimesh] = {}
+    occ_vol: dict[str, float] = {}
+    with _Gmsh() as gmsh:
+        tag_name = _occ_bodies(gmsh, parts, keyfn)
+        gmsh.option.setNumber("Mesh.MeshSizeMax", h * MM)
+        gmsh.option.setNumber("Mesh.MeshSizeMin", h * MM * 0.05)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 24)
+        gmsh.option.setNumber("General.NumThreads", min(os.cpu_count() or 1, 16))
+        gmsh.model.mesh.generate(2)
+        ntags, coords, _ = gmsh.model.mesh.getNodes()
+        idx = np.zeros(int(ntags.max()) + 1, int)
+        idx[ntags.astype(int)] = np.arange(len(ntags))
+        X = coords.reshape(-1, 3)
+        for key in dict.fromkeys(tag_name.values()):
+            vols = [(3, t) for t, k in tag_name.items() if k == key]
+            occ_vol[key] = sum(gmsh.model.occ.getMass(3, t) for _, t in vols)
+            bnd = gmsh.model.getBoundary(vols, combined=True, oriented=True, recursive=False)
+            tris = []
+            for (d, st) in bnd:
+                _, _, nodes = gmsh.model.mesh.getElements(2, abs(st))
+                for nd in nodes:
+                    T = idx[nd.astype(int)].reshape(-1, 3)
+                    tris.append(T[:, ::-1] if st < 0 else T)
+            F = np.vstack(tris)
+            used = np.unique(F)
+            remap = -np.ones(len(X), int)
+            remap[used] = np.arange(len(used))
+            m = _orient_shells(trimesh.Trimesh(X[used] @ Rp.T, remap[F], process=True))
+            meshes[key] = m
+    allv = np.vstack([m.vertices for m in meshes.values()])
+    shift = np.array([-(allv[:, 0].min() + allv[:, 0].max()) / 2,
+                      -(allv[:, 1].min() + allv[:, 1].max()) / 2, -allv[:, 2].min()])
+    stem = design.name or "rotor"
+    files, info = {}, {}
+    for key, m in meshes.items():
+        m.apply_translation(shift)
+        info[key] = dict(watertight=bool(m.is_watertight), volume_mm3=float(m.volume),
+                         occ_volume_mm3=occ_vol[key], n_triangles=int(len(m.faces)))
+    if fmt == "stl":
+        for key, m in meshes.items():
+            f = out_dir / f"{stem}_{key}.stl"
+            m.export(str(f))
+            files[key] = str(f)
+    elif fmt == "3mf":
+        f = out_dir / f"{stem}.3mf"
+        write_3mf(f, meshes)
+        files = {"3mf": str(f)}
+    else:
+        raise ValueError(fmt)
+    manifest = dict(design=stem, design_hash=design.hash(), units="mm", blades=blades,
+                    print_frame="build_dir->+Z, raster_dir->+X, on bed (z>=0)",
+                    print_rotation=Rp.tolist(), shift_mm=shift.tolist(), files=files, parts=info)
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1))
+    return manifest
+
+
+def write_3mf(path: str | os.PathLike, meshes: dict) -> str:
+    """Minimal 3MF (core spec, mm): one named <object> per mesh, all in one <build>, identity
+    transforms (positions are in the vertex coordinates). No lxml dependency."""
+    import zipfile
+    from xml.sax.saxutils import quoteattr
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" '
+             'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n<resources>\n']
+    for oid, (name, m) in enumerate(meshes.items(), start=1):
+        parts.append(f'<object id="{oid}" name={quoteattr(name)} type="model"><mesh><vertices>\n')
+        parts.append("".join(f'<vertex x="{x:.5f}" y="{y:.5f}" z="{z:.5f}"/>\n'
+                             for x, y, z in np.asarray(m.vertices)))
+        parts.append("</vertices><triangles>\n")
+        parts.append("".join(f'<triangle v1="{a}" v2="{b}" v3="{c}"/>\n'
+                             for a, b, c in np.asarray(m.faces)))
+        parts.append("</triangles></mesh></object>\n")
+    parts.append("</resources>\n<build>\n")
+    parts.append("".join(f'<item objectid="{oid}"/>\n' for oid in range(1, len(meshes) + 1)))
+    parts.append("</build>\n</model>\n")
+    ct = ('<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/'
+          'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.'
+          'openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType='
+          '"application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>')
+    rels = ('<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.'
+            'openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" '
+            'Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>'
+            '</Relationships>')
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", ct)
+        z.writestr("_rels/.rels", rels)
+        z.writestr("3D/3dmodel.model", "".join(parts))
+    return str(path)
+
+
 def _rename_step_products(path: Path, names: list[str]) -> None:
     import re
     s = path.read_text()
-    pat = re.compile(r"PRODUCT\(\s*'Open CASCADE STEP translator [\d.]+ 1\.(\d+)'\s*,"
-                     r"\s*'Open CASCADE STEP translator [\d.]+ 1\.\d+'")
+    pat = re.compile(r"PRODUCT\(\s*'Open CASCADE STEP translator \d+\.\d+ \d+\.(\d+)'\s*,"
+                     r"\s*'Open CASCADE STEP translator \d+\.\d+ \d+\.\d+'")
 
     def rep(m):
         i = int(m.group(1)) - 1
         nm = names[i] if 0 <= i < len(names) else f"solid{i+1}"
         return f"PRODUCT('{nm}','{nm}'"
     s = pat.sub(rep, s)
-    s = s.replace("PRODUCT('Open CASCADE STEP translator 7.8 1','Open CASCADE STEP translator 7.8 1'",
-                  "PRODUCT('flexblade_rotor','flexblade_rotor'")
+    s = re.sub(r"PRODUCT\(\s*'Open CASCADE STEP translator \d+\.\d+ \d+'\s*,\s*"
+               r"'Open CASCADE STEP translator \d+\.\d+ \d+'", "PRODUCT('flexblade_rotor','flexblade_rotor'", s)
     path.write_text(s)
 
 
@@ -1080,6 +1294,8 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
             part_vols.append(occ_part(occ, p))
         occ.synchronize()
         flat = [d for dts in part_vols for d in dts]
+        occ.dilate(flat, 0, 0, 0, MM, MM, MM)          # booleans/meshing in mm
+        occ.synchronize()
         if len(flat) > 1:
             out, omap = occ.fragment(flat, [])
         else:
@@ -1097,8 +1313,8 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
                         owner[tag] = pi
                 k += 1
         # mesh sizes
-        gmsh.option.setNumber("Mesh.MeshSizeMax", h)
-        gmsh.option.setNumber("Mesh.MeshSizeMin", min(h_member, h) * 0.3)
+        gmsh.option.setNumber("Mesh.MeshSizeMax", h * MM)
+        gmsh.option.setNumber("Mesh.MeshSizeMin", min(h_member, h) * 0.3 * MM)
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
         gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 1)
         gmsh.option.setNumber("Mesh.Algorithm3D", 10)   # HXT, parallel
@@ -1120,7 +1336,7 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
                 if d == 0:
                     sizes[t] = min(sizes.get(t, 1e9), sz)
         for t, sz in sizes.items():
-            gmsh.model.mesh.setSize([(0, t)], sz)
+            gmsh.model.mesh.setSize([(0, t)], sz * MM)
         for tag, pi in owner.items():
             gmsh.model.addPhysicalGroup(3, [tag], name=f"{parts[pi].name}")
         gmsh.model.mesh.generate(3)
@@ -1128,7 +1344,7 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
         ntags, coords, _ = gmsh.model.mesh.getNodes()
         node_index = np.zeros(int(ntags.max()) + 1, int)
         node_index[ntags.astype(int)] = np.arange(len(ntags))
-        pts = coords.reshape(-1, 3)
+        pts = coords.reshape(-1, 3) / MM                # back to metres
         tets, epart = [], []
         for tag, pi in owner.items():
             types, _, nodes = gmsh.model.mesh.getElements(3, tag)

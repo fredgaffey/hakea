@@ -29,7 +29,7 @@ import numpy as np
 import scipy.linalg as sl
 
 from . import fact
-from .beam import (Element, FEModel, State, _edofs, assemble_inertia, assemble_internal,
+from .beam import (Element, FEModel, State, _edofs, assemble, assemble_internal,
                    assemble_Kmat, element_end_forces, element_end_forces_lin, element_point_maps,
                    skew, solve_static, unit, _logm)
 from .bladegeom import airfoil_coords, resolve_stations
@@ -39,7 +39,9 @@ from .schema import (BladeHarmonic, CampbellResult, Check, Design, FlexureMember
 from .section import (CircleShape, RectShape, SectionProps, airfoil_shape, section_properties)
 
 G0 = 9.80665
-STIFF_FACTOR = 1.0e3
+import os as _os
+_DEBUG = bool(_os.environ.get("FLEXBLADE_DEBUG"))
+STIFF_FACTOR = 1.0e2
 
 
 # =============================================================================== helpers
@@ -452,6 +454,19 @@ def _aero_points(model: RotorModel, bi: BladeInfo):
     return out
 
 
+def _aero_maps(model: RotorModel, st: State):
+    """element_point_maps at every aero point of every blade, in _aero_points order
+    (one batched numba call on the fast path)."""
+    from . import beam as _beam
+    pts = [p for bi in model.blades for p in _aero_points(model, bi)]
+    if not _beam._FAST:
+        return iter([element_point_maps(p[0], st, p[1], p[4]) for p in pts])
+    from .beam_fast import element_point_maps_batch
+    idx = {id(e): k for k, e in enumerate(model.fe.elements)}
+    return zip(*element_point_maps_batch(model.fe, st, [idx[id(p[0])] for p in pts],
+                                         [p[1] for p in pts], [p[4] for p in pts]))
+
+
 def _blade_proj(bi: BladeInfo, L: np.ndarray, Nr: np.ndarray) -> np.ndarray:
     """3×12: [uz, uy, θ] blade-local from element DOFs."""
     Lb = bi.Rk.T @ L
@@ -462,17 +477,76 @@ def _blade_proj(bi: BladeInfo, L: np.ndarray, Nr: np.ndarray) -> np.ndarray:
 def aero_load_vector(model: RotorModel, st: State, trim) -> np.ndarray:
     """Dead aero loads from AeroTrim (per-unit-span Fx, Fy, Fz, Mx at quarter chord)."""
     F = np.zeros(model.fe.ndof)
+    maps = _aero_maps(model, st)
     for bi in model.blades:
         for e, xi, wl, r, qc, ia, s in _aero_points(model, bi):
             fz = (1 - s) * trim.Fz[ia] + s * trim.Fz[ia + 1]
             fy = (1 - s) * trim.Fy[ia] + s * trim.Fy[ia + 1]
             fx = (1 - s) * trim.Fx[ia] + s * trim.Fx[ia + 1]
             mx = (1 - s) * trim.Mx[ia] + s * trim.Mx[ia + 1]
-            rr, sH, L, Nr = element_point_maps(e, st, xi, qc)
+            rr, sH, L, Nr = next(maps)
             fH = bi.Rk @ np.array([fx, fy, fz])
             mH = bi.Rk @ np.array([mx, 0.0, 0.0])
             F[_edofs(e)] += wl * (L.T @ fH + Nr.T @ mH)
     return F
+
+
+def _dlog_left(phi: np.ndarray) -> np.ndarray:
+    """d log(exp(ω)R)/dω at ω = 0 for log R = φ (inverse left Jacobian of SO(3))."""
+    th = float(np.linalg.norm(phi))
+    P = skew(phi)
+    if th < 1e-6:
+        return np.eye(3) - 0.5 * P + P @ P / 12.0
+    return np.eye(3) - 0.5 * P + (1.0 / th**2 - (1 + np.cos(th)) / (2 * th * np.sin(th))) * P @ P
+
+
+def aero_shape_sens(model: RotorModel, aero, rpm: float, shape: dict, h: float = 1e-4):
+    """Station-wise d[Fx, Fy, Fz, Mx]/dθ̄ and /dβ̄ of aero.trim(rpm, blade_shape) (BEM
+    inflow re-solved — stations are independent in the BEM, so one central difference
+    of all stations at once gives the diagonal).  None if the aero grid ≠ r_aero."""
+    if len(aero.r) != len(model.r_aero) or not np.allclose(aero.r, model.r_aero, rtol=0, atol=1e-12):
+        return None
+    out = {}
+    for key in ("theta", "beta"):
+        sp, sm = dict(shape), dict(shape)
+        sp[key] = np.asarray(shape[key], float) + h
+        sm[key] = np.asarray(shape[key], float) - h
+        tp, tm = aero.trim(rpm=rpm, blade_shape=sp), aero.trim(rpm=rpm, blade_shape=sm)
+        out[key] = np.array([(np.asarray(getattr(tp, f)) - np.asarray(getattr(tm, f))) / (2 * h)
+                             for f in ("Fx", "Fy", "Fz", "Mx")])        # (4, n_st)
+    return out
+
+
+def aero_shape_tangent(model: RotorModel, st: State, sens: dict) -> np.ndarray:
+    """Consistent d(aero_load_vector(model, s, aero.trim(rpm, mean blade shape(s))))/dq
+    through the blade-mean elastic pitch θ̄ and flap slope β̄ (load geometry frozen).
+    Replaces the per-blade quasi-steady Ka in the trim Newton: the trim loads see only
+    the blade-MEAN shape and re-solve the BEM inflow, so Ka was inconsistent (linear
+    convergence, and wrong stiffness on the soft antisymmetric pitch mode)."""
+    n = model.fe.ndof
+    nst = len(model.r_aero)
+    B = len(model.blades)
+    X0 = model.fe.Xref
+    Ct = np.zeros((nst, n))        # dθ̄_i/dq
+    Cb = np.zeros((nst, n))        # dβ̄_i/dq
+    for bi in model.blades:
+        G = np.gradient(np.eye(len(bi.aero_r)), bi.aero_r, axis=0)
+        for i, nd in enumerate(bi.aero_nodes):
+            Ct[i, 6 * nd + 3:6 * nd + 6] += (bi.Rk.T @ _dlog_left(_logm(st.R[nd])))[0] / B
+            Cb[:, 6 * nd:6 * nd + 3] += np.outer(G[:, i], bi.Rk[:, 2]) / B
+    At = np.zeros((n, nst))
+    Ab = np.zeros((n, nst))
+    maps = _aero_maps(model, st)
+    for bi in model.blades:
+        for e, xi, wl, r, qc, ia, s in _aero_points(model, bi):
+            rr, sH, L, Nr = next(maps)
+            d = _edofs(e)
+            for A, dF in ((At, sens["theta"]), (Ab, sens["beta"])):
+                for j, wj in ((ia, 1 - s), (ia + 1, s)):
+                    fH = bi.Rk @ dF[:3, j]
+                    mH = bi.Rk[:, 0] * dF[3, j]
+                    A[d, j] += wj * wl * (L.T @ fH + Nr.T @ mH)
+    return At @ Ct + Ab @ Cb
 
 
 @dataclass
@@ -494,13 +568,14 @@ def aero_linear(model: RotorModel, st: State, aero, trim, omega: float, dynamic_
     c0 = 0.0 + 0j
     Fz_rows = []
     B = len(model.blades)
+    maps = _aero_maps(model, st)
     for bi in model.blades:
         ph = np.exp(1j * bi.psi0)
         row = np.zeros(n, complex)
         rowX = 0.0 + 0j
         for e, xi, wl, r, qc, ia, s in _aero_points(model, bi):
             Ai = (1 - s) * A[ia] + s * A[ia + 1]
-            rr, sH, L, Nr = element_point_maps(e, st, xi, qc)
+            rr, sH, L, Nr = next(maps)
             P = _blade_proj(bi, L, Nr)
             d = _edofs(e)
             Ka[np.ix_(d, d)] += wl * P.T @ Ai[:, :3] @ P
@@ -574,47 +649,111 @@ def _blade_shape(model: RotorModel, st: State):
     return np.array(th), np.array(be)
 
 
-def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_outer: int = 4) -> StaticState:
+def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_outer: int = 6) -> StaticState:
+    """Nonlinear aeroelastic hover trim.
+
+    Inner: at fixed rpm, Newton on the structure with aero loads that follow the
+    deformed blade (elastic pitch θ_el(r) and flap slope from the current state fed to
+    aero.trim(rpm, blade_shape)) and the quasi-steady aero pitch stiffness in the tangent.
+    Outer: secant on rpm for thrust = vehicle weight (unless op.rpm is given).
+    The hub angle is held (the motor's mean torque balances drag)."""
     d = model.design
     fe = model.fe
     warn: list[str] = []
     use_aero_loads = aero is not None and d.analysis.aero != "none"
-    trim = None
-    if aero is not None:
-        trim = aero.trim(rpm=rpm) if rpm is not None else aero.trim()
-        rpm = trim.rpm
-    elif rpm is None:
-        rpm = d.op.rpm
+    hubfix = (6 * model.hub + 5,)
+    if aero is None:
+        rpm = rpm if rpm is not None else d.op.rpm
         if rpm is None:
             raise ValueError("no aero model: op.rpm must be given")
-    Omega = rpm * 2 * np.pi / 60
-    F = aero_load_vector(model, fe.initial_state(), trim) if use_aero_loads else None
-    st, info = solve_static(fe, Omega, F, n_steps=2, tol=1e-9)
-    its = info.iterations
-    conv = info.converged
-    th, be = _blade_shape(model, st)
-    if aero is not None and d.analysis.nonlinear_static:
-        for _ in range(max_outer):
-            shape = dict(theta=th.mean(0), beta=be.mean(0) if use_aero_loads else 0 * be[0], r=model.r_aero)
-            t2 = aero.trim(rpm=rpm if d.op.rpm is not None else None, blade_shape=shape) \
-                if d.op.rpm is not None else aero.trim(blade_shape=shape)
-            drpm = abs(t2.rpm - trim.rpm) / trim.rpm
-            trim = t2
-            Omega = trim.omega
-            F = aero_load_vector(model, st, trim) if use_aero_loads else None
-            st, info = solve_static(fe, Omega, F, state0=st, n_steps=1, tol=1e-9)
+        Om = rpm * 2 * np.pi / 60
+        st, info = solve_static(fe, Om, None, n_steps=2, extra_fixed=hubfix)
+        w = [] if info.converged else [f"nonlinear static did not converge: {info.message}"]
+        th, be = _blade_shape(model, st)
+        return StaticState(st, Om, rpm, None, None, info.converged, info.iterations, w, th, be)
+    trim0 = aero.trim(rpm=rpm) if rpm is not None else aero.trim()
+    fixed_rpm = rpm is not None or d.op.rpm is not None
+    W = trim0.T if fixed_rpm else d.op.vehicle_mass * G0
+    if not fixed_rpm:
+        W = float(trim0.T)     # aero.trim() trims to its own thrust target (incl. thrust share)
+
+    def shape_of(s):
+        th, be = _blade_shape(model, s)
+        return dict(theta=th.mean(0), beta=be.mean(0), r=model.r_aero), th, be
+
+    cache = {}
+
+    def aero_at(s, rpm_x):
+        shp, _, _ = shape_of(s)
+        return aero.trim(rpm=rpm_x, blade_shape=shp)
+
+    def solve_at(rpm_x, st0):
+        Om = rpm_x * 2 * np.pi / 60
+        if not use_aero_loads:
+            s1, inf = solve_static(fe, Om, None, state0=st0, n_steps=2, extra_fixed=hubfix)
+            return s1, inf, aero_at(s1, rpm_x)
+
+        def fext(s):
+            tr = aero_at(s, rpm_x)
+            cache["tr"] = tr
+            return aero_load_vector(model, s, tr)
+
+        def ktan(s):
+            if cache.get("sens_rpm") != rpm_x:      # sensitivities: once per rpm
+                cache["sens"] = aero_shape_sens(model, aero, rpm_x, shape_of(s)[0])
+                cache["sens_rpm"] = rpm_x
+            if cache["sens"] is None:
+                tr = cache.get("tr") or aero_at(s, rpm_x)
+                return np.real(aero_linear(model, s, aero, tr, 0.0, False).Ka)
+            return aero_shape_tangent(model, s, cache["sens"])
+
+        its0 = 0
+        if st0 is None:   # cold start: centrifugal only, then dead rigid-blade aero loads
+            st0, inf0 = solve_static(fe, Om, None, n_steps=2, extra_fixed=hubfix)
+            its0 = inf0.iterations
+            st0, inf0 = solve_static(fe, Om, aero_load_vector(model, st0, aero_at(fe.initial_state(), rpm_x)),
+                                     state0=st0, extra_fixed=hubfix)
+            its0 += inf0.iterations
+        s1, inf = solve_static(fe, Om, fext, state0=st0, extra_fixed=hubfix, ext_tangent=ktan)
+        inf.iterations += its0
+        return s1, inf, aero_at(s1, rpm_x)
+
+    x = float(trim0.rpm)
+    st, info, tr = solve_at(x, None)
+    its, conv = info.iterations, info.converged
+    xs, fs = [x], [tr.T - W]
+    ok_outer = fixed_rpm
+    if not fixed_rpm and conv:
+        for k in range(max_outer):
+            if abs(fs[-1]) < 1e-3 * W:
+                ok_outer = True
+                break
+            if len(xs) == 1:
+                xn = x * np.sqrt(W / max(tr.T, 1e-9))
+            else:
+                xn = xs[-1] - fs[-1] * (xs[-1] - xs[-2]) / (fs[-1] - fs[-2])
+            x = float(np.clip(xn, 0.7 * xs[-1], 1.4 * xs[-1]))
+            st, info, tr = solve_at(x, st)
             its += info.iterations
             conv = conv and info.converged
-            th2, be2 = _blade_shape(model, st)
-            dth = np.abs(th2 - th).max()
-            th, be = th2, be2
-            if drpm < 2e-4 and dth < 2e-4:
+            if not info.converged:
+                xs.append(x)
+                fs.append(tr.T - W)
                 break
+            xs.append(x)
+            fs.append(tr.T - W)
+            if _DEBUG:
+                print(f"trim outer: rpm {x:.1f} T-W {fs[-1]:+.4f} N  newton its {info.iterations} {info.message}")
         else:
-            warn.append("trim (aero ↔ elastic pitch) outer iteration not fully converged")
+            ok_outer = abs(fs[-1]) < 1e-3 * W
+    if not ok_outer:
+        warn.append(f"trim rpm iteration not converged (T−W = {fs[-1]:+.3f} N)")
     if not conv:
         warn.append(f"nonlinear static did not converge: {info.message}")
-    return StaticState(st, Omega, Omega * 60 / (2 * np.pi), trim, F, conv, its, warn, th, be)
+    _, th, be = shape_of(st)
+    Om = x * 2 * np.pi / 60
+    F = aero_load_vector(model, st, tr) if use_aero_loads else None
+    return StaticState(st, Om, x, tr, F, conv, its, warn, th, be)
 
 
 # =============================================================================== linearisation
@@ -633,15 +772,14 @@ class Linear:
 
 def linearize(model: RotorModel, ss: StaticState, coriolis: bool = True) -> Linear:
     fe = model.fe
-    sa = assemble_internal(fe, ss.state, True)
-    ia = assemble_inertia(fe, ss.state, ss.Omega, True)
-    G = ia.G if coriolis else np.zeros_like(ia.G)
-    M = ia.M.copy()
-    # regularise massless DOFs
+    sa = assemble(fe, ss.state, ss.Omega, True, True)
+    G = sa.G if coriolis else np.zeros_like(sa.G)
+    M = sa.M.copy()
+    # regularise massless DOFs (stiff links); modes use shift-invert so this is benign
     dM = np.diag(M).copy()
     eps = 1e-9 * max(dM.max(), 1e-30)
     M[np.diag_indices_from(M)] += np.where(dM < eps, eps, 0.0)
-    return Linear(sa, ia, fe.free_dofs(), sa.Kgeo, ia.Kcf, M, G)
+    return Linear(sa, None, fe.free_dofs(), sa.Kgeo, np.zeros_like(sa.Kgeo), M, G)
 
 
 def K_complex(model: RotorModel, lin: Linear, freq_hz: float, real_only: bool = False) -> np.ndarray:
@@ -723,9 +861,17 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
     Kr = 0.5 * (Kr + Kr.T)
     M = lin.M[np.ix_(f, f)]
     nb = min(n_basis, len(f))
-    lam, Phi = sl.eigh(Kr, M, subset_by_index=[0, nb - 1])
-    # drop basis vectors far above the band of interest (regularised massless DOFs)
+    # shift-invert Lanczos: accurate low modes despite the huge stiffness/mass range
+    # (stiff links, near-massless rotational DOFs) that ruins Cholesky-based eigh
     w_ref = max(ss.Omega, 2 * np.pi * 10.0)
+    from scipy.sparse.linalg import eigsh
+    try:
+        lam, Phi = eigsh(Kr, k=min(nb, len(f) - 2), M=M, sigma=-(0.05 * w_ref) ** 2, which="LM")
+    except Exception:   # pragma: no cover
+        lam, Phi = sl.eigh(Kr, M, subset_by_index=[0, nb - 1])
+    o = np.argsort(lam)
+    lam, Phi = lam[o], Phi[:, o]
+    # drop basis vectors far above the band of interest (regularised massless DOFs)
     ok = np.sqrt(np.abs(lam)) < 200.0 * w_ref
     ok[: min(len(ok), n_modes + 2)] = True
     lam, Phi = lam[ok], Phi[:, ok]
@@ -744,7 +890,10 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
         z = ev[i]
         if z.imag < -1e-9 * max(1.0, abs(z)):
             continue
-        if any(abs(z - s) < 1e-9 * max(1.0, abs(z)) for s in seen):
+        tolz = 2e-2 * w_ref
+        if abs(z) < tolz and any(abs(s_) < tolz for s_ in seen):
+            continue          # rigid-spin double root: keep one
+        if any(abs(z - s_) < 1e-9 * max(1.0, abs(z)) for s_ in seen):
             continue
         seen.append(z)
         keep.append(i)
@@ -768,13 +917,11 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
         num = np.conj(x) @ Z @ x
         den = np.real(np.conj(x) @ lin.M @ x) * max(w, 1e-12) ** 2
         zeta = float(np.imag(num) / (2 * den)) if w > 0 else 0.0
-        if z.real > 1e-6 * max(abs(z), 1.0) and abs(z.imag) < 1e-6:
-            labels_extra = " (divergent)"
-        else:
-            labels_extra = ""
+        labels_extra = " (divergent)" if (z.real > 1e-3 * w_ref and abs(z.imag) < 1e-3 * w_ref) else ""
         lab, part = _labels(model, x, lin.M)
         if w < 1e-3 * ss.Omega:
             lab = "rigid spin" if part.get("hub", 0) > 0.05 else lab + " (zero)"
+            labels_extra = ""
         out_f.append(w / (2 * np.pi))
         out_z.append(zeta)
         shapes.append(x)
@@ -789,7 +936,8 @@ def campbell(model: RotorModel, rpm_grid, n_modes: int | None = None) -> Campbel
     for rpm in rpm_grid:
         Om = rpm * 2 * np.pi / 60
         if Om > 0:
-            st, info = solve_static(model.fe, Om, None, state0=st0, n_steps=1 if st0 else 2)
+            st, info = solve_static(model.fe, Om, None, state0=st0, n_steps=1 if st0 else 2,
+                                    extra_fixed=(6 * model.hub + 5,))
             st0 = st
         else:
             st = model.fe.initial_state()
@@ -904,7 +1052,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
         u, rv = blade_local_motion_c(model, U, bi)
         i75 = np.argmin(np.abs(bi.chain_r - r75))
         th = rv[i75, 0]
-        lag = -rv[0, 2]
+        lag = -(rv[0, 2] - U[hubd])          # relative to the hub
         flap = -rv[0, 1]
         ref = np.exp(-1j * np.angle(dQ)) if not unit_torque else 1.0
         ref = 1.0   # phases relative to the command (duty / torque) peak at ψ = 0
@@ -918,7 +1066,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
                                         lag_amp_deg=la, lag_phase_deg=lp, flap_amp_deg=fa,
                                         flap_phase_deg=fp))
         angles.append(dict(pitch=th, lag=lag, flap=flap, pitch_root=rv[0, 0],
-                           lag_tip=-u[-1, 1] / (model.R - bi.chain_r[0]),
+                           lag_tip=-(u[-1, 1] - U[hubd] * model.R) / (model.R - bi.chain_r[0]),
                            flap_tip=u[-1, 2] / (model.R - bi.chain_r[0])))
     W = d.op.vehicle_mass * G0
     T = float(ss.trim.T) if ss.trim is not None else W
@@ -970,6 +1118,24 @@ def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: i
 # =============================================================================== checks
 
 
+_STRENGTH_MEMO: dict = {}
+
+
+def _strength_along(fb, t_hat) -> float:
+    """Memoised Material.strength_along — a pure function of (material, print
+    orientation, t̂); it dominated `checks` (~14k calls per evaluate)."""
+    o = fb.orientation
+    mat = get_material(fb.material)
+    key = (id(mat), None if o is None else (tuple(o.build_dir), tuple(o.raster_dir)),
+           np.asarray(t_hat, float).tobytes())
+    v = _STRENGTH_MEMO.get(key)
+    if v is None:
+        if len(_STRENGTH_MEMO) > 100_000:
+            _STRENGTH_MEMO.clear()
+        v = _STRENGTH_MEMO[key] = mat.strength_along(o, t_hat)
+    return v
+
+
 def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.ndarray):
     """Max stress utilisation, interlayer utilisation, max tensile strain for section forces."""
     S = sec.stiffness6()
@@ -982,7 +1148,7 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
         ex = eps[0] + fb.z * eps[4] - fb.y * eps[5]
         sig = fb.E * ex
         mat = get_material(fb.material)
-        Xa = mat.strength_along(fb.orientation, t_hat)
+        Xa = _strength_along(fb, t_hat)
         u1 = np.sqrt((sig / Xa) ** 2 + (tau / mat.S) ** 2)
         b = unit(fb.orientation.build_dir)
         c = float(abs(t_hat @ b))
@@ -1004,7 +1170,7 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float):
         ex = abs(eps[0] + fb.z * eps[4] - fb.y * eps[5])
         mat = get_material(fb.material)
         sa = ex * fb.E * mat.storage_scale(freq_hz)
-        Xa = mat.strength_along(fb.orientation, t_hat)
+        Xa = _strength_along(fb, t_hat)
         best_e = max(best_e, ex / mat.fatigue_strain_amp_allow)
         best_s = max(best_s, sa / (mat.fatigue_stress_ratio * Xa))
     return best_e, best_s, float(np.max([abs(eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]))
@@ -1100,12 +1266,11 @@ def _trim_result(model: RotorModel, ss: StaticState) -> TrimResult:
     stretch = float(tipd[0])
     # root centrifugal force: Ω² Σ m r_x over blade-1 mass points (blade + flexure)
     cf = 0.0
-    for e in fe.elements:
-        if e.blade != bi.k or e.massless:
+    sa = assemble_internal(fe, st, False)
+    for e, c in zip(fe.elements, sa.cr):
+        if e.blade != bi.k or e.massless or len(e.mpts) == 0:
             continue
-        for xi, y, z, m in e.mpts:
-            r, s, L, Nr = element_point_maps(e, st, xi, (y, z))
-            cf += m * ss.Omega**2 * (bi.Rk.T @ r)[0]
+        cf += ss.Omega**2 * float(np.sum(e.mpts[:, 3] * (c.pos @ bi.Rk[:, 0])))
     tr = ss.trim
     if tr is not None:
         return TrimResult(rpm=ss.rpm, thrust=float(tr.T), torque=float(tr.Q), power=float(tr.P),

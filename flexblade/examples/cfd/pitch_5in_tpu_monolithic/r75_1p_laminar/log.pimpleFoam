@@ -1,0 +1,39 @@
+time step continuity errors : sum local = 8.1910732e-13, global = 1.622512e-13, cumulative = -3.5887967e-07
+PIMPLE: iteration 2
+smoothSolver:  Solving for Ux, Initial residual = 2.7608237e-05, Final residual = 4.514853e-07, No Iterations 1
+smoothSolver:  Solving for Uy, Initial residual = 0.00034247123, Final residual = 5.3909392e-06, No Iterations 1
+GAMG:  Solving for p, Initial residual = 0.089776346, Final residual = 0.0007497014, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.0060365172, Final residual = 3.7051511e-05, No Iterations 5
+time step continuity errors : sum local = 4.5833726e-10, global = -6.9070955e-11, cumulative = -3.5894874e-07
+GAMG:  Solving for p, Initial residual = 0.025647072, Final residual = 0.00012721834, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.0018010069, Final residual = 5.2971909e-08, No Iterations 17
+time step continuity errors : sum local = 6.5559168e-13, global = -1.2701275e-13, cumulative = -3.5894886e-07
+PIMPLE: iteration 3
+smoothSolver:  Solving for Ux, Initial residual = 1.0305043e-05, Final residual = 3.560878e-09, No Iterations 3
+smoothSolver:  Solving for Uy, Initial residual = 0.00012314575, Final residual = 5.0062527e-09, No Iterations 5
+GAMG:  Solving for p, Initial residual = 0.23859489, Final residual = 0.0022793029, No Iterations 3
+GAMG:  Solving for p, Initial residual = 0.012760987, Final residual = 0.00010395393, No Iterations 7
+time step continuity errors : sum local = 1.0680753e-09, global = 1.4145364e-10, cumulative = -3.5880741e-07
+GAMG:  Solving for p, Initial residual = 0.019379764, Final residual = 9.2862036e-05, No Iterations 6
+GAMG:  Solving for p, Initial residual = 0.003697923, Final residual = 6.5449527e-08, No Iterations 19
+time step continuity errors : sum local = 6.736811e-13, global = -1.321689e-13, cumulative = -3.5880754e-07
+ExecutionTime = 835.06 s  ClockTime = 889 s
+
+forceCoeffs forceCoeffs write:
+    Coefficient	Total	Pressure	Viscous	Internal
+    Cd:	0.058453188	0.051659048	0.0067941402	0
+    Cd(f):	0.0072486828	0.0038839885	0.0033646944	0
+    Cd(r):	0.051204505	0.04777506	0.0034294459	0
+    Cl:	0.87911645	0.87782142	0.0012950303	0
+    Cl(f):	0.37351407	0.3724829	0.0010311794	0
+    Cl(r):	0.50560238	0.50533853	0.00026385087	0
+    CmPitch:	-0.066044152	-0.066427816	0.00038366426	0
+    CmRoll:	-0.021977911	-0.021945536	-3.2375757e-05	0
+    CmYaw:	0.0014613297	0.0012914762	0.00016985351	0
+    Cs:	-1.1689118e-17	1.022357e-19	-1.1791354e-17	0
+    Cs(f):	0.0014613297	0.0012914762	0.00016985351	0
+    Cs(r):	-0.0014613297	-0.0012914762	-0.00016985351	0
+
+    writing force and moment coefficient files.
+
+End

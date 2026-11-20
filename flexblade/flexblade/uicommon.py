@@ -207,6 +207,7 @@ def run_sweep(design: Design, variables: list[tuple[str, list[Any]]], what: list
             yield rec
         return
     import multiprocessing as mp
+    os.environ["FLEXBLADE_WORKER"] = "1"
     with mp.get_context("spawn" if os.environ.get("FLEXBLADE_SPAWN") else None).Pool(workers) as pool:
         for i, rec in enumerate(pool.imap(_sweep_one, jobs)):
             rec["index"] = i

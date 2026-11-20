@@ -1,10 +1,12 @@
-"""3D single-blade periodic-sector hover case (SRFSimpleFoam, steady RANS).
+"""3D single-blade periodic-sector hover case (simpleFoam + MRF zone, steady RANS).
 
 Domain: annular sector of angle 2π/n centred on blade 1 (+x), rotationally cyclic sides,
 r ∈ [r_axis, farfield_R·R], z ∈ [−below·R, above·R]. Background blockMesh (polar blocks,
 ≤ 45° each, arc edges) + snappyHexMesh onto the blade STL (blade-1 aerodynamic surface from
 geometry; flexure/hub omitted). Whole domain in the single rotating frame (SRF, rpm about
-+z), absolute far field at rest (SRFFreestreamVelocity UInf 0). Forces on the blade patch
++z) replaced by MRF: rotating cylinder zone r ≤ 1.15R, |z| ≤ 0.25R around the blade
+(topoSet), stationary outer domain with freestream (at rest) far-field BCs. (A whole-domain
+SRF diverged: far-field relative speed Ω·r_far ≈ 300 m/s.) Forces on the blade patch
 via `forces` → hover thrust/torque ×n (post.hover_forces) for comparison with aero BEMT.
 """
 from __future__ import annotations
@@ -199,13 +201,29 @@ addLayersControls
     maxFaceThicknessRatio 0.5; maxThicknessToMedialRatio 0.3; minMedialAxisAngle 90;
     nBufferCellsNoExtrude 0; nLayerIter 50;
 }}
-meshQualityControls {{ #includeEtc "caseDicts/mesh/generation/meshQualityDict" }}
+meshQualityControls {{ #includeEtc "caseDicts/meshQualityDict"
+    nSmoothScale 4; errorReduction 0.75; relaxed {{ maxNonOrtho 75; }} }}
 mergeTolerance 1e-6;
 """)
     foam.write_dict(case, "system/surfaceFeatureExtractDict", "")
-    foam.write_dict(case, "constant/SRFProperties", {
-        "SRFModel": "rpm", "origin": (0.0, 0.0, 0.0), "axis": (0.0, 0.0, 1.0),
-        "rpmCoeffs": {"rpm": float(rpm)}})
+    om = float(rpm) * 2 * math.pi / 60
+    foam.write_dict(case, "constant/MRFProperties", {"MRF1": {
+        "cellZone": "rotor", "active": True, "nonRotatingPatches": RawEntry("()"),
+        "origin": (0.0, 0.0, 0.0), "axis": (0.0, 0.0, 1.0), "omega": om}})
+    zr, zh = 1.15 * R, 0.25 * R
+    foam.write_dict(case, "system/topoSetDict", f"""actions
+(
+    {{
+        name    rotor;
+        type    cellZoneSet;
+        action  new;
+        source  cylinderToCell;
+        p1      (0 0 {-zh:.6g});
+        p2      (0 0 {zh:.6g});
+        radius  {zr:.6g};
+    }}
+);
+""")
     foam.write_dict(case, "constant/transportProperties",
                     {"transportModel": "Newtonian", "nu": RawEntry(f"[0 2 -1 0 0 0 0] {nu:.6g}")})
     foam.write_dict(case, "constant/turbulenceProperties",
@@ -215,11 +233,20 @@ mergeTolerance 1e-6;
     kf, wf = foam.turbulence_fields_kw("kOmegaSST", Vt, R, intensity=0.01, visc_ratio=1.0, nu=nu)
     far = ("inlet", "outlet", "farfield")
     cyc = {"cyc_lo": {"type": "cyclic"}, "cyc_hi": {"type": "cyclic"}}
-    Uf = {p: {"type": "SRFFreestreamVelocity", "UInf": (0.0, 0.0, 0.0),
-              "value": RawEntry("uniform (0 0 0)")} for p in far}
-    Uf.update({"axis": {"type": "slip"}, "blade": {"type": "noSlip"}}, **cyc)
-    foam.field_file(case, "Urel", "volVectorField", "[0 1 -1 0 0 0 0]", "uniform (0 0 0)", Uf)
-    pf = {p: {"type": "freestreamPressure", "freestreamValue": RawEntry("uniform 0")} for p in far}
+    # hover: far field at rest. freestreamPressure divides by |U_inf| (= 0 here → FPE), so
+    # use totalPressure p0 = 0 + pressureInletOutletVelocity on inlet/farfield (entrainment),
+    # static p = 0 + inletOutlet on the outlet (wake)
+    Uf = {p: {"type": "pressureInletOutletVelocity", "value": RawEntry("uniform (0 0 0)")}
+          for p in ("inlet", "farfield")}
+    Uf["outlet"] = {"type": "inletOutlet", "inletValue": RawEntry("uniform (0 0 0)"),
+                    "value": RawEntry("uniform (0 0 0)")}
+    # blade inside the MRF zone: MRF sets the wall velocity to Ω×r
+    Uf.update({"axis": {"type": "slip"},
+               "blade": {"type": "fixedValue", "value": RawEntry("uniform (0 0 0)")}}, **cyc)
+    foam.field_file(case, "U", "volVectorField", "[0 1 -1 0 0 0 0]", "uniform (0 0 0)", Uf)
+    pf = {p: {"type": "totalPressure", "p0": RawEntry("uniform 0"), "value": RawEntry("uniform 0")}
+          for p in ("inlet", "farfield")}
+    pf["outlet"] = {"type": "fixedValue", "value": RawEntry("uniform 0")}
     pf.update({"axis": {"type": "zeroGradient"}, "blade": {"type": "zeroGradient"}}, **cyc)
     foam.field_file(case, "p", "volScalarField", "[0 2 -2 0 0 0 0]", "uniform 0", pf)
     for name, val, wall, dims in (
@@ -233,7 +260,7 @@ mergeTolerance 1e-6;
     nf.update({"axis": {"type": "calculated", "value": RawEntry("uniform 0")},
                "blade": {"type": "nutUSpaldingWallFunction", "value": RawEntry("uniform 0")}}, **cyc)
     foam.field_file(case, "nut", "volScalarField", "[0 2 -1 0 0 0 0]", "uniform 0", nf)
-    foam.write_dict(case, "system/controlDict", f"""application     SRFSimpleFoam;
+    foam.write_dict(case, "system/controlDict", f"""application     simpleFoam;
 startFrom       latestTime;
 startTime       0;
 stopAt          endTime;
@@ -260,35 +287,36 @@ functions
 }}
 """)
     foam.write_dict(case, "system/fvSchemes", """ddtSchemes      { default steadyState; }
-gradSchemes     { default Gauss linear; grad(Urel) cellLimited Gauss linear 1; }
+gradSchemes     { default Gauss linear; grad(U) cellLimited Gauss linear 1; }
 divSchemes
 {
     default         none;
-    div(phi,Urel)   bounded Gauss linearUpwindV grad(Urel);
+    div(phi,U)      bounded Gauss linearUpwind grad(U);
     div(phi,k)      bounded Gauss upwind;
     div(phi,omega)  bounded Gauss upwind;
-    div((nuEff*dev2(T(grad(Urel))))) Gauss linear;
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }
-laplacianSchemes { default Gauss linear limited 0.5; }
+laplacianSchemes { default Gauss linear limited 0.33; }
 interpolationSchemes { default linear; }
-snGradSchemes   { default limited 0.5; }
+snGradSchemes   { default limited 0.33; }
 wallDist        { method meshWave; }
 """)
     foam.write_dict(case, "system/fvSolution", """solvers
 {
     p     { solver GAMG; smoother GaussSeidel; tolerance 1e-7; relTol 0.05; }
-    "(Urel|k|omega)" { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-8; relTol 0.1; }
+    "(U|k|omega)" { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-8; relTol 0.1; }
 }
-SIMPLE { nNonOrthogonalCorrectors 1; consistent yes; residualControl { p 1e-5; Urel 1e-6; } }
-relaxationFactors { fields { p 0.3; } equations { Urel 0.7; k 0.5; omega 0.5; } }
+SIMPLE { nNonOrthogonalCorrectors 2; consistent no; residualControl { p 1e-5; U 1e-6; } }
+relaxationFactors { fields { p 0.2; } equations { U 0.5; k 0.5; omega 0.5; } }
 """)
     foam.decompose_dict(case, np_)
     foam.write_allrun(case, [
         "run blockMesh",
         "run snappyHexMesh -overwrite",
+        "run topoSet",
         "run checkMesh",
         "if [ \"$NP\" -gt 1 ]; then run decomposePar -force; fi",
-        "runp SRFSimpleFoam",
+        "runp simpleFoam",
         "echo done",
     ])
     info = RotorCase(str(case), float(rpm), n, R, 360.0 / n, nu, Tb, Qb, ncell, tuple(surface_level))

@@ -1,0 +1,39 @@
+Starting to read points at line 12
+Vertices to be read: 18710
+Vertices read:18710
+
+Starting to read cells at line 18725
+Cells to be read: 44877
+
+Mapping region 2 to Foam patch 0
+Mapping region 3 to Foam patch 1
+Mapping region 4 to Foam patch 2
+Mapping region 1 to Foam cellZone 0
+Cells:
+    total:14876
+    hex  :3585
+    prism:11291
+    pyr  :0
+    tet  :0
+
+CellZones:
+Zone	Size
+    0	14876
+
+Patch 0 gets name frontAndBack
+Patch 1 gets name farfield
+Patch 2 gets name airfoil
+
+--> FOAM Warning : 
+    From Foam::polyMesh::polyMesh(const IOobject &, pointField &&, const cellShapeList &, const faceListList &, const wordList &, const wordList &, const word &, const word &, const wordList &, const bool)
+    in file meshes/polyMesh/polyMeshFromShapeMesh.C at line 635
+    Found 30001 undefined faces in mesh; adding to default patch defaultFaces
+Finding faces of patch 0
+Finding faces of patch 1
+Finding faces of patch 2
+
+FaceZones:
+Zone	Size
+
+Writing zone 0 to cellZone fluid and cellSet
+End

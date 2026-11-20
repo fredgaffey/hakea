@@ -40,7 +40,7 @@ def dict_body(d: dict, indent: int = 0) -> str:
         elif isinstance(v, RawEntry):
             out.append(f"{pad}{k} {v.text};\n" if k else f"{pad}{v.text}\n")
         else:
-            out.append(f"{pad}{k:<16}{fmt(v)};\n")
+            out.append(f"{pad}{k:<15} {fmt(v)};\n")
     return "".join(out)
 
 

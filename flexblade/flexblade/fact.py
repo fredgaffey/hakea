@@ -30,7 +30,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .schema import Design, Flexure, FlexureMember, PrintOrientation
+from .schema import Design, Flexure, FlexureMember, Layup, PrintOrientation
 
 # --------------------------------------------------------------------------- screw algebra
 
@@ -143,8 +143,8 @@ def generate_members(design: Design) -> list[FlexureMember]:
 
     skewed_cross_blade : two plates, planes both containing the hinge axis a, length
         directions l± = cos(γ/2) x' ± sin(γ/2) ŷ (⟂ a), crossing at the hinge point,
-        width along a; offset ±(w/2) along a so they do not intersect (Haringx
-        cross-spring). Constraint lines: all lines in either plane → 5-system.
+        width along a; offset ±(w + cross_gap)/2 along a so they do not touch or fuse when
+        printed (Haringx cross-spring). Constraint lines: all lines in either plane → 5-system.
     skewed_single_blade: one plate, length along x' (⟂ a), width along a, centred on
         the hinge point. Constrains 3 (in-plane); bending about a is the hinge, plate
         twist and out-of-plane shear are the parasitic soft DOFs (centrifugal tension
@@ -181,7 +181,7 @@ def generate_members(design: Design) -> list[FlexureMember]:
         for sg in (1.0, -1.0):
             ldir = np.cos(g) * xp + sg * np.sin(g) * np.array([0.0, 1.0, 0.0])
             ldir = unit(ldir - a * (a @ ldir))
-            c = H0 + sg * 0.5 * w * a
+            c = H0 + sg * 0.5 * (w + f.cross_gap) * a
             out.append(plate(c, ldir, a, L))
     elif topo == "skewed_single_blade":
         out.append(plate(H0, xp, a, L))
@@ -208,6 +208,20 @@ def generate_members(design: Design) -> list[FlexureMember]:
         out.append(FlexureMember(kind="wire", p0=tuple(p0), p1=tuple(p1), width=t, thickness=t,
                                  width_dir=tuple(a), shape="circle", taper=f.taper, layup=lay,
                                  orientation=ori))
+    elif topo == "torsion_bar":
+        Lb = f.bar_length or L
+        # bar on the hinge axis; raster/fibre direction along the bar
+        ybuild = np.cross(a, xp)
+        ybuild = ybuild / np.linalg.norm(ybuild)
+        bar_ori = PrintOrientation(build_dir=tuple(map(float, ybuild)), raster_dir=tuple(map(float, a)))
+        p0, p1 = H0 - 0.5 * Lb * a, H0 + 0.5 * Lb * a
+        out.append(FlexureMember(kind="wire", p0=tuple(map(float, p0)), p1=tuple(map(float, p1)),
+                                 width=f.bar_diameter, thickness=f.bar_diameter,
+                                 width_dir=tuple(map(float, xp)), shape="circle", taper=1.0,
+                                 layup=Layup(kind="solid", material=f.bar_material),
+                                 orientation=bar_ori))
+        if f.bar_with_plate:
+            out.append(plate(H0, xp, a, L))
     elif topo in ("custom", "topopt"):
         out.extend(f.members)
     elif topo == "rigid":
