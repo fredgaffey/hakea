@@ -111,6 +111,20 @@ class FlexureMember(_M):
     orientation: PrintOrientation = PrintOrientation()
 
 
+class TopoptFlexure(_M):
+    """Stored result of a topology-optimised flexure (flexblade.topopt), used by
+    topology == "topopt": rotor.py replaces the flexure by a zero-length 6×6 spring at
+    the hinge point plus a lumped mass, so evaluate() runs the 1/rev analysis on it."""
+    K6: list[list[float]] = Field(description="6×6 stiffness at the hinge point, blade-1 frame H, "
+                                              "[ux,uy,uz,rx,ry,rz] → [Fx,Fy,Fz,Mx,My,Mz], rpm 0")
+    mass: float = Field(0.0, description="kg, designed flexure region")
+    com: Vec3 = (0.0, 0.0, 0.0)
+    inertia: list[list[float]] = Field(default_factory=lambda: [[0.0] * 3 for _ in range(3)],
+                                       description="kg m², about the COM, frame H")
+    source: str = Field("", description="result directory / file the data came from")
+    notes: str = ""
+
+
 class Flexure(_M):
     """Root compliance between hub and aerodynamic blade.
 
@@ -124,9 +138,11 @@ class Flexure(_M):
                           bend-twist coupled by skewed root geometry (monolithic TPU)
       custom              use `members` as given
       rigid               rigid root (reference / baseline)
+      topopt              topology-optimised flexure: `topopt` holds its 6×6 stiffness and
+                          mass properties (flexblade topopt); `members` are only drawn
     """
     topology: Literal["skewed_cross_blade", "skewed_single_blade", "wire_triplet",
-                      "integral_taper", "custom", "rigid"] = "skewed_cross_blade"
+                      "integral_taper", "custom", "rigid", "topopt"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")
@@ -143,6 +159,7 @@ class Flexure(_M):
     members: list[FlexureMember] = Field(
         default_factory=list, description="explicit members (custom) or fact.py output")
     hub_radius: float = Field(0.006, description="rigid hub outer radius, m")
+    topopt: Optional[TopoptFlexure] = Field(None, description="topology == topopt: stored result")
 
 
 # --------------------------------------------------------------------------- operating point / motor

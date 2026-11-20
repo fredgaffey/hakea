@@ -208,7 +208,7 @@ def generate_members(design: Design) -> list[FlexureMember]:
         out.append(FlexureMember(kind="wire", p0=tuple(p0), p1=tuple(p1), width=t, thickness=t,
                                  width_dir=tuple(a), shape="circle", taper=f.taper, layup=lay,
                                  orientation=ori))
-    elif topo == "custom":
+    elif topo in ("custom", "topopt"):
         out.extend(f.members)
     elif topo == "rigid":
         r1 = H0[0] + 0.5 * L
