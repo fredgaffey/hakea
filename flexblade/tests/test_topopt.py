@@ -322,11 +322,10 @@ def test_rotor_hook_full_K6_spring():
     d2.flexure.topopt = TopoptFlexure(K6=K1.tolist(), mass=1e-4, com=(0.01, 0.0, 0.0))
     m1 = build_model(d2)
     from flexblade.topopt.problem import layout_metrics
-    # the spring sits between rotor.py's stiff (1e3×) spoke/connector links, which add ~1 %
-    # compliance in series
+    # the series compliance of rotor.py's stiff spoke is compensated (_compensate_links)
     for b, Kref in ((1, K1), (2, K2)):
         Kb = flexure_stiffness(m1, blade=b)
-        assert np.allclose(np.diag(Kb), np.diag(Kref), rtol=0.03)
+        assert np.allclose(Kb, Kref, rtol=1e-6, atol=1e-6 * np.abs(Kref).max())
         a = m0.blades[b - 1].hinge_dir                 # frame H (blade 2 rotated by π)
         mb, mr = layout_metrics(Kb, a, d.flexure.length), layout_metrics(Kref, a, d.flexure.length)
         assert mb["k_axis"] == pytest.approx(mr["k_axis"], rel=0.02)

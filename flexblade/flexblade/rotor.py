@@ -227,6 +227,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     max_GJ = max(s[0].GJ for s in blade_secs)
 
     blades: list[BladeInfo] = []
+    full_springs: list = []
     pending_stiff: list[tuple[int, int, np.ndarray, str, int]] = []
     nfe = max(1, an.n_flexure_elements)
     for k in range(1, B + 1):
@@ -303,8 +304,10 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             if np.linalg.norm(fe.X0[master] - Rk @ H0) > 1e-9:
                 B_node = fe.add_node(Rk @ H0, f"b{k}.hingeB")
                 pending_stiff.append((B_node, master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn0", k))
-            fe.add_element(Element(A, B_node, np.zeros(3), [], tag=f"b{k}.hinge", kind="spring", blade=k,
-                                   spring_K=Ks, spring_frame=frame))
+            ie = fe.add_element(Element(A, B_node, np.zeros(3), [], tag=f"b{k}.hinge", kind="spring",
+                                        blade=k, spring_K=Ks, spring_frame=frame))
+            if "K6" in kh:
+                full_springs.append((k, ie, Ks.copy()))
             if kh.get("mass", 0.0) > 0.0:
                 Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
                 c = Rk @ (Mt @ np.asarray(kh.get("com", H0), float)) - fe.X0[master]
@@ -333,7 +336,35 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     fe.prepare()
     model = RotorModel(design, fe, hub, blades, r_aero, b.elastic_axis_chord_frac,
                        st_r, st_chord, st_twist, warnings)
+    if full_springs:
+        _compensate_links(model, full_springs)
     return model
+
+
+def _compensate_links(model: RotorModel, springs) -> None:
+    """A full-6×6 spring (ideal_hinge["K6"]) sits in series with the stiff spoke from the
+    hub node to the hinge point (STIFF_FACTOR × the stiffest section, not rigid): ~5–10 %
+    extra compliance on a stiff flexure. Remove it so flexure_stiffness() at the hinge point
+    returns the stored K6: C_spring = C_target − C_link, C_link = C_measured − C_spring (one
+    linear pass, exact since the link compliance does not depend on the spring)."""
+    fe = model.fe
+    for k, ie, Ks0 in springs:
+        el = fe.elements[ie]
+        Q = np.zeros((6, 6))
+        Q[:3, :3] = Q[3:, 3:] = el.E0
+        Kt = Q @ Ks0 @ Q.T
+        Km = flexure_stiffness(model, blade=k)
+        C_link = np.linalg.inv(Km) - np.linalg.inv(Kt)
+        Cs = np.linalg.inv(Kt) - C_link
+        Cs = 0.5 * (Cs + Cs.T)
+        if np.linalg.eigvalsh(Cs).min() <= 0:
+            model.warnings.append(f"blade {k}: 6×6 spring stiffer than its stiff links; not compensated")
+            continue
+        Kn = Q.T @ np.linalg.inv(Cs) @ Q
+        Kn = 0.5 * (Kn + Kn.T)
+        el.spring_K = Kn
+        el.K7[1:, 1:] = Kn
+    fe._pack = None                     # batched-kernel cache holds the element K7s
 
 
 def _merge_nodes(fe: FEModel, merges, blades) -> None:
