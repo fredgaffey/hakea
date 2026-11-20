@@ -85,7 +85,6 @@ def pitch_sweep(design, specs: list[dict], out_dir, where: str = "mac",
         keep.mkdir(parents=True, exist_ok=True)
         shutil.copy(cdir / "flexblade_case.json", keep)
         for f in (cdir / "postProcessing").rglob("coefficient.dat"):
-            shutil.copy(f, keep / "coefficient.dat")
             (keep / "postProcessing/forceCoeffs/0").mkdir(parents=True, exist_ok=True)
             shutil.copy(f, keep / "postProcessing/forceCoeffs/0/coefficient.dat")
         for lg in cdir.glob("log.*"):

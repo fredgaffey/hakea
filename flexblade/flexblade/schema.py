@@ -137,6 +137,9 @@ class Flexure(_M):
     thickness: float = Field(0.0012, description="member thickness, m")
     width: float = Field(0.008, description="member width, m")
     cross_angle_deg: float = Field(90.0, description="angle between crossed blades")
+    cross_gap: float = Field(0.001, ge=0.0, description="axial gap between the two crossed plates "
+                             "along the hinge axis, m; must exceed ~2 nozzle widths or the plates "
+                             "fuse when printed (FEA: fused cross is ~1.9x stiffer)")
     taper: float = 1.0
     twist_deg: float = Field(0.0, description="pre-twist of members about their axis")
     layup: Layup = Layup()

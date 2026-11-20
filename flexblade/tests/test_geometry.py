@@ -146,3 +146,45 @@ def test_deformed_frames_rigid_rotation():
     expect = np.cross([th, 0, 0], X)
     assert np.allclose(p["frames"][0], expect, atol=1e-9)
     assert np.allclose(p["frames"][2], -expect, atol=1e-9)
+
+
+def _union_volume_mm3(design, blades="one"):
+    """Independent check: OCC fuse of all raw part solids (overlaps counted once)."""
+    import gmsh
+    geo = g._step_geometry(design)
+    parts = [p for p in geo.parts if blades == "all" or (p.blade == 1 and p.role != "spoke")]
+    with g._Gmsh() as gm:
+        dts = [d for p in parts for d in g.occ_part(gm.model.occ, p)]
+        out, _ = gm.model.occ.fuse(dts[:1], dts[1:])
+        gm.model.occ.synchronize()
+        return sum(gm.model.occ.getMass(*d) for d in out if d[0] == 3) * 1e9
+
+
+@pytest.mark.parametrize("layup", [
+    Layup(kind="rod_insert", material="tpu_64d", insert_material="cf_rod_pultruded",
+          insert_diameter=0.0008, insert_positions=[0.3]),
+    Layup(kind="core_skin", material="tpu_95a", skin_material="pa6_cf", skin_thickness=0.0004),
+])
+def test_print_parts_watertight_disjoint(tmp_path, layup):
+    d = _design(layup=layup)
+    man = g.export_print_parts(d, tmp_path, blades="one", fmt="stl")
+    vols = []
+    for key, f in man["files"].items():
+        m = trimesh.load(f)
+        assert m.is_watertight, key
+        assert m.bounds[0][2] >= -1e-6                       # on the bed, mm
+        if key == "rod_channels":   # rods are simple solids: OCC mass is reliable here
+            assert m.volume == pytest.approx(man["parts"][key]["occ_volume_mm3"], rel=0.03)
+        vols.append(m.volume)
+    assert len(vols) >= 2
+    assert sum(vols) == pytest.approx(_union_volume_mm3(d), rel=0.02)
+    if layup.kind == "rod_insert":
+        assert "rod_channels" in man["files"]
+
+
+def test_print_parts_3mf(tmp_path):
+    import zipfile
+    man = g.export_print_parts(Design(), tmp_path, blades="one", fmt="3mf")
+    z = zipfile.ZipFile(man["files"]["3mf"])
+    assert "3D/3dmodel.model" in z.namelist()
+    assert 'name="tpu_64d"' in z.read("3D/3dmodel.model").decode()

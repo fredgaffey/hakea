@@ -1,0 +1,47 @@
+{
+ "design": "7in_tpu_rod",
+ "design_hash": "4dac339ca29058c5",
+ "units": "mm",
+ "blades": "one",
+ "print_frame": "build_dir->+Z, raster_dir->+X, on bed (z>=0)",
+ "print_rotation": [
+  [
+   1.0,
+   0.0,
+   0.0
+  ],
+  [
+   0.0,
+   1.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "shift_mm": [
+  -45.6543900595813,
+  5.107659685968793,
+  11.596551211459381
+ ],
+ "files": {
+  "tpu_64d": "examples/print/7in_tpu_rod_blade1/7in_tpu_rod_tpu_64d.stl",
+  "rod_channels": "examples/print/7in_tpu_rod_blade1/7in_tpu_rod_rod_channels.stl"
+ },
+ "parts": {
+  "tpu_64d": {
+   "watertight": true,
+   "volume_mm3": 2862.0164806559374,
+   "occ_volume_mm3": 2853.8103909930023,
+   "n_triangles": 83580
+  },
+  "rod_channels": {
+   "watertight": true,
+   "volume_mm3": 122.1634293459038,
+   "occ_volume_mm3": 123.18913825322639,
+   "n_triangles": 29900
+  }
+ }
+}

@@ -317,7 +317,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("export", parents=[common], help="export geometry")
     s.add_argument("design", nargs="?", default="-", help=D)
-    s.add_argument("--fmt", choices=["glb", "stl", "step", "json"], default="step")
+    s.add_argument("--fmt", choices=["glb", "stl", "step", "json", "stl_parts", "3mf"], default="step")
     s.add_argument("-o", "--output", help="output path (default <name>.<fmt>)")
     s.set_defaults(fn=cmd_export)
 

@@ -26,9 +26,17 @@ _SOURCE_DOCKER = ("for f in /usr/lib/openfoam/openfoam*/etc/bashrc /opt/openfoam
                   "do [ -f \"$f\" ] && . \"$f\" && break; done")
 
 
-def _sh(cmd: list[str] | str, timeout: Optional[float] = None, check: bool = True, **kw):
+def _sh(cmd: list[str] | str, timeout: Optional[float] = None, check: bool = True,
+        retries: Optional[int] = None, **kw):
+    """Run a command; ssh/rsync transport failures (exit 255) are retried."""
     shell = isinstance(cmd, str)
-    r = subprocess.run(cmd, shell=shell, capture_output=True, text=True, timeout=timeout, **kw)
+    if retries is None:
+        retries = 3 if (not shell and cmd[0] in ("ssh", "rsync")) else 0
+    for attempt in range(retries + 1):
+        r = subprocess.run(cmd, shell=shell, capture_output=True, text=True, timeout=timeout, **kw)
+        if r.returncode != 255 or attempt == retries:
+            break
+        time.sleep(5 * (attempt + 1))
     if check and r.returncode != 0:
         raise RuntimeError(f"command failed ({r.returncode}): {cmd}\n{r.stdout[-2000:]}\n{r.stderr[-2000:]}")
     return r
@@ -108,7 +116,7 @@ def run_case(case_dir: str | Path, where: Literal["mac", "docker", "local"] = "m
             inner = f"cd {rq} && ./Allrun {int(np)}"
             cmd = (f"export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH; "
                    f"{MAC_OPENFOAM} -c {shlex.quote(inner)}")
-            r = _sh(["ssh", host, cmd], timeout=timeout, check=False)
+            r = _sh(["ssh", host, cmd], timeout=timeout, check=False, retries=0)
             ok = r.returncode == 0 and "FAILED" not in r.stdout
             _sh(["rsync", "-a", "--include=postProcessing/***", "--include=log.*",
                  "--exclude=*", f"{host}:{remote}/", f"{case}/"], timeout=600, check=False)
