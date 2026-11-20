@@ -178,10 +178,17 @@ def filament_cost(mass: dict[str, Any]) -> dict[str, Any]:
 _NON_STRUCT = ("esc", "motor")
 
 
-def _margin(f_per_rev: float | None) -> float | None:
+def _margin(f_per_rev: float | None, zeta: float | None = None) -> float | None:
+    """Distance of a mode from 1P/2P in /rev.  With the mode's true damping ζ the 1P term is
+    damping-aware: max(|p−1|, equivalent undamped margin with the same 1P amplification)
+    (stability.margin_1p_eff), so a well-damped mode near 1P is not rejected outright."""
     if f_per_rev is None or not math.isfinite(f_per_rev):
         return None
-    return float(min(abs(f_per_rev - 1.0), abs(f_per_rev - 2.0)))
+    m1 = abs(f_per_rev - 1.0)
+    if zeta is not None and math.isfinite(zeta) and zeta > 0:
+        from .stability import margin_1p_eff
+        m1 = max(m1, margin_1p_eff(f_per_rev, zeta))
+    return float(min(m1, abs(f_per_rev - 2.0)))
 
 
 def fitness(control_ratio: float, util: float, lag_margin: float | None,
@@ -231,8 +238,10 @@ def metrics(res: dict, design: Design | None = None, with_mass: bool = True) -> 
         util_interlayer=by_kind.get("interlayer"), util_static=by_kind.get("static"),
         lag_per_rev=s.get("lag_freq_per_rev"), flap_per_rev=s.get("flap_freq_per_rev"),
         pitch_per_rev=s.get("pitch_freq_per_rev"),
-        lag_margin=_margin(s.get("lag_freq_per_rev")),
-        pitch_margin=_margin(s.get("pitch_freq_per_rev")),
+        lag_margin=_margin(s.get("lag_freq_per_rev"), s.get("lag_zeta")),
+        pitch_margin=_margin(s.get("pitch_freq_per_rev"), s.get("pitch_zeta")),
+        zeta_min=s.get("zeta_min"), near_1p_per_rev=s.get("near_1p_per_rev"),
+        near_1p_zeta=s.get("near_1p_zeta"), air_resonance_zeta=s.get("air_resonance_zeta"),
         pitch_split_deg=s.get("trim_diff_pitch_deg"), rpm=s.get("rpm"),
         esc_util=max((c["utilisation"] for c in res.get("checks") or [] if c["member"] in _NON_STRUCT),
                      default=None),
