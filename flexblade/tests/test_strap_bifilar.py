@@ -46,3 +46,18 @@ def test_bifilar_pitch_stiffness_vs_omega2():
         ks.append((k - k0) / rpm ** 2)
     # ∝ Ω²: the per-rev contribution does not drift with rpm
     assert ks[1] == pytest.approx(ks[0], rel=0.3)
+
+
+def test_v5_design_bifilar_members():
+    from pathlib import Path
+    from flexblade import fact
+    from flexblade.schema import Design
+    p = Path(__file__).parents[1] / "study" / "designs" / "7in_tt_strap_steelx_v5.json"
+    d = Design.model_validate_json(p.read_text())
+    cab = [m for m in fact.generate_members(d) if m.cable]
+    assert len(cab) == 2
+    H0, a = fact.hinge_axis(d)
+    for m in cab:      # on the rotor-axis line through H0: a hinge rotation does not stretch them
+        o = np.asarray(m.p1, float) - H0
+        assert abs(o[1]) < 1e-12 and abs(abs(o[2]) - d.flexure.strap_radius) < 1e-12
+        assert abs(np.cross(a, [0.0, 0.0, o[2]])[0]) < 1e-12
