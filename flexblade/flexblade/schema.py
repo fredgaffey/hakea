@@ -125,11 +125,17 @@ class Flexure(_M):
                           (FACT constraint lines ⟂-free set) + optional tension member
       integral_taper      no separate flexure: blade root section thinned/tapered and
                           bend-twist coupled by skewed root geometry (monolithic TPU)
+      torsion_bar         stiff bar lying ON the skewed hinge axis (one end gripped by the hub,
+                          the other by the blade): constrains 5 DOF, the hinge motion is the
+                          bar's own torsion. Optional TPU plate around it (`thickness` > 0,
+                          `layup`) tunes stiffness/damping. Bar: bar_diameter, bar_material,
+                          bar_length (None = `length`). Needs a thick hub block, not a thin root.
       custom              use `members` as given
       rigid               rigid root (reference / baseline)
     """
     topology: Literal["skewed_cross_blade", "skewed_cross_blade_sym", "skewed_single_blade",
-                      "wire_triplet", "integral_taper", "custom", "rigid"] = "skewed_cross_blade"
+                      "wire_triplet", "integral_taper", "torsion_bar", "custom",
+                      "rigid"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")
@@ -137,6 +143,13 @@ class Flexure(_M):
     thickness: float = Field(0.0012, description="member thickness, m")
     width: float = Field(0.008, description="member width, m")
     cross_angle_deg: float = Field(90.0, description="angle between crossed blades")
+    bar_diameter: float = Field(0.0015, gt=0, description="torsion_bar: bar diameter, m")
+    bar_material: str = Field("cf_rod_pultruded", description="torsion_bar: bar material "
+                              "(pultruded CF: G/E ≈ 0.04 → soft in torsion, stiff in bending)")
+    bar_length: Optional[float] = Field(None, description="torsion_bar: bar length along the "
+                                        "hinge axis, m; None = `length`")
+    bar_with_plate: bool = Field(True, description="torsion_bar: add the TPU plate (layup, "
+                                 "thickness, width) around the bar")
     cross_gap: float = Field(0.001, ge=0.0, description="axial gap between the two crossed plates "
                              "along the hinge axis, m; must exceed ~2 nozzle widths or the plates "
                              "fuse when printed (FEA: fused cross is ~1.9x stiffer)")

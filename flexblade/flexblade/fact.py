@@ -227,6 +227,20 @@ def generate_members(design: Design) -> list[FlexureMember]:
         out.append(FlexureMember(kind="wire", p0=tuple(p0), p1=tuple(p1), width=t, thickness=t,
                                  width_dir=tuple(a), shape="circle", taper=f.taper, layup=lay,
                                  orientation=ori))
+    elif topo == "torsion_bar":
+        Lb = f.bar_length or L
+        # bar on the hinge axis; raster/fibre direction along the bar
+        ybuild = np.cross(a, xp)
+        ybuild = ybuild / np.linalg.norm(ybuild)
+        bar_ori = PrintOrientation(build_dir=tuple(map(float, ybuild)), raster_dir=tuple(map(float, a)))
+        p0, p1 = H0 - 0.5 * Lb * a, H0 + 0.5 * Lb * a
+        out.append(FlexureMember(kind="wire", p0=tuple(map(float, p0)), p1=tuple(map(float, p1)),
+                                 width=f.bar_diameter, thickness=f.bar_diameter,
+                                 width_dir=tuple(map(float, xp)), shape="circle", taper=1.0,
+                                 layup=Layup(kind="solid", material=f.bar_material),
+                                 orientation=bar_ori))
+        if f.bar_with_plate:
+            out.append(plate(H0, xp, a, L))
     elif topo == "custom":
         out.extend(f.members)
     elif topo == "rigid":
