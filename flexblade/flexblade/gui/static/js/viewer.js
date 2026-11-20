@@ -49,6 +49,27 @@ class RotorSlot {
     mesh.userData.part = part;
     this.group.add(mesh);
     this.parts.push({ part, mesh, base: pos, map: null });
+    this.applyXray(mesh, part);
+  }
+
+  /** See-through view: outer shells transparent, inserts (rods, strips, cores) solid. */
+  static isInsert(part) {
+    const r = (part.role || '') + ' ' + (part.name || '');
+    return /rod|strip|insert|core|tow|bar/i.test(r);
+  }
+
+  applyXray(mesh, part) {
+    const see = !!this.xray && !Viewer.isInsert(part);
+    mesh.material.transparent = see;
+    mesh.material.opacity = see ? 0.18 : 1.0;
+    mesh.material.depthWrite = !see;
+    mesh.renderOrder = see ? 1 : 0;
+    mesh.material.needsUpdate = true;
+  }
+
+  setXray(on) {
+    this.xray = on;
+    for (const p of this.parts) this.applyXray(p.mesh, p.part);
   }
 
   bladeOf(p, rmin) {
@@ -268,10 +289,16 @@ export class Viewer {
 
   slot(name) {
     if (!this.slots[name]) this.slots[name] = new RotorSlot(name, name === 'lower' ? -1 : 1, this.root);
+    this.slots[name].xray = this.xray;
     return this.slots[name];
   }
 
   get parts() { return Object.values(this.slots).flatMap((s) => s.parts); }
+
+  setXray(on) {
+    this.xray = on;
+    for (const s of Object.values(this.slots)) s.setXray(on);
+  }
 
   clear() { for (const s of Object.values(this.slots)) s.clear(); }
 
