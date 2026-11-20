@@ -7,3 +7,6 @@ work/
 *.npz
 study/campaign/burn.log
 study/campaign/STOP_BURN
+study/results/ideal_spec_*in.json
+study/designs/ideal_*in.json
+study/results/ideal_evals.jsonl.gz
