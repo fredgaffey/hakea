@@ -75,6 +75,16 @@ def test_floquet_isotropic_equals_lti_and_aniso_b2():
     assert abs(max(s2.real)) < 1e-6 * OM            # conservative periodic system: |μ| = 1
 
 
+def test_two_blade_aniso_support_window_near_1p():
+    """2-bladed rotor on anisotropic support: unstable when the support frequencies straddle
+    Ω (f_x < Ω < f_y, 2/rev parametric), stable away from it with the same damping."""
+    rs2 = S.articulated_toy(2, E, RG, MB, NU, OM, 3.0)
+    f1 = OM / (2 * np.pi)
+    s_in = S.coupled_eigs(rs2, af_of(0.96 * f1, 0.02, fy=1.1 * f1, nb=2), floquet=True)[0]
+    s_out = S.coupled_eigs(rs2, af_of(0.7 * f1, 0.02, fy=0.8 * f1, nb=2), floquet=True)[0]
+    assert max(s_in.real) > 0.0 > max(s_out.real)
+
+
 def test_margin_1p_eff():
     assert S.margin_1p_eff(1.15, 0.0) == pytest.approx(0.15, rel=1e-6)
     assert S.margin_1p_eff(0.9, 0.0) > 0.1
