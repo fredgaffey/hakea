@@ -40,3 +40,4 @@ def test_pin_plus_link_reports_pin_stiffness(e):
     old, new = _pin_link(e)
     assert new == pytest.approx(0.05, rel=0.01)            # consistent: the pin only
     assert old - 0.05 == pytest.approx(100.0 * e, abs=2e-3)  # preload-free transport: + T·e
+

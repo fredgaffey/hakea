@@ -467,11 +467,12 @@ class FlexureOnly:
         if extra_K is not None:
             K = K + extra_K
         fm = sa.fint[6 * self.master:6 * self.master + 6] if state is not None else None
-        return condense_to_point(fe, K, self.master, self.clamp, st.x[self.master], point, fm)
+        return condense_to_point(fe, K, self.master, self.clamp, st.x[self.master], point, fm,
+                                 fe.X0[self.master] - np.asarray(point, float))
 
 
 def condense_to_point(fe: FEModel, K: np.ndarray, master: int, clamp: list[int], x_master, point,
-                      f_master=None) -> np.ndarray:
+                      f_master=None, lever=None) -> np.ndarray:
     """Condense K onto the master node and transport it to `point` (rigid offset d = x_master −
     point). Under a preload (f_master = internal force [F; M] the substructure exerts at the
     master, i.e. ∂U/∂q_m) the transport is nonlinear: x_m = x_p + R(θ)d, so the Hessian of
@@ -479,7 +480,10 @@ def condense_to_point(fe: FEModel, K: np.ndarray, master: int, clamp: list[int],
     it a tension T reported at a point a distance d inboard of where it acts shows a spurious
     pendulum stiffness ≈ T·d (the stiffness of the same structure would depend on the
     reporting point). With it the 6×6 is the consistent tangent "as if cut at `point`" — what
-    a zero-length 6×6 spring at `point` (topology "ideal") must carry to reproduce it."""
+    a zero-length 6×6 spring at `point` (topology "ideal") must carry to reproduce it.
+    `lever` (default d) is the rigid-connection lever used in that term; flexure_stiffness
+    passes the reference-geometry lever so the flexure's own deformation (e.g. the stretch of
+    an ideal zero-length spring under CF) is left to its element tangent, not re-transported."""
     fixed = set()
     for n in clamp:
         fixed.update(range(6 * n, 6 * n + 6))
@@ -496,7 +500,8 @@ def condense_to_point(fe: FEModel, K: np.ndarray, master: int, clamp: list[int],
     Kp = T.T @ Kc @ T
     if f_master is not None:
         F = np.asarray(f_master, float)[:3]
-        Kp[3:, 3:] += 0.5 * (np.outer(F, d) + np.outer(d, F)) - (F @ d) * np.eye(3)
+        dl = d if lever is None else np.asarray(lever, float)
+        Kp[3:, 3:] += 0.5 * (np.outer(F, dl) + np.outer(dl, F)) - (F @ dl) * np.eye(3)
     return 0.5 * (Kp + Kp.T)
 
 
@@ -1230,7 +1235,8 @@ def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: i
     clamp = [model.hub] + [n for n in range(fe.nn) if n not in used]
     sub.fixed = set()
     fm = sa.fint[6 * bi.master:6 * bi.master + 6] if ss is not None else None
-    return condense_to_point(sub, K, bi.master, clamp, st.x[bi.master], bi.hinge_point, fm)
+    return condense_to_point(sub, K, bi.master, clamp, st.x[bi.master], bi.hinge_point, fm,
+                             fe.X0[bi.master] - bi.hinge_point)
 
 
 # =============================================================================== checks
