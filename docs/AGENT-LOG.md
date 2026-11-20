@@ -33,3 +33,5 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | opus-5-5 | lean | 10in steelx: buckling + strap fix | 10in steelx v2: strip compression from mean rotation via strap tilt (fixed: CG 0.415, strap 12mm); BUG FIX bought strand judged with print strength; still infeasible (trim nonconv, 1P flap) | 89k / 40 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | Finish evaluation cache | eval cache landed: sqlite content-addressed + model version, host-side pool dedupe; warm 0.01s vs 5s cold | 35k / 34 calls | green: yes |
 | 2026-11-20 | opus-5-5 | lean | Finish Floquet stability module | stability: true damped eig + Floquet airframe, Coleman validated <2%; no air resonance; damping-aware 1P margin -> 7in v2 feasible at hover | 97k / 29 calls | green: yes |
+| 2026-11-20 | sonnet-5-5 | lean | Fix 10in trim non-convergence | trim: bracketed Illinois + trim_ok flag; 10in v2 has NO valid trim (elastic pitch collapse branch) | 49k / 36 calls | green: yes |
+| 2026-11-20 | opus-5-5 | lean | Robust re-tune of 7in steelx | 7in steelx v3 ROBUSTLY FEASIBLE: cr 0.354/0.196/0.107 at 0.7/1.0/1.4 | 64k / 40 calls | green: yes |
