@@ -29,3 +29,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | opus-5-5 | lean | Pre-lag hinge preset | pre_lag_deg feature (hinge/pitch axis, auto) | 74k / 25 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | CalculiX check of steel cross-spring | ccx hex20 steel strips: k_hinge within 20%, cross/flap 1.3x, axis<1deg | 69k / 28 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | Evaluate pre-lag over throttle | prelag eval: hinge-axis preset fails; split throttle-invariant -> pitch preset works | 31k / 13 calls | green: yes |
+| 2026-11-20 | sonnet-5-5 | lean | 7in steelx realisation with pitch preset | 7in steelx v2: split solved (<=0.35deg), cr 0.36/0.17/0.085 but resonance (pitch-antisym+hub ~1/rev) binds; KILL v2 | 69k / 36 calls | green: yes |
