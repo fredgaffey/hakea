@@ -22,14 +22,14 @@ sys.path.insert(0, str(HERE.parent))
 RES, FIG, DES = HERE / "results", HERE / "figures", HERE / "designs"
 
 CONCEPTS = ["tpu_monolithic", "tpu_rod", "tpu_cf_skin", "cf_flexure", "cf_flexure_sym", "tpu_split",
-            "tpu95_split"]
+            "tpu95_split", "torsion_bar"]
 LABEL = {"tpu_monolithic": "TPU monolithic", "tpu_rod": "TPU + CF rod inserts", "tpu_cf_skin": "TPU core + CF skin",
          "cf_flexure": "PA6-CF crossed plates", "cf_flexure_sym": "PA6-CF crossed plates, symmetric",
-         "tpu_split": "TPU-64D plate + radial CF rod", "tpu95_split": "TPU-95A plate + radial CF rod"}
+         "tpu_split": "TPU-64D plate + radial CF rod", "tpu95_split": "TPU-95A plate + radial CF rod", "torsion_bar": "CF torsion bar + TPU plate + CF strap"}
 COLOR = {"tpu_monolithic": "#2a78d6", "tpu_rod": "#eb6834", "tpu_cf_skin": "#1baf7a",
-         "cf_flexure": "#eda100", "cf_flexure_sym": "#e87ba4", "tpu_split": "#008300", "tpu95_split": "#6250d6"}
+         "cf_flexure": "#eda100", "cf_flexure_sym": "#e87ba4", "tpu_split": "#008300", "tpu95_split": "#6250d6", "torsion_bar": "#e34948"}
 MARK = {"tpu_monolithic": "o", "tpu_rod": "s", "tpu_cf_skin": "^", "cf_flexure": "D", "cf_flexure_sym": "v",
-        "tpu_split": "P", "tpu95_split": "X"}
+        "tpu_split": "P", "tpu95_split": "X", "torsion_bar": "*"}
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 SIZES = [4, 5, 7, 10, 12]
 CHECKS = ["static_stress", "interlayer", "creep_strain", "fatigue_strain", "fatigue_stress",
@@ -56,18 +56,49 @@ def load_ideal() -> list[dict]:
     return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
 
 
+def read_gz_tolerant(path: Path) -> str:
+    """Concatenated gzip members, tolerating a truncated/corrupt member (a run killed
+    mid-write, then appended to): decode in chunks, keep what decoded before an error,
+    resume at the next gzip header."""
+    import zlib
+    raw = path.read_bytes()
+    out, pos, CH = [], 0, 1 << 14
+    while pos < len(raw):
+        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        p = pos
+        nxt_start = None
+        try:
+            while p < len(raw):
+                chunk = raw[p:p + CH]
+                out.append(d.decompress(chunk).decode("utf-8", "replace"))
+                end = p + len(chunk)
+                if d.eof:
+                    nxt_start = end - len(d.unused_data)
+                    break
+                p = end
+        except zlib.error:
+            out.append("\n")
+            nxt = raw.find(b"\x1f\x8b\x08", p + 1)
+            if nxt < 0:
+                break
+            pos = nxt
+            continue
+        if nxt_start is None:
+            break
+        pos = nxt_start
+    return "".join(out)
+
+
 def load_evals():
     p = RES / "evals.jsonl.gz"
     out = []
-    try:
-        with gzip.open(p, "rt") as fh:
-            for line in fh:
-                try:
-                    out.append(json.loads(line))
-                except json.JSONDecodeError:
-                    break
-    except EOFError:
-        pass
+    if not p.exists():
+        return out
+    for line in read_gz_tolerant(p).splitlines():
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
     return out
 
 

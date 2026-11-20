@@ -1,0 +1,216 @@
+{
+ "name": "7in_coax_cf_flexure_sym",
+ "layout": "coaxial",
+ "coaxial": {
+  "spacing_frac": 0.25,
+  "lower_blade": null,
+  "lower_flexure": null,
+  "lower_motor": null,
+  "lower_collective_offset_deg": 0.0,
+  "trim": "torque_balance",
+  "lower_rpm": null,
+  "lower_torque_mod_frac": 4.298051520203853,
+  "pulse_phase_offset_deg": 0.0
+ },
+ "blade": {
+  "diameter_in": 7.0,
+  "n_blades": 2,
+  "root_cutout_frac": 0.22,
+  "airfoil": {
+   "kind": "naca4",
+   "naca": "4412",
+   "coords": null
+  },
+  "stations": [
+   {
+    "r_frac": 0.22,
+    "chord": 0.02432304,
+    "twist_deg": 36.610459665965216,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.2909090909090909,
+    "chord": 0.023566581818181817,
+    "twist_deg": 30.416147479343643,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.3618181818181818,
+    "chord": 0.022810123636363634,
+    "twist_deg": 26.348529914830475,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.43272727272727274,
+    "chord": 0.022053665454545453,
+    "twist_deg": 23.499275376500837,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.5036363636363637,
+    "chord": 0.02129720727272727,
+    "twist_deg": 21.401818687378498,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.5745454545454546,
+    "chord": 0.02054074909090909,
+    "twist_deg": 19.79724813072375,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.6454545454545454,
+    "chord": 0.019784290909090906,
+    "twist_deg": 18.531927883734063,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.7163636363636363,
+    "chord": 0.019027832727272726,
+    "twist_deg": 17.509479217552887,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.7872727272727272,
+    "chord": 0.018271374545454543,
+    "twist_deg": 16.666598655286343,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.8581818181818182,
+    "chord": 0.017514916363636363,
+    "twist_deg": 15.960085703275677,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 0.9290909090909091,
+    "chord": 0.01675845818181818,
+    "twist_deg": 15.359494638280257,
+    "thickness_frac": null,
+    "layup": null
+   },
+   {
+    "r_frac": 1.0,
+    "chord": 0.016002,
+    "twist_deg": 14.84277341263094,
+    "thickness_frac": null,
+    "layup": null
+   }
+  ],
+  "layup": {
+   "kind": "solid",
+   "material": "pa6_cf",
+   "skin_material": null,
+   "skin_thickness": 0.0,
+   "insert_material": null,
+   "insert_diameter": 0.0,
+   "insert_positions": []
+  },
+  "orientation": {
+   "build_dir": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "raster_dir": [
+    1.0,
+    0.0,
+    0.0
+   ]
+  },
+  "elastic_axis_chord_frac": 0.4348243
+ },
+ "flexure": {
+  "topology": "skewed_cross_blade_sym",
+  "skew_deg": 59.6526197,
+  "hinge_radius": 0.0206505,
+  "length": 0.0052308,
+  "thickness": 0.0023286,
+  "width": 0.0121535,
+  "cross_angle_deg": 51.7435405,
+  "bar_diameter": 0.0015,
+  "bar_material": "cf_rod_pultruded",
+  "bar_length": null,
+  "bar_with_plate": true,
+  "cross_gap": 0.0016955,
+  "taper": 1.0,
+  "twist_deg": 0.0,
+  "layup": {
+   "kind": "solid",
+   "material": "pa6_cf",
+   "skin_material": null,
+   "skin_thickness": 0.0,
+   "insert_material": null,
+   "insert_diameter": 0.0,
+   "insert_positions": []
+  },
+  "orientation": {
+   "build_dir": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "raster_dir": [
+    1.0,
+    0.0,
+    0.0
+   ]
+  },
+  "tension_member": null,
+  "tension_rod_diameter": 0.0,
+  "tension_rod_material": "cf_rod_pultruded",
+  "members": [],
+  "hub_radius": 0.0084
+ },
+ "motor": {
+  "name": "2806.5_1100kv_6s",
+  "kv": 1100.0,
+  "R": 0.1,
+  "J_rotor": 6.986215172187064e-06,
+  "J_hub": 5.487999999999998e-06,
+  "supply_V": 24.0,
+  "max_current": 50.0,
+  "torque_bandwidth_hz": 2000.0,
+  "L": 4.4479338842975216e-05,
+  "Rb": 0.043,
+  "b": 7.4e-06,
+  "T0": 1.3e-06,
+  "voltage_gain": 1.04,
+  "poles": 14,
+  "duty_slew_max": 2550.0
+ },
+ "op": {
+  "vehicle_mass": 1.143,
+  "rpm": null,
+  "collective_deg": 0.0,
+  "torque_mod_frac": 4.188890074447499,
+  "drive": "duty",
+  "duty_mod_amp": null,
+  "rho": 1.225,
+  "temperature_C": 25.0,
+  "rpm_grid": [],
+  "thrust_share": null,
+  "extra_inflow": null
+ },
+ "analysis": {
+  "n_blade_elements": 16,
+  "n_flexure_elements": 6,
+  "aero": "theodorsen",
+  "dynamic_inflow": true,
+  "coriolis": true,
+  "nonlinear_static": true,
+  "n_modes": 8,
+  "fatigue_cycles": 10000000.0
+ },
+ "notes": "preset: cf_flexure, mass \u221d D^1.5, hover blade law; flexure dimensions are scaled placeholders (structures to tune); coaxial pair, spacing 0.25R, mass \u00d71.15; study: 1/rev duty pulse at 0.95\u00d7 motor capability (DC-equivalent), AM32 max_ramp 255 (duty_slew_max 2550/s)"
+}
