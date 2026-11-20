@@ -28,6 +28,10 @@ def variants(design, thrust_factors=THRUST_FACTORS, perturb=None):
             d = design
             if p:
                 d = set_design(d, {k: float(get_path(d, k)) * m for k, m in p.items()})
+            if d.flexure.pre_lag_deg == "auto" and d.flexure.pre_lag_ref_mass is None:
+                # pre-lag is built-in geometry: solve it once at the nominal thrust, not per point
+                d = d.model_copy(update=dict(flexure=d.flexure.model_copy(
+                    update=dict(pre_lag_ref_mass=design.op.vehicle_mass))))
             d = d.model_copy(update=dict(op=d.op.model_copy(
                 update=dict(vehicle_mass=design.op.vehicle_mass * f, rpm=None,
                             pulse_capability_margin=PULSE_MARGIN))))

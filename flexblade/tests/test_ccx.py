@@ -155,3 +155,21 @@ def test_design_root_stiffness_smoke(tmp_path):
     assert np.all(np.linalg.eigvalsh(K) > 0)
     assert 1.5 < out["k_hinge_Nm_rad"] < 6.0       # N m/rad (ccx: 2.99 since the PA6-CF hub fitting, E02/E08)
     assert out["k_hinge_Nm_rad"] < min(np.diag(K)[3:])
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("size", [5, 7])
+def test_steelx_strips_beam_vs_ccx(tmp_path, size):
+    """Crossed spring-steel shim cross-spring (tt_strap_steelx): hex20 (C3D20R, 2 elements through
+    the 0.10-0.13 mm shim) strips, hub faces fixed / blade faces rigid, vs the beam model
+    (rotor.flexure_only_model, strap + axial release removed) at the hinge point."""
+    from pathlib import Path
+    from flexblade.schema import Design
+    f = Path(__file__).parents[1] / "study" / "designs" / f"{size}in_tt_strap_steelx_hand.json"
+    r = ccx.compare_strip_flexure(Design.model_validate_json(f.read_text()), tmp_path)
+    q = r["ratio"]
+    assert 0.8 < q["k_hinge"] < 1.2                      # hinge bending about the axis
+    for k in ("kx", "ky", "kz"):
+        assert 0.8 < q[k] < 1.25, (k, q)
+    assert 0.7 < q["k_cross"] < 1.4 and 0.7 < q["k_flap"] < 1.4, q   # 5": ~1.30 (plate/clamp effect)
+    assert r["axis_err_deg"] < 1.0

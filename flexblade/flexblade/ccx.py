@@ -265,9 +265,14 @@ def write_inp_model(model: Model, workdir, case: str = "static", rpm: Optional[f
     out.append("")
     # elements by set
     for sname, si in model.sets.items():
-        out.append(f"*ELEMENT, TYPE=C3D10, ELSET={sname}")
+        out.append(f"*ELEMENT, TYPE={model.meta.get('etype', 'C3D10')}, ELSET={sname}")
         for e in si.elems:
-            out.append(f"{e+1}, " + ", ".join(str(n + 1) for n in model.elems[e]))
+            ids = [e + 1] + [int(n) + 1 for n in model.elems[e]]
+            if len(ids) <= 16:
+                out.append(", ".join(map(str, ids)))
+            else:      # ccx: max 16 entries per line; continue after a trailing comma (hex20)
+                out.append(", ".join(map(str, ids[:16])) + ",")
+                out.append(", ".join(map(str, ids[16:])))
     out.append("*ELSET, ELSET=Eall")
     for sname in model.sets:
         out.append(sname)
@@ -679,3 +684,95 @@ def check(design: Design, rpm: Optional[float] = None, workdir=None, mesh_scale:
         out["K_rot_eig"] = np.linalg.eigvalsh(K[3:, 3:]).tolist()
     out["timings_s"] = tm
     return out
+
+
+# =========================================================================== thin-strip flexure (hex20)
+
+# ccx C3D20(R) node order: 8 corners (bottom ccw, top ccw), bottom/top mid-edges, vertical mid-edges
+_HEX20 = [(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (0, 0, 2), (2, 0, 2), (2, 2, 2), (0, 2, 2),
+          (1, 0, 0), (2, 1, 0), (1, 2, 0), (0, 1, 0), (1, 0, 2), (2, 1, 2), (1, 2, 2), (0, 1, 2),
+          (0, 0, 1), (2, 0, 1), (2, 2, 1), (0, 2, 1)]
+
+
+def strip_flexure_model(members, material: M.Material, nl: int = 20, nw: int = 16, nt: int = 2,
+                        hub_end: int = 0) -> Model:
+    """Hex20 (C3D20R) mesh of rectangular flexure strips, `nt` elements through the thickness.
+
+    members: geometry.FlexureMember list (metres; only rect members are meshed), p0 = hub end,
+    p1 = blade end. Node sets FIXHUB (all nodes of the hub-end faces) and BLADESIDE (blade-end
+    faces; rigid body in the stiffness run) -- the printed fittings are idealised as rigid.
+    Mesh is built directly (no gmsh): a tet mesh with >=2 elements through a 0.1 mm shim over
+    8x8 mm is ~10^5 tets per strip, a structured hex20 grid is 640 elements.
+    """
+    from . import geometry as G
+    nodes, elems, hub, blade = [], [], [], []
+    for m in members:
+        if m.shape != "rect" or m.kind == "wire":
+            continue
+        p0, p1, L, t, w, nrm = G.member_frame(m)
+        p0, p1 = p0 * 1e3, p1 * 1e3
+        Lm, wid, th = L * 1e3, m.width * 1e3, m.thickness * 1e3
+        o = p0 - w * wid / 2 - nrm * th / 2
+        key: dict = {}
+
+        def nid(i, j, k):
+            if (i, j, k) not in key:
+                key[(i, j, k)] = len(nodes)
+                nodes.append(o + t * Lm * i / (2 * nl) + w * wid * j / (2 * nw) + nrm * th * k / (2 * nt))
+                if i == 0:
+                    hub.append(key[(i, j, k)])
+                if i == 2 * nl:
+                    blade.append(key[(i, j, k)])
+            return key[(i, j, k)]
+        for a in range(nl):
+            for b in range(nw):
+                for c in range(nt):
+                    elems.append([nid(2 * a + di, 2 * b + dj, 2 * c + dk) for di, dj, dk in _HEX20])
+    mod = Model(np.array(nodes), np.array(elems), {"strips": SetInfo(material, None, np.arange(len(elems)))})
+    mod.nsets["FIXHUB"] = np.unique(hub)
+    mod.nsets["BLADESIDE"] = np.unique(blade)
+    mod.meta["etype"] = "C3D20R"
+    return mod
+
+
+def strip_flexure_K(members, material, point_mm, workdir, **mesh_kw) -> np.ndarray:
+    """6x6 ccx stiffness (SI, [ux uy uz rx ry rz]) of strip members at `point_mm`: hub faces
+    fixed, blade faces rigid-body-loaded at the point."""
+    model = strip_flexure_model(members, material, **mesh_kw)
+    write_inp_model(model, workdir, "root_stiffness", fixed=[("FIXHUB", 1, 3)],
+                    rigid=dict(nset="BLADESIDE", ref=tuple(point_mm)))
+    return stiffness_from_run(run(workdir, threads=2))
+
+
+def compare_strip_flexure(design: Design, workdir, **mesh_kw) -> dict:
+    """ccx (hex20 strips only, steel shim, no strap) vs rotor.flexure_only_model (beam, same strips, unloaded)
+    at the hinge point. Rotational terms are 1/compliance about the hinge-frame axes
+    (a = hinge axis, s = in the x-z plane perpendicular to a, y = tangential)."""
+    from . import geometry as G, rotor as R
+    members, (hp, ax), _ = G.get_members(design)
+    members = [m for m in members if m.kind != "wire" and m.layup.material != "aramid_yarn"]
+    mat = M.get_material(members[0].layup.material)
+    Kc = strip_flexure_K(members, mat, np.asarray(hp) * 1e3, workdir, **mesh_kw)
+    d2 = design.model_copy(deep=True)
+    d2.flexure.strap_strands = 0          # custom members are re-strapped by fact otherwise
+    d2.flexure.axial_release = False      # (radial slider at the blade end: kx~0 by design)
+    d2.analysis.member_anchorage = "none"    # rigid clamps, as in the ccx model
+    Kb = R.flexure_only_model(d2, members).stiffness_at(np.asarray(hp, float))
+    a = np.asarray(ax, float) / np.linalg.norm(ax)
+    s = np.cross([0.0, 1.0, 0.0], a)
+    s /= np.linalg.norm(s)
+    y = np.array([0.0, 1.0, 0.0])
+
+    def terms(K):
+        C = np.linalg.inv(K)
+        Cr = C[3:, 3:]
+        w, v = np.linalg.eigh(Cr)
+        ev = v[:, -1] * np.sign(v[:, -1] @ a)
+        return dict(k_hinge=1 / (a @ Cr @ a), k_cross=1 / (s @ Cr @ s), k_flap=1 / (y @ Cr @ y),
+                    kx=K[0, 0], ky=K[1, 1], kz=K[2, 2], axis=ev)
+    tc, tb = terms(Kc), terms(Kb)
+    ratio = {k: tc[k] / tb[k] if abs(tb[k]) > 1e-3 else float("nan") for k in tc if k != "axis"}
+    ang = lambda u, v: float(np.degrees(np.arccos(min(1.0, abs(u @ v)))))
+    return dict(ccx=tc, beam=tb, ratio=ratio, axis_err_deg=ang(tc["axis"], tb["axis"]),
+                axis_design_err_deg=dict(ccx=ang(tc["axis"], a), beam=ang(tb["axis"], a)),
+                Kccx=Kc, Kbeam=Kb, n_nodes=None)

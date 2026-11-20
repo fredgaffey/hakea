@@ -151,6 +151,71 @@ def _blade_section(design: Design, r: float, st_r, stations, coll: float) -> tup
     return sec, chord, twist, layup
 
 
+def pre_lag_rad(design: Design) -> float:
+    """flexure.pre_lag_deg as rad ('auto' unresolved → 0; resolve with resolve_pre_lag)."""
+    pl = design.flexure.pre_lag_deg
+    return 0.0 if pl == "auto" else float(np.radians(pl))
+
+
+def _rot_axis(a: np.ndarray, ang: float) -> np.ndarray:
+    """Rotation matrix by ang about unit axis a (Rodrigues)."""
+    S = skew(unit(a))
+    return np.eye(3) + np.sin(ang) * S + (1 - np.cos(ang)) * (S @ S)
+
+
+def preset_pitch(model: RotorModel) -> np.ndarray:
+    """(B,) built-in pitch of each blade from the pre-lag rotation (blade-local x component)."""
+    psi = pre_lag_rad(model.design)
+    return np.array([psi * float((bi.Rk.T @ bi.hinge_dir)[0]) for bi in model.blades])
+
+
+def split_and_lag(model: RotorModel, ss) -> tuple[float, float]:
+    """(blade-1 − blade-2 total pitch at 0.75R incl. preset, rad; mean elastic hinge rotation
+    about each blade's own hinge axis at the blade root (lag-positive), rad)."""
+    i75 = np.argmin(np.abs(model.r_aero - 0.75 * model.R))
+    th = ss.blade_pitch_el[:, i75] + preset_pitch(model)
+    lag = np.mean([float(_logm(ss.state.R[bi.master]) @ bi.hinge_dir) for bi in model.blades])
+    return float(th[0] - th[1]), float(lag)
+
+
+def resolve_pre_lag(design: Design, passes: int = 3, info: dict | None = None) -> Design:
+    """flexure.pre_lag_deg == 'auto' → numeric: trim at the reference op (pre_lag_ref_mass),
+    first step pre-lag = −(pre-lag + mean elastic hinge lag), then secant on the total pitch
+    split. The secant slope d(split)/d(pre-lag) = 2 sin(s)·k/(k + K_cf) (info['slope'])."""
+    f = design.flexure
+    if f.pre_lag_deg != "auto":
+        return design
+    ref = design
+    if f.pre_lag_ref_mass is not None:
+        ref = design.model_copy(update=dict(op=design.op.model_copy(
+            update=dict(vehicle_mass=f.pre_lag_ref_mass))))
+
+    def run(psi_deg):
+        d = ref.model_copy(update=dict(flexure=ref.flexure.model_copy(update=dict(pre_lag_deg=psi_deg))))
+        m = build_model(d)
+        ss = static_trim(m, make_aero(m))
+        return split_and_lag(m, ss)
+
+    xs, gs = [0.0], []
+    sp, lag = run(0.0)
+    gs.append(sp)
+    x = float(np.degrees(-lag))
+    for _ in range(max(1, passes - 1)):
+        x = float(np.clip(x, -15.0, 15.0))
+        sp, lag = run(x)
+        xs.append(x)
+        gs.append(sp)
+        if abs(np.degrees(sp)) < 0.02 or gs[-1] == gs[-2]:
+            break
+        x = xs[-1] - gs[-1] * (xs[-1] - xs[-2]) / (gs[-1] - gs[-2])
+    j = int(np.argmin(np.abs(gs)))
+    if info is not None:
+        info.update(pre_lag_deg=xs, split_deg=list(np.degrees(gs)),
+                    slope=float((gs[1] - gs[0]) / np.radians(xs[1] - xs[0])) if len(xs) > 1 and xs[1] != xs[0] else float("nan"))
+    psi = xs[j] if len(xs) == len(gs) else xs[-1]
+    return design.model_copy(update=dict(flexure=f.model_copy(update=dict(pre_lag_deg=float(psi)))))
+
+
 def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     """Build the rotor FE model.
 
@@ -197,6 +262,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     st_twist = np.radians([s.twist_deg for s in stations]) + coll
 
     members1 = fact.generate_members(design) if ideal_hinge is None else []
+    pre_lag = pre_lag_rad(design)
     r_root = b.root_cutout_frac * R
     r_m = max(max(m.p0[0], m.p1[0]) for m in members1) if members1 else design.flexure.hinge_radius
     if r_m > r_root + 1e-9:
@@ -259,13 +325,18 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             mem_H.append(m.model_copy(update=dict(
                 p0=tuple(map(float, Rk @ np.asarray(m.p0))), p1=tuple(map(float, Rk @ np.asarray(m.p1))),
                 width_dir=tuple(map(float, Rk @ np.asarray(m.width_dir))))))
-        # blade chain nodes
-        chain = [fe.add_node(Rk @ np.array([r, 0.0, 0.0]), f"b{k}.r{r*1e3:.1f}") for r in r_chain]
+        # blade chain nodes (pre-lag: blade side rotated about this blade's own hinge axis)
+        H0k, ak = fact.hinge_axis(design, k)
+        av = ak if design.flexure.pre_lag_axis == "hinge" else np.array([ak[0], 0.0, 0.0])
+        Rp = _rot_axis(Rk @ av, pre_lag * float(np.linalg.norm(av)))
+        pk = Rk @ H0k
+        chain = [fe.add_node(pk + Rp @ (Rk @ np.array([r, 0.0, 0.0]) - pk), f"b{k}.r{r*1e3:.1f}")
+                 for r in r_chain]
         master = chain[0]
         blade_elems = []
         for i in range(len(r_chain) - 1):
             sec, chord, twist, layup = blade_secs[i]
-            e2 = Rk @ np.array([0.0, np.cos(twist), np.sin(twist)])
+            e2 = Rp @ Rk @ np.array([0.0, np.cos(twist), np.sin(twist)])
             kind = "shank" if i < n_sh else "blade"
             el = Element(chain[i], chain[i + 1], e2, [sec], material_fracs=_ea_fracs(sec, layup),
                          tag=f"b{k}.{kind}", kind=kind, blade=k)
@@ -387,9 +458,11 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     stiff = stiff_section(STIFF_FACTOR * max_EA, STIFF_FACTOR * max_EI, STIFF_FACTOR * max_GJ)
     merges: list[tuple[int, int]] = []
     for n0, n1, e2, tag, k in pending_stiff:
-        if e2 is None or np.linalg.norm(fe.X0[n1] - fe.X0[n0]) < 1e-9:
+        if np.linalg.norm(fe.X0[n1] - fe.X0[n0]) < 1e-9:
             merges.append((n0, n1))
             continue
+        if e2 is None:      # coincident before the pre-lag rotation moved the blade side
+            e2 = np.array([0.0, 0.0, 1.0])
         fe.add_element(Element(n0, n1, e2, [stiff], tag=tag, kind="rigid", blade=k, massless=True))
     if merges:
         _merge_nodes(fe, merges, blades)
@@ -1514,6 +1587,9 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
     t = {}
     t0 = time.perf_counter()
     res = Results(design_hash=design.hash())
+    pl_info: dict = {}
+    if design.flexure.pre_lag_deg == "auto":
+        design = resolve_pre_lag(design, info=pl_info)
     model = build_model(design)
     t["build"] = time.perf_counter() - t0
     t1 = time.perf_counter()
@@ -1530,9 +1606,12 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
     res.trim = _trim_result(model, ss)
     summary = dict(rpm=ss.rpm, Omega=ss.Omega)
     if ss.trim is not None and ss.blade_pitch_el is not None and len(model.blades) >= 2:
-        i75 = np.argmin(np.abs(model.r_aero - 0.75 * model.R))
-        dp = ss.blade_pitch_el[0, i75] - ss.blade_pitch_el[1, i75]
+        dp, lag = split_and_lag(model, ss)
         summary["trim_diff_pitch_deg"] = float(np.degrees(dp))
+        summary["pre_lag_deg"] = float(np.degrees(pre_lag_rad(design)))
+        summary["hinge_lag_el_deg"] = float(np.degrees(lag))
+        if pl_info.get("slope") is not None and np.isfinite(pl_info["slope"]):
+            summary["pre_lag_split_slope"] = pl_info["slope"]
         if abs(np.degrees(dp)) > 0.5:
             res.warnings.append(f"static blade-1 vs blade-2 elastic pitch differs by {np.degrees(dp):.2f}° at "
                                 "0.75R (drag lag × skew coupling): pre-set blade pitch to balance")
