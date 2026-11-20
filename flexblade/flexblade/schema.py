@@ -311,6 +311,19 @@ class Motor(_M):
                                                     "max_ramp 16 per 50 us tick of 2000 -> 160/s")
 
 
+class Airframe(_M):
+    """In-plane hub support (arm/airframe) seen by one rotor, from an arm tap test.
+    Placeholder defaults until measured on the vehicle."""
+    f_hz: float = Field(150.0, description="in-plane hub-translation mode frequency (x), Hz")
+    f_y_hz: Optional[float] = Field(None, description="frequency in y (along-arm), Hz; None = "
+                                    "isotropic (rotating-frame constant coefficients). Anisotropic "
+                                    "support with a 2-bladed rotor -> periodic -> Floquet")
+    zeta: float = Field(0.02, description="airframe mode damping ratio")
+    mass: Optional[float] = Field(None, description="effective in-plane modal mass at the hub, kg, "
+                                  "EXCLUDING the rotor (added from the FE model); None = 0.25 x "
+                                  "vehicle_mass")
+
+
 class OperatingPoint(_M):
     vehicle_mass: float = Field(0.6, description="kg; hover thrust = m g")
     rpm: Optional[float] = Field(None, description="None = trim rpm to hover thrust")
@@ -336,6 +349,8 @@ class OperatingPoint(_M):
     thrust_share: Optional[float] = Field(
         None, description="fraction of vehicle weight this rotor carries (set by coaxial trim); "
                           "None = 1")
+    airframe: Optional[Airframe] = Field(None, description="in-plane hub support for the "
+                                         "air/ground-resonance check; None = rigid hub")
     extra_inflow: Optional[InflowProfile] = Field(
         None, description="imposed by the other rotor in a coaxial pair; set by coaxial.py")
 
@@ -349,6 +364,13 @@ class AnalysisOptions(_M):
     coriolis: bool = True
     nonlinear_static: bool = True
     n_modes: int = 8
+    stability: Literal["energy", "eig", "floquet"] = Field(
+        "eig", description="damping of the aeroelastic modes: energy = quotient estimate on the "
+        "undamped modes; eig = rotating-frame damped state-matrix eigenvalues (aero Ka/Ca, "
+        "Coriolis, structural loss) on a reduced modal basis; floquet = eig + Floquet monodromy "
+        "for the hub-coupled system with anisotropic op.airframe")
+    stability_basis: int = Field(20, description="modes in the reduced basis for stability")
+    min_damping: float = Field(0.005, description="aeroelastic_stability / air_resonance: min zeta")
     fatigue_cycles: float = 1.0e7
     member_anchorage: Literal["both", "hub", "none"] = Field(
         "both", description="flexure member ends: elastic punch-on-fitting anchorage springs "

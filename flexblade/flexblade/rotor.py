@@ -1031,12 +1031,11 @@ class ModeData:
     parts: list[dict]
 
 
-def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = None,
-          coriolis: bool = True, lin: Linear | None = None, n_basis: int = 40) -> ModeData:
-    fe = model.fe
-    lin = lin or linearize(model, ss, coriolis)
+def modal_basis(model: RotorModel, ss: StaticState, lin: Linear, n_basis: int = 40,
+                n_keep: int = 10) -> tuple[np.ndarray, np.ndarray]:
+    """Undamped real modal basis (λ = ω², Φ over lin.free) of the rotating-frame system."""
     f = lin.free
-    n_modes = n_modes or model.design.analysis.n_modes
+    n_modes = n_keep
     f_ref = max(ss.Omega / (2 * np.pi), 1.0)
     K = K_complex(model, lin, f_ref)
     Kr = np.real(K)[np.ix_(f, f)]
@@ -1058,6 +1057,18 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
     ok[: min(len(ok), n_modes + 2)] = True
     lam, Phi = lam[ok], Phi[:, ok]
     nb = len(lam)
+    return lam, Phi
+
+
+def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = None,
+          coriolis: bool = True, lin: Linear | None = None, n_basis: int = 40) -> ModeData:
+    fe = model.fe
+    lin = lin or linearize(model, ss, coriolis)
+    f = lin.free
+    n_modes = n_modes or model.design.analysis.n_modes
+    lam, Phi = modal_basis(model, ss, lin, n_basis, n_modes)
+    nb = len(lam)
+    w_ref = max(ss.Omega, 2 * np.pi * 10.0)
     G = lin.G[np.ix_(f, f)]
     Gr = Phi.T @ G @ Phi
     # scaled state space  y = [q; q̇/w_ref]:  ẏ = w_ref [[0, I], [−Λ/w², −Gr/w]] y
@@ -1580,6 +1591,64 @@ def _pick(md: ModeData, key: str, Omega: float) -> float:
     return float("nan")
 
 
+def _zeta_check(name: str, z: float, zmin: float, note: str) -> Check:
+    util = 1e3 if not (np.isfinite(z) and z > 0) else min(1e3, zmin / z)
+    return Check(name=name, member="stability", value=float(z) if np.isfinite(z) else -1.0,
+                 allowable=zmin, utilisation=float(util), note=note)
+
+
+def _stability(model: RotorModel, ss: StaticState, lin: Linear, aero, md: ModeData, res,
+               summary: dict) -> list[Check]:
+    """Mode damping per analysis.stability (energy | eig | floquet), the 1P-proximity metrics
+    and the aeroelastic_stability / air_resonance checks (see stability.py)."""
+    from . import stability as stb
+    an = model.design.analysis
+    Om = ss.Omega
+    P = Om / (2 * np.pi)
+    fr = np.array(md.freqs_hz, float)
+    zt = np.array(md.damping, float)
+    if an.stability != "energy":
+        s, _, _ = stb.damped_modes(model, ss, lin, aero, fr, n_basis=an.stability_basis)
+        el = np.abs(s) > 0.05 * Om
+        fr = np.where(el, np.abs(s.imag) / (2 * np.pi), fr)
+        zt = np.where(el, stb.zeta_of(s), zt)
+        for m_, z_, f_ in zip(res.modes, zt, fr):
+            m_.participation["zeta_energy"] = float(m_.damping_ratio)
+            m_.damping_ratio, m_.freq_hz = float(z_), float(f_)
+    el = fr > 0.05 * P
+    out: list[Check] = []
+    if el.any():
+        i = int(np.argmin(np.where(el, zt, np.inf)))
+        summary.update(zeta_min=float(zt[i]), zeta_min_per_rev=float(fr[i] / P))
+        out.append(_zeta_check("aeroelastic_stability", float(zt[i]), an.min_damping,
+                               f"min damping ({an.stability}) {zt[i]:.4f} of '{md.labels[i]}' at "
+                               f"{fr[i] / P:.3f}/rev"))
+        j = int(np.argmin(np.where(el, np.abs(fr / P - 1.0), np.inf)))
+        pj = float(fr[j] / P)
+        summary.update(near_1p_per_rev=pj, near_1p_zeta=float(zt[j]),
+                       near_1p_amp=stb.amp_1p(pj, float(zt[j])),
+                       near_1p_margin_eff=max(abs(pj - 1), stb.margin_1p_eff(pj, float(zt[j]))))
+        for key in ("lag", "pitch"):
+            for k, lab in enumerate(md.labels):
+                if lab.startswith(key) and el[k]:
+                    summary[f"{key}_zeta"] = float(zt[k])
+                    break
+    af = model.design.op.airframe
+    if af is not None and an.stability != "energy":
+        fl = None if an.stability == "floquet" else False
+        za, sa_, _, afm = stb.air_resonance(model, ss, lin, aero, af, an.stability_basis, floquet=fl)
+        iso = stb.isotropic(afm)
+        how = "LTI (isotropic support, exact)" if iso else ("Floquet" if fl is None else
+                                                            "LTI on the averaged support (approx.)")
+        summary.update(air_resonance_zeta=float(za))
+        fz = abs(sa_.imag) / (2 * np.pi) if sa_ is not None else float("nan")
+        out.append(_zeta_check("air_resonance", float(za), an.min_damping,
+                               f"rotor + in-plane hub support f={af.f_hz:g}/{af.f_y_hz or af.f_hz:g} Hz "
+                               f"zeta_af={af.zeta:g}: min zeta {za:.4f} at {fz:.1f} Hz (rotating "
+                               f"frame), {how}"))
+    return out
+
+
 HDT_MARGIN_C = 10.0   # part temperature must stay below HDT - margin
 
 
@@ -1658,6 +1727,14 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
         summary.update(lag_freq_per_rev=_pick(md, "lag", Om), flap_freq_per_rev=_pick(md, "flap", Om),
                        pitch_freq_per_rev=_pick(md, "pitch", Om))
         t["modes"] = time.perf_counter() - t1
+    stab_checks: list[Check] = []
+    if md is not None:
+        t1 = time.perf_counter()
+        try:
+            stab_checks = _stability(model, ss, lin, aero, md, res, summary)
+        except Exception as ex:   # pragma: no cover
+            res.warnings.append(f"stability analysis failed: {ex}")
+        t["stability"] = time.perf_counter() - t1
     if "campbell" in what:
         t1 = time.perf_counter()
         grid = design.op.rpm_grid or list(np.linspace(0.0, 1.2 * ss.rpm, 7))
@@ -1687,7 +1764,7 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
         t["harmonic"] = time.perf_counter() - t1
     if "checks" in what:
         t1 = time.perf_counter()
-        res.checks = checks(model, ss, hd)
+        res.checks = checks(model, ss, hd) + stab_checks
         if design.print_setup is not None:
             from .printsetup import print_checks
             _pc, _ps, _pw = print_checks(design)
@@ -1703,7 +1780,8 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
         if res.checks:
             worst = max(res.checks, key=lambda c: c.utilisation)
             summary["max_utilisation"] = float(worst.utilisation)
-            struct = [c for c in res.checks if c.member not in ("esc", "motor") and not c.member.startswith("print:")]
+            struct = [c for c in res.checks if c.member not in ("esc", "motor", "stability")
+                      and not c.member.startswith("print:")]
             if struct:
                 summary["max_structural_utilisation"] = float(max(c.utilisation for c in struct))
             for c in res.checks:
