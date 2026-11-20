@@ -44,7 +44,9 @@ HAND = {
     7.0: {"flexure.thickness": 1.0e-4, "flexure.width": 0.008, "flexure.length": 0.010,
           "flexure.strap_strand_diameter": 0.0009, "flexure.strap_length": 0.004},
     10.0: {"flexure.thickness": 8.0e-5, "flexure.width": 0.008, "flexure.length": 0.010,
-           "flexure.strap_strand_diameter": 0.0012, "flexure.strap_length": 0.004},
+           "flexure.strap_strand_diameter": 0.0016, "flexure.strap_length": 0.012,
+           # v2: CG set for ~zero static hinge lag (not on the strap line), see notes
+           "blade.elastic_axis_chord_frac": 0.415},
 }
 COMMON = {"flexure.cross_angle_deg": 90.0, "flexure.cross_gap": 0.0015, "flexure.taper": 1.0,
           "flexure.strap_strands": 1, "flexure.strap_radius": 0.0,
@@ -68,7 +70,7 @@ def design(D: float, card: dict | None = None, extra: dict | None = None,
         vals.setdefault("flexure.hinge_radius", float(card["x"]["flexure.hinge_radius"]))
     vals["flexure.strap_pin_diameter"] = max(0.003, 4 * vals["flexure.strap_strand_diameter"])
     d = SE.apply_strap(base, vals, f"{int(D)}in_tt_strap_steelx_hand", topology="skewed_cross_blade")
-    if balance and "blade.elastic_axis_chord_frac" not in (extra or {}):
+    if balance and "blade.elastic_axis_chord_frac" not in vals:
         d = cg_balance(d)
     return d
 
@@ -204,7 +206,9 @@ def loaded_state(d: Design) -> dict:
 
 def evaluate(D: float, cards: Path = CARDS, robust: bool = False, extra: dict | None = None) -> tuple[Design, dict]:
     card = card_for(D, cards)
-    d = design(D, card, extra)
+    # resolve pre_lag 'auto' once (hardware value) so the strip / loaded-state checks see the
+    # same built geometry as api.evaluate ('auto' unresolved would build it at 0)
+    d = rotor.resolve_pre_lag(design(D, card, extra))
     out = SE.evaluate(d, card, robust)
     r = SE.api.evaluate(d).model_dump(mode="json")
     ls = loaded_state(d)
