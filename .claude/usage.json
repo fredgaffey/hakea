@@ -1,0 +1,21 @@
+{
+  "log": "docs/AGENT-LOG.md",
+  "ledger": "docs/usage/agents.jsonl",
+  "testsDir": "tests",
+  "metric": "total",
+  "outlierMultiple": 4,
+  "agentTypes": null,
+  "extraPaths": [],
+  "includeWorktrees": true,
+  "budget": {
+    "calls": 40,
+    "tokens": 100000,
+    "metric": "ctxEnd",
+    "stopAt": 0.8
+  },
+  "logRow": {
+    "metric": "ctxEnd",
+    "requireGreen": true
+  },
+  "prices": null
+}
