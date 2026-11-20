@@ -1357,6 +1357,23 @@ def evaluate(design: Design, what: list[str] | None = None) -> Results:
     t["linearize"] = time.perf_counter() - t1
     try:
         res.flexure_stiffness = flexure_stiffness(model, ss).tolist()
+        # FACT intent check: is the softest rotation of the root really about the intended
+        # skewed hinge axis? (rods across the hinge can turn it into a twist about another axis)
+        try:
+            _a = np.asarray(fact.hinge_axis(design)[1], float)
+            _C = np.linalg.inv(np.asarray(res.flexure_stiffness, float))[3:, 3:]
+            _w, _v = np.linalg.eigh(0.5 * (_C + _C.T))
+            _soft = _v[:, int(np.argmax(_w))]
+            _err = float(np.degrees(np.arccos(min(1.0, abs(float(_soft @ _a))))))
+            res.summary["hinge_axis_err_deg"] = _err
+            res.summary["hinge_k_free"] = float(1.0 / (_a @ _C @ _a))
+            res.summary["hinge_k_ratio"] = float((1.0 / (_a @ _C @ _a)) * float(np.max(_w)))
+            if _err > 20.0 and design.flexure.topology not in ("rigid",):
+                res.warnings.append(f"flexure softest rotation is {_err:.0f}° from the intended hinge axis "
+                                    f"(k about intended axis {res.summary['hinge_k_ratio']:.1f}× the softest): "
+                                    "mechanism differs from the FACT design intent")
+        except Exception:   # noqa: BLE001
+            pass
     except Exception as ex:   # pragma: no cover
         res.warnings.append(f"flexure stiffness failed: {ex}")
     md = None
@@ -1415,7 +1432,7 @@ def evaluate(design: Design, what: list[str] | None = None) -> Results:
         summary.update(thrust=float(ss.trim.T), torque=float(ss.trim.Q))
     summary.update(coning_deg=res.trim.coning_deg, radial_stretch=res.trim.radial_stretch,
                    root_cf=res.trim.centrifugal_force_root, elastic_pitch_075_deg=res.trim.root_pitch_change_deg)
-    res.summary = {k: float(v) for k, v in summary.items()}
+    res.summary = {**res.summary, **{k: float(v) for k, v in summary.items()}}
     t["total"] = time.perf_counter() - t0
     res.timings_s = t
     return res
