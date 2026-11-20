@@ -307,6 +307,19 @@ def get_material(name: str) -> Material:
         raise KeyError(f"unknown material {name!r}; known: {sorted(LIBRARY)}") from None
 
 
+def flexure_indices(m: Material) -> dict:
+    """Material indices for a strain-limited flexure (no simulation):
+    fatigue_strain = σ_f/E (allowable 1/rev strain amplitude at 1e7 cycles),
+    creep_strain   = sustained-strain allowable,
+    fatigue_strain_per_rho = σ_f/E per (g/cm³) (strain capability per unit mass),
+    specific_stiffness = E1/ρ (blade, MPa·cm³/g), specific_strength = Xt/ρ (tension member)."""
+    eps_f = m.fatigue_strain_amp_allow
+    return dict(fatigue_strain=eps_f, creep_strain=m.creep_strain_allow,
+                fatigue_strain_per_rho=eps_f / (m.rho / 1000.0),
+                specific_stiffness=m.E1 / 1e6 / (m.rho / 1000.0),
+                specific_strength=m.Xt / 1e6 / (m.rho / 1000.0))
+
+
 def list_materials() -> list[dict]:
     """All registered materials. Real products carry brand/product/url/price/confidence;
     `group` and `cls` are set for every entry (GUI grouping, class filters)."""
@@ -316,7 +329,8 @@ def list_materials() -> list[dict]:
         if "@" in m.name:
             continue
         d = dict(name=m.name, rho=m.rho, E1=m.E1, E2=m.E2, E3=m.E3, Xt=m.Xt, Zt=m.Zt,
-                 loss_factor=m.loss_factor, elastomer=m.is_elastomer, source=m.source)
+                 loss_factor=m.loss_factor, elastomer=m.is_elastomer, source=m.source,
+                 **flexure_indices(m))
         meta = META.get(m.name)
         if meta:
             d.update(meta)

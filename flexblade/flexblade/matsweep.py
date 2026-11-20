@@ -197,8 +197,9 @@ def fitness(control_ratio: float, util: float, lag_margin: float | None,
     g = 1.0 if util <= 1 else 1.0 / util ** 2
     h = 1.0
     for m in (lag_margin, pitch_margin):
-        if m is not None:
-            h *= min(1.0, max(m, 0.0) / margin_ref)
+        # None = mode not identified by the modal labeller (very soft / mixed modes):
+        # treated as no margin, i.e. the design is not credited
+        h *= 0.0 if m is None else min(1.0, max(m, 0.0) / margin_ref)
     return float(abs(control_ratio) * g * h)
 
 

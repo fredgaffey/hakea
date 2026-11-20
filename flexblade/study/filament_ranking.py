@@ -53,6 +53,10 @@ STUDIES = [
     ("rod_10", "10in_tpu_rod", "insert", "inserts", "10\" TPU + rod — insert rod/wire"),
     ("cf_flex_5", "5in_cf_flexure", "body", RIGID, "5\" all-filament crossed flexure — rigid filament"),
     ("cf_flex_10", "10in_cf_flexure", "body", RIGID, "10\" all-filament crossed flexure — rigid filament"),
+    ("flex_only_5", "5in_cf_flexure", "flexure", "filaments",
+     "5\" crossed flexure — flexure material only (blade stays PA6-CF)"),
+    ("flex_only_10", "10in_cf_flexure", "flexure", "filaments",
+     "10\" crossed flexure — flexure material only (blade stays PA6-CF)"),
 ]
 N_SENS = 6
 
@@ -236,6 +240,7 @@ def write_report(recs, sens, baselines, top=12):
     A("| preset | torque_mod_frac | slot materials |\n|---|---|---|")
     for pre, b in baselines.items():
         A(f"| {pre} | {b['mod_frac']:.3f} | " + ", ".join(f"{k}: {'/'.join(v)}" for k, v in b["materials"].items() if v) + " |")
+    A(index_tables())
     studies = list(dict.fromkeys(r["study"] for r in recs))
     A("\n## Rankings per design\n")
     A("Columns: **fit** = fitness (higher better), **CR** = control_ratio (hub moment / (W·R)), "
@@ -296,6 +301,64 @@ def write_report(recs, sens, baselines, top=12):
     A(database_tables())
     (HERE / "FILAMENTS.md").write_text("\n".join(L) + "\n")
     print("wrote", HERE / "FILAMENTS.md")
+
+
+def index_tables(top: int = 25) -> str:
+    """Material indices (no simulation): the simulator's governing checks are flexure creep
+    strain and fatigue strain, i.e. strain-limited — rank flexure materials by σ_f/E first."""
+    from flexblade.materials import list_materials
+    ms = [m for m in list_materials() if not m.get("variant_of")]
+    L = ["\n## Material indices (no simulation)\n",
+         "The governing checks in every study are **creep strain and fatigue strain in the flexure** "
+         "(strain-limited, not strength-limited). For a flexure of given stiffness the usable rotation "
+         "scales with the allowable strain, so flexure materials are ranked by the fatigue strain "
+         "capability **ε_f = σ_f/E** (σ_f = fatigue strength at 1e7 cycles = fatigue_stress_ratio × Xt; "
+         "elastomers: hardness table / literature) and the sustained (creep) strain allowable **ε_c**, "
+         "then by ε_f per density. The blade wants specific stiffness E/ρ (frequency placement, low "
+         "centrifugal load per stiffness); a tension member wants specific strength σ/ρ and low creep.\n",
+         "Provenance: σ_f and ε_c are literature/class values unless a TDS gives fatigue data — see "
+         "`derived.fatigue_stress_ratio` / `derived.creep_strain_allow` per entry.\n"]
+
+    def nm(m):
+        n = m["name"] if m.get("brand") in (None, "generic") else f"{m['brand']} {m['product']}"
+        return f"[{n}]({m['url']})" if m.get("url") else f"{n} *(generic)*"
+
+    def table(title, rows, cols):
+        L.append(f"\n### {title}\n")
+        L.append("| # | material | class | " + " | ".join(c[0] for c in cols) + " | conf |")
+        L.append("|---|---|---|" + "---|" * len(cols) + "---|")
+        for i, m in enumerate(rows):
+            L.append(f"| {i+1} | {nm(m)} | {m.get('cls')} | " + " | ".join(c[1](m) for c in cols)
+                     + f" | {m.get('confidence', 'low')} |")
+
+    from flexblade.filament_db import INSERT_CLASSES
+    flex = [m for m in ms if m.get("cls") not in INSERT_CLASSES]
+    rig = [m for m in flex if not m["elastomer"]]
+    el = [m for m in flex if m["elastomer"]]
+    cols = [("ε_f = σ_f/E %", lambda m: f"{m['fatigue_strain']*100:.2f}"),
+            ("ε_c creep %", lambda m: f"{m['creep_strain']*100:.2f}"),
+            ("ε_f/ρ %·cm³/g", lambda m: f"{m['fatigue_strain_per_rho']*100:.2f}"),
+            ("E MPa", lambda m: f"{m['E1']/1e6:.4g}"), ("σ_t MPa", lambda m: f"{m['Xt']/1e6:.3g}"),
+            ("ρ", lambda m: f"{m['rho']:.0f}"), ("$/kg", lambda m: _f(m.get("usd_per_kg")))]
+    key = lambda m: (-min(m["fatigue_strain"], 10), -m["creep_strain"], -m["fatigue_strain_per_rho"])  # noqa: E731
+    table(f"Flexure — rigid filaments by ε_f, then ε_c (top {top})", sorted(rig, key=key)[:top], cols)
+    table("Flexure — elastomers (TPU/TPE) by ε_f, then ε_c", sorted(el, key=key), cols)
+    best = {}
+    for m in sorted(rig + el, key=key):
+        best.setdefault(m.get("cls"), m)
+    table("Flexure — best product per class", list(best.values()), cols)
+    cols_b = [("E/ρ MPa·cm³/g", lambda m: f"{m['specific_stiffness']:.4g}"),
+              ("σ/ρ MPa·cm³/g", lambda m: f"{m['specific_strength']:.3g}"),
+              ("ε_c creep %", lambda m: f"{m['creep_strain']*100:.2f}"),
+              ("E_z/E", lambda m: f"{m['E3']/m['E1']:.2f}"),
+              ("σ_z MPa", lambda m: f"{m['Zt']/1e6:.3g}"), ("$/kg", lambda m: _f(m.get("usd_per_kg")))]
+    table(f"Blade (rigid, stiffness-driven) — by E/ρ (top {top})",
+          sorted(rig, key=lambda m: -m["specific_stiffness"])[:top], cols_b)
+    ins = [m for m in ms if m.get("cls") in INSERT_CLASSES]
+    table("Tension member / insert — by σ/ρ",
+          sorted(ins + sorted(rig, key=lambda m: -m["specific_strength"])[:8],
+                 key=lambda m: -m["specific_strength"]), cols_b[:3] + cols[:1])
+    return "\n".join(L)
 
 
 def database_tables() -> str:
@@ -360,7 +423,8 @@ METHOD = """\
       F = CR · g(U) · h(m_lag) · h(m_pitch),   g(U) = 1 if U ≤ 1 else 1/U²,   h(m) = min(1, m / 0.15)
 
   i.e. control authority, kept only while every structural check passes, and penalised when a
-  lag or pitch mode is within 0.15/rev of 1P or 2P. *Feasible* = U ≤ 1 and both margins ≥ 0.15.
+  lag or pitch mode is within 0.15/rev of 1P or 2P (a mode the modal labeller cannot identify
+  — very soft or mixed — counts as zero margin). *Feasible* = U ≤ 1 and both margins ≥ 0.15.
   Because the presets' flexure dimensions are still placeholders, most candidates have U > 1;
   the 1/U² term then ranks them by how far they are from working.
 * **Sensitivity**: the top 6 of every table are re-run with E ×0.8 / ×1.2 and strengths ×0.8 / ×1.2

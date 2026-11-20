@@ -72,6 +72,7 @@ def test_rotor_mass_and_fitness(presets):
     assert fitness(0.01, 0.5, 0.5, 0.5) == pytest.approx(0.01)
     assert fitness(0.01, 2.0, 0.5, 0.5) == pytest.approx(0.0025)
     assert fitness(0.01, 0.5, 0.075, 0.5) == pytest.approx(0.005)
+    assert fitness(0.01, 0.5, None, 0.5) == 0.0
 
 
 def test_cli_resize_and_material_sweep(capfd, tmp_path):

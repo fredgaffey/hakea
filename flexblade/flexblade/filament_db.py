@@ -121,6 +121,7 @@ CLASSES: dict[str, dict[str, Any]] = {
     "pp": dict(_U, group="PP", rho=900, creep=0.01, fr=0.3, loss=0.05, fs=_PP_F, nu=0.4),
     "pp_gf": dict(_GF, group="PP", rho=1050, creep=0.005, loss=0.04, fs=_PP_F),
     "pp_cf": dict(_CF, group="PP", rho=1000, creep=0.004, loss=0.04, fs=_PP_F),
+    "pom": dict(_U, group="POM / acetal", rho=1410, creep=0.008, fr=0.35, loss=0.02),
     "pps_cf": dict(_CF, group="High-temp (PEEK/PEKK/PPS)", rho=1300, creep=0.004, fr=0.35),
     "peek": dict(_U, group="High-temp (PEEK/PEKK/PPS)", rho=1300, creep=0.006, fr=0.35, loss=0.01),
     "pekk": dict(_U, group="High-temp (PEEK/PEKK/PPS)", rho=1290, creep=0.006, fr=0.35, loss=0.01),
@@ -286,8 +287,63 @@ def class_ratios(records: list[dict]) -> dict[str, dict[str, Any]]:
     return out
 
 
+def _frac(v: float) -> float:
+    """Strain given in percent (> 0.2) -> fraction."""
+    return v / 100.0 if v > 0.2 else v
+
+
+def class_literature(lit: dict[str, list[dict]], records: list[dict]) -> dict[str, dict]:
+    """Literature fatigue/creep findings per class -> {cls: {"fr": (ratio, rule),
+    "creep": (strain, rule), "eps_f": (strain, rule)}}. Medians; FDM-printed findings are
+    preferred over moulded when both exist. fatigue_strength_MPa is converted to a ratio
+    with the class median TDS tensile strength."""
+    import statistics
+    out: dict[str, dict] = {}
+    uts: dict[str, list[float]] = {}
+    for r in records:
+        v = _tds(r, "tensile_strength_xy_MPa")
+        if v:
+            uts.setdefault(r["class"], []).append(v)
+    for cls, finds in lit.items():
+        if cls.startswith("_") or not isinstance(finds, list):
+            continue
+        targets = [c for c in re.split(r"[/,+ ]+", cls) if c in CLASSES]
+        for c in targets:
+            d: dict = {}
+
+            def pick(q):
+                f = [x for x in finds if x.get("quantity") == q and _num(x.get("value")) is not None]
+                pr = [x for x in f if "print" in str(x.get("specimen", "")).lower() or "fdm" in str(x.get("specimen", "")).lower()]
+                return pr or f
+
+            def cite(fs):
+                return "; ".join(sorted({str(x.get("source", "?"))[:80] for x in fs}))[:300]
+            rat = pick("fatigue_ratio")
+            fs = pick("fatigue_strength_MPa")
+            if rat:
+                d["fr"] = (min(1.0, statistics.median(_num(x["value"]) for x in rat)),
+                           f"literature median fatigue/UTS over {len(rat)} findings ({cite(rat)})")
+            elif fs and uts.get(c):
+                u = statistics.median(uts[c])
+                v = statistics.median(_num(x["value"]) for x in fs)
+                d["fr"] = (min(1.0, v / u), f"literature fatigue strength {v:g} MPa (median of {len(fs)}: "
+                           f"{cite(fs)}) / class median TDS UTS {u:g} MPa")
+            cr = pick("creep_strain_allow")
+            if cr:
+                d["creep"] = (statistics.median(_frac(_num(x["value"])) for x in cr),
+                              f"literature permissible long-term strain, median of {len(cr)} ({cite(cr)})")
+            ef = pick("fatigue_strain_amp")
+            if ef:
+                d["eps_f"] = (statistics.median(_frac(_num(x["value"])) for x in ef),
+                              f"literature fatigue strain amplitude, median of {len(ef)} ({cite(ef)})")
+            if d:
+                out.setdefault(c, {}).update(d)
+    return out
+
+
 def derive(rec: dict, fit: tuple[float, float, int] | None = None,
-           conditioned: bool = False, ratios: dict | None = None) -> tuple[dict, dict]:
+           conditioned: bool = False, ratios: dict | None = None,
+           lit: dict | None = None) -> tuple[dict, dict]:
     """Datasheet record -> (sim dict SI, derived {field: rule}). `ratios` = class_ratios()."""
     cls = rec["class"]
     C = dict(CLASSES[cls])
@@ -472,22 +528,45 @@ def derive(rec: dict, fit: tuple[float, float, int] | None = None,
 
     # allowables
     h = shore_index(tds.get("shore_hardness"))
+    L = (lit or {}).get(cls, {})
     fr = C["fr"]
-    sim["fatigue_stress_ratio"] = fr
     D["fatigue_stress_ratio"] = f"class table {fr} (fatigue strength at 1e7 / static)"
+    if g("fatigue_strength_MPa") and D["Xt"].startswith("tds:"):
+        fr = min(1.0, g("fatigue_strength_MPa") * 1e6 / sim["Xt"])
+        D["fatigue_stress_ratio"] = "tds:fatigue_strength_MPa / Xt"
+    elif "fr" in L:
+        fr, D["fatigue_stress_ratio"] = L["fr"]
+    sim["fatigue_stress_ratio"] = fr
     if elast:
         cr, fa, why = _elastomer_tables(h)
-        sim["creep_strain_allow"] = cr
-        sim["fatigue_strain_amp_allow"] = fa
         D["creep_strain_allow"] = f"elastomer hardness table {cr:g} ({why})"
         D["fatigue_strain_amp_allow"] = f"elastomer hardness table {fa:g} ({why})"
+        if "creep" in L:
+            cr, D["creep_strain_allow"] = L["creep"]
+        if "eps_f" in L:
+            fa, D["fatigue_strain_amp_allow"] = L["eps_f"]
+        # stress consistency (bites only for stiff D-scale grades): fatigue stress amplitude
+        # ≤ fr·Xt, sustained stress ≤ 0.5·Xt
+        if fr * sim["Xt"] / E1 < fa:
+            fa = fr * sim["Xt"] / E1
+            D["fatigue_strain_amp_allow"] += f"; capped at fatigue_stress_ratio × Xt/E1 = {fa:.4g}"
+        if 0.5 * sim["Xt"] / E1 < cr:
+            cr = 0.5 * sim["Xt"] / E1
+            D["creep_strain_allow"] += f"; capped at 0.5 × Xt/E1 = {cr:.4g} (sustained stress ≤ ½ UTS)"
+        sim["creep_strain_allow"] = cr
+        sim["fatigue_strain_amp_allow"] = fa
     else:
         cr = C["creep"]
         why = f"class table {cr:g} ({cls})"
+        if "creep" in L:
+            cr, why = L["creep"]
         el = g("elongation_xy_pct")
         if el and not insert and 0.25 * el / 100 < cr:
             cr = 0.25 * el / 100
             why += f", capped 0.25 × elongation {el:g} %"
+        if not insert and 0.5 * sim["Xt"] / E1 < cr:
+            cr = 0.5 * sim["Xt"] / E1
+            why += f", capped 0.5 × Xt/E1 = {cr:.4g} (sustained stress ≤ ½ UTS)"
         sim["creep_strain_allow"] = cr
         D["creep_strain_allow"] = why
         sim["fatigue_strain_amp_allow"] = fr * sim["Xt"] / E1
@@ -500,10 +579,13 @@ def derive(rec: dict, fit: tuple[float, float, int] | None = None,
     return sim, D
 
 
-def build_entries(records: list[dict], fx: dict = FX_TO_USD) -> list[dict]:
-    """Raw research records -> database entries (adds sim/derived, usd price, _cond variants)."""
+def build_entries(records: list[dict], fx: dict = FX_TO_USD,
+                  literature: dict | None = None) -> list[dict]:
+    """Raw research records -> database entries (adds sim/derived, usd price, _cond variants).
+    literature: {class: [findings]} fatigue/creep literature (see class_literature)."""
     fit = shore_modulus_fit(records)
     ratios = class_ratios(records)
+    lit = class_literature(literature or {}, records)
     out, seen = [], set()
     for r in records:
         r = json.loads(json.dumps(r))
@@ -515,7 +597,7 @@ def build_entries(records: list[dict], fx: dict = FX_TO_USD) -> list[dict]:
                 r[k] = quote(r[k].strip(), safe=":/?&=%#+@,;~!$'()*[]")
         if r.get("price"):
             r["price"]["usd_per_kg"] = usd_per_kg(r["price"], fx)
-        r["sim"], r["derived"] = derive(r, fit, ratios=ratios)
+        r["sim"], r["derived"] = derive(r, fit, ratios=ratios, lit=lit)
         out.append(r)
         cond = (r.get("tds") or {}).get("conditioned")
         if cond and any(v is not None for k, v in cond.items() if k.endswith("_MPa")):
@@ -524,7 +606,7 @@ def build_entries(records: list[dict], fx: dict = FX_TO_USD) -> list[dict]:
             v["name"] = r["name"] + ("_aged" if metal else "_cond")
             v["product"] = r["product"] + (" (aged)" if metal else " (conditioned)")
             v["variant_of"] = r["name"]
-            v["sim"], v["derived"] = derive(r, fit, conditioned=True, ratios=ratios)
+            v["sim"], v["derived"] = derive(r, fit, conditioned=True, ratios=ratios, lit=lit)
             v["derived"] = {k: (d + " [conditioned values]" if d.startswith("tds:") else d)
                             for k, d in v["derived"].items()}
             out.append(v)
@@ -621,13 +703,19 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("raw", nargs="+")
     ap.add_argument("-o", "--out", default=str(DATA_PATH))
     a = ap.parse_args(argv)
-    recs, overlays = [], []
+    recs, overlays, literature = [], [], {}
     for f in a.raw:
         doc = json.loads(Path(f).read_text())
-        (recs.extend if isinstance(doc, list) else overlays.append)(doc)
+        if Path(f).name.startswith("fatigue_creep"):
+            for k, v in doc.items():
+                literature.setdefault(k, []).extend(v if isinstance(v, list) else [])
+        elif isinstance(doc, list):
+            recs.extend(doc)
+        else:
+            overlays.append(doc)
     recs = dedupe(recs)
     recs = apply_overlays(recs, overlays)
-    ents = build_entries(recs)
+    ents = build_entries(recs, literature=literature)
     write_db(ents, a.out)
     print(f"{len(ents)} entries -> {a.out}")
 
