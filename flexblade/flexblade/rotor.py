@@ -811,6 +811,7 @@ class StaticState:
     warnings: list[str] = field(default_factory=list)
     blade_pitch_el: Optional[np.ndarray] = None     # (B, n_aero) elastic pitch, rad
     blade_beta: Optional[np.ndarray] = None
+    trim_ok: bool = True         # False: T≠W trim failed; result is the best point, never use it as a trim
 
 
 def blade_local_motion(model: RotorModel, st: State, bi: BladeInfo, nodes=None):
@@ -900,42 +901,96 @@ def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_oute
         inf.iterations += its0
         return s1, inf, aero_at(s1, rpm_x)
 
-    x = float(trim0.rpm)
-    st, info, tr = solve_at(x, None)
-    its, conv = info.iterations, info.converged
-    xs, fs = [x], [tr.T - W]
-    ok_outer = fixed_rpm
-    if not fixed_rpm and conv:
-        for k in range(max_outer):
-            if abs(fs[-1]) < 1e-3 * W:
-                ok_outer = True
-                break
-            if len(xs) == 1:
-                xn = x * np.sqrt(W / max(tr.T, 1e-9))
-            else:
-                xn = xs[-1] - fs[-1] * (xs[-1] - xs[-2]) / (fs[-1] - fs[-2])
-            x = float(np.clip(xn, 0.7 * xs[-1], 1.4 * xs[-1]))
-            st, info, tr = solve_at(x, st)
-            its += info.iterations
-            conv = conv and info.converged
-            if not info.converged:
-                xs.append(x)
-                fs.append(tr.T - W)
-                break
-            xs.append(x)
-            fs.append(tr.T - W)
-            if _DEBUG:
-                print(f"trim outer: rpm {x:.1f} T-W {fs[-1]:+.4f} N  newton its {info.iterations} {info.message}")
-        else:
-            ok_outer = abs(fs[-1]) < 1e-3 * W
+    x0 = float(trim0.rpm)      # rigid-blade BEMT/momentum rpm (T = C_T ρ A (ΩR)²) = bracket centre
+    tol = 1e-3 * W
+    pts: dict = {}              # rpm -> (state, info, aero trim): warm starts + bracket data
+    its = 0
+    fail_msg = None
+
+    def ev(xr):
+        nonlocal its
+        near = min(pts, key=lambda k: abs(k - xr)) if pts else None
+        s1, inf, t1 = solve_at(xr, pts[near][0] if near is not None else None)
+        its += inf.iterations
+        pts[xr] = (s1, inf, t1)
+        if _DEBUG:
+            print(f"trim outer: rpm {xr:.1f} T-W {t1.T - W:+.4f} N  newton its {inf.iterations} {inf.message}")
+        return float(t1.T - W)
+
+    def bracket(start_list, up_first):
+        """Walk geometrically (warm) from the first point until T−W changes sign."""
+        f_prev, x_prev = None, None
+        for xr in start_list:
+            f = ev(xr)
+            if not pts[xr][1].converged:
+                return None
+            if abs(f) < tol:
+                return (xr, xr)
+            if f_prev is not None and f * f_prev < 0:
+                return (min(x_prev, xr), max(x_prev, xr))
+            f_prev, x_prev = f, xr
+        return None
+
+    st = info = tr = None
+    x = x0
+    conv = ok_outer = False
+    if fixed_rpm:
+        st, info, tr = solve_at(x0, None)
+        its, conv, ok_outer = info.iterations, info.converged, True
+    else:
+        f0 = ev(x0)
+        if pts[x0][1].converged:
+            g = 1.06 if f0 < 0 else 1 / 1.06
+            up = [x0 * g ** i for i in range(0, 26)]
+            br = bracket(up, f0 < 0)
+            if br is None:      # fallback: continuation from low rpm upward (other branch)
+                br = bracket([x0 * 0.4 * 1.15 ** i for i in range(0, 18)], True)
+            if br is not None:
+                if br[0] == br[1]:
+                    x = br[0]
+                else:
+                    xl, xh = br
+                    fl, fh = pts[xl][2].T - W, pts[xh][2].T - W
+                    # bracketed regula-falsi/bisection hybrid (Illinois), warm-started evaluations
+                    side = 0
+                    for _ in range(max_outer + 14):
+                        xm = xh - fh * (xh - xl) / (fh - fl)
+                        if not (min(xl, xh) < xm < max(xl, xh)):
+                            xm = 0.5 * (xl + xh)
+                        fm = ev(xm)
+                        if not pts[xm][1].converged:
+                            break
+                        x = xm
+                        if abs(fm) < tol:
+                            break
+                        if fm * fl < 0:
+                            xh, fh = xm, fm
+                            if side == -1:
+                                fl *= 0.5
+                            side = -1
+                        else:
+                            xl, fl = xm, fm
+                            if side == 1:
+                                fh *= 0.5
+                            side = 1
+                        if abs(xh - xl) < 1e-6 * xm:
+                            break
+        # choose result: the evaluated point closest to the target
+        x = min(pts, key=lambda k: abs(pts[k][2].T - W))
+        st, info, tr = pts[x]
+        conv = bool(info.converged)
+        ok_outer = conv and abs(tr.T - W) < tol
+        fail_msg = None if ok_outer else (
+            f"trim failed: no converged rpm with T = W found (best rpm {x:.0f}: T = {tr.T:.3f} N vs W = {W:.3f} N; "
+            "thrust(rpm) does not cross the weight, e.g. torsional collapse branch)")
     if not ok_outer:
-        warn.append(f"trim rpm iteration not converged (T−W = {fs[-1]:+.3f} N)")
+        warn.append(fail_msg or f"trim rpm iteration not converged (T−W = {tr.T - W:+.3f} N)")
     if not conv:
         warn.append(f"nonlinear static did not converge: {info.message}")
     _, th, be = shape_of(st)
     Om = x * 2 * np.pi / 60
     F = aero_load_vector(model, st, tr) if use_aero_loads else None
-    return StaticState(st, Om, x, tr, F, conv, its, warn, th, be)
+    return StaticState(st, Om, x, tr, F, conv, its, warn, th, be, trim_ok=bool(ok_outer and conv))
 
 
 # =============================================================================== linearisation
@@ -1264,7 +1319,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
         hub_moment_phase_deg=float(np.degrees(np.arctan2(mean[1], mean[0]))),
         hub_moment_2p=amp2, thrust_1p=float(abs(T1)),
         moment_per_torque=float(Mmag / dQa) if dQa > 0 else 0.0,
-        control_ratio=float(Mmag / (W * model.R)) if W > 0 else 0.0,
+        control_ratio=(float(Mmag / (W * model.R)) if W > 0 else 0.0) if getattr(ss, 'trim_ok', True) else float('nan'),
         tilt_equiv_deg=float(np.degrees(np.arctan2(Mmag, max(T, 1e-9) * model.R * 0.75))),
         nodes=[tuple(map(float, x)) for x in fe.Xref],
         displacement_re=np.real(U).reshape(-1, 6).tolist(),
@@ -1612,7 +1667,7 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
     t["trim"] = time.perf_counter() - t1
     res.warnings += model.warnings + ss.warnings
     res.trim = _trim_result(model, ss)
-    summary = dict(rpm=ss.rpm, Omega=ss.Omega)
+    summary = dict(rpm=ss.rpm, Omega=ss.Omega, trim_ok=bool(ss.trim_ok))
     if ss.trim is not None and ss.blade_pitch_el is not None and len(model.blades) >= 2:
         dp, lag = split_and_lag(model, ss)
         summary["trim_diff_pitch_deg"] = float(np.degrees(dp))
