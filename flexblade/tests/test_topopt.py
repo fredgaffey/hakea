@@ -206,7 +206,7 @@ def _responses(P, x, beta=4.0):
 
 @pytest.mark.parametrize("overhang", [False, True])
 def test_adjoint_sensitivities_match_finite_differences(overhang):
-    P = _small_problem(overhang=overhang, build_dir=(0.0, 0.0, 1.0))
+    P = _small_problem(overhang=overhang, build_dir=(0.0, 0.0, 1.0), min_ratio=5.0)
     rng = np.random.default_rng(3)
     x0 = P.x0().numpy()
     x0 = np.clip(0.5 * x0 + 0.5 * rng.random(x0.shape), 0.05, 0.95)
@@ -235,7 +235,7 @@ def test_adjoint_sensitivities_match_finite_differences(overhang):
 def test_batched_adjoint_matches_autograd():
     """Problem.value_and_grads (one batched, rank-reduced adjoint solve) = per-function
     autograd through LinearSolve (checked against finite differences above)."""
-    P = _small_problem()
+    P = _small_problem(min_ratio=5.0)
     rng = np.random.default_rng(5)
     x0 = np.clip(0.5 * P.x0().numpy() + 0.5 * rng.random(P.x0().shape), 0.05, 0.95)
     r = P.responses(P.T(x0), 4.0)

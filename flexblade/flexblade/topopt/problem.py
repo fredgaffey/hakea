@@ -70,7 +70,7 @@ class TopoptOptions:
     build_dir: Optional[tuple] = None      # None → design.flexure.orientation
     raster_dir: Optional[tuple] = None
     penal: float = 3.0
-    eps_void: float = 1e-6
+    eps_void: float = 1e-4                 # × soft phase (TPU): void E ~ kPa; floating islands stay solvable
     plate_factor: float = 30.0             # plate/hub stiffness = factor × stiff phase
     min_feature: float = 0.8e-3            # ≈ 2 nozzle widths; filter radius = min_feature
     beta0: float = 2.0
@@ -81,6 +81,8 @@ class TopoptOptions:
     lag_target: Optional[float] = 0.7      # /rev at hover (rotor model); None → FACT k_axis
     k_hinge_band: float = 1.3              # c_soft ≤ band × target compliance
     axis_tol: float = 0.05                 # tilt (rad) / offset (fraction of Lc)
+    min_ratio: Optional[float] = None      # constrained/hinge stiffness ratio floor (smooth max
+                                           # of the 5 constrained compliances, transl. × 1/Lc²)
     stretch_limit: Optional[float] = None  # m; None → FACT beam under the same steady wrench
     loads: str = "rotor"                   # rotor (trim + 1/rev wrenches) | cf (CF pull only)
     stress_sf: float = 1.5
@@ -90,7 +92,7 @@ class TopoptOptions:
     creep: bool = True
     fatigue: bool = True
     interlayer: bool = True
-    stress_exclude_layers: int = 1         # skip design layers next to hub/plate (singular)
+    stress_exclude_layers: int = 2         # skip design layers next to hub/plate (singular corners)
     volfrac: Optional[float] = None        # of design domain; None → clip(2 × seed, .15, .4)
     mass_limit: Optional[float] = None     # kg
     stiff_frac_limit: Optional[float] = None
@@ -277,6 +279,8 @@ class Problem:
         self._targets_and_loads()
         self.Omega = self.rpm * 2 * math.pi / 60
         self.ref = None
+        Lc2 = dom.Lc ** 2
+        self._ratio_scale = T(np.array([1 / Lc2, 1 / Lc2, 1 / Lc2, 1.0, 1.0]))
         self.setup_time = time.perf_counter() - t0
 
     @property
@@ -556,6 +560,10 @@ class Problem:
         g.append(r["c_soft"] / (o.k_hinge_band * ref["c_target"]) - 1.0); names.append("hinge_not_too_soft")
         g.append((r["tilt2"] + r["offset2"]) / o.axis_tol ** 2 - 1.0); names.append("axis")
         g.append(r["stretch"] / ref["stretch_limit"] - 1.0); names.append("stretch")
+        if o.min_ratio:
+            cs = r["c_stiff"] * self._ratio_scale
+            cmax = ((cs ** 8).mean()) ** (1 / 8)
+            g.append(o.min_ratio * cmax / r["c_soft"] - 1.0); names.append("ratio")
         for n in ("stress",) + STRAIN_CONSTRAINTS:
             if n + "_pnorm" in r:
                 g.append(self.corr[n] * r[n + "_pnorm"] - 1.0); names.append(n)

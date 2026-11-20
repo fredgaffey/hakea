@@ -263,12 +263,13 @@ def material_names(res) -> dict:
     return dict(soft=o.get("soft_material", "tpu_64d"), stiff=o.get("stiff_material", "pa6_cf"))
 
 
-def surface_parts(res, dom, fields: dict | None = None, iso: float = 0.5, smooth_iters: int = 20) -> dict:
+def surface_parts(res, dom, fields: dict | None = None, iso: float = 0.5, smooth_iters: int = 20,
+                  include_pads: bool = True) -> dict:
     """{phase: (V, F)} smoothed iso-surfaces of the soft / stiff phase (blade-1 frame H, m)."""
     if fields is None:
         gray = getattr(res, "rho_gray", None) is not None
         fields = dict(rho=res.rho_gray if gray else res.rho, phi=res.phi_gray if gray else res.phi)
-    mf = material_fields(fields["rho"], fields["phi"], dom.hub, dom.plate)
+    mf = material_fields(fields["rho"], fields["phi"], dom.hub, dom.plate, include_pads)
     parts = {}
     for mname, fld in mf.items():
         V, F = isosurface(nodal_field(fld), iso, dom.origin, dom.h)
@@ -358,7 +359,7 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
         ax.set_ylabel(f"{labels[v]} (mm)")
         ax.set_title(f"mean density along {labels[ax_drop]}" + (" (hub/plate grey)" if ax_drop else ""))
     ax = fig.add_subplot(2, 3, 4, projection="3d")
-    sp_ = surface_parts(res, dom)
+    sp_ = surface_parts(res, dom, include_pads=False)
     for mname, col in (("soft", soft_c), ("stiff", stiff_c)):
         V, F = sp_[mname]
         if len(F):
@@ -380,7 +381,7 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    ax.set_title("iso-surfaces (orange soft, blue stiff)")
+    ax.set_title("smoothed iso-surfaces (orange soft, blue stiff; pads hidden)")
     ax = fig.add_subplot(2, 3, 5)
     hist = history if history is not None else res.history
     if hist:
@@ -434,7 +435,8 @@ def render_util(res, dom, path, title: str | None = None):
             if res.fields and (k + "_field") in res.fields]
     if not flds:
         return None
-    fig, axs = plt.subplots(2, len(flds), figsize=(3.6 * len(flds), 6.5), squeeze=False)
+    fig, axs = plt.subplots(2, len(flds), figsize=(3.8 * len(flds), 7.5), squeeze=False,
+                            layout="constrained")
     fig.suptitle(title or f"{res.design_name}: utilisation of the optimised flexure (max through depth)")
     ext = [dom.origin[d] * 1e3 for d in range(3)], [(dom.origin[d] + dom.shape[d] * dom.h[d]) * 1e3 for d in range(3)]
     vmax = max(1.0, max(float(f.max()) for _, f in flds))
@@ -443,9 +445,6 @@ def render_util(res, dom, path, title: str | None = None):
             ax = axs[i, j]
             im = ax.imshow(f.max(drop).T, origin="lower", cmap="magma", vmin=0, vmax=vmax,
                            extent=[ext[0][u], ext[1][u], ext[0][v], ext[1][v]], aspect="equal")
-            sol = (res.rho.max(drop) > 0.5).T
-            ax.contour(sol, levels=[0.5], colors="c", linewidths=0.6,
-                       extent=[ext[0][u], ext[1][u], ext[0][v], ext[1][v]])
             ax.set_title(f"{k}: max {float(f.max()):.2f}", fontsize=9)
             ax.set_xlabel(f"{'xyz'[u]} (mm)")
             ax.set_ylabel(f"{'xyz'[v]} (mm)")
