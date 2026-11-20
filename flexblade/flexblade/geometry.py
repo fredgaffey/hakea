@@ -924,17 +924,25 @@ def export_step(design: Design, path: Path, fuse_by_material: bool = True) -> st
                 key = p.name
             groups.setdefault(key, []).extend(dt)
         occ.synchronize()
-        names, inputs = [], []
-        for key, dts in groups.items():
+        # fuse each group, then make groups disjoint (lower priority cut by higher),
+        # then fragment for conformal shared faces (rod holes, core/skin interface)
+        done: list[tuple[str, list]] = []
+        for key, dts in groups.items():          # insertion order = priority (high first)
             if len(dts) > 1:
                 try:
                     dts, _ = occ.fuse(dts[:1], dts[1:])
                 except Exception:  # noqa: BLE001  (keep unfused on OCC failure)
                     pass
-            for d in dts:
-                names.append(key)
-                inputs.append(d)
+            tools = [d for _, prev in done for d in prev]
+            if tools:
+                try:
+                    dts, _ = occ.cut(dts, tools, removeObject=True, removeTool=False)
+                except Exception:  # noqa: BLE001
+                    pass
+            done.append((key, [d for d in dts if d[0] == 3]))
         occ.synchronize()
+        names = [k for k, dts in done for _ in dts]
+        inputs = [d for _, dts in done for d in dts]
         if len(inputs) > 1:
             _, omap = occ.fragment(inputs, [])
         else:

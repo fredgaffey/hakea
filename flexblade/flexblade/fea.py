@@ -510,6 +510,12 @@ def static_centrifugal(design: Design, rpm: Optional[float] = None, h: Optional[
         max_displacement=float(np.abs(u).max()),
         mass=model.total_mass(), n_dof=int(model.ndof), n_tets=int(len(model.tets)),
         timings=dict(model.timings, total=time.perf_counter() - t0), warnings=warnings + sm.warnings))
+    Lf = min([float(np.linalg.norm(np.subtract(m.p1, m.p0))) for m in sm.members] or [R])
+    if res["max_displacement"] > 0.03 * R or abs(res["radial_stretch_flexure"]) > 0.03 * Lf:
+        res["warnings"].append(
+            f"linear small-strain assumption violated (max |u| {res['max_displacement']*1e3:.2f} mm,"
+            f" flexure stretch {res['radial_stretch_flexure']*1e3:.2f} mm on {Lf*1e3:.1f} mm length);"
+            " stresses are indicative only")
     if return_model:
         res["model"], res["u"], res["sigma"] = model, u, sig
     return res
