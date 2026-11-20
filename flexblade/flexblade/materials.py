@@ -128,6 +128,21 @@ class Material:
         # with engineering strain: ε_H = T^{-T} ε_local → C_H = T C T^T
         return T @ C @ T.T
 
+    def plate_modulus(self, orientation: PrintOrientation | None, t_hat, w_hat, n_hat) -> float:
+        """Cylindrical-bending modulus Q11 of a wide plate (length t_hat, width w_hat, normal
+        n_hat): plane stress (sigma_n = 0) with eps_w = gamma_tw = 0 (width fully restrained).
+        Equals E/(1-nu^2) for isotropic material; larger than axial_modulus when the length
+        direction is off the material axes (shear coupling)."""
+        R = np.array([_local_dir(orientation, v) for v in (t_hat, w_hat, n_hat)])
+        pairs = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
+        K = np.zeros((6, 6))
+        for i, (a, b) in enumerate(pairs):
+            for j, (c, d) in enumerate(pairs):
+                K[i, j] = R[a, c] * R[b, d] if c == d else R[a, c] * R[b, d] + R[a, d] * R[b, c]
+        SN = np.linalg.inv(K @ self.stiffness_local() @ K.T)   # compliance, plate axes (L,W,N)
+        idx = [0, 1, 5]
+        return float(np.linalg.inv(SN[np.ix_(idx, idx)])[0, 0])
+
     def axial_modulus(self, orientation: PrintOrientation | None, t_hat) -> float:
         """Young's modulus along unit direction t_hat (frame H)."""
         a = _local_dir(orientation, t_hat)
