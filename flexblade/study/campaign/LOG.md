@@ -36,3 +36,13 @@ Idea backlog (unscreened):
 - I13 INERTIA BUDGET: above lag resonance the blades stay ~inertially fixed and only the motor bell + hub swing: φ ≈ ΔQ/(J_hub Ω²). Shrinking J_hub (light hub, thin bell, small motor) raises swing directly. Quantify J_bell vs J_hub vs J_blades in the model; consider lightened bell / hub as a design variable.
 - I14 PULSE SHAPE: motor torque is limited by current; a square-ish duty pulse gives 4/π more 1/rev fundamental than sine at same peak. Check the duty-drive model allows non-sinusoidal waveforms (ESC slew permitting).
 - I15 ASYMMETRIC MASS: put lag inertia (tip/trailing mass) where it raises blade lag inertia but not flap inertia; trailing-edge mass also sets pitch-inertia coupling — use the ideal run's mass knobs to pick.
+
+## 2026-11-21 ~00:50 — iteration 2 (targeted, not grid)
+- MODEL: beam anchorage compliance merged (rod ends butted on fitting = contact-soft): beam now within 3 % of CalculiX on E01. Old 5" winner collapses 0.22 → 0.017. ⇒ ANCHORAGE is the central design problem; butted rods are out, embedded/continuous only.
+- MODEL: motor pulse now thermally capped (capability = min(current, voltage, thermal)); Rth 2307 3.0→1.5 K/W (prop wash), cyclic_rms_frac 0.5 — both guesses, MEASURE Rth on Hakea. Old winner was at 380 °C winding.
+- MODEL: temp derating + HDT check; brand creep/fatigue allowables are all class defaults (biggest data gap → coupon tests).
+- I12/I13 tested: response sits on a sharp resonance; J_hub lever refuted (non-monotonic). Resonance knife-edges are fragile with throttle → robust multi-throttle objective being built.
+- IDEAL (smoke): ideal wants very soft skewed hinge (k≈0.07 N·m/rad @5") with k_cross/k_hinge≈260, k_flap/k_hinge≈500, skew≈55°; ideal cr ≈ 2.5× best real. Binding: resonance near 1P (5", 7"), motor torque (10").
+- COMPUTE: grid/burn STOPPED (thermally unsustainable pulse, not throttle-robust, low returns). Replaced by targeted ideal_seeds.sh (multi-seed ideal DE, 5/7/10") → cluster ideal families.
+- HELPERS: robust multi-throttle objective (sonnet); realise-ideal: skewed cruciform torsion hinge vs cross-axis pivot (opus).
+- NEXT: cluster ideal seeds; realise best family with embedded anchorage; robust re-run; verify with ccx.
