@@ -115,15 +115,16 @@ export function download(name, blobOrText, type = 'application/json') {
 
 /** Colour for a utilisation value: green → amber → red. */
 export function utilColour(u) {
-  if (u === null || u === undefined || Number.isNaN(u)) return '#8892a0';
-  const t = Math.max(0, Math.min(1, u));
-  if (u > 1) return '#e5534b';
-  // 0 → green (79,178,134), 0.8 → amber (224,179,65), 1 → orange-red (229,120,60)
-  const lerp = (a, b, s) => Math.round(a + (b - a) * s);
-  let c;
-  if (t < 0.8) { const s = t / 0.8; c = [lerp(79, 224, s), lerp(178, 179, s), lerp(134, 65, s)]; }
-  else { const s = (t - 0.8) / 0.2; c = [lerp(224, 229, s), lerp(179, 120, s), lerp(65, 60, s)]; }
-  return `rgb(${c.join(',')})`;
+  if (u === null || u === undefined || Number.isNaN(u)) return '#9aa3ad';
+  if (u > 1) return '#a50f2a';
+  // blue (0) -> green (0.35) -> yellow (0.7) -> red (1.0)
+  const stops = [[0, [43, 110, 214]], [0.35, [44, 170, 90]], [0.7, [240, 205, 40]], [1, [230, 50, 35]]];
+  const t = Math.max(0, u);
+  let k = 0;
+  while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
+  const [t0, c0] = stops[k], [t1, c1] = stops[k + 1];
+  const s = Math.min(1, (t - t0) / (t1 - t0));
+  return `rgb(${c0.map((a, i) => Math.round(a + (c1[i] - a) * s)).join(',')})`;
 }
 
 export const utilClass = (u) => (u > 1 ? 'u-bad' : u > 0.8 ? 'u-warn' : 'u-ok');

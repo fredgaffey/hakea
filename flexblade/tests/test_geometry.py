@@ -188,3 +188,42 @@ def test_print_parts_3mf(tmp_path):
     z = zipfile.ZipFile(man["files"]["3mf"])
     assert "3D/3dmodel.model" in z.namelist()
     assert 'name="tpu_64d"' in z.read("3D/3dmodel.model").decode()
+
+def test_member_dims_and_blade_connected_to_flexure():
+    """Flexure plate extents match length/width/thickness; fitting -> shank -> blade root contiguous."""
+    d = Design()
+    fx = d.flexure
+    s = g.build_surface(d)
+    parts = {p["name"]: p for p in s["parts"]}
+    geo = g.build_geometry(d)
+    m = geo.members[1][0]
+    p1 = np.array(m.p1)
+    assert np.linalg.norm(p1 - np.array(m.p0)) == pytest.approx(fx.length, rel=1e-6)
+    assert m.width == pytest.approx(fx.width) and m.thickness == pytest.approx(fx.thickness)
+    V = parts["blade1_flex0"]["vertices"]
+    _, _, L, t, w, n = g.member_frame(m)
+    ext = np.ptp(V @ np.column_stack([t, w, n]), axis=0)
+    assert ext == pytest.approx([fx.length, m.width, m.thickness], rel=1e-6)
+    byname = {q.name: q for q in geo.parts}
+    fit, shank, blade = byname["blade1_root_fitting"], byname["blade1_shank"], byname["blade1"]
+    Vf = parts["blade1_root_fitting"]["vertices"]
+    assert (p1 >= Vf.min(0) - 1e-9).all() and (p1 <= Vf.max(0) + 1e-9).all()   # plate end in fitting
+    # shank starts on the fitting's outer face and ends centred inside the blade root section
+    assert np.linalg.norm(shank.sections[0].ring.mean(0) - fit.sections[1].ring.mean(0)) < 2e-3
+    root = blade.sections[0].ring
+    assert np.linalg.norm(shank.sections[1].ring.mean(0)[1:] - root.mean(0)[1:]) < 0.5e-3
+    assert abs(shank.sections[1].ring[:, 0].min() - root[:, 0].min()) < 1e-3
+
+
+def test_surface_colours_distinct_per_material():
+    s = g.build_surface(Design())
+    cols = {p["material"]: p["color_base"] for p in s["parts"]}
+    assert len(set(cols.values())) == len(cols)
+    assert g.color_hex("cf_rod_pultruded") != g.color_hex("pa6_cf")
+    assert g.color_hex("pa6_cf", "hub") != g.color_hex("pa6_cf", "fitting")
+
+
+def test_blade_surface_resampled_smooth():
+    s = g.build_surface(Design())
+    b = next(p for p in s["parts"] if p["name"] == "blade1")
+    assert len(b["vertices"]) >= g.N_SPAN_SURF * 100

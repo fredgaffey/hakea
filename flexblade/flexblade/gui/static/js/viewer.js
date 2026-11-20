@@ -44,7 +44,8 @@ class RotorSlot {
     g.setAttribute('position', new THREE.BufferAttribute(pos.slice(), 3));
     g.setIndex(part.faces.flat());
     g.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ color: part.color || '#8892a0', metalness: 0.1, roughness: 0.55, side: THREE.DoubleSide });
+    const mat = new THREE.MeshStandardMaterial({ color: part.color || '#a070dc', metalness: 0.05, roughness: 0.6, side: THREE.DoubleSide });
+    mat.userData.baseOpacity = part.role === 'skin' || part.role === 'member_skin' ? 0.5 : 1;
     const mesh = new THREE.Mesh(g, mat);
     mesh.userData.part = part;
     this.group.add(mesh);
@@ -242,15 +243,15 @@ export class Viewer {
     this.camera.position.set(110, -150, 90);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
-    this.scene.add(new THREE.HemisphereLight(0xdde6f0, 0x30363d, 1.6));
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
+    // hemisphere (sky/ground) for ambient shape cues + key and fill directional lights
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x7a828c, 1.9));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(100, -80, 200);
     this.scene.add(key);
-    const rim = new THREE.DirectionalLight(0x9fc4ff, 0.6);
-    rim.position.set(-120, 140, -60);
-    this.scene.add(rim);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.9);
+    fill.position.set(-120, 140, 60);
+    this.scene.add(fill);
     this.setTheme(true);
-    this.scene.add(new THREE.AxesHelper(18));
     this.root = new THREE.Group();
     this.root.scale.setScalar(MM);
     this.scene.add(this.root);
@@ -261,6 +262,10 @@ export class Viewer {
     this.autoScale = 1;
     this.rotating = true;
     this.showNodes = false;
+    this.seeThrough = false;
+    this.fitted = false;
+    this.hover = null;
+    this.initHover(container);
     this.colourBy = 'material';
     this.partColour = null; // (part) => css colour, for utilisation mode
     this.last = performance.now();
@@ -272,7 +277,7 @@ export class Viewer {
   setTheme(dark) {
     const z = this.grid ? this.grid.position.z : -12;
     if (this.grid) this.scene.remove(this.grid);
-    this.grid = new THREE.GridHelper(400, 40, dark ? 0x3a4450 : 0xbcc4cc, dark ? 0x232a31 : 0xe1e5ea);
+    this.grid = new THREE.GridHelper(400, 40, 0x9aa2ab, 0xc2c8ce);
     this.grid.rotation.x = Math.PI / 2;
     this.grid.position.z = z;
     this.scene.add(this.grid);
@@ -310,7 +315,7 @@ export class Viewer {
 
   /** geometry: {parts:[{name, role, blade, rotor?, material, color, vertices, faces}]} in metres. */
   setGeometry(geo, nBlades) {
-    this.clear();
+    this.clear(); // synchronous swap: the new meshes are added in the same tick, so nothing blinks
     const hasLower = geo.parts.some((p) => Viewer.rotorOf(p) === 'lower');
     for (const part of geo.parts) {
       let r = Viewer.rotorOf(part);
@@ -320,8 +325,12 @@ export class Viewer {
       s.nBlades = nBlades || 2;
       s.addPart(part);
     }
-    this.fit();
+    const R = geo.radius || Math.max(...geo.parts.flatMap((p) => p.vertices.map((v) => Math.hypot(v[0], v[1]))));
+    if (!this.fitted || Math.abs(R - (this.fitR || R)) > 0.2 * R) this.fit();   // auto-frame on first / very different rotor
+    this.fitR = R;
+    this.fitted = true;
     this.recolour();
+    this.applyOpacity();
   }
 
   /** harmonics: {main: h} or {upper: h, lower: h}. */
@@ -352,13 +361,19 @@ export class Viewer {
   fit(points) {
     const box = new THREE.Box3();
     if (points) for (const p of points) box.expandByPoint(new THREE.Vector3(p[0] * MM, p[1] * MM, p[2] * MM));
-    else box.setFromObject(this.root);
+    else for (const P of this.parts) for (let v = 0; v < P.base.length; v += 3) {
+      box.expandByPoint(new THREE.Vector3(P.base[v] * MM, P.base[v + 1] * MM, P.base[v + 2] * MM));
+    }
     if (box.isEmpty()) return;
+    if (!points) { // the rotor sweeps a disk: frame the full radius
+      const R = Math.max(Math.abs(box.min.x), box.max.x, Math.abs(box.min.y), box.max.y);
+      box.expandByPoint(new THREE.Vector3(-R, -R, box.min.z)); box.expandByPoint(new THREE.Vector3(R, R, box.max.z));
+    }
     const size = box.getSize(new THREE.Vector3()).length();
     const c = box.getCenter(new THREE.Vector3());
     c.x = 0; c.y = 0;
     this.controls.target.copy(c);
-    this.camera.position.set(c.x + size * 0.75, c.y - size * 1.15, c.z + size * 0.7);
+    this.camera.position.set(c.x + size * 0.34, c.y - size * 0.8, c.z + size * 1.0);
     this.camera.near = size / 1000;
     this.camera.far = size * 50;
     this.camera.updateProjectionMatrix();
@@ -369,9 +384,58 @@ export class Viewer {
 
   recolour() {
     for (const P of this.parts) {
-      const c = this.colourBy === 'util' && this.partColour ? this.partColour(P.part) : (P.part.color || '#8892a0');
+      const c = this.colourBy === 'util' && this.partColour ? this.partColour(P.part) : (P.part.color || '#a070dc');
       P.mesh.material.color.set(c);
     }
+  }
+
+  /** See-through: everything except rods (and other stiffeners) goes translucent. */
+  applyOpacity() {
+    for (const P of this.parts) {
+      const m = P.mesh.material, solid = P.part.role === 'rod' || P.part.role === 'wire';
+      const o = this.seeThrough && !solid ? 0.22 : m.userData.baseOpacity;
+      m.transparent = o < 1; m.opacity = o; m.depthWrite = o >= 0.99;
+      m.needsUpdate = true;
+    }
+  }
+
+  setSeeThrough(on) { this.seeThrough = on; this.applyOpacity(); }
+
+  initHover(container) {
+    this.ray = new THREE.Raycaster();
+    this.tip = document.createElement('div');
+    this.tip.className = 'vp-tip';
+    this.tip.hidden = true;
+    container.parentElement.append(this.tip);
+    const dom = this.renderer.domElement;
+    dom.addEventListener('pointermove', (e) => {
+      const r = dom.getBoundingClientRect();
+      this.pointer = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1,
+        px: e.clientX - r.left, py: e.clientY - r.top };
+    });
+    dom.addEventListener('pointerleave', () => { this.pointer = null; });
+  }
+
+  updateHover() {
+    let hit = null;
+    if (this.pointer) {
+      this.ray.setFromCamera(this.pointer, this.camera);
+      const meshes = this.parts.map((P) => P.mesh);
+      const hits = this.ray.intersectObjects(meshes, false);
+      // when see-through, ignore translucent parts if a solid one is under the cursor too
+      hit = (this.seeThrough ? hits.find((h) => h.object.userData.part.role === 'rod') : null) || hits[0] || null;
+    }
+    const part = hit ? hit.object.userData.part : null;
+    if (part !== this.hover) {
+      if (this.hover) for (const P of this.parts) if (P.part === this.hover) P.mesh.material.emissive.setHex(0);
+      if (part) for (const P of this.parts) if (P.part === part) P.mesh.material.emissive.setHex(0x333333);
+      this.hover = part;
+    }
+    if (part) {
+      this.tip.hidden = false;
+      this.tip.textContent = `${part.name} · ${part.material || '?'} · ${part.role}`;
+      this.tip.style.transform = `translate(${this.pointer.px + 14}px, ${this.pointer.py + 14}px)`;
+    } else this.tip.hidden = true;
   }
 
   frame() {
@@ -384,6 +448,7 @@ export class Viewer {
       if (s.nodePts) s.nodePts.visible = this.showNodes;
       s.deform(this.psi, this.exag * this.autoScale);
     }
+    this.updateHover();
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }

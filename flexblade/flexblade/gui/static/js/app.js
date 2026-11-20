@@ -46,7 +46,7 @@ function showTab(name) {
 // ------------------------------------------------------------------ design state
 
 const pushSession = debounce(() => api.putSession(S.design).catch(() => {}), 500);
-const refreshGeometry = debounce(() => loadGeometry(), 350);
+const refreshGeometry = debounce(() => loadGeometry(), 400);
 const liveEval = debounce(() => evaluate(), 700);
 const validateSoon = debounce(async () => {
   const v = await api.validate(S.design).catch((e) => ({ ok: false, error: e.message }));
@@ -132,44 +132,59 @@ function partUtilColour(part) {
   return utilColour(u);
 }
 
+let geoSeq = 0;
+function vpMsg(text, err = false) {
+  const m = $('#vp-msg');
+  m.textContent = text;
+  m.className = `vp-msg${text ? (err ? ' err' : ' info') : ''}`;
+}
+
 async function loadGeometry() {
   const v = await ensureViewer();
   if (!v) return;
-  const msg = $('#vp-msg');
+  const seq = ++geoSeq;
+  vpMsg('updating geometry…');
   try {
     const geo = await api.geometry(S.design);
+    if (seq !== geoSeq) return; // a newer request superseded this one
     v.setGeometry(geo, S.design.blade?.n_blades || 2);
     v.setHarmonics(harmonicsOf(S.results));
     S.updExag?.();
     S.geometryOk = true;
-    msg.textContent = '';
+    vpMsg('');
     renderLegend(geo);
   } catch (e) {
-    S.geometryOk = false;
-    if (hasNodes(S.results)) {
+    if (seq !== geoSeq) return;
+    // keep whatever is on screen; only fall back to the beam model if nothing is shown yet
+    if (!v.parts.length && hasNodes(S.results)) {
       v.setBeamOnly(harmonicsOf(S.results), S.design.blade?.n_blades || 2);
-      msg.textContent = `geometry unavailable (${e.message}); showing beam model`;
-    } else {
-      v.clear();
-      msg.textContent = `geometry unavailable: ${e.message}`;
-    }
-    $('#vp-legend').replaceChildren();
+      vpMsg(`geometry unavailable (${e.message}); showing beam model`, true);
+    } else vpMsg(`geometry error: ${e.message}${v.parts.length ? ' (showing previous geometry)' : ''}`, true);
   }
 }
+
+const MAT_NAMES = {
+  tpu_95a: 'TPU 95A', tpu_64d: 'TPU 64D', pa6_cf: 'PA6-CF', petg_cf: 'PETG-CF', pla: 'PLA',
+  cf_rod_pultruded: 'CF rod', steel_302_spring: 'steel 302',
+};
 
 function renderLegend(geo) {
   const box = $('#vp-legend');
   box.replaceChildren();
+  if (geo) S.lastGeo = geo; else geo = S.lastGeo;
   if ($('#colour-by').value === 'util') {
-    box.append(el('div', {}, 'utilisation'),
-      ...[[0, '0'], [0.5, '0.5'], [0.8, '0.8'], [1.0, '1.0'], [1.2, '>1']].map(([u, l]) =>
-        el('div', {}, el('span.sw', { style: `background:${utilColour(u)}` }), l)));
+    box.append(el('div.lg-title', {}, 'utilisation (value / allowable)'),
+      el('div.lg-grad', { style: `background:linear-gradient(90deg,${[0, 0.25, 0.5, 0.75, 1].map((u) => utilColour(u)).join(',')})` }),
+      el('div.lg-ticks', {}, el('span', {}, '0'), el('span', {}, '0.5'), el('span', {}, '1.0')),
+      el('div', {}, el('span.sw', { style: `background:${utilColour(1.5)}` }), 'over limit (> 1)'),
+      el('div', {}, el('span.sw', { style: `background:${utilColour(null)}` }), 'no check'));
     return;
   }
   const seen = new Map();
-  for (const p of geo?.parts || []) if (!seen.has(p.material || p.role)) seen.set(p.material || p.role, p.color);
-  for (const [k, c] of seen) box.append(el('div', {}, el('span.sw', { style: `background:${c}` }), k || '?'));
-  S.lastGeo = geo;
+  for (const p of geo?.parts || []) if (!seen.has(p.material || p.role)) seen.set(p.material || p.role, p.color_base || p.color);
+  box.append(el('div.lg-title', {}, 'material'));
+  for (const [k, c] of seen) box.append(el('div', {}, el('span.sw', { style: `background:${c}` }), MAT_NAMES[k] || k || '?'));
+  box.append(el('div.lg-note', {}, 'hub darker, fittings lighter'));
 }
 
 function wireViewerControls() {
@@ -187,11 +202,13 @@ function wireViewerControls() {
   S.updExag = upd;
   $('#rotating').onchange = (e) => (v.rotating = e.target.checked);
   $('#show-nodes').onchange = (e) => (v.showNodes = e.target.checked);
+  $('#see-through').onchange = (e) => v.setSeeThrough(e.target.checked);
   $('#colour-by').onchange = (e) => { v.colourBy = e.target.value; v.recolour(); renderLegend(S.lastGeo); };
   $('#xray').onchange = (e) => v.setXray(e.target.checked);
   $('#btn-reset-view').onclick = () => v.resetView();
   v.rotating = $('#rotating').checked;
   v.showNodes = $('#show-nodes').checked;
+  v.setSeeThrough($('#see-through').checked);
   v.colourBy = $('#colour-by').value;
 }
 
@@ -323,6 +340,8 @@ async function boot() {
   status('ready');
   if (qs.get('tab')) showTab(qs.get('tab'));
   if (qs.get('eval') === '1') await evaluate();
+  S.setDesign = setDesign;
+  S.showResults = showResults;
   window.flexblade = S; // for debugging / automation
   document.body.dataset.ready = '1';
 }
