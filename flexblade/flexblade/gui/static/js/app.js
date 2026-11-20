@@ -7,6 +7,7 @@ import { api } from './api.js';
 import { initParams, renderParams, markChanged } from './params.js';
 import { renderSummary, renderChecks, renderCampbell, renderHarmonic, renderJSON } from './results.js';
 import { OptimisePanel } from './optimize.js';
+import { MaterialsPanel } from './materials.js';
 
 const S = {
   info: null, schema: null, presets: {}, materials: [], hints: null,
@@ -41,6 +42,7 @@ function initTheme() {
 function showTab(name) {
   $$('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
   $$('.tab-body > section').forEach((s) => s.classList.toggle('on', s.dataset.panel === name));
+  if (name === 'materials' && S.materialsPanel) S.materialsPanel.refreshSlots();
 }
 
 // ------------------------------------------------------------------ design state
@@ -301,6 +303,12 @@ async function boot() {
   S.optimise = new OptimisePanel($('#tab-optimise'), {
     getDesign: () => S.design, getResults: () => S.results, suggestions: hints.target_suggestions,
     apply: (design, results) => { setDesign(design); if (results) showResults(results); toast('applied optimised design'); },
+  });
+  S.materialsPanel = new MaterialsPanel($('#tab-materials'), {
+    getDesign: () => S.design,
+    apply: async (slot, material) => {
+      try { setDesign(await api.setMaterial(S.design, slot, material)); toast(`${slot} → ${material}`); } catch (e) { toast(e.message, true, 6000); }
+    },
   });
   const want = qs.get('preset');
   const start = want && S.presets[want] ? want : names[0];

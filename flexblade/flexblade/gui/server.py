@@ -17,6 +17,8 @@ REST (documented at /docs):
   GET  /api/export?fmt=step      same for ?preset=NAME, else the session design (Keel bridge)
   POST /api/optimize             OptimizeRequest -> {job_id}
   POST /api/sweep                {design, variables:{path:[values] | "lo:hi:n"}, what?} -> {job_id}
+  POST /api/material_slots       {design} -> {slots: {slot: [materials]}}
+  POST /api/material_sweep       {design, slot, materials (selector), resize, torque, workers?} -> {job_id, n}
   GET  /api/jobs/{id}            {status, progress, history, result|error}
   GET/PUT /api/session/design    the "current" design shared between GUI tabs and the Keel bridge
 
@@ -140,6 +142,21 @@ def _sweep_job(job: dict, design: Design, variables, what) -> dict:
         rows.append(rec)
         job["progress"] = {"i": len(rows), "n": n, "best": None}
     return {"variables": {p: v for p, v in variables}, "rows": rows}
+
+
+def _material_sweep_job(job: dict, design: Design, slot: str, materials: str, resize: bool,
+                        torque: Any, workers: int) -> dict:
+    def progress(i, n):
+        job["progress"] = {"i": i, "n": n, "best": None}
+    rows = api.material_sweep(design, slot, materials, resize=resize, torque=torque,
+                              workers=workers, progress=progress)
+    rows.sort(key=lambda r: -(r.get("fitness") if isinstance(r.get("fitness"), (int, float)) else -1))
+    for r in rows:
+        r.pop("mass_by_material_g", None)
+        if r.get("resize"):
+            r["resize_feasible"] = r["resize"]["feasible"]
+            r["resize"] = None
+    return {"slot": slot, "materials": materials, "resized": resize, "rows": rows}
 
 
 def create_app(cors_origins: list[str] | None = None) -> FastAPI:
@@ -329,6 +346,35 @@ def create_app(cors_origins: list[str] | None = None) -> FastAPI:
         if n > int(body.get("max_points", 400)):
             raise HTTPException(422, {"error": f"grid has {n} points > max_points"})
         return {"job_id": jobs.submit("sweep", _sweep_job, d, variables, body.get("what"))}
+
+    @app.post("/api/material_slots")
+    def material_slots(body: dict = Body(...)):
+        return {"slots": api.material_slots(design_of(body.get("design")))}
+
+    @app.post("/api/set_material")
+    def set_material(body: dict = Body(...)):
+        from ..matsweep import set_material as sm
+        try:
+            return sm(design_of(body.get("design")), body["slot"], body["material"])
+        except Exception as e:  # noqa: BLE001
+            raise _err(e, 422) from e
+
+    @app.post("/api/material_sweep")
+    def material_sweep(body: dict = Body(...)):
+        d = design_of(body.get("design"))
+        slot = body.get("slot", "body")
+        try:
+            from ..materials import select_materials
+            n = len(select_materials(body.get("materials", "filaments")))
+            if not api.material_slots(d).get(slot):
+                raise ValueError(f"slot {slot!r} not used by this design")
+        except Exception as e:  # noqa: BLE001
+            raise _err(e, 422) from e
+        torque = body.get("torque", "design")
+        workers = int(body.get("workers", max(1, (os.cpu_count() or 2) // 2)))
+        return {"job_id": jobs.submit("material_sweep", _material_sweep_job, d, slot,
+                                      body.get("materials", "filaments"),
+                                      bool(body.get("resize", False)), torque, workers), "n": n}
 
     @app.get("/api/jobs/{jid}")
     def job(jid: str):

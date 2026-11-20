@@ -126,11 +126,67 @@ def get_preset(name: str) -> dict:
     return uc.resolve_design({"preset": name}).model_dump(mode="json")
 
 
-@tool(description="Material library: name, density rho (kg/m^3), orthotropic moduli E1 (raster), "
-                      "E2 (in-layer transverse), E3 (interlayer/build) in Pa, loss factor, elastomer "
-                      "flag, source notes. Use names in layup.material / skin_material / insert_material.")
-def list_materials() -> dict:
-    return {"materials": api.materials()}
+@tool(description="Material library: generic entries plus real filament / insert products. Per "
+                      "entry: name, density rho (kg/m^3), orthotropic moduli E1 (raster), E2 (in-layer "
+                      "transverse), E3 (interlayer/build) in Pa, Xt/Zt strengths, loss factor, elastomer "
+                      "flag, source; for real products also brand, product, cls (class code), group, url "
+                      "(buy), tds_url, price/currency/usd_per_kg, confidence, shore, hardened_nozzle, "
+                      "ams, moisture. Filter with `selector` (all | filaments | rigid | inserts | "
+                      "class:tpu | brand:Bambu Lab | group:NAME). Use names in layup.material / "
+                      "skin_material / insert_material.")
+def list_materials(selector: str = "all") -> dict:
+    from .materials import select_materials
+    names = set(select_materials(selector))
+    return {"materials": [m for m in api.materials() if m["name"] in names]}
+
+
+@tool(description="Material sweep: evaluate `design` once per material in a layup slot "
+                      "(body = blade+flexure base material, blade, flexure, skin, insert). `materials` "
+                      "is a selector (all | filaments | rigid | inserts | class:tpu | class:pa_cf+pet_cf "
+                      "| brand:NAME | comma list). resize=true rescales geometry so each element keeps "
+                      "the original soft bending stiffness (fair comparison); false = same geometry. "
+                      "torque: 'design' | 'capability' (motor 1/rev capability) | number. Returns rows "
+                      "sorted by fitness: control_ratio, pitch_1p_deg, max_util + governing check, "
+                      "lag/pitch per-rev and margins to 1P/2P, pitch split, rotor mass, filament cost, "
+                      "fitness, feasible. " + DESIGN_DOC)
+async def material_sweep(design: DesignArg, slot: str, materials: str = "all", resize: bool = False,
+                         torque: str = "design", workers: int = 8, hosts: str | None = None,
+                         out_path: str | None = None) -> dict:
+    d = _design(design)
+    try:
+        tq: Any = float(torque)
+    except ValueError:
+        tq = torque
+
+    def run():
+        return api.material_sweep(d, slot, materials, resize=resize, torque=tq, hosts=hosts,
+                                  workers=workers)
+    recs = await anyio.to_thread.run_sync(run)
+    recs.sort(key=lambda r: -(r.get("fitness") or -1))
+    if out_path:
+        from .matsweep import to_csv, to_jsonl
+        Path(out_path).write_text(to_csv(recs) if out_path.endswith(".csv") else to_jsonl(recs))
+    keep = ("material", "brand", "product", "cls", "control_ratio", "pitch_1p_deg", "max_util",
+            "governing", "lag_per_rev", "pitch_per_rev", "lag_margin", "pitch_margin",
+            "pitch_split_deg", "rotor_mass_g", "filament_cost_usd", "fitness", "feasible", "url",
+            "error")
+    rows = [{k: r.get(k) for k in keep if r.get(k) is not None} for r in recs]
+    for r, full in zip(rows, recs):
+        if full.get("resize"):
+            r["resize_feasible"] = full["resize"]["feasible"]
+    return {"n": len(rows), "slot": slot, "resized": resize, "rows": rows,
+            **({"out_path": str(Path(out_path).resolve())} if out_path else {})}
+
+
+@tool(description="Material-agnostic resize: switch layup `slot` (body|blade|flexure|skin|insert) to "
+                      "`material` and rescale thickness (then width if below t_min) / blade t/c / skin "
+                      "thickness / rod diameter so every element keeps its original soft bending "
+                      "stiffness. Returns the resized Design and a report (per element old/new, achieved "
+                      "ratio, feasibility, EA/GJ/EI_stiff/mass ratios). Re-run evaluate_design on it. "
+                      + DESIGN_DOC)
+def resize_for_material(design: DesignArg, slot: str, material: str, t_min: float = 0.4e-3) -> dict:
+    d2, rep = api.resize_for_material(_design(design), slot, material, t_min=t_min)
+    return {"design": d2.model_dump(mode="json"), "report": rep}
 
 
 @tool(description="Validate a design. Returns {ok, design_hash, design} or {ok:false, errors:[{loc,msg}]}. "

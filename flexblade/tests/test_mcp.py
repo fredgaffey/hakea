@@ -43,7 +43,7 @@ def test_tools_listed_with_descriptions():
     tools = {t.name: t for t in anyio.run(go).tools}
     for n in ["get_schema", "list_presets", "get_preset", "list_materials", "validate_design",
               "set_design_values", "evaluate_design", "optimize_design", "sweep", "export_geometry",
-              "explain_results"]:
+              "explain_results", "material_sweep", "resize_for_material"]:
         assert n in tools and len(tools[n].description) > 40
     assert "dotted" in tools["set_design_values"].description
 
@@ -54,6 +54,10 @@ def test_schema_presets_materials():
     assert P in names
     assert payload(call("get_preset", {"name": P}))["name"] == P
     assert any(m["name"] == "pa6_cf" for m in payload(call("list_materials", {}))["materials"])
+    tpu = payload(call("list_materials", {"selector": "class:tpu"}))["materials"]
+    assert tpu and all(m["elastomer"] for m in tpu)
+    real = [m for m in tpu if m.get("brand") != "generic"]
+    assert real and all(m.get("url") and "confidence" in m and "usd_per_kg" in m for m in real)
 
 
 def test_validate_and_set():
