@@ -26,3 +26,6 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | opus-5-5 | lean | Feeler-gauge cross-spring + strap | steel shim cross-spring: unloaded k on target, ratios 1.3e3-4.3e3; KILL hand designs (pitch split from static lag; 10in strip buckles); suspect loaded-K accounting | 107k / 48 calls | green: no |
 | 2026-11-20 | sonnet-5-5 | lean | Compact faired root geometry | compact root: height set by flexure members, not fittings; fairing caps -8% power (thermal 1.07->0.98); envelope still 3.5-4.7 | 63k / 40 calls | green: yes |
 | 2026-11-20 | opus-5-5 | lean | Audit loaded flexure stiffness | BUG FIX condense_to_point missing preload transport term; steelx loaded k_hinge 0.34->0.0195, ratios ~5e3; dynamics unaffected | 86k / 42 calls | green: yes |
+| 2026-11-20 | opus-5-5 | lean | Pre-lag hinge preset | pre_lag_deg feature (hinge/pitch axis, auto) | 74k / 25 calls | green: yes |
+| 2026-11-20 | sonnet-5-5 | lean | CalculiX check of steel cross-spring | ccx hex20 steel strips: k_hinge within 20%, cross/flap 1.3x, axis<1deg | 69k / 28 calls | green: yes |
+| 2026-11-20 | sonnet-5-5 | lean | Evaluate pre-lag over throttle | prelag eval: hinge-axis preset fails; split throttle-invariant -> pitch preset works | 31k / 13 calls | green: yes |
