@@ -1,0 +1,59 @@
+    Number of boundary faces = 2557
+
+Processor 7
+    Number of cells = 26208
+    Number of points = 29197
+    Number of faces shared with processor 2 = 505
+    Number of faces shared with processor 3 = 717
+    Number of faces shared with processor 4 = 4
+    Number of faces shared with processor 5 = 810
+    Number of faces shared with processor 6 = 135
+    Number of faces shared with processor 8 = 988
+    Number of processor patches = 6
+    Number of processor faces = 3159
+    Number of boundary faces = 867
+
+Processor 8
+    Number of cells = 25955
+    Number of points = 31264
+    Number of faces shared with processor 1 = 537
+    Number of faces shared with processor 2 = 699
+    Number of faces shared with processor 4 = 6
+    Number of faces shared with processor 6 = 105
+    Number of faces shared with processor 7 = 988
+    Number of faces shared with processor 9 = 1154
+    Number of processor patches = 6
+    Number of processor faces = 3489
+    Number of boundary faces = 2433
+
+Processor 9
+    Number of cells = 26117
+    Number of points = 36540
+    Number of faces shared with processor 0 = 83
+    Number of faces shared with processor 1 = 566
+    Number of faces shared with processor 6 = 1050
+    Number of faces shared with processor 8 = 1154
+    Number of processor patches = 4
+    Number of processor faces = 2853
+    Number of boundary faces = 7072
+
+Number of processor faces = 16797
+Max number of cells = 26460 (0.965391% above average 26207)
+Max number of processor patches = 9 (50% above average 6)
+Max number of faces between processors = 3700 (10.1387% above average 3359.4)
+
+
+Time = 0
+
+Processor 0: field transfer
+Processor 1: field transfer
+Processor 2: field transfer
+Processor 3: field transfer
+Processor 4: field transfer
+Processor 5: field transfer
+Processor 6: field transfer
+Processor 7: field transfer
+Processor 8: field transfer
+Processor 9: field transfer
+
+End
