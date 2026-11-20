@@ -106,6 +106,25 @@ The GUI, REST and MCP also accept `{"preset": NAME, "set": {path: value}}` for t
 `flexblade optimize` only accepts `{"preset": NAME}` with no `set`: that path validates the
 request directly, so to change values first, run `flexblade set` and pass the full design.
 
+### Topology optimisation (GPU)
+
+When the parametric FACT flexure cannot meet its targets, `flexblade topopt` runs a 3D
+two-material (soft TPU / stiff PA6-CF, both print-anisotropic) density topology
+optimisation of the hub-to-blade-root region on a voxel grid (PyTorch, CUDA if present),
+seeded from the voxelised FACT layout. It keeps the FACT hinge stiffness about the skewed
+axis, maximises the stiffness of the other five directions, and constrains axis
+alignment, centrifugal stretch, Tsai-Hill stress (incl. interlayer) and volume:
+
+```
+flexblade topopt preset:5in_cf_flexure --out out/5in --n-elem 100000 --evaluate
+```
+
+Writes `render.png`, `<name>_soft.stl` / `_stiff.stl` and a faceted `<name>_topopt.step`
+(mm), `result.json` (6×6 at the hinge point, history, validation against a P2-tet re-analysis)
+and `design_topopt.json` (`flexure.topology = "topopt"`, the stored 6×6 + mass properties,
+so `flexblade evaluate design_topopt.json` runs the 1/rev analysis on it). Examples:
+`examples/topopt/`.
+
 ## MCP server (for LLM agents)
 
 ```bash

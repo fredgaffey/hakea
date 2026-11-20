@@ -263,14 +263,15 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
     labels = "xyz"
     for k, (ax_drop, (u, v)) in enumerate([(2, (0, 1)), (1, (0, 2)), (0, (1, 2))]):
         ax = fig.add_subplot(2, 3, k + 1)
-        r = rho.max(ax_drop)
-        stiff = (rho * phi).max(ax_drop)
-        pads = (dom.hub | dom.plate).max(ax_drop)
-        img = np.ones(r.shape + (3,))
-        frac = np.where(r > 0, stiff / np.maximum(r, 1e-9), 0)[..., None]
-        col = soft_c * (1 - frac) + stiff_c * frac
-        img = img * (1 - r[..., None]) + col * r[..., None]
-        img[pads] = pad_c
+        # mean density through the depth (darker = more material behind), hue = stiff fraction
+        r = rho.mean(ax_drop)
+        r = r / max(float(r.max()), 1e-9)
+        stiff = (rho * phi).sum(ax_drop) / np.maximum(rho.sum(ax_drop), 1e-9)
+        col = soft_c * (1 - stiff[..., None]) + stiff_c * stiff[..., None]
+        img = np.ones(r.shape + (3,)) * (1 - r[..., None]) + col * r[..., None]
+        if ax_drop != 0:
+            pads = (dom.hub | dom.plate).any(ax_drop)
+            img[pads] = 0.75 * img[pads] + 0.25 * pad_c
         ax.imshow(np.transpose(img, (1, 0, 2)), origin="lower", interpolation="nearest",
                   extent=[ext[0][u], ext[1][u], ext[0][v], ext[1][v]], aspect="equal")
         H = dom.hinge_point * 1e3
@@ -282,7 +283,7 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
         ax.set_ylim(ext[0][v], ext[1][v])
         ax.set_xlabel(f"{labels[u]} (mm)")
         ax.set_ylabel(f"{labels[v]} (mm)")
-        ax.set_title(f"max projection along {labels[ax_drop]}")
+        ax.set_title(f"mean density along {labels[ax_drop]}" + (" (hub/plate grey)" if ax_drop else ""))
     ax = fig.add_subplot(2, 3, 4, projection="3d")
     mf = material_fields(rho, phi, dom.hub, dom.plate)
     for mname, col in (("soft", soft_c), ("stiff", stiff_c)):
@@ -330,7 +331,7 @@ def render(res, dom, path, title: str | None = None, util: np.ndarray | None = N
              f"{res.responses['stretch'] * 1e6:.1f}"),
             ("stress util", "", f"{res.responses['seed_stress_max']:.2f}", f"{res.responses['stress_max']:.2f}"),
             ("mass (g)", "", "", f"{res.mass_props['mass'] * 1e3:.3f}")]
-    tb = ax.table(cellText=rows, loc="center", cellLoc="center")
+    tb = ax.table(cellText=rows, loc="center", cellLoc="center", colWidths=[0.34, 0.22, 0.22, 0.22])
     tb.auto_set_font_size(False)
     tb.set_fontsize(9)
     tb.scale(1, 1.5)

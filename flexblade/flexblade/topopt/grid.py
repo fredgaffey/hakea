@@ -347,7 +347,7 @@ def build_domain(design: Design, n_elem: int = 100_000, h: Optional[float] = Non
     x: hub face (flexure.hub_radius) − hub_layers elements … outermost member end
     (rotor.py master radius) + plate_layers elements. y, z: bounding box of the FACT
     members (incl. end faces; plus the twisted root airfoil section for envelope
-    "airfoil"), + margin.
+    "airfoil"; y at least ±root chord/4 for "box"), + margin.
     envelope: "box" (whole box designable) or "airfoil" (designable only inside the root
     airfoil section extruded along x, + margin; the plate keeps the full box section so
     FACT-seed connectors still land on it)."""
@@ -369,6 +369,10 @@ def build_domain(design: Design, n_elem: int = 100_000, h: Optional[float] = Non
         pts.append(np.vstack([_member_corners(m) for m in members]))
     P = np.vstack(pts)
     lo, hi = P.min(0), P.max(0)
+    if envelope == "box":
+        # room to spread along the chord: at least ±chord/4 in y around the axis
+        lo[1] = min(lo[1], -0.25 * st0.chord)
+        hi[1] = max(hi[1], 0.25 * st0.chord)
     if margin is None:
         margin = max(0.08 * (x_root - x_hub), 0.0005)
     # rough element size to place hub/plate layers
