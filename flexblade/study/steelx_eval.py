@@ -212,8 +212,10 @@ def evaluate(D: float, cards: Path = CARDS, robust: bool = False, extra: dict | 
     out["trim_split_deg"] = r["summary"].get("trim_diff_pitch_deg")
     out["load"] = {k: v for k, v in ls.items() if k not in ("model", "ss", "K6_unloaded")}
     if card is not None:
-        # unloaded (no initial-stress) ratios: flexure_stiffness at trim adds a CF-proportional
-        # Δk_hinge ≈ 1.6e-3 m × strap tension that does not depend on the strips (see report)
+        # unloaded (material-only) ratios alongside the loaded ones (out["ratios"] from the
+        # trim-state flexure_stiffness). The loaded K6 used to carry a spurious T·d pendulum
+        # (d = master − hinge point, ≈ 5.5 mm here) from a preload-free transport; fixed in
+        # rotor.condense_to_point, so loaded is now like-for-like with the ideal K6.
         du = SE.IS.distance(ls["K6_unloaded"], card)
         t = card["targets"]
         out["ratios_unloaded"] = {k: 10 ** v * t[k] for k, v in du["terms"].items()
