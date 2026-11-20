@@ -235,18 +235,160 @@ FORMING_TEMP_C = {"tpu_95a": 100.0, "tpu_64d": 105.0, "petg_cf": 90.0, "pla": 65
 TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0}
 for _n, _m in list(LIBRARY.items()):
     LIBRARY[_n] = dataclasses.replace(_m, forming_temp_C=FORMING_TEMP_C.get(_n, 0.0), tg_C=TG_C.get(_n, 0.0))
+GENERIC_NAMES = tuple(LIBRARY)
+
+# Metadata of the real-product entries (brand, product, url, price, confidence, …) keyed by
+# material name; generic entries above have none. Filled by _register_filaments().
+META: dict[str, dict] = {}
+
+
+def _register_filaments() -> None:
+    """Register every entry of data/filaments.json as a Material (see filament_db.py)."""
+    from .filament_db import CLASSES, load_entries
+    for e in load_entries():
+        s = e["sim"]
+        if e["name"] in LIBRARY and e["name"] not in META:
+            raise ValueError(f"filament entry {e['name']!r} clashes with a generic material")
+        LIBRARY[e["name"]] = Material(
+            e["name"], s["rho"], s["E1"], s["E2"], s["E3"], s["G12"], s["G13"], s["G23"],
+            s["nu12"], s["nu13"], s["nu23"], loss_factor=s["loss_factor"],
+            freq_scale=tuple(tuple(p) for p in s["freq_scale"]),
+            freq_loss=tuple(tuple(p) for p in s.get("freq_loss") or ()),
+            Xt=s["Xt"], Yt=s["Yt"], Zt=s["Zt"], S=s["S"],
+            creep_strain_allow=s["creep_strain_allow"],
+            fatigue_strain_amp_allow=s["fatigue_strain_amp_allow"],
+            fatigue_stress_ratio=s["fatigue_stress_ratio"], is_elastomer=s["is_elastomer"],
+            source=f"{e['brand']} {e['product']} — {e.get('tds_url') or e['url']} "
+                   f"(confidence {e['confidence']}; derived fields: "
+                   f"{sum(not v.startswith('tds:') for v in e['derived'].values())})")
+        price = e.get("price") or {}
+        META[e["name"]] = dict(
+            brand=e["brand"], product=e["product"], cls=e["class"],
+            group=CLASSES[e["class"]]["group"], url=e["url"], tds_url=e.get("tds_url"),
+            price=price.get("value"), currency=price.get("currency"),
+            per_kg=price.get("per_kg", True), usd_per_kg=price.get("usd_per_kg"),
+            price_date=price.get("date"), confidence=e["confidence"],
+            variant_of=e.get("variant_of"), shore=(e.get("tds") or {}).get("shore_hardness"),
+            hardened_nozzle=(e.get("print") or {}).get("hardened_nozzle_required"),
+            ams=(e.get("print") or {}).get("ams_compatible"),
+            moisture=(e.get("print") or {}).get("moisture_sensitivity"))
+
+
+_register_filaments()
+
+# generic entries: class/group for grouping in the GUI and class filters
+_GENERIC_CLASS = {"tpu_95a": "tpu", "tpu_64d": "tpu", "pa6_cf": "pa_cf", "petg_cf": "petg_cf",
+                  "pla": "pla", "cf_rod_pultruded": "cf_rod", "steel_302_spring": "steel_wire"}
+
+
+def material_class(name: str) -> str | None:
+    base = name.split("@", 1)[0]
+    if base in META:
+        return META[base]["cls"]
+    return _GENERIC_CLASS.get(base)
+
+
+def _variant(name: str) -> Material:
+    """'<base>@E=0.8,S=1.2,rho=1.0' → base material with moduli ×E, strengths ×S, density
+    ×rho (used for datasheet-uncertainty sensitivity; works across worker processes)."""
+    from dataclasses import replace
+    base, _, spec = name.partition("@")
+    m = LIBRARY[base]
+    f = {"E": 1.0, "S": 1.0, "rho": 1.0}
+    for part in spec.split(","):
+        k, _, v = part.partition("=")
+        if k.strip() not in f:
+            raise KeyError(f"bad material variant key {k!r} in {name!r} (use E, S, rho)")
+        f[k.strip()] = float(v)
+    e, s = f["E"], f["S"]
+    v = replace(m, name=name, rho=m.rho * f["rho"], E1=m.E1 * e, E2=m.E2 * e, E3=m.E3 * e,
+                G12=m.G12 * e, G13=m.G13 * e, G23=m.G23 * e, Xt=m.Xt * s, Yt=m.Yt * s,
+                Zt=m.Zt * s, S=m.S * s, source=m.source + f" [variant {spec}]")
+    LIBRARY[name] = v
+    return v
 
 
 def get_material(name: str) -> Material:
     try:
         return LIBRARY[name]
     except KeyError:
+        if "@" in name:
+            try:
+                return _variant(name)
+            except KeyError:
+                pass
         raise KeyError(f"unknown material {name!r}; known: {sorted(LIBRARY)}") from None
 
 
+def flexure_indices(m: Material) -> dict:
+    """Material indices for a strain-limited flexure (no simulation):
+    fatigue_strain = σ_f/E (allowable 1/rev strain amplitude at 1e7 cycles),
+    creep_strain   = sustained-strain allowable,
+    fatigue_strain_per_rho = σ_f/E per (g/cm³) (strain capability per unit mass),
+    specific_stiffness = E1/ρ (blade, MPa·cm³/g), specific_strength = Xt/ρ (tension member)."""
+    eps_f = m.fatigue_strain_amp_allow
+    return dict(fatigue_strain=eps_f, creep_strain=m.creep_strain_allow,
+                fatigue_strain_per_rho=eps_f / (m.rho / 1000.0),
+                specific_stiffness=m.E1 / 1e6 / (m.rho / 1000.0),
+                specific_strength=m.Xt / 1e6 / (m.rho / 1000.0))
+
+
 def list_materials() -> list[dict]:
+    """All registered materials. Real products carry brand/product/url/price/confidence;
+    `group` and `cls` are set for every entry (GUI grouping, class filters)."""
+    from .filament_db import CLASSES
     out = []
     for m in LIBRARY.values():
-        out.append(dict(name=m.name, rho=m.rho, E1=m.E1, E2=m.E2, E3=m.E3,
-                        loss_factor=m.loss_factor, elastomer=m.is_elastomer, source=m.source))
+        if "@" in m.name:
+            continue
+        d = dict(name=m.name, rho=m.rho, E1=m.E1, E2=m.E2, E3=m.E3, Xt=m.Xt, Zt=m.Zt,
+                 loss_factor=m.loss_factor, elastomer=m.is_elastomer, source=m.source,
+                 **flexure_indices(m))
+        meta = META.get(m.name)
+        if meta:
+            d.update(meta)
+        else:
+            cls = _GENERIC_CLASS.get(m.name)
+            d.update(brand="generic", product=m.name, cls=cls,
+                     group=CLASSES[cls]["group"] if cls in CLASSES else "Generic",
+                     url=None, tds_url=None, price=None, currency=None, usd_per_kg=None,
+                     confidence="low")
+        out.append(d)
     return out
+
+
+def select_materials(spec: str | list[str]) -> list[str]:
+    """Material selector: 'all', 'filaments' (all real products), 'generic',
+    'class:tpu' / 'class:pa_cf+pa_gf', 'group:Nylon (PA)', 'brand:Bambu Lab',
+    'rigid' (all non-elastomer printable), 'inserts', or a comma list of names.
+    Conditioned (`_cond`) variants are included only when named or with ':cond' suffix
+    on the selector (e.g. 'class:pa_cf:cond')."""
+    from .filament_db import INSERT_CLASSES
+    if isinstance(spec, list):
+        return [get_material(n).name for n in spec]
+    spec = spec.strip()
+    with_cond = spec.endswith(":cond")
+    if with_cond:
+        spec = spec[: -len(":cond")]
+    allm = [m for m in list_materials()
+            if with_cond or not (m.get("variant_of"))]
+    if spec == "all":
+        sel = allm
+    elif spec == "filaments":
+        sel = [m for m in allm if m["name"] in META]
+    elif spec == "generic":
+        sel = [m for m in allm if m["name"] not in META]
+    elif spec == "rigid":
+        sel = [m for m in allm if not m["elastomer"] and m.get("cls") not in INSERT_CLASSES]
+    elif spec == "inserts":
+        sel = [m for m in allm if m.get("cls") in INSERT_CLASSES]
+    elif spec.startswith("class:"):
+        cl = set(spec[6:].split("+"))
+        sel = [m for m in allm if m.get("cls") in cl]
+    elif spec.startswith("group:"):
+        sel = [m for m in allm if m.get("group") == spec[6:]]
+    elif spec.startswith("brand:"):
+        sel = [m for m in allm if (m.get("brand") or "").lower() == spec[6:].lower()]
+    else:
+        return [get_material(n.strip()).name for n in spec.split(",") if n.strip()]
+    return [m["name"] for m in sel]

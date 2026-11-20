@@ -1,0 +1,23 @@
+{
+  "_doc": "Manual corrections applied on top of the research records by flexblade.filament_db (apply_overlays). Each states why; the record's notes get '[db fix: ...]'.",
+  "polymaker_polyflex_tpu95": {
+    "set": {"tds.tensile_strength_xy_MPa": 33.6, "tds.tensile_modulus_xy_MPa": null},
+    "note": "TDS V5.4 row labelled 'Young's modulus' (33.6 MPa) sits in the tensile-strength position and matches the 95A strength class (TPU95-HF: 26.6 MPa strength); treated as tensile strength, modulus unknown"
+  },
+  "3dxtech_3dxflex_tpu_95a": {
+    "drop": true,
+    "note": "no datasheet values beyond hardness (TDS not found)"
+  },
+  "ultrafuse_pp_gf30": {
+    "drop": true,
+    "note": "duplicate of basf_ultrafuse_pp_gf30 (researched twice)"
+  },
+  "bambu_abs_gf": {
+    "set": {"class": "abs_gf"},
+    "note": "glass-fibre grade; filed as abs_cf by the research brief (no abs_gf code there)"
+  },
+  "confluent_se508_nitinol": {
+    "set": {"class": "nitinol"},
+    "note": "superelastic NiTi filed as steel_wire by the research brief; own class"
+  }
+}

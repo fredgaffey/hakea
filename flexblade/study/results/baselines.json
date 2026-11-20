@@ -1,0 +1,78 @@
+{
+ "5in_tpu_monolithic": {
+  "mod_frac": 4.1684575884799155,
+  "materials": {
+   "body": [
+    "tpu_64d"
+   ],
+   "skin": [],
+   "insert": []
+  }
+ },
+ "7in_tpu_monolithic": {
+  "mod_frac": 2.7662038230326687,
+  "materials": {
+   "body": [
+    "tpu_64d"
+   ],
+   "skin": [],
+   "insert": []
+  }
+ },
+ "5in_tpu_cf_skin": {
+  "mod_frac": 4.084841212991005,
+  "materials": {
+   "body": [
+    "tpu_64d"
+   ],
+   "skin": [
+    "pa6_cf"
+   ],
+   "insert": []
+  }
+ },
+ "7in_tpu_rod": {
+  "mod_frac": 3.065654164118676,
+  "materials": {
+   "body": [
+    "tpu_64d"
+   ],
+   "skin": [],
+   "insert": [
+    "cf_rod_pultruded"
+   ]
+  }
+ },
+ "10in_tpu_rod": {
+  "mod_frac": 2.3863642267995138,
+  "materials": {
+   "body": [
+    "tpu_64d"
+   ],
+   "skin": [],
+   "insert": [
+    "cf_rod_pultruded"
+   ]
+  }
+ },
+ "5in_cf_flexure": {
+  "mod_frac": 3.9994903316520594,
+  "materials": {
+   "body": [
+    "pa6_cf"
+   ],
+   "skin": [],
+   "insert": []
+  }
+ },
+ "10in_cf_flexure": {
+  "mod_frac": 1.9767741707959525,
+  "materials": {
+   "body": [
+    "pa6_cf"
+   ],
+   "skin": [],
+   "insert": []
+  }
+ }
+}

@@ -18,7 +18,40 @@ export function initParams(container, { schema, hints, materials, change }) {
   SCHEMA = schema;
   HINTS = hints;
   MATERIALS = materials.map((m) => m.name);
+  MAT_INFO = Object.fromEntries(materials.map((m) => [m.name, m]));
   onChange = change;
+}
+
+let MAT_INFO = {};
+
+/** Label for a material option: "Brand Product" for real products, name for generic. */
+export function materialLabel(m) {
+  if (!m || !m.brand || m.brand === 'generic') return m ? `${m.name} (generic)` : '';
+  const price = m.usd_per_kg ? ` · $${Math.round(m.usd_per_kg)}/kg` : '';
+  const shore = m.shore && !String(m.product).includes(String(m.shore)) ? ` ${m.shore}` : '';
+  return `${m.brand} ${m.product}${shore}${price}`;
+}
+
+/** <select> of materials grouped by class group (TPU, PLA, Nylon, …), brand-sorted. */
+function materialSelect(path, s, value, nullable) {
+  const groups = new Map();
+  for (const name of MATERIALS) {
+    const m = MAT_INFO[name] || { name };
+    const g = m.group || 'Other';
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(m);
+  }
+  const sel = el('select', { title: MAT_INFO[value]?.source || '' },
+    nullable ? el('option', { value: '' }, '(none)') : null,
+    ...[...groups.entries()].map(([g, ms]) => el('optgroup', { label: g },
+      ...ms.sort((a, b) => (a.brand === 'generic') - (b.brand === 'generic') || materialLabel(a).localeCompare(materialLabel(b)))
+        .map((m) => el('option', { value: m.name, selected: m.name === value, title: m.source || '' }, materialLabel(m))))));
+  if (value !== null && value !== undefined && !MATERIALS.includes(value)) sel.append(el('option', { value, selected: true }, `${value} (?)`));
+  if (value === null) sel.value = '';
+  sel.addEventListener('change', () => onChange(path, sel.value === '' && nullable ? null : sel.value));
+  const m = MAT_INFO[value];
+  const link = m?.url ? el('a.mat-link', { href: m.url, target: '_blank', rel: 'noopener', title: 'product page' }, '↗') : null;
+  return el('div.f', { 'data-path': path }, label(path, s), el('span.ctl', {}, sel, link));
 }
 
 const resolve = (node) => {
@@ -148,7 +181,7 @@ function boolField(path, s, value) {
 
 function stringField(path, s, value, nullable) {
   const key = path.split('.').pop();
-  if (HINTS.material_fields.includes(key)) return enumField(path, s, value, nullable, MATERIALS);
+  if (HINTS.material_fields.includes(key)) return materialSelect(path, s, value, nullable);
   if (key === 'notes') {
     const ta = el('textarea', { rows: 2 }, value || '');
     ta.addEventListener('change', () => onChange(path, ta.value));

@@ -99,6 +99,21 @@ Voigt in frame H); `Material.axial_modulus(orientation, t_hat)`,
 `Material.shear_modulus(orientation, t_hat, n_hat)`; `Material.complex_scale(freq_hz)`
 (multiplier for storage modulus incl. loss: E* = E·complex_scale).
 
+Real products (added): `data/filaments.json` (built by `python -m flexblade.filament_db
+study/filament_research/*.json` — research records + overlays) is registered at import
+next to the generic entries; `META[name]` holds brand/product/url/price/confidence;
+`select_materials("class:tpu" | "rigid" | "inserts" | "brand:…" | "a,b")`;
+`get_material("name@E=0.8,S=1.2")` = scaled variant (sensitivity, works in workers).
+Datasheet values are never edited; simulator fields not on the TDS carry a `derived`
+rule per field (see `filament_db.py` docstring).
+
+### matsweep.py / resize.py (added)
+Layup slots `body|blade|flexure|skin|insert`; `set_material`, `material_sweep`
+(`api.material_sweep`, CLI `material-sweep`, MCP, GUI Materials tab),
+`rotor_mass`, `metrics` + `fitness`. `resize.resize_for_material(design, slot, mat)`
+rescales flexure thickness (→ width below t_min), blade t/c, skin thickness or rod
+diameter so each element's soft bending stiffness EI_soft matches the original.
+
 ### section.py
 `section_properties(shape, layup, orientation, t_hat) -> SectionProps`
 SectionProps fields: EA, EIy, EIz, EIyz (or principal angle), GJ, GAy, GAz,

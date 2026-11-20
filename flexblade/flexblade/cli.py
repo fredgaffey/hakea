@@ -264,6 +264,41 @@ def cmd_sweep(a, out):
                   "variables": {p: v for p, v in variables}})
 
 
+def cmd_material_sweep(a, out):
+    d = _design_arg(a.design)
+    from .matsweep import to_csv, to_jsonl
+    torque = a.torque
+    try:
+        torque = float(torque)
+    except ValueError:
+        pass
+
+    def prog(i, n):
+        if a.progress:
+            print(json.dumps({"progress": i, "of": n}), file=sys.stderr)
+    recs = api.material_sweep(d, a.slot, a.materials, resize=a.resize, torque=torque,
+                              hosts=a.hosts, workers=a.workers, progress=prog)
+    k = a.sort
+    recs.sort(key=lambda r: (not isinstance(r.get(k), (int, float)),
+                             -(r.get(k) or 0) if isinstance(r.get(k), (int, float)) else 0))
+    if a.out:
+        text = to_csv(recs) if a.out.endswith(".csv") else to_jsonl(recs)
+        Path(a.out).write_text(text)
+        out.emit({"out": str(Path(a.out).resolve()), "n": len(recs),
+                  "errors": sum("error" in r for r in recs)})
+    elif a.format == "csv":
+        out.emit({"csv": to_csv(recs)})
+    else:
+        for r in recs:
+            out.line(r)
+
+
+def cmd_resize(a, out):
+    d = _design_arg(a.design)
+    d2, rep = api.resize_for_material(d, a.slot, a.material, t_min=a.t_min)
+    out.emit({"design": d2, "report": rep})
+
+
 def cmd_digest(a, out):
     r = uc.read_json(a.results)
     out.emit({"digest": uc.digest(r)})
@@ -388,6 +423,31 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--evaluate", action="store_true", help="run rotor 1/rev analysis on the result")
     s.add_argument("--progress", action="store_true", help="JSON progress lines on stderr")
     s.set_defaults(fn=cmd_topopt)
+    s = sub.add_parser("material-sweep", parents=[common],
+                       help="evaluate a design once per material in a layup slot; table per material")
+    s.add_argument("design", help=D)
+    s.add_argument("--slot", required=True, choices=["body", "blade", "flexure", "skin", "insert"])
+    s.add_argument("--materials", default="all",
+                   help="all | filaments | rigid | inserts | class:tpu[+pa_cf] | group:NAME | "
+                        "brand:NAME | name1,name2 (append :cond for nylon conditioned variants)")
+    s.add_argument("--resize", action="store_true",
+                   help="resize geometry to the design's section stiffnesses (fair comparison)")
+    s.add_argument("--torque", default="design", help="design | capability | torque_mod_frac number")
+    s.add_argument("--hosts", help="HostPool spec, e.g. local:16,mac:10 (default: local process pool)")
+    s.add_argument("--workers", type=int, default=8, help="local worker processes (default 8)")
+    s.add_argument("--out", help="write .csv or .jsonl (else JSON lines to stdout)")
+    s.add_argument("--format", choices=["jsonl", "csv"], default="jsonl")
+    s.add_argument("--sort", default="fitness", help="record key to sort by (descending)")
+    s.add_argument("--progress", action="store_true")
+    s.set_defaults(fn=cmd_material_sweep)
+
+    s = sub.add_parser("resize", parents=[common],
+                       help="switch a slot to a material and resize to the original section stiffness")
+    s.add_argument("design", help=D)
+    s.add_argument("--slot", required=True, choices=["body", "blade", "flexure", "skin", "insert"])
+    s.add_argument("--material", required=True)
+    s.add_argument("--t-min", type=float, default=0.4e-3, help="min printable thickness, m")
+    s.set_defaults(fn=cmd_resize)
 
     s = sub.add_parser("digest", parents=[common], help="text digest of a Results JSON")
     s.add_argument("results", nargs="?", default="-")

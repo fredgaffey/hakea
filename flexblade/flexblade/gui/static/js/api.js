@@ -34,6 +34,9 @@ export const api = {
   fea: (design, opts = {}) => json('POST', '/api/fea', { design, ...opts }),
   optimize: (request) => json('POST', '/api/optimize', request),
   job: (id) => json('GET', `/api/jobs/${id}`),
+  materialSlots: (design) => json('POST', '/api/material_slots', { design }),
+  materialSweep: (body) => json('POST', '/api/material_sweep', body),
+  setMaterial: (design, slot, material) => json('POST', '/api/set_material', { design, slot, material }),
   putSession: (design) => json('PUT', '/api/session/design', { design }),
   export: async (design, fmt) => {
     const r = await req('POST', `/api/export?fmt=${fmt}`, { design });

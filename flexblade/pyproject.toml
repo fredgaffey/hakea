@@ -20,3 +20,6 @@ flexblade = "flexblade.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["flexblade*"]
+
+[tool.setuptools.package-data]
+flexblade = ["data/*.json", "gui/static/*", "gui/static/js/*", "keel/*", "keel/**/*"]
