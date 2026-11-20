@@ -21,7 +21,7 @@ def test_capability_hakea_hover():
 
 def test_voltage_limit():
     m = Motor(max_current=1000)
-    c = capability(m, 26000, 0.05)
+    c = capability(m, 26000, 0.05, thermal=False)
     assert c.dQ_limit == "voltage"
     assert np.isclose(c.dQ_max_1p, c.dQ_voltage_limit)
     assert capability(m, max_rpm(m, 0.05) * 1.01, 0.05).dQ_max_1p == 0
@@ -52,3 +52,13 @@ def test_thermal_grows_with_pulse():
     m = Motor()
     u = [thermal(m, 18500, 0.058, f * 0.058 / kt(m))["utilisation"] for f in (0, 0.3, 0.6)]
     assert u[0] < u[1] < u[2]
+
+
+def test_thermal_limit_caps_pulse():
+    from flexblade.motor import MOTOR_LIBRARY
+    e = MOTOR_LIBRARY["tmotor_2307_1300kv"]
+    m = e[0] if isinstance(e, tuple) else e
+    hot = m.model_copy(update=dict(thermal_resistance_KW=6.0))
+    c = capability(hot, 15000, 0.05)
+    assert c.dQ_limit == "thermal"
+    assert c.dQ_max_1p < capability(hot, 15000, 0.05, thermal=False).dQ_max_1p

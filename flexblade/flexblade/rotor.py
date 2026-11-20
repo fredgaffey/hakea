@@ -1287,7 +1287,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
     if hd is not None and ss.trim is not None:
         try:
             from . import motor as mot
-            cap = mot.capability(model.design.motor, ss.rpm, float(ss.trim.Q))
+            cap = mot.capability(model.design.motor, ss.rpm, float(ss.trim.Q), ambient_C=model.design.op.temperature_C)
             dq = abs(hd.dQ)
             out.append(Check(name="motor_torque_1p", member="motor", value=float(dq),
                              allowable=float(cap.dQ_max_1p),

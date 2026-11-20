@@ -58,6 +58,7 @@ class MotorCapability:
     dQ_limit: str              # 'current' | 'voltage' | 'none (mean over limit)'
     dQ_current_limit: float
     dQ_voltage_limit: float
+    dQ_thermal_limit: float    # continuous full-cyclic copper budget (inf if thermal=False)
     f_1p: float                # Hz
     bandwidth_gain: float      # |H(f_1p)|
     bandwidth_phase_deg: float  # arg H(f_1p) (lag negative)
@@ -67,7 +68,8 @@ class MotorCapability:
 
 
 def capability(motor: Motor, rpm: float, mean_torque: float = 0.0,
-               duty_max: float = DUTY_MAX) -> MotorCapability:
+               duty_max: float = DUTY_MAX, ambient_C: float = 25.0,
+               thermal: bool = True) -> MotorCapability:
     """Steady and 1/rev torque capability at `rpm` around `mean_torque` [N m].
 
     Q_mean_max = Kt·min(I_max, (V_max − Ke ω)/R)
@@ -82,8 +84,14 @@ def capability(motor: Motor, rpm: float, mean_torque: float = 0.0,
     Qmax = K * max(0.0, min(motor.max_current, i_v))
     dI_c = motor.max_current - I0
     dI_v = i_v - I0
-    dI = max(0.0, min(dI_c, dI_v))
-    lim = "current" if dI_c <= dI_v else "voltage"
+    # thermal: steady winding T = Ta + Rth (R(I0² + dI²/2) + b w²) <= max_winding_C
+    # (continuous full-amplitude cyclic = worst case; Rth is a guess, see schema)
+    P_allow = (motor.max_winding_C - ambient_C) / motor.thermal_resistance_KW
+    P_room = P_allow - motor.R * I0**2 - motor.b * w**2
+    rf = max(motor.cyclic_rms_frac, 1e-3)
+    dI_t = np.sqrt(2.0 * P_room / motor.R) / rf if (thermal and P_room > 0) else (0.0 if thermal else np.inf)
+    dI = max(0.0, min(dI_c, dI_v, dI_t))
+    lim = min((dI_c, "current"), (dI_v, "voltage"), (dI_t, "thermal"))[1]
     if dI <= 0:
         lim = "none (mean over limit)"
     f = rpm / 60.0
@@ -91,7 +99,7 @@ def capability(motor: Motor, rpm: float, mean_torque: float = 0.0,
     return MotorCapability(
         rpm=float(rpm), Kt=K, back_emf=emf, V_max=Vmax, I_mean=I0, Q_mean_max=Qmax,
         dQ_max_1p=K * dI, dQ_limit=lim, dQ_current_limit=K * max(dI_c, 0.0),
-        dQ_voltage_limit=K * max(dI_v, 0.0), f_1p=f, bandwidth_gain=float(abs(H)),
+        dQ_voltage_limit=K * max(dI_v, 0.0), dQ_thermal_limit=K * max(float(dI_t), 0.0), f_1p=f, bandwidth_gain=float(abs(H)),
         bandwidth_phase_deg=float(np.degrees(np.angle(H))),
         copper_W_mean=motor.R * I0**2, copper_W_at_dQmax=motor.R * (I0**2 + 0.5 * dI**2),
         mod_frac_max=(K * dI / mean_torque) if mean_torque > 0 else float("inf"))
@@ -101,12 +109,12 @@ def thermal(motor: Motor, rpm: float, mean_torque: float, dI_amp: float = 0.0,
             ambient_C: float = 25.0) -> dict:
     """Steady winding temperature with a 1/rev current pulse of amplitude `dI_amp` [A].
 
-    copper = I0^2 R + 1/2 dI^2 R (I0 = Q/Kt);  total = copper + b w^2 (iron/friction, lumped
+    copper = I0^2 R + 1/2 (rms_frac dI)^2 R (I0 = Q/Kt; rms_frac = typical/max cyclic demand);  total = copper + b w^2 (iron/friction, lumped
     into the winding path).  T = ambient + total * Rth.  utilisation = rise / (max - ambient).
     """
     w = rpm * 2 * np.pi / 60.0
     I0 = mean_torque / kt(motor)
-    cu = motor.R * (I0**2 + 0.5 * dI_amp**2)
+    cu = motor.R * (I0**2 + 0.5 * (motor.cyclic_rms_frac * dI_amp)**2)
     P = cu + motor.b * w**2
     T = ambient_C + P * motor.thermal_resistance_KW
     room = motor.max_winding_C - ambient_C
@@ -157,8 +165,8 @@ def _J(d_mm, h_mm):
 
 
 def _Rth(d_mm, h_mm):
-    """Winding->ambient K/W, scaled from 3.0 K/W (2307) by 1/stator area (d*h); +-50 %."""
-    return 3.0 * (23.0 * 7.0) / (d_mm * h_mm)
+    """Winding->ambient K/W, scaled from 1.5 K/W (2307, prop wash) by 1/stator area (d*h); +-50 %."""
+    return 1.5 * (23.0 * 7.0) / (d_mm * h_mm)
 
 
 MOTOR_LIBRARY: dict[str, tuple[Motor, str]] = {

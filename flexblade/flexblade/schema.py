@@ -212,9 +212,12 @@ class Motor(_M):
     T0: float = Field(1.3e-6, description="Coulomb friction, N m")
     voltage_gain: float = Field(1.04, description="AM32 effective duty->voltage gain g(rpm)")
     poles: int = 14
-    thermal_resistance_KW: float = Field(3.0, description="winding->ambient thermal resistance with "
-                                         "prop wash, K/W. Guess for 2307 class (+-50 %); library "
-                                         "motors scale ~ 1/stator area (d*h)")
+    thermal_resistance_KW: float = Field(1.5, description="winding->ambient thermal resistance with "
+                                         "prop wash, K/W. Guess for 2307 class (range ~0.8-3; MEASURE "
+                                         "on Hakea: thermocouple after 2 min hover); library motors "
+                                         "scale ~ 1/stator area (d*h)")
+    cyclic_rms_frac: float = Field(0.5, description="RMS cyclic demand / max cyclic over a flight, for "
+                                   "the thermal budget (1.0 = full cyclic continuously; guess)")
     max_winding_C: float = Field(120.0, description="max continuous winding temperature, C "
                                  "(enamel class ~130-155 C, magnets N-grade ~80-150 C; guess)")
     duty_slew_max: float = Field(160.0, description="AM32 max duty change per second (fraction/s); "
