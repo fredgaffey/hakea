@@ -22,7 +22,7 @@ and at the end write a **generic playbook** for an arbitrary mission.
 6. **Iterate** from the improved leader. Keep a diverse archive (best per concept family),
    not one design.
 
-Rules: verify leaders with FEA every step and CalculiX for adoption; beam/FEA/CalculiX
+Rules: full_grid/results.jsonl is git-ignored (>100 MB) — refresh `gzip -c results.jsonl > results.jsonl.gz` before committing. Verify leaders with FEA every step and CalculiX for adoption; beam/FEA/CalculiX
 disagreement > 15 % is a bug flag — investigate before trusting. Token frugality: each
 check-in is short; heavy work is background compute; at most one lean agent at a time
 and only with a clear need. Commit + push results at every check-in.
