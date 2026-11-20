@@ -17,3 +17,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-20 | sonnet-5-5 | lean | Lag tuning + inertia map (I12/I13) | lag tuning/J_hub sweeps: sharp resonance, I13 refuted, found motor_thermal 3.7 | 26k / 7 calls | green: yes |
 | 2026-11-20 | sonnet-5-5 | lean | Robust multi-throttle objective | robust multi-throttle eval; cr swings 6x over throttle | 37k / 17 calls | green: yes |
 | 2026-11-20 | opus-5-5 | lean | Realise ideal: skewed cruciform pivot | skewed cruciform KILL: CF through hinge member; -> tension-torsion strap | 78k / 47 calls | green: yes |
+| 2026-11-20 | opus-5-5 | lean | Tension-torsion strap concept | tt_strap KEEP as CF path (all checks pass); cruciform ratios ~10 too low -> pair strap with crossed plates | 103k / 51 calls | green: yes |
