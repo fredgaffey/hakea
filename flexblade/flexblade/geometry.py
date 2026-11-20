@@ -683,7 +683,7 @@ def _build_single(design: Design, n_side: int = N_AIRFOIL_SURF,
         parts.append(Part(f"blade{k}_shank", "fitting", lay.material, bo, k,
                           [tr_sec(x) for x in shank_secs], ruled=True))
         parts.append(_box_part(f"blade{k}_hub_fitting", "fitting",
-                               design.flexure.layup.material, fo, k, tr_fit(fit_hub)))
+                               HUB_MATERIAL, PrintOrientation(), k, tr_fit(fit_hub)))   # rigid: a TPU hub fitting made the real part ~24x softer than modelled (CalculiX, E01/E02)
         parts.append(_box_part(f"blade{k}_spoke", "spoke", HUB_MATERIAL, PrintOrientation(), 0,
                                tr_fit(spoke)))
     hub_secs = [_circle_section(np.array([0, 0, z]), [0, 0, 1.0], hub_r, [1.0, 0, 0])

@@ -1,0 +1,66 @@
+
+                        S T E P       1
+
+
+                                INCREMENT     1
+
+
+ displacements (vx,vy,vz) for set RN and time  0.1000000E+01
+
+     31763  1.377444E-03  3.026976E-06 -1.630090E-03
+     31764  5.547752E-07  1.325616E-04  4.444181E-07
+
+                        S T E P       2
+
+
+                                INCREMENT     1
+
+
+ displacements (vx,vy,vz) for set RN and time  0.2000000E+01
+
+     31763  3.026976E-06  5.015531E-03 -7.165355E-06
+     31764 -4.115845E-04  1.625075E-06  8.325130E-04
+
+                        S T E P       3
+
+
+                                INCREMENT     1
+
+
+ displacements (vx,vy,vz) for set RN and time  0.3000000E+01
+
+     31763 -1.630090E-03 -7.165355E-06  2.526479E-03
+     31764 -7.769502E-07 -2.980354E-04 -1.595870E-06
+
+                        S T E P       4
+
+
+                                INCREMENT     1
+
+
+ displacements (vx,vy,vz) for set RN and time  0.4000000E+01
+
+     31763  5.547752E-07 -4.115845E-04 -7.769502E-07
+     31764  3.671047E-04 -1.468101E-08  7.637471E-05
+
+                        S T E P       5
+
+
+                                INCREMENT     1
+
+
+ displacements (vx,vy,vz) for set RN and time  0.5000000E+01
+
+     31763  1.325616E-04  1.625075E-06 -2.980354E-04
+     31764 -1.468101E-08  7.288696E-05  5.160413E-07
+
+                        S T E P       6
+
+
+                                INCREMENT     1
+
+
+ displacements (vx,vy,vz) for set RN and time  0.6000000E+01
+
+     31763  4.444181E-07  8.325130E-04 -1.595870E-06
+     31764  7.637471E-05  5.160413E-07  4.547596E-04
