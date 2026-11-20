@@ -122,12 +122,25 @@ if __name__ == "__main__":
         design = json.load(open(sys.argv[i + 1]))
         del sys.argv[i:i + 2]
     results = None
+    fea_shots = "--fea" in sys.argv
+    if fea_shots:
+        sys.argv.remove("--fea")
     if "--results" in sys.argv:        # canned Results JSON (skips a slow live evaluation)
         i = sys.argv.index("--results")
         results = json.load(open(sys.argv[i + 1]))
         del sys.argv[i:i + 2]
     base = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8765"
     out = sys.argv[2] if len(sys.argv) > 2 else "."
+    if design is not None and fea_shots:
+        # FEA view: run the job from the header button; the action waits until the field is shown
+        load = "flexblade.setDesign(%s);" % json.dumps(design)
+        run = "document.getElementById('btn-fea').click();"
+        later = ("(function w(){if(!flexblade.fea.ready){setTimeout(w,300);return;}%s})();")
+        vm = ("var s=document.getElementById('fea-field');s.value='von_mises';"
+              "s.dispatchEvent(new Event('change'));")
+        shots = [("fea", "eval=0&tab=fea", load + run, 25),
+                 ("fea_vm", "eval=0&tab=fea", load + run + later % vm, 25)]
+        sys.exit(asyncio.run(main(base, out, shots)))
     if design is not None:
         # design views: material colours, see-through, utilisation colouring
         load = "flexblade.setDesign(%s);" % json.dumps(design)

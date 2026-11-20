@@ -211,3 +211,23 @@ def test_coaxial_evaluate_and_geometry(client):
     assert any(p["name"].startswith("lower_") for p in g["parts"])
     h = client.get("/api/hints").json()
     assert "op.extra_inflow" in h["advanced"] and any(gr["key"] == "coaxial" for gr in h["groups"])
+
+
+def test_fea_job_coarse(client):
+    """POST /api/fea -> job -> surface field of the 5in rod winner (real FEA, coarse mesh)."""
+    pytest.importorskip("skfem")
+    pytest.importorskip("gmsh")
+    design = json.loads((Path(__file__).resolve().parents[1] / "study" / "designs"
+                         / "5in_tpu_rod_winner.json").read_text())
+    jid = client.post("/api/fea", json={"design": design, "coarse": True}).json()["job_id"]
+    j = _wait(client, jid, timeout=120)
+    assert j["status"] == "done", j["error"]
+    f = j["result"]
+    nf, nv = len(f["faces"]), len(f["vertices"])
+    assert nf > 500 and nv > 200 and len(f["disp"]) == nv and len(f["face_part"]) == nf
+    assert max(max(t) for t in f["faces"]) < nv
+    for k in ("von_mises", "strain", "interlayer", "utilisation", "util_strain", "util_stress"):
+        assert len(f["fields"][k]["values"]) == nf
+        assert f["fields"][k]["min"] <= f["fields"][k]["max"]
+    assert f["fields"]["von_mises"]["max"] > 1e6 and f["summary"]["max_von_mises"] > 1e6
+    assert f["timings"]["total"] < 60

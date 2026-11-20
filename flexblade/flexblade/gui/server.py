@@ -17,6 +17,7 @@ REST (documented at /docs):
   GET  /api/export?fmt=step      same for ?preset=NAME, else the session design (Keel bridge)
   POST /api/optimize             OptimizeRequest -> {job_id}
   POST /api/sweep                {design, variables:{path:[values] | "lo:hi:n"}, what?} -> {job_id}
+  POST /api/fea                  {design, rpm?, coarse?=true} -> {job_id}; result = surface result field
   GET  /api/jobs/{id}            {status, progress, history, result|error}
   GET/PUT /api/session/design    the "current" design shared between GUI tabs and the Keel bridge
 
@@ -142,6 +143,18 @@ def _sweep_job(job: dict, design: Design, variables, what) -> dict:
         rows.append(rec)
         job["progress"] = {"i": len(rows), "n": n, "best": None}
     return {"variables": {p: v for p, v in variables}, "rows": rows}
+
+
+def _fea_job(job: dict, design: Design, rpm, coarse: bool) -> dict:
+    from .. import fea
+    job["progress"] = {"i": 0, "n": 3, "best": None, "stage": "meshing + solving"}
+    res = fea.static_centrifugal(design, rpm=rpm, coarse=coarse, field=True)
+    job["progress"] = {"i": 3, "n": 3, "best": None, "stage": "done"}
+    out = res.pop("field")
+    out["summary"] = {k: v for k, v in res.items() if k not in ("timings",)}
+    out["timings"] = res.get("timings")
+    out["design_hash"] = design.hash()
+    return out
 
 
 def create_app(cors_origins: list[str] | None = None) -> FastAPI:
@@ -336,6 +349,13 @@ def create_app(cors_origins: list[str] | None = None) -> FastAPI:
         if n > int(body.get("max_points", 400)):
             raise HTTPException(422, {"error": f"grid has {n} points > max_points"})
         return {"job_id": jobs.submit("sweep", _sweep_job, d, variables, body.get("what"))}
+
+    @app.post("/api/fea")
+    def fea_run(body: dict = Body(...)):
+        """Static centrifugal FEA of blade 1 + flexure -> job whose result is the surface field
+        {vertices, faces, disp, face_part, part_names, fields:{name:{values,min,max}}, summary}."""
+        d = design_of(body.get("design"))
+        return {"job_id": jobs.submit("fea", _fea_job, d, body.get("rpm"), bool(body.get("coarse", True)))}
 
     @app.get("/api/jobs/{jid}")
     def job(jid: str):

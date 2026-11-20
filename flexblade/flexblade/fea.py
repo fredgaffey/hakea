@@ -314,7 +314,12 @@ def model_from_design(design: Design, region: str = "root", h: Optional[float] =
                       h_member: Optional[float] = None, freq_hz: Optional[float] = None):
     from .geometry import build_solid_mesh
     t0 = time.perf_counter()
-    sm = build_solid_mesh(design, region=region, h=h, h_member=h_member)
+    try:
+        sm = build_solid_mesh(design, region=region, h=h, h_member=h_member)
+    except Exception:  # noqa: BLE001 - gmsh HXT failure on some shank lofts; retry without it
+        if region != "blade1":
+            raise
+        sm = build_solid_mesh(design, region=region, h=h, h_member=h_member, skip_shank=True)
     t1 = time.perf_counter()
     C, rho, bd = _material_arrays(sm, freq_hz)
     model = FEModel(sm.points, sm.tets, C, rho, bd, sm.elem_part,
@@ -477,7 +482,8 @@ def _clamp_hub_side(model: FEModel, sm, hub_radius: float = 0.0) -> np.ndarray:
 
 def static_centrifugal(design: Design, rpm: Optional[float] = None, h: Optional[float] = None,
                        h_member: Optional[float] = None, return_model: bool = False,
-                       stress_stiffening: bool = True, max_iter: int = 6, tol: float = 0.01) -> dict:
+                       stress_stiffening: bool = True, max_iter: int = 6, tol: float = 0.01,
+                       field: bool = False, coarse: bool = False) -> dict:
     """Linear static centrifugal load case of blade 1 + flexure (hub side clamped).
 
     Returns max von Mises, max principal, max interlayer normal stress (σ along the print
@@ -488,8 +494,13 @@ def static_centrifugal(design: Design, rpm: Optional[float] = None, h: Optional[
     and spin softening, i.e. the propeller-moment / tennis-racket restoring effect) until the
     max displacement changes < tol. Without it a soft skewed hinge has no centrifugal
     restoring stiffness and deflections/stresses are grossly overestimated.
+    ``coarse`` meshes at 1.6x the auto size (fast, for the GUI); ``field`` adds
+    ``res["field"] = surface_field(...)`` (viewable boundary-surface result field).
     """
     warnings: list[str] = []
+    if coarse and h is None:
+        from .geometry import auto_mesh_size
+        h = 1.6 * auto_mesh_size(design)
     rpm = _rpm_or_default(design, rpm, warnings)
     om = rpm * 2 * math.pi / 60
     t0 = time.perf_counter()
@@ -535,9 +546,74 @@ def static_centrifugal(design: Design, rpm: Optional[float] = None, h: Optional[
             f"linear small-strain assumption violated (max |u| {res['max_displacement']*1e3:.2f} mm,"
             f" flexure stretch {res['radial_stretch_flexure']*1e3:.2f} mm on {Lf*1e3:.1f} mm length);"
             " stresses are indicative only")
+    if field:
+        res["field"] = surface_field(model, u, sig)
     if return_model:
         res["model"], res["u"], res["sigma"] = model, u, sig
     return res
+
+
+def surface_field(model: FEModel, u: np.ndarray, sig: np.ndarray) -> dict:
+    """Boundary-surface triangles of the tet mesh with per-face result values (frame H, m).
+
+    Per-face values are the element maximum over quadrature points. Fields: von_mises, interlayer
+    (stress along build dir, tension +) [Pa]; strain (max principal, tensor) [-]; util_strain
+    (strain / creep_strain_allow), util_stress (max of principal/Xt, interlayer/Zt),
+    utilisation (max of both). ``disp`` is the per-vertex displacement (m, true scale).
+    """
+    s = sig
+    S = np.empty(s.shape[:2] + (3, 3))
+    S[..., 0, 0], S[..., 1, 1], S[..., 2, 2] = s[..., 0], s[..., 1], s[..., 2]
+    S[..., 1, 2] = S[..., 2, 1] = s[..., 3]
+    S[..., 0, 2] = S[..., 2, 0] = s[..., 4]
+    S[..., 0, 1] = S[..., 1, 0] = s[..., 5]
+    vm = np.sqrt(0.5 * ((s[..., 0] - s[..., 1]) ** 2 + (s[..., 1] - s[..., 2]) ** 2
+                        + (s[..., 2] - s[..., 0]) ** 2) + 3 * (s[..., 3] ** 2 + s[..., 4] ** 2 + s[..., 5] ** 2))
+    b = model.build_dir
+    sn = np.einsum("ea,eqab,eb->eq", b, S, b)
+    p1 = np.linalg.eigvalsh(S)[..., -1]
+    eps = np.einsum("eab,eqb->eqa", np.linalg.inv(model.C), s)   # Voigt, engineering shear
+    E = np.empty_like(S)
+    E[..., 0, 0], E[..., 1, 1], E[..., 2, 2] = eps[..., 0], eps[..., 1], eps[..., 2]
+    E[..., 1, 2] = E[..., 2, 1] = 0.5 * eps[..., 3]
+    E[..., 0, 2] = E[..., 2, 0] = 0.5 * eps[..., 4]
+    E[..., 0, 1] = E[..., 1, 0] = 0.5 * eps[..., 5]
+    e1 = np.linalg.eigvalsh(E)[..., -1]
+    ep = model.elem_part if model.elem_part is not None else np.zeros(len(s), int)
+    allow, Xt, Zt = np.ones(len(s)), np.ones(len(s)), np.ones(len(s))
+    for pi in np.unique(ep):
+        mat = get_material(model.part_materials[pi])
+        sel = ep == pi
+        allow[sel], Xt[sel], Zt[sel] = mat.creep_strain_allow, mat.Xt, mat.Zt
+    el = dict(von_mises=vm.max(1), interlayer=sn.max(1), strain=e1.max(1))
+    el["util_strain"] = el["strain"] / allow
+    el["util_stress"] = np.maximum(p1.max(1) / Xt, el["interlayer"] / Zt)
+    el["utilisation"] = np.maximum(el["util_strain"], el["util_stress"])
+    # boundary faces: faces used by exactly one tet
+    t = model.tets
+    F = np.concatenate([t[:, [1, 2, 3]], t[:, [0, 3, 2]], t[:, [0, 1, 3]], t[:, [0, 2, 1]]])
+    owner = np.tile(np.arange(len(t)), 4)
+    key = np.sort(F, axis=1)
+    _, inv, cnt = np.unique(key, axis=0, return_inverse=True, return_counts=True)
+    bf = cnt[inv.ravel()] == 1
+    F, owner = F[bf], owner[bf]
+    used, newidx = np.unique(F, return_inverse=True)
+    faces = newidx.reshape(-1, 3)
+    # vertex displacement from the P2 vertex dofs
+    vdof = np.empty(len(model.points), int)
+    vdof[t.ravel()] = model.edofs[:, :4].ravel()
+    d = vdof[used]
+    disp = np.stack([u[3 * d], u[3 * d + 1], u[3 * d + 2]], axis=1)
+
+    def f32(a):
+        return np.asarray(a, dtype=np.float32).tolist()
+
+    fields = {k: dict(values=f32(v[owner]), min=float(v[owner].min()), max=float(v[owner].max()))
+              for k, v in el.items()}
+    return dict(units="m", frame="H", vertices=f32(model.points[used]), faces=faces.tolist(),
+                disp=f32(disp), face_part=ep[owner].tolist(), part_names=list(model.part_names),
+                part_materials=list(model.part_materials), fields=fields,
+                n_tets=int(len(t)), n_faces=int(len(faces)))
 
 
 def _stress_summary(model: FEModel, sig: np.ndarray) -> dict:

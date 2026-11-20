@@ -13,6 +13,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FeaView } from './fea-view.js';
 
 const MM = 1000; // scene units are mm
 
@@ -255,6 +256,7 @@ export class Viewer {
     this.root = new THREE.Group();
     this.root.scale.setScalar(MM);
     this.scene.add(this.root);
+    this.fea = new FeaView(this);
     this.slots = {};
     this.psi = 0;
     this.speed = 0.5;       // visual rev/s
@@ -399,7 +401,28 @@ export class Viewer {
     }
   }
 
-  setSeeThrough(on) { this.seeThrough = on; this.applyOpacity(); }
+  setSeeThrough(on) { this.seeThrough = on; this.applyOpacity(); this.fea.setSeeThrough(on); }
+
+  /** FEA mode: show/hide the rotor geometry (ghosted) behind the FEA surface; spin/deform pause. */
+  setFeaMode(on, showGeometry) {
+    this.fea.setActive(on);
+    for (const s of Object.values(this.slots)) s.group.visible = !this.fea.active || !!showGeometry;
+    if (this.fea.active) this.tip.hidden = true;
+  }
+
+  /** Frame an arbitrary point cloud (metres, frame H) at its own centre. */
+  fitCloud(pts) {
+    const box = new THREE.Box3();
+    for (const p of pts) box.expandByPoint(new THREE.Vector3(p[0] * MM, p[1] * MM, p[2] * MM));
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3()).length();
+    const c = box.getCenter(new THREE.Vector3());
+    this.controls.target.copy(c);
+    this.camera.position.set(c.x + size * 0.5, c.y - size * 1.0, c.z + size * 1.6);
+    this.camera.near = size / 1000;
+    this.camera.far = size * 50;
+    this.camera.updateProjectionMatrix();
+  }
 
   initHover(container) {
     this.ray = new THREE.Raycaster();
@@ -453,11 +476,12 @@ export class Viewer {
       this.psi = (this.psi + dt * this.speed * 2 * Math.PI) % (2 * Math.PI);
     }
     for (const s of Object.values(this.slots)) {
-      s.group.rotation.z = this.rotating ? s.sign * this.psi : 0;
+      const fea = this.fea.active;
+      s.group.rotation.z = this.rotating && !fea ? s.sign * this.psi : 0;
       if (s.nodePts) s.nodePts.visible = this.showNodes;
-      s.deform(this.psi, this.exag * this.autoScale);
+      s.deform(this.psi, fea ? 0 : this.exag * this.autoScale);
     }
-    this.updateHover();
+    if (!this.fea.updateHover(this.pointer, this.camera, this.tip)) this.updateHover();
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }

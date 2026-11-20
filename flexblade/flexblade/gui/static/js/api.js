@@ -31,6 +31,7 @@ export const api = {
   validate: (design) => json('POST', '/api/validate', { design }),
   evaluate: (design, what) => json('POST', '/api/evaluate', { design, what }),
   geometry: (design) => json('POST', '/api/geometry', { design }),
+  fea: (design, opts = {}) => json('POST', '/api/fea', { design, ...opts }),
   optimize: (request) => json('POST', '/api/optimize', request),
   job: (id) => json('GET', `/api/jobs/${id}`),
   putSession: (design) => json('PUT', '/api/session/design', { design }),

@@ -7,6 +7,7 @@ import { api } from './api.js';
 import { initParams, renderParams, markChanged } from './params.js';
 import { renderSummary, renderChecks, renderCampbell, renderHarmonic, renderJSON } from './results.js';
 import { OptimisePanel } from './optimize.js';
+import { FeaPanel } from './fea.js';
 
 const S = {
   info: null, schema: null, presets: {}, materials: [], hints: null,
@@ -41,6 +42,8 @@ function initTheme() {
 function showTab(name) {
   $$('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
   $$('.tab-body > section').forEach((s) => s.classList.toggle('on', s.dataset.panel === name));
+  S.fea?.setActive(name === 'fea');
+  if (name !== 'fea' && S.viewer && S.lastGeo) renderLegend(S.lastGeo);
 }
 
 // ------------------------------------------------------------------ design state
@@ -74,6 +77,7 @@ function onParamChange(path, value, opts = {}) {
   refreshGeometry();
   pushSession();
   validateSoon();
+  S.fea?.markStale();
   if ($('#live').checked) liveEval();
 }
 
@@ -158,6 +162,7 @@ async function loadGeometry() {
     S.geometryOk = true;
     vpMsg('');
     renderLegend(geo);
+    S.fea?.applyMode();
   } catch (e) {
     if (seq !== geoSeq) return;
     // keep whatever is on screen; only fall back to the beam model if nothing is shown yet
@@ -175,8 +180,9 @@ const MAT_NAMES = {
 
 function renderLegend(geo) {
   const box = $('#vp-legend');
-  box.replaceChildren();
   if (geo) S.lastGeo = geo; else geo = S.lastGeo;
+  if (S.viewer?.fea.active) return;   // FEA colour scale owns the legend
+  box.replaceChildren();
   if ($('#colour-by').value === 'util') {
     box.append(el('div.lg-title', {}, 'utilisation (value / allowable)'),
       el('div.lg-grad', { style: `background:linear-gradient(90deg,${[0, 0.25, 0.5, 0.75, 1].map((u) => utilColour(u)).join(',')})` }),
@@ -338,6 +344,8 @@ async function boot() {
   sel.replaceChildren(...(names.length ? names : ['(no presets)']).map((n) => el('option', { value: n }, n)));
   if (pres.error) toast(`presets unavailable: ${pres.error}`, true, 6000);
   wireIO();
+  S.fea = new FeaPanel($('#tab-fea'), { getDesign: () => S.design, ensureViewer, viewer: () => S.viewer, status });
+  $('#btn-fea').onclick = () => { showTab('fea'); S.fea.run(); };
   S.optimise = new OptimisePanel($('#tab-optimise'), {
     getDesign: () => S.design, getResults: () => S.results, suggestions: hints.target_suggestions,
     apply: (design, results) => { setDesign(design); if (results) showResults(results); toast('applied optimised design'); },

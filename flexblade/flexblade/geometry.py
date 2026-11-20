@@ -1339,7 +1339,7 @@ def auto_mesh_size(design: Design) -> float:
 def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = None,
                      h_member: Optional[float] = None, order: int = 1,
                      verbose: bool = False, n_side: int = N_AIRFOIL_STEP,
-                     rotor: str = "upper") -> SolidMesh:
+                     rotor: str = "upper", skip_shank: bool = False) -> SolidMesh:
     """Conformal multi-material tetra mesh of a region via gmsh OCC + fragment.
 
     region: 'root' (flexure members of blade 1 only, ends free for BCs), 'blade1'
@@ -1355,6 +1355,9 @@ def build_solid_mesh(design: Design, region: str = "root", h: Optional[float] = 
             design.model_copy(update=dict(layout="single"))
     geo = build_geometry(design, n_side=n_side, blades=[1] if region != "full" else None)
     parts = _region_parts(geo, region)
+    if skip_shank:     # skewed-hinge designs: the bridging shank loft can defeat the mesher
+        parts = [p for p in parts if not p.name.endswith("_shank")]
+        geo.warnings.append("blade-root shank omitted from the solid mesh (meshing fallback)")
     if not parts:
         raise ValueError(f"region {region!r} is empty for this design")
     h = h or auto_mesh_size(design)
