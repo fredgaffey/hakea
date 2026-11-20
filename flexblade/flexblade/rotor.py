@@ -340,6 +340,14 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             kind = "shank" if i < n_sh else "blade"
             el = Element(chain[i], chain[i + 1], e2, [sec], material_fracs=_ea_fracs(sec, layup),
                          tag=f"b{k}.{kind}", kind=kind, blade=k)
+            xm = []
+            for bm in b.balance_masses:
+                rb = float(np.clip(bm.r_frac * b.radius, r_chain[0], r_chain[-1]))
+                if bm.mass > 0 and (r_chain[i] <= rb < r_chain[i + 1] or (i == len(r_chain) - 2 and rb >= r_chain[i])):
+                    xi = (rb - r_chain[i]) / (r_chain[i + 1] - r_chain[i])
+                    xm.append([xi, bm.chord_offset, bm.normal_offset, bm.mass])
+            if xm:
+                el.extra_mpts = np.array(xm)
             blade_elems.append(fe.add_element(el))
         member_elems: dict[str, list[int]] = {}
         for j, m in enumerate(mem_H):
@@ -1378,6 +1386,67 @@ def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: i
                              fe.X0[bi.master] - bi.hinge_point)
 
 
+PITCH_CF_RATIO_MAX = 1.0
+A_LIFT_EFF = 5.7          # 3-D lift-curve slope used in the aero pitch-stiffness estimate, /rad
+
+
+def pitch_cf(model: RotorModel, Omega: float, K6=None, blade: int = 1) -> dict:
+    """CF propeller ("tennis-racket") moment vs pitch stiffness through the skewed hinge.
+
+    Centrifugal potential V = -1/2 Omega^2 sum m |P r|^2 (P: projection on the rotor plane).
+    For a small blade rotation w about the hinge point p (d = r - p), its Hessian is
+        K_cf = -Omega^2 sum m [ S^T P S + sym(P r (x) d) - (P r . d) I ],  S w = w x d,
+    over the blade's mass points (incl. balance masses) at the design geometry.
+    K_cf[x,x] = Omega^2 sum m (y^2 - z^2) = Omega^2 (I_chord - I_normal) cos 2theta is the
+    propeller-moment stiffness: a spring pulling the sections to FLAT pitch. Against it act the
+    flexure (K6, loaded) seen through the skew (a rotation about the hinge axis couples pitch
+    to lag, which CF lag stiffness resists), the rest of K_cf, and the aero pitch stiffness
+    -1/2 rho (Omega r)^2 a c^2 (x_ea - 0.25) (negative = destabilising, EA aft of the AC).
+    With k_eff = 1/[(K_rest)^-1]_xx the static pitch is theta ~ theta0/(1+ratio),
+    ratio = k_prop/k_eff, and thrust T ~ Omega^2 theta saturates as Omega grows at
+    T_max ~ T(1+ratio)/ratio: ratio >> 1 means the trim cannot reach T=W (blade collapses
+    flat). Reported as pitch_cf_ratio (check limit PITCH_CF_RATIO_MAX)."""
+    fe = model.fe
+    bi = model.blades[blade - 1]
+    p = np.asarray(bi.hinge_point, float)
+    P = np.diag([1.0, 1.0, 0.0])
+    W2 = Omega ** 2
+    Kcf = np.zeros((3, 3))
+    for e in fe.elements:
+        if e.blade != blade or e.kind not in ("blade", "shank") or e.mpts is None or not len(e.mpts):
+            continue
+        xa = fe.X0[e.n0]
+        for xi, y, z, m in e.mpts:
+            r = xa + e.E0 @ np.array([xi * e.L0, y, z])
+            d = r - p
+            S = -skew(d)
+            Pr = P @ r
+            A = S.T @ P @ S + 0.5 * (np.outer(Pr, d) + np.outer(d, Pr)) - (Pr @ d) * np.eye(3)
+            Kcf -= W2 * m * A
+    Rk = bi.Rk
+    Kcf = Rk.T @ Kcf @ Rk          # blade-local frame (pitch = local x)
+    k_prop = float(Kcf[0, 0])
+    rho = model.design.op.rho
+    r = np.asarray(model.r_aero, float)
+    c = model.chord(r)
+    w = np.gradient(r) if len(r) > 1 else np.ones(1)
+    k_aero = float(-np.sum(0.5 * rho * W2 * r ** 2 * A_LIFT_EFF * c ** 2 * (model.ea_frac - 0.25) * w))
+    if K6 is None:
+        K6 = flexure_stiffness(model, None, blade)
+    K6 = np.asarray(K6, float)
+    Ks = np.linalg.inv(np.linalg.inv(0.5 * (K6 + K6.T))[3:, 3:])
+    if blade != 1:
+        Ks = Rk.T @ Ks @ Rk
+    Kr = Ks + Kcf - k_prop * np.diag([1.0, 0, 0]) + np.diag([k_aero, 0, 0])
+    try:
+        k_eff = float(1.0 / np.linalg.inv(Kr)[0, 0])
+    except np.linalg.LinAlgError:
+        k_eff = 0.0
+    ratio = k_prop / k_eff if k_eff > 0 else float("inf")
+    return dict(pitch_cf_ratio=float(ratio), pitch_k_prop=k_prop, pitch_k_eff=k_eff,
+                pitch_k_aero=k_aero, pitch_k_struct=float(1.0 / np.linalg.inv(Ks)[0, 0]))
+
+
 # =============================================================================== checks
 
 
@@ -1769,6 +1838,15 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
                                     "mechanism differs from the FACT design intent")
         except Exception:   # noqa: BLE001
             pass
+        try:
+            pc = pitch_cf(model, ss.Omega, res.flexure_stiffness)
+            res.summary.update(pc)
+            if pc["pitch_cf_ratio"] > PITCH_CF_RATIO_MAX:
+                res.warnings.append(f"pitch_cf_ratio {pc['pitch_cf_ratio']:.2f} > {PITCH_CF_RATIO_MAX}: CF "
+                                    "propeller moment dominates the pitch stiffness through the hinge "
+                                    "(blade driven to flat pitch)")
+        except Exception as ex:   # noqa: BLE001
+            res.warnings.append(f"pitch_cf failed: {ex}")
     except Exception as ex:   # pragma: no cover
         res.warnings.append(f"flexure stiffness failed: {ex}")
     md = None
@@ -1820,6 +1898,13 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
     if "checks" in what:
         t1 = time.perf_counter()
         res.checks = checks(model, ss, hd) + stab_checks
+        _pr = res.summary.get("pitch_cf_ratio")
+        if _pr is not None:
+            _pr = float(_pr) if np.isfinite(_pr) else 1e3
+            res.checks.append(Check(name="pitch_cf_ratio", member="blade", value=_pr,
+                                    allowable=PITCH_CF_RATIO_MAX, utilisation=_pr / PITCH_CF_RATIO_MAX,
+                                    note="CF propeller-moment pitch stiffness / effective pitch stiffness "
+                                         "through the skewed hinge (>1: blade driven flat, trim fails)"))
         if design.print_setup is not None:
             from .printsetup import print_checks
             _pc, _ps, _pw = print_checks(design)

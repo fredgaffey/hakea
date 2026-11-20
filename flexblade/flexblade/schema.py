@@ -70,6 +70,18 @@ class BladeStation(_M):
     layup: Optional[Layup] = Field(None, description="None = blade default layup")
 
 
+class BalanceMass(_M):
+    """Point balance mass fixed in the blade (e.g. a steel pin pressed into the root): mass
+    `mass` at radius r_frac·R, offset in the blade section frame from the reference line
+    (elastic axis): `chord_offset` toward the LE (+), `normal_offset` along the section normal
+    (+ = suction/thrust side). A pair at ±normal_offset is a "Chinese weight" (tennis-racket
+    balance): it gives I_normal > I_chord, opposing the centrifugal propeller moment."""
+    mass: float = Field(0.0, ge=0.0, description="kg")
+    r_frac: float = Field(0.25, ge=0.0, le=1.0)
+    chord_offset: float = 0.0
+    normal_offset: float = 0.0
+
+
 class Blade(_M):
     diameter_in: float = Field(5.0, ge=3.0, le=14.0)
     n_blades: int = Field(2, ge=1, le=6)
@@ -83,6 +95,8 @@ class Blade(_M):
     orientation: PrintOrientation = PrintOrientation()
     elastic_axis_chord_frac: float = Field(
         0.25, description="beam reference line position along chord from LE")
+    balance_masses: list[BalanceMass] = Field(
+        default_factory=list, description="point masses in the blade (CF propeller-moment balance)")
 
     @property
     def radius(self) -> float:

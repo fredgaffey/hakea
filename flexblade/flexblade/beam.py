@@ -360,6 +360,7 @@ class Element:
     spring_K: Optional[np.ndarray] = None    # 6×6 [translations; rotations] in frame E0 → zero-length spring
     spring_frame: Optional[np.ndarray] = None  # 3×3 columns (axis a, e2, ·) in H
     loss_eta: float = 0.0                    # hysteretic loss factor (no material_fracs)
+    extra_mpts: Optional[np.ndarray] = None  # (n,4) extra point masses xi, y, z, mass (local)
     # derived
     L0: float = 0.0
     E0: np.ndarray = None
@@ -414,6 +415,8 @@ class Element:
                     for sg in (1, -1):
                         pts.append([xi, c[0] + sg * a[0], c[1] + sg * a[1], m * w * self.L0 / 4])
         self.mpts = np.ascontiguousarray(np.array(pts)) if pts else np.zeros((0, 4))
+        if self.extra_mpts is not None and len(self.extra_mpts):
+            self.mpts = np.ascontiguousarray(np.vstack([self.mpts, np.asarray(self.extra_mpts, float)]))
 
     def complex_scale(self, freq_hz: float) -> complex:
         if not self.material_fracs:
