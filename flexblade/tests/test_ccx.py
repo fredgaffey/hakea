@@ -153,5 +153,8 @@ def test_design_root_stiffness_smoke(tmp_path):
     out = ccx.check(d, rpm=18500.0, workdir=tmp_path, do_modal=False, do_centrifugal=False)
     K = np.array(out["K6"])
     assert np.all(np.linalg.eigvalsh(K) > 0)
-    assert 0.1 < out["k_hinge_Nm_rad"] < 1.0                     # N m/rad (ccx: ~0.32)
+    # N m/rad. Was ~0.32 when the hub fitting was TPU; ca47135 made it rigid PA6-CF (the soft
+    # fitting was a real design flaw), so ccx now gives ~2.99. Beam model gives ~10.2 (our fea 7.7):
+    # ccx/beam ~0.29, residual gap is fitting/anchorage compliance that beam/fea idealise as rigid.
+    assert 1.5 < out["k_hinge_Nm_rad"] < 6.0
     assert out["k_hinge_Nm_rad"] < min(np.diag(K)[3:])
