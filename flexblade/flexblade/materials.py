@@ -9,6 +9,7 @@ Orthotropic convention: axis 1 = raster/fibre direction, 2 = in-layer transverse
 """
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -46,6 +47,11 @@ class Material:
     fatigue_stress_ratio: float = 0.3         # fatigue strength ≈ ratio × static, 1e7
     is_elastomer: bool = False
     source: str = ""
+    # post-print heat forming: working temperature of a part made of this material (°C), and
+    # glass-transition / softening Tg for materials that can be inserted pre-forming (0 = n/a).
+    # ROUGH, assumed values (see FORMING_TEMP_C / TG_C below) -- verify with a coupon.
+    forming_temp_C: float = 0.0
+    tg_C: float = 0.0
 
     # ------------------------------------------------------------------ frequency
     def storage_scale(self, freq_hz: float) -> float:
@@ -220,6 +226,15 @@ LIBRARY: dict[str, Material] = {
                              creep_strain_allow=0.005, fatigue_strain_amp_allow=0.002,
                              fatigue_stress_ratio=0.35, source="spring-temper stainless wire"),
 }
+
+
+# assumed: TPU 95A/64D soften ~100-130 C; PETG-CF Tg ~85 C (form ~90-100); PLA Tg ~60 C;
+# PA6-CF needs ~150-170 C; pultruded CF rod epoxy/vinyl-ester matrix Tg ~110 C (ASSUMPTION);
+# steel spring wire does not care below its tempering temperature.
+FORMING_TEMP_C = {"tpu_95a": 100.0, "tpu_64d": 105.0, "petg_cf": 90.0, "pla": 65.0, "pa6_cf": 160.0}
+TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0}
+for _n, _m in list(LIBRARY.items()):
+    LIBRARY[_n] = dataclasses.replace(_m, forming_temp_C=FORMING_TEMP_C.get(_n, 0.0), tg_C=TG_C.get(_n, 0.0))
 
 
 def get_material(name: str) -> Material:

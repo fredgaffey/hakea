@@ -161,6 +161,9 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     [u; θ] → [f; m]) and optional "mass", "com", "inertia" (lumped on the blade side) — any
     flexure given its stiffness. Flexure.topology == "topopt" builds this from
     design.flexure.topopt."""
+    if design.print_setup is not None:
+        from .printsetup import apply_print_setup
+        design = apply_print_setup(design)
     if ideal_hinge is None and design.flexure.topology == "topopt":
         tp = design.flexure.topopt
         if tp is None:
@@ -1417,11 +1420,17 @@ def evaluate(design: Design, what: list[str] | None = None) -> Results:
     if "checks" in what:
         t1 = time.perf_counter()
         res.checks = checks(model, ss, hd)
+        if design.print_setup is not None:
+            from .printsetup import print_checks
+            _pc, _ps, _pw = print_checks(design)
+            res.checks += _pc
+            res.warnings += _pw
+            res.summary.update(_ps)
         t["checks"] = time.perf_counter() - t1
         if res.checks:
             worst = max(res.checks, key=lambda c: c.utilisation)
             summary["max_utilisation"] = float(worst.utilisation)
-            struct = [c for c in res.checks if c.member not in ("esc", "motor")]
+            struct = [c for c in res.checks if c.member not in ("esc", "motor") and not c.member.startswith("print:")]
             if struct:
                 summary["max_structural_utilisation"] = float(max(c.utilisation for c in struct))
             for c in res.checks:

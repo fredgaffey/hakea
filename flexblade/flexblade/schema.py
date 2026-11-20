@@ -282,6 +282,58 @@ class Coaxial(_M):
                          "moments add; 0 = aligned for maximum combined moment")
 
 
+class FormOp(_M):
+    """Post-print heat-forming of one region (rigid-rotation first model: the region's final
+    PrintOrientation = R_form · as-printed). Ops of a region compose in list order.
+
+    twist: rotate about `axis` (frame H, through the region) by angle_deg.
+    bend:  bend about the line direction `axis` by angle_deg at `radius` (m).
+    inserts_in_unbent: bend only — pultruded/steel inserts sit in an unbent segment (user
+      asserts the bend line misses them); otherwise an insert must be parallel to the bend line.
+    """
+    region: Literal["blade", "flexure"] = "flexure"
+    kind: Literal["twist", "bend"] = "twist"
+    axis: Vec3 = (1.0, 0.0, 0.0)
+    angle_deg: float = 0.0
+    radius: float = Field(0.006, gt=0, description="bend radius, m")
+    inserts_in_unbent: bool = False
+
+
+class PrintSetup(_M):
+    """One build direction for the WHOLE multi-material print (frame H) plus per-region
+    in-layer raster angles; `printsetup.apply_print_setup` derives every part's
+    PrintOrientation from it.
+
+    build_dir: layer-stacking direction; None -> take it from `preset`
+      flat (z, rotor axis) | on_edge (y, chordwise) | hinge_in_plane (build ⟂ hinge axis,
+      rotated about it to minimise flexure overhang) | tilted (build_dir from tilt_deg/azimuth_deg: continuous variable) |
+      formed_torsion_bar (build z, flexure
+      printed flat then heat-formed so the bar ends on the skewed hinge axis).
+    blade_raster_deg / flexure_raster_deg: in-layer raster angle about build_dir, from the
+      projection of the blade span (+x) into the layer plane (right-handed about build_dir).
+      Inserts (rods, bar, tension member) always have their fibre axis along the insert.
+    pauses: insert names dropped in at a print pause: "bar", "tension_rod", "tension_member",
+      "rod_insert", "member<i>".
+    """
+    preset: Literal["flat", "on_edge", "hinge_in_plane", "formed_torsion_bar", "drilled_torsion_bar",
+                    "tilted"] = "flat"
+    tilt_deg: float = Field(0.0, description="preset tilted: build_dir tilt from the rotor axis z, deg")
+    azimuth_deg: float = Field(0.0, description="preset tilted: azimuth of the tilt about z from +x, deg")
+    install: dict[str, Literal["pause", "drilled"]] = Field(
+        default_factory=dict, description="per insert ('bar','rod_insert','tension_rod',"
+        "'tension_member','member<i>'): laid in at a print pause (must lie in a layer) or drilled "
+        "after printing/forming. Default: bar drilled, others pause. formed_torsion_bar: bar pause "
+        "(rod = forming mandrel)")
+    build_dir: Optional[Vec3] = None
+    blade_raster_deg: float = 0.0
+    flexure_raster_deg: float = 0.0
+    pauses: list[str] = Field(default_factory=list)
+    form: list[FormOp] = Field(default_factory=list, description="post-print heat-forming; the "
+                               "as-printed state is build_dir, the final = form applied. Preset "
+                               "formed_torsion_bar fills it (flat print, bar in-plane, twist 90° "
+                               "about the bar, bend (90°−skew) about y) if empty")
+
+
 class Design(_M):
     name: str = "unnamed"
     layout: Literal["single", "coaxial"] = "single"
@@ -291,6 +343,9 @@ class Design(_M):
     motor: Motor = Motor()
     op: OperatingPoint = OperatingPoint()
     analysis: AnalysisOptions = AnalysisOptions()
+    print_setup: Optional[PrintSetup] = Field(
+        None, description="single build direction + region raster angles; None = per-part "
+                          "blade/flexure.orientation as given")
     notes: str = ""
 
     def canonical_json(self) -> str:
