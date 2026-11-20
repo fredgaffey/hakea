@@ -280,6 +280,7 @@ class AeroTrim:
     converged: bool = True
     notes: list[str] = field(default_factory=list)
     v_ext: Optional[np.ndarray] = None   # imposed external inflow (coaxial), m/s + down
+    Q_root: float = 0.0   # root-hardware drag torque (included in Q, P), N m
 
     @property
     def v_own(self) -> np.ndarray:
@@ -501,6 +502,15 @@ class AeroModel:
             hi = np.where(neg, hi, mid)
         return 0.5 * (lo + hi), bool(np.all(ok))
 
+    def _root_torque(self, Omega, inflow):
+        if not getattr(self.design.analysis, "root_drag", True):
+            return 0.0
+        try:
+            from .rootdrag import root_drag_torque
+            return root_drag_torque(self.design, Omega, self.rho, float(self.r[0]), inflow)
+        except Exception:
+            return 0.0
+
     def _shape(self, blade_shape):
         th = np.zeros_like(self.r)
         be = np.zeros_like(self.r)
@@ -543,6 +553,8 @@ class AeroModel:
         dQ = self.B * self.r * (-Fy)
         T = float(np.sum(self.w_int * dT))
         Q = float(np.sum(self.w_int * dQ))
+        Q_root = self._root_torque(Omega, float(U_P[0]))
+        Q += Q_root
         P = Q * Omega
         A = np.pi * self.R**2
         FoM = float(max(T, 0.0) ** 1.5 / np.sqrt(2 * self.rho * A) / P) if P > 0 else 0.0
@@ -558,7 +570,7 @@ class AeroModel:
             cl_a=p["cl_a"], cd_a=p["cd_a"], cm_a=p["cm_a"], cl_W=p["cl_W"], cd_W=p["cd_W"],
             cm_W=p["cm_W"], Fz=Fz, Fy=Fy, Fx=Fx, Mx=Mx, dT_dr=dT, dQ_dr=dQ, T=T, Q=Q, P=P,
             FoM=FoM, CT=CT, CQ=CQ, lambda0=float(np.sqrt(max(CT, 0.0) / 2.0)),
-            converged=conv, notes=notes, v_ext=v_ext.copy())
+            converged=conv, notes=notes, v_ext=v_ext.copy(), Q_root=Q_root)
 
     def thrust_at(self, rpm, collective_deg=None, blade_shape=None) -> float:
         c = np.radians(self.design.op.collective_deg if collective_deg is None else collective_deg)

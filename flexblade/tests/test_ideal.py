@@ -36,7 +36,8 @@ def test_ideal_K6_principal_axes(base):
 def test_ideal_reduces_to_skewed_pin_hinge(base):
     """Given the skewed pin hinge's K (soft about a, k_rot about the other axes, k_trans in
     translation), the ideal topology reproduces the pin-hinge reference model."""
-    kh = dict(k_hinge=0.05, k_rot=1e3, k_trans=1e7)
+    base = base.model_copy(update=dict(analysis=base.analysis.model_copy(update=dict(root_drag=False))))
+    kh = dict(k_hinge=0.05, k_rot=1e3, k_trans=1e7)   # root-hardware drag differs by topology
     cr_pin = _cr(rotor.build_model(base, ideal_hinge=kh))
     d = _ideal(base, k_hinge=0.05, k_cross=1e3, k_flap=1e3, k_axial=1e7, k_inplane=1e7, k_outplane=1e7)
     r = rotor.evaluate(d)
