@@ -42,6 +42,9 @@ from scipy.linalg import lu_factor as sl_lu_factor, lu_solve as sl_lu_solve
 
 from .section import SectionProps
 
+# FLEXBLADE_FAST=0 selects the reference kernels below (tests compare the two paths).
+_FAST = __import__("os").environ.get("FLEXBLADE_FAST", "1") != "0"
+
 # --------------------------------------------------------------------------- small math
 
 
@@ -556,6 +559,9 @@ def assemble(model: FEModel, st: State, Omega: float = 0.0, want_tangent: bool =
     """Assemble at state st (all elements in one parallel numba call).
     du_pred: if given, the initial-stress Hessian is weighted by the predicted element
     forces f7 + K7·B·du_pred (prestress predictor for unstressed starts)."""
+    if _FAST:
+        from . import beam_fast
+        return beam_fast.assemble(model, st, Omega, want_tangent, want_mass, du_pred)
     n = model.ndof
     pk = _pack(model)
     ne = len(model.elements)
@@ -613,6 +619,9 @@ def assemble_internal(model: FEModel, st: State, want_tangent: bool = True, Omeg
 
 
 def assemble_Kmat(model: FEModel, sa: Assembly, scales=None) -> np.ndarray:
+    if _FAST:
+        from . import beam_fast
+        return beam_fast.assemble_Kmat(model, sa, scales)
     n = model.ndof
     dtype = complex if scales is not None and np.iscomplexobj(np.asarray(scales)) else float
     K = np.zeros((n, n), dtype)
