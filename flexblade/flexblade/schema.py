@@ -255,6 +255,10 @@ class Flexure(_M):
     members: list[FlexureMember] = Field(
         default_factory=list, description="explicit members (custom) or fact.py output")
     hub_radius: float = Field(0.006, description="rigid hub outer radius, m")
+    fairing: bool = Field(False, description="root hardware (fitting, flexure, strap, shank) is "
+                          "faired: bluff-body Cd 0.4 instead of 1.1 in the root drag model")
+    root_envelope_ratio: float = Field(2.0, gt=0.0, description="soft limit: max root hardware "
+                                       "height / root airfoil thickness (root_envelope check)")
     topopt: Optional[TopoptFlexure] = Field(None, description="topology == topopt: stored result")
     ideal: Optional[IdealFlexure] = Field(None, description="topology == ideal: spring + masses "
                                           "(None = IdealFlexure defaults)")
@@ -324,6 +328,7 @@ class OperatingPoint(_M):
 
 class AnalysisOptions(_M):
     n_blade_elements: int = 16
+    root_drag: bool = Field(True, description="include root-hardware bluff-body drag in torque/power")
     n_flexure_elements: int = 6
     aero: Literal["none", "quasi_steady", "theodorsen"] = "theodorsen"
     dynamic_inflow: bool = True

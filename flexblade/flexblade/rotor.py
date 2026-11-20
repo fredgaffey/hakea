@@ -1416,6 +1416,16 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                                   f"Rth {model.design.motor.thermal_resistance_KW:.2f} K/W (guess)"))
         except Exception as ex:   # pragma: no cover
             model.warnings.append(f"motor capability check failed: {ex}")
+    try:   # soft check: root hardware height vs local airfoil thickness
+        from .rootdrag import envelope
+        hmax, allow = envelope(model.design)
+        if allow > 0 and hmax > 0:
+            out.append(Check(name="root_envelope", member="root", value=hmax, allowable=allow,
+                             utilisation=hmax / allow,
+                             note=f"hardware height {hmax*1e3:.1f} mm vs {model.design.flexure.root_envelope_ratio:g} x "
+                                  f"root airfoil thickness (soft)"))
+    except Exception as ex:   # pragma: no cover
+        model.warnings.append(f"root envelope check failed: {ex}")
     return out
 
 
