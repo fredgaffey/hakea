@@ -13,7 +13,7 @@ from .schema import Design
 
 CD_BLUFF = 1.1      # rectangular / blocky sections
 CD_FAIRED = 0.4     # fairing: streamlined cover
-_HW_ROLES = ("fitting", "member", "member_core", "member_skin", "rod", "wire")
+_HW_ROLES = ("fitting", "fairing", "member", "member_core", "member_skin", "rod", "wire")
 _CACHE: dict[str, tuple] = {}
 
 
