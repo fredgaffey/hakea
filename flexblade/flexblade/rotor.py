@@ -1355,7 +1355,8 @@ def blade_local_motion_c(model: RotorModel, U: np.ndarray, bi: BladeInfo):
 # =============================================================================== flexure stiffness
 
 
-def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: int = 1) -> np.ndarray:
+def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: int = 1,
+                      cables_only: bool = False) -> np.ndarray:
     """6×6 stiffness of blade `blade`'s flexure (members + stiff links, incl. the
     initial-stress (geometric) stiffness of the trim state) at its hinge point, frame H.
 
@@ -1365,15 +1366,21 @@ def flexure_stiffness(model: RotorModel, ss: StaticState | None = None, blade: i
     pin + T·d. It is directly comparable with an "ideal" zero-length 6×6 at the hinge point
     (whose loaded K equals its K6). The rotor CF lag stiffness (Ω² e S) is NOT included: it
     belongs to the blade and is in the full dynamic model either way. Unloaded (ss None):
-    material stiffness only."""
+    material stiffness only.
+
+    cables_only: keep only the strap strands (cable members) of the flexure, e.g. to read the
+    tension-torsion strap's own geometric pitch stiffness (bifilar: ≈ Σ T_i r²/L about the
+    radial axis through the hinge point, ∝ Ω²)."""
     fe = model.fe
     bi = model.blades[blade - 1]
     st = ss.state if ss is not None else fe.initial_state()
     sub = FEModel()
     sub.X0 = fe.X0
     sub.node_tags = fe.node_tags
+    cab = {f"flex{j}" for j, m in enumerate(bi.members) if m.cable}
     sub.elements = [e for i, e in enumerate(fe.elements)
-                    if e.blade == blade and e.kind in ("flexure", "rigid", "spring")]
+                    if e.blade == blade and e.kind in ("flexure", "rigid", "spring")
+                    and not (cables_only and e.kind == "flexure" and e.tag.split(".", 1)[-1] not in cab)]
     sub._X = fe.Xref
     sub._prepared = True
     sa = assemble_internal(sub, st, True)
