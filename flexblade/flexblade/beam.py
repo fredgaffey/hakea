@@ -686,7 +686,8 @@ class NewtonInfo:
 def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarray] | np.ndarray | None = None,
                  state0: State | None = None, n_steps: int = 4, tol: float = 1e-6, max_iter: int = 30,
                  verbose: bool = False, extra_fixed=(), lam0: float | None = None,
-                 ext_tangent: Callable[[State], np.ndarray] | None = None) -> tuple[State, NewtonInfo]:
+                 ext_tangent: Callable[[State], np.ndarray] | None = None,
+                 max_total: int = 120) -> tuple[State, NewtonInfo]:
     """Nonlinear static equilibrium in the rotating frame: f_int(q) = F_cf(q, Ω) + λF_ext.
 
     Adaptive continuation in λ = (Ω/Ω₀)² (centrifugal and external loads ramp together;
@@ -740,7 +741,7 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
                 continue
             sa = assemble(model, st, Om, True, False)
             Km = assemble_Kmat(model, sa)
-            if res > 0.2 and it == 0:
+            if res > 0.2:
                 # unbalanced state: predict prestress from a (mass-regularised) linear
                 # solve and weight the initial-stress Hessian with it
                 sm = assemble(model, st, Om, False, True)
@@ -790,7 +791,7 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
     res = np.inf
     while lam < 1.0 - 1e-12:
         lt = min(1.0, lam + dlam)
-        st_try, ok, res, note = newton_at(st, lt, 20 if lt < 1.0 else max_iter)
+        st_try, ok, res, note = newton_at(st, lt, 12 if lt < 1.0 else max_iter)
         if ok:
             st, lam = st_try, lt
             msg = note or msg
@@ -798,7 +799,7 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
         else:
             n_fail += 1
             dlam *= 0.35
-            if dlam < 2e-3 or n_fail > 10:
+            if dlam < 2e-3 or n_fail > 6 or total_it > max_total:
                 st = st_try
                 ok_all = False
                 msg = f"Newton did not converge at λ=(Ω/Ω₀)²={lt:.3f} (residual {res:.1e})"

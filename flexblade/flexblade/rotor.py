@@ -41,7 +41,7 @@ from .section import (CircleShape, RectShape, SectionProps, airfoil_shape, secti
 G0 = 9.80665
 import os as _os
 _DEBUG = bool(_os.environ.get("FLEXBLADE_DEBUG"))
-STIFF_FACTOR = 1.0e3
+STIFF_FACTOR = 1.0e2
 
 
 # =============================================================================== helpers
@@ -600,10 +600,12 @@ def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_oute
             return np.real(aero_linear(model, s, aero, tr, 0.0, False).Ka)
 
         its0 = 0
-        if st0 is None:   # cold start: dead loads of the rigid-blade trim first
-            st0, inf0 = solve_static(fe, Om, aero_load_vector(model, fe.initial_state(), aero_at(fe.initial_state(), rpm_x)),
-                                     n_steps=2, extra_fixed=hubfix)
+        if st0 is None:   # cold start: centrifugal only, then dead rigid-blade aero loads
+            st0, inf0 = solve_static(fe, Om, None, n_steps=2, extra_fixed=hubfix)
             its0 = inf0.iterations
+            st0, inf0 = solve_static(fe, Om, aero_load_vector(model, st0, aero_at(fe.initial_state(), rpm_x)),
+                                     state0=st0, extra_fixed=hubfix)
+            its0 += inf0.iterations
         s1, inf = solve_static(fe, Om, fext, state0=st0, extra_fixed=hubfix)
         inf.iterations += its0
         return s1, inf, aero_at(s1, rpm_x)
@@ -613,7 +615,7 @@ def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_oute
     its, conv = info.iterations, info.converged
     xs, fs = [x], [tr.T - W]
     ok_outer = fixed_rpm
-    if not fixed_rpm:
+    if not fixed_rpm and conv:
         for k in range(max_outer):
             if abs(fs[-1]) < 1e-3 * W:
                 ok_outer = True
@@ -626,6 +628,10 @@ def static_trim(model: RotorModel, aero=None, rpm: float | None = None, max_oute
             st, info, tr = solve_at(x, st)
             its += info.iterations
             conv = conv and info.converged
+            if not info.converged:
+                xs.append(x)
+                fs.append(tr.T - W)
+                break
             xs.append(x)
             fs.append(tr.T - W)
             if _DEBUG:
@@ -776,7 +782,10 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
         z = ev[i]
         if z.imag < -1e-9 * max(1.0, abs(z)):
             continue
-        if any(abs(z - s) < 1e-9 * max(1.0, abs(z)) for s in seen):
+        tolz = 2e-2 * w_ref
+        if abs(z) < tolz and any(abs(s_) < tolz for s_ in seen):
+            continue          # rigid-spin double root: keep one
+        if any(abs(z - s_) < 1e-9 * max(1.0, abs(z)) for s_ in seen):
             continue
         seen.append(z)
         keep.append(i)
@@ -800,13 +809,11 @@ def modes(model: RotorModel, ss: StaticState, aero=None, n_modes: int | None = N
         num = np.conj(x) @ Z @ x
         den = np.real(np.conj(x) @ lin.M @ x) * max(w, 1e-12) ** 2
         zeta = float(np.imag(num) / (2 * den)) if w > 0 else 0.0
-        if z.real > 1e-6 * max(abs(z), 1.0) and abs(z.imag) < 1e-6:
-            labels_extra = " (divergent)"
-        else:
-            labels_extra = ""
+        labels_extra = " (divergent)" if (z.real > 1e-3 * w_ref and abs(z.imag) < 1e-3 * w_ref) else ""
         lab, part = _labels(model, x, lin.M)
         if w < 1e-3 * ss.Omega:
             lab = "rigid spin" if part.get("hub", 0) > 0.05 else lab + " (zero)"
+            labels_extra = ""
         out_f.append(w / (2 * np.pi))
         out_z.append(zeta)
         shapes.append(x)
@@ -937,7 +944,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
         u, rv = blade_local_motion_c(model, U, bi)
         i75 = np.argmin(np.abs(bi.chain_r - r75))
         th = rv[i75, 0]
-        lag = -rv[0, 2]
+        lag = -(rv[0, 2] - U[hubd])          # relative to the hub
         flap = -rv[0, 1]
         ref = np.exp(-1j * np.angle(dQ)) if not unit_torque else 1.0
         ref = 1.0   # phases relative to the command (duty / torque) peak at ψ = 0
@@ -951,7 +958,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
                                         lag_amp_deg=la, lag_phase_deg=lp, flap_amp_deg=fa,
                                         flap_phase_deg=fp))
         angles.append(dict(pitch=th, lag=lag, flap=flap, pitch_root=rv[0, 0],
-                           lag_tip=-u[-1, 1] / (model.R - bi.chain_r[0]),
+                           lag_tip=-(u[-1, 1] - U[hubd] * model.R) / (model.R - bi.chain_r[0]),
                            flap_tip=u[-1, 2] / (model.R - bi.chain_r[0])))
     W = d.op.vehicle_mass * G0
     T = float(ss.trim.T) if ss.trim is not None else W
