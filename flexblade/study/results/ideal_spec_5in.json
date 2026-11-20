@@ -1,0 +1,166 @@
+{
+ "diameter_in": 5.0,
+ "control_ratio": 0.03008993287041005,
+ "feasible": true,
+ "binding_constraint": "check:esc_duty_peak",
+ "binding_utilisation": 0.8916513869172418,
+ "violations": {},
+ "motor_thermal_util": 3.192461220219307,
+ "motor_thermal_enforced": false,
+ "rpm": 19700.518300065858,
+ "thrust": 5.8824342228525115,
+ "torque_mod_frac": 3.807040965074304,
+ "capability": {
+  "rpm": 19357.918940151285,
+  "Q": 0.05527630454286861,
+  "dQ_max": 0.22151490083434067,
+  "frac": 4.007411542183478,
+  "limit": "current"
+ },
+ "stiffness": {
+  "frame": "blade-1 frame H at the hinge point: x radial, y in-plane, z rotor axis; [ux,uy,uz,rx,ry,rz] -> [F;M], N/m, N m/rad",
+  "hinge_point": [
+   0.013182158694564287,
+   0.0,
+   0.0
+  ],
+  "hinge_axis": [
+   0.8173637064257852,
+   0.0,
+   -0.5761220108778199
+  ],
+  "skew_deg": 54.821754774891076,
+  "k_hinge": 0.07399917759625159,
+  "k_cross": 19.336710643836344,
+  "k_flap": 37.51831564098762,
+  "k_axial": 314558.9878009273,
+  "k_inplane": 38652.084637527805,
+  "k_outplane": 53848588.89777877,
+  "k_pitch": 6.467612323682986,
+  "k_lag": 12.943097497749608,
+  "k_lag_pitch": 9.070834371655963,
+  "loss_eta": 0.24109814834544974,
+  "K6": [
+   [
+    314558.9878009273,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    38652.084637527805,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    53848588.89777877,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    6.467612323682986,
+    0.0,
+    9.070834371655963
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    37.51831564098762,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    9.070834371655963,
+    0.0,
+    12.943097497749608
+   ]
+  ]
+ },
+ "mass": {
+  "elastic_axis_chord_frac": 0.4175120874793016,
+  "tip_mass": 0.0006437429462612022,
+  "tip_mass_chord": 0.002081965894709969,
+  "lag_inertia": 4.8048816949521396e-08,
+  "hinge_radius": 0.013182158694564287
+ },
+ "dynamics": {
+  "lag_per_rev": 0.3314343104529105,
+  "flap_per_rev": 0.7857896683202297,
+  "pitch_per_rev": 0.5057155351496089,
+  "pitch_amp_deg": 0.9702134549242732,
+  "lag_amp_deg": 0.7234781493935514,
+  "moment_phase_deg": -78.87440880404391,
+  "min_damping": 0.025757071007379912,
+  "res_margin": 0.19013078624393798
+ },
+ "targets": {
+  "skew_deg": 54.821754774891076,
+  "k_hinge": 0.07399917759625159,
+  "k_cross_over_k_hinge": 261.30980467566496,
+  "k_flap_over_k_hinge": 507.0099001058102,
+  "k_lag_over_k_flap": 0.34498077210080474,
+  "k_lag_pitch_over_k_lag": 0.7008240781028723,
+  "k_axial": 314558.9878009273,
+  "k_inplane": 38652.084637527805,
+  "k_outplane": 53848588.89777877,
+  "lag_per_rev": 0.3314343104529105
+ },
+ "J": -3.008993287041005,
+ "n_evals": 52,
+ "generations": 3,
+ "de_message": "Maximum number of iterations has been exceeded.",
+ "wall_s": 29.70666003227234,
+ "x": {
+  "flexure.skew_deg": 54.8217548,
+  "flexure.hinge_radius": 0.0131822,
+  "flexure.ideal.k_hinge": 0.0739992,
+  "flexure.ideal.k_cross": 19.3367106,
+  "flexure.ideal.k_flap": 37.5183156,
+  "flexure.ideal.k_axial": 314558.9878009,
+  "flexure.ideal.k_inplane": 38652.0846375,
+  "flexure.ideal.k_outplane": 53848588.8977788,
+  "flexure.ideal.loss_eta": 0.2410981,
+  "blade.elastic_axis_chord_frac": 0.4175121,
+  "flexure.ideal.tip_mass": 0.0006437,
+  "flexure.ideal.tip_mass_chord": 0.002082,
+  "flexure.ideal.lag_inertia": 0.0
+ },
+ "reference": {
+  "design": "5in_tpu_rod",
+  "control_ratio": 0.012274901180624733,
+  "feasible": false,
+  "binding": [
+   "check:creep_strain",
+   1.5646059799339944
+  ],
+  "lag_per_rev": 0.6870589556217687,
+  "distance": {
+   "rms": 1.2033471163810787,
+   "terms": {
+    "k_hinge": 1.0664430621652807,
+    "k_cross_over_k_hinge": -2.5921072689567906,
+    "k_flap_over_k_hinge": -0.9534891322937322,
+    "skew_deg": -0.6461691979196322,
+    "k_lag_over_k_flap": -1.373873304943556,
+    "k_axial": 0.0,
+    "k_inplane": 0.0,
+    "k_outplane": -0.7168189071329528
+   }
+  }
+ }
+}

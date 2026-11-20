@@ -52,7 +52,8 @@ STOCK_SLEW = 160.0
 RES_BAND = 0.15
 SPLIT_MAX = 2.0
 FAIL = 1.0e6
-CONCEPTS = presets.CONCEPTS + ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar")
+CONCEPTS = presets.CONCEPTS + ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
+                               "skewed_cruciform")
 SIZES = presets.SIZES_IN
 
 RESULTS = HERE / "results"
@@ -88,6 +89,12 @@ def variables(concept: str, D: float) -> list[Variable]:
               Variable(path="flexure.thickness", lo=0.0008, hi=0.005 * s, log=True),
               Variable(path="flexure.width", lo=0.004 * s, hi=0.022 * s),
               Variable(path="flexure.tension_rod_diameter", lo=0.0003, hi=0.0025 * s, log=True)]
+    elif concept == "skewed_cruciform":
+        V += [Variable(path="flexure.thickness", lo=0.0003, hi=0.0012 * s, log=True),
+              Variable(path="flexure.width", lo=0.004 * s, hi=0.024 * s),
+              Variable(path="flexure.bar_length", lo=0.006 * s, hi=0.024 * s),
+              Variable(path="flexure.cross_angle_deg", lo=60.0, hi=120.0),
+              Variable(path="flexure.cruciform_rod_diameter", lo=0.0003, hi=0.0025 * s, log=True)]
     elif concept in ("tpu_split", "tpu95_split"):
         V += [Variable(path="flexure.thickness", lo=0.0008, hi=0.006 * s, log=True),
               Variable(path="flexure.width", lo=0.004 * s, hi=0.022 * s),
@@ -120,7 +127,8 @@ def capability_frac(d: Design) -> dict:
 
 
 def base_design(D: float, concept: str, coax: bool = False, frac_margin: float = 0.95) -> tuple[Design, dict]:
-    pc = "cf_flexure" if concept in ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar") else concept
+    pc = "cf_flexure" if concept in ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
+                                         "skewed_cruciform") else concept
     d = presets.make_coax_preset(D, pc) if coax else presets.make_preset(D, pc)
     if concept == "torsion_bar":
         # Fred's torsion bar: pultruded CF bar on the skewed hinge axis (hinge = bar torsion) +
@@ -130,6 +138,14 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
             topology="torsion_bar", bar_diameter=0.0015 * sc, bar_material="cf_rod_pultruded",
             bar_length=0.010 * sc, bar_with_plate=True, layup=Layup(kind="solid", material="tpu_64d"),
             thickness=0.0015 * sc, width=0.008 * sc, tension_rod_diameter=0.0007 * sc))))
+    if concept == "skewed_cruciform":
+        # X-section PA6-CF torsion hinge on the skewed axis (fibres along it), centroid CF rod
+        # carrying most of the centrifugal load, both embedded in the fittings (fact.py)
+        sc = D / 5.0
+        d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
+            topology="skewed_cruciform", layup=Layup(kind="solid", material="pa6_cf"),
+            thickness=0.0004 * sc, width=0.012 * sc, bar_length=0.012 * sc, cross_angle_deg=90.0,
+            cruciform_rod_diameter=0.0012 * sc, bar_material="cf_rod_pultruded"))))
     if concept in ("tpu_split", "tpu95_split"):
         # split load path: TPU plate hinge (bending) + radial CF rod through the hinge point
         # (centrifugal load); PA6-CF blade
