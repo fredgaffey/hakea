@@ -69,3 +69,22 @@ Key finding: k_t/k_lat = (R^2/2)(E_c/G) only; shear needs A/h ~ 3 mm, so pads mu
 | printed mass (solid-ish PLA, est.) | ~43 g | ~90 g | ~28 g | ~100 g |
 
 Verdict: the ring is much shorter but NOT better: 2-4x the mass (adds to arm tip mass and I_t), a 120-128 mm plate in the downwash, min zeta at 7in worse (0.004 vs 0.012 at 2x I_t, 190 Hz arm; equal at 10in, where the 0.0089 floor is not mount-limited), and the pad columns need T-slot retention for tension (tilt puts half the pads in tension). Twin-washer files kept; ring STLs not shipped (generator `python study/build/mount_ring.py build` writes watertight plates/pad if wanted).
+
+
+## I30: steel XY flexure stage + TPU shear pads (study/build/mount_xy.py, study/mounts_tilt_xy.py; raw results/mounts_tilt_xy.json)
+Two nested orthogonal parallelograms (4 horizontal 1095 shims per stage, 8 total; t 0.08, w 10 along the motor axis, free L 12, pair spacing 24), motor on the inner block.  Pads (4 TPU columns in shear, h 3, D 3.5 at 7in / 2.8 at 10in) carry 90-93% of k_lat, so they set zeta; the blades only guide.  Analytic (7in / 10in; blades identical):
+- k_lat 35.6 / 24.0 kN/m (pads 33.2 / 21.6, blades 2.4); hub mode f_x 128 / 69 Hz, f_y 118 / 67 Hz (10 g middle frame on y); zeta = 0.070 / 0.068 (pad eta 0.15 x pad fraction; blades 0.001).  zeta 0.07 needs the pad to carry >90% of the stiffness: a "thin pad in parallel" cannot damp a stiff steel stage (zeta = 0.075 x pad fraction).
+- k_t 1290 N m/rad (stage1 1670 in series with stage2 5100) = 7.8x / 10x the rule (166 / 128); run in Floquet at 3x derate (430) for clamp/FDM compliance.  k_axial 5.9 MN/m (twin 121 kN/m).
+- yaw about the motor axis: k_theta 3.8 kN m/rad (blade axial, lever 12 mm, two stages in series) -> 2.2 kHz (7in) / 1.3 kHz (10in) with J_p included, still 700 / 425 Hz with a 10x clamp knockdown, vs 1P 183 / 108 Hz.  Motor reaction torque ~0.15 N m twists it ~40 urad.
+- blade stress: 3 g lateral = 0.054 / 0.167 mm -> 18 / 56 MPa; 1P imbalance (1 g mm assumed) 26 / 12 um -> 9 / 4 MPa (far below fatigue).  Thrust (15 / 25 N) is in-plane shear of the blades, 3.9 / 6.5 MPa vs shear-buckling 93 MPa (margin 24 / 14).  Caveat: with blades on both sides of a block, arc shortening locks the stage axially: ~0.6 E A d^2 / L^2 = 1.9 N (7in) but 18.5 N (10in) at 3 g vs Euler 23 N per blade -> at 10in use one blade pair per stage side only, or w 12 / t 0.1 (more guide, less zeta).
+- Floquet (T x J x arm, k_lat x1.09 to compensate the 10 g middle frame, derated k_t 430): 7in min zeta I_t x1/x2/x3 = 0.0014 / 0.0065 / 0.0023 (190 Hz arm; twin 0.0043 / 0.0116 / 0.0123); with +5 g and no k compensation the 190 Hz arm goes unstable (-0.003): the 7in hub is sensitive to mount mass.  10in = 0.0089 floor in all cases (same as twin and ring).  Hub mode 0.64-0.66 x 1P.
+
+| | 7in twin | 7in ring | 7in XY | 10in twin | 10in XY |
+|---|---|---|---|---|---|
+| height | 104 mm | 12+34 | 15 mm | 102 mm | 15 mm |
+| footprint | 30 mm | 120 dia | 79 x 74 mm | 30 mm | 79 x 74 mm |
+| printed mass (est., 50% fill PETG) | 43 g | 90 g | ~26 g + 3 g steel (+10 g moving middle frame) | 28 g | ~26 g |
+| k_t margin vs rule | 1.07x | 1.02x | 7.8x (2.6x derated) | 1.13x | 10x (3.4x derated) |
+| min zeta (I_t x2) | 0.0116 | 0.0040 | 0.0065 | 0.0089 | 0.0089 |
+
+Verdict: the XY stage fixes height and k_t margin (7-10x, tilt/yaw/axial stiff by kinematics) but not the 7in tilt-Floquet damping floor, which is set by hub mass and arm frequency rather than by k_t, and it costs a 79 x 74 mm plate in the downwash.  It is better than the twin only if height is the constraint; at 10in it is a tie on zeta.  Build: 3 FDM frames (slots 0.38 mm open at the top for dropping the shims in, CA, no print pause needed if the top is left open), 8 shim strips 19 x 9.6 mm, 4 glued TPU pads.  STLs (watertight): study/build/{7in_v6,10in_v5}/xy/.  Env knobs of the scan: XY_DERATE, XY_KSCALE, XY_DM.

@@ -1,0 +1,67 @@
+{
+ "inner_block": {
+  "watertight": true,
+  "vol_mm3": 7321,
+  "bbox": [
+   30.0,
+   30.0,
+   10.0
+  ]
+ },
+ "middle_frame": {
+  "watertight": true,
+  "vol_mm3": 10451,
+  "bbox": [
+   43.0,
+   66.0,
+   10.0
+  ]
+ },
+ "outer_frame": {
+  "watertight": true,
+  "vol_mm3": 22982,
+  "bbox": [
+   79.0,
+   74.0,
+   15.0
+  ]
+ },
+ "tpu_pad": {
+  "watertight": true,
+  "vol_mm3": 42,
+  "bbox": [
+   3.5,
+   3.5,
+   5.8
+  ]
+ },
+ "shim_blade": {
+  "watertight": true,
+  "vol_mm3": 15,
+  "bbox": [
+   19.0,
+   9.6,
+   0.1
+  ]
+ },
+ "footprint_mm": [
+  79.0,
+  74.0
+ ],
+ "height_mm": 15.0,
+ "blades": {
+  "n": 8,
+  "t": 0.08,
+  "w": 9.6,
+  "L_free": 12.0,
+  "strip_len": 19.0,
+  "material": "steel_1095_shim"
+ },
+ "pads": {
+  "n": 4,
+  "D": 3.49,
+  "h": 3.0,
+  "mat": "TPU 85A",
+  "note": "glued 1 mm-radius tenons in sockets of inner block and base plate"
+ }
+}
