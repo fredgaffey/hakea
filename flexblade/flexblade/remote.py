@@ -20,6 +20,7 @@ import shlex
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any, Callable, Iterable, Iterator
 
@@ -94,6 +95,9 @@ def _eval_job(job: dict) -> dict:
         return {"id": job["id"], "error": f"{type(e).__name__}: {e}"}
 
 
+WATCHDOG_PERIOD = 10.0
+
+
 def worker_main(workers: int) -> None:
     """stdin JSON-lines jobs → stdout JSON-lines results, as they complete."""
     import multiprocessing as mp
@@ -108,18 +112,58 @@ def worker_main(workers: int) -> None:
     lock = threading.Lock()
     out = sys.stdout
 
+    last = [time.monotonic()]
+    npend = [0]
+    pool_ref: list = []
+
+    def die(code=0):
+        for p in pool_ref:
+            try:
+                p.terminate()
+            except Exception:
+                pass
+        os._exit(code)
+
     def emit(rec):
-        with lock:
-            out.write(json.dumps(rec, default=str) + "\n")
-            out.flush()
+        last[0] = time.monotonic()
+        npend[0] = max(0, npend[0] - 1)
+        try:
+            with lock:
+                out.write(json.dumps(rec, default=str) + "\n")
+                out.flush()
+        except (BrokenPipeError, OSError, ValueError):
+            die(0)                                # driver gone: nobody to hear results
+
+    try:
+        idle_s = float(os.environ.get("FLEXBLADE_WORKER_IDLE_MIN", "30")) * 60
+    except ValueError:
+        idle_s = 1800.0
+    def watchdog():
+        while True:
+            time.sleep(WATCHDOG_PERIOD)
+            if os.getppid() == 1 or (npend[0] == 0 and time.monotonic() - last[0] > idle_s):
+                die(0)
 
     with mp.get_context("spawn").Pool(workers) as pool:
+        pool_ref.append(pool)
+        threading.Thread(target=watchdog, daemon=True).start()
         pending = []
-        for line in sys.stdin:
+        while True:
+            try:
+                line = sys.stdin.readline()
+            except (OSError, ValueError):
+                break
+            if not line:                          # EOF: driver closed / died
+                break
             line = line.strip()
             if not line:
                 continue
-            job = json.loads(line)
+            try:
+                job = json.loads(line)
+            except ValueError:
+                continue
+            last[0] = time.monotonic()
+            npend[0] += 1
             pending.append(pool.apply_async(_eval_job, (job,), callback=emit,
                                             error_callback=lambda e, j=job: emit(
                                                 {"id": j["id"], "error": repr(e)})))
