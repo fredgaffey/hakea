@@ -36,3 +36,19 @@ Stiffness pass (<= 11 %, 20 % limit). Preset/hover pass/fail NOT established. To
   the beam strip discretisation/slot-frame stress recovery (not investigated). Beam in-plane part unchecked.
 - Principal-axis offset (axis stage, beam flexure_only_model): v8 0.453 deg, v8 presets=0 0.0008 deg, v8 skew60 0.456 deg,
   skew60 presets=0 0.0008 deg -> caused by the (blade-asymmetric) strip presets, not by the skew.
+
+## 4. Beam strip stress recovery audit (b2.flex0: 6 elements, 8-lamina stack, fibres z +-0.05 / y +-4.5 mm)
+- 219 MPa (T0.7) = (190 out-of-plane + 19 in-plane) x Kt 1.05 at el56a, mid-span; axial 0-1 MPa; torsion (T 22 -> -17
+  mN m) is not in sigma. Along the strip: M2 (oop) -15 hub / +25 mid-span plateau / -9 blade mN m; M3 (in-plane) 340 -> 54.
+  T1.0: M2 -24 / +30 / -14, M3 414 -> 14 -> 265 MPa.
+- Interior peak is PHYSICAL: the stiff strip carries a large in-plane moment M3. Rod equilibrium in the section frame,
+  dM2/ds = -V3 + k1*M3 and dT/ds = -k2*M3 (k1 twist rate ~12 rad/m, k2 oop curvature): lateral-torsional coupling
+  turns ~15 mN m of M3 into M2 per element and builds the mid-span plateau (clamped M_cr,LTB ~ 2pi/L sqrt(EIy GJ) ~ 0.39
+  N m vs M3 0.34-0.41). M2 and M3 both scale ~+22 % T0.7->T1. Presets are not double-counted (slot mode).
+- ccx misses it: mixed BCs free u_x/u_y/theta_z -> M3 = 0, no coupling; fair check must impose theta_z/u_y (or apply M3).
+- Recovery ARTEFACT found and fixed (beam.element_end_forces(e, c, st)): legacy K12.d7 moments are log-rotation conjugates
+  in the CR frame, off by ~1/2 theta x M; with M3 ~ 0.3 N m and theta ~ 1.5 deg that leaks ~5 mN m (~40 MPa) into M2 and
+  makes M2/T jump at nodes. Now Bt.f7 (spatial nodal action) in the end-section frame, continuous at nodes
+  (tests/test_strip_stress_recovery.py). Mid-span 207 vs 208 MPa (unchanged); hub clamp 175 vs 143 (T0.7), 270 vs 225 (T1),
+  so T1 binding sigma_m moves to the hub clamp, 284 (x Kt) vs 265. rotor static/mean uses it; amplitudes (_lin) still CR.
+- Re-score (sa.py file v8): cr_pl 0.0883 (was 0.0911), feasible, mech margin 0.036, phase 6.2 deg / gain 9.8 % (unchanged).
