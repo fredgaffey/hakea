@@ -1,0 +1,30 @@
+{
+ "v6": {
+  "cr_pl": 0.06499594987059955,
+  "feasible_pl": true,
+  "viol_hard": {},
+  "cr_min": 0.052761502206658054,
+  "res_margin": 0.1841467906560592,
+  "res_which": "pitch antisym+hub 0.88/rev vs 1P"
+ },
+ "t1.15": {
+  "cr_pl": 0.061094365584514886,
+  "feasible_pl": false,
+  "viol_hard": {
+   "resonance": 0.29545593478871
+  },
+  "cr_min": 0.04978870362624806,
+  "res_margin": 0.1056816097816935,
+  "res_which": "pitch antisym+hub 0.92/rev vs 1P"
+ },
+ "t1.08": {
+  "cr_pl": 0.06315538552676528,
+  "feasible_pl": false,
+  "viol_hard": {
+   "resonance": 0.07596368601701302
+  },
+  "cr_min": 0.051402218226635314,
+  "res_margin": 0.13860544709744804,
+  "res_which": "pitch antisym+hub 0.90/rev vs 1P"
+ }
+}

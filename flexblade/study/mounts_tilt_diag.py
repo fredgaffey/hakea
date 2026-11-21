@@ -129,6 +129,54 @@ def fmt(r):
         r["z_lib"], r["re_lib"], r["f_rot_lib"], g(r["inf_lib"]), r["z_dom"], r["re_dom"], r["f_rot_dom"], g(r["inf_dom"]))
 
 
+FA = (60, 80, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 210, 225, 260, 300)
+VARS = {"base": {}, "eta.06": dict(eta=0.06), "eta.10": dict(eta=0.10), "eta.15": dict(eta=0.15),
+        "w1.3": dict(width=1.3), "t1.15": dict(thickness=1.15), "m45": dict(mass=0.045), "m70": dict(mass=0.070),
+        "G1.5": dict(G=1.5)}
+
+
+def variant_design(v, fn="7in_tt_strap_steelx_v6"):
+    d0 = Design.model_validate_json((TW.HERE / "designs" / f"{fn}.json").read_text())
+    fl = d0.flexure
+    up = {}
+    if "eta" in v:
+        mat = fl.layup.material.split("eta=")[0] + "eta=%g" % v["eta"]
+        up["layup"] = fl.layup.model_copy(update=dict(material=mat))
+    for k in ("width", "thickness"):
+        if k in v:
+            up[k] = getattr(fl, k) * v[k]
+    return d0.model_copy(update=dict(flexure=fl.model_copy(update=up)))
+
+
+def grid_job(a):
+    name, T, J = a
+    v = VARS[name]
+    C = setup(T, J, d0=variant_design(v))
+    m = dict(MNT)
+    if "mass" in v:
+        m["mass_motor_kg"] = v["mass"]
+    if "G" in v:
+        m["G_mpa"] = MNT["G_mpa"] * v["G"]
+    out = dict(var=name, T=T, J=J, f1p=C["ss"].Omega / 2 / np.pi, nu_lag=None)
+    for fa in FA:
+        for ix in (1.0, 2.0):
+            out[f"{fa}_{ix:g}"] = solve(C, af_of(C, fa, ix=ix, mnt=m))
+    return out
+
+
+if __name__ == "__main__" and "grid" in sys.argv:
+    import json
+    from concurrent.futures import ProcessPoolExecutor
+    jobs = [("base", T, J) for T in (0.7, 1.0, 1.4) for J in (2.5e-6, 3.76e-6, 5.49e-6)]
+    jobs += [(n, 1.4, J) for n in VARS if n != "base" for J in (2.5e-6, 3.76e-6)]
+    with ProcessPoolExecutor(4) as ex:
+        res = list(ex.map(grid_job, jobs))
+    (TW.HERE / "results" / "mounts_tilt_diag.json").write_text(json.dumps(res, indent=1, default=float))
+    for r in res:
+        print(r["var"], r["T"], r["J"], "1P %.0f" % r["f1p"], " ".join(
+            "%s:%.3f" % (k, r[k]) for k in r if "_" in k and k[0].isdigit()), flush=True)
+    sys.exit()
+
 if __name__ == "__main__" and "dom" in sys.argv:
     C = setup()
     for fa in (150, 170, 190, 225, 260, 300, 350):
