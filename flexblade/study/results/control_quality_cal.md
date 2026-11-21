@@ -22,3 +22,5 @@ FC has continuous eRPM: gain/phase calibrated at n nodes equally spaced in rpm o
 | 7in_v6 | 5 | 3.6 | 15.2 | 0.9/3.6 | True |
 | 7in_v5 | 5 | 5.1 | 13.5 | 1.1/3.5 | True |
 | 10in_v5 | 8 | 6.0 | 13.5 | 1.5/4.6 | True |
+| 7in_v6 | 8 | 3.5 | 14.8 | 0.9/2.9 | True |
+| 7in_v5 | 8 | 4.7 | 12.5 | 0.7/2.4 | True |
