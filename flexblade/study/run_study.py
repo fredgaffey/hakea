@@ -517,16 +517,38 @@ def score_pl(m: dict) -> float:
 
 
 class Logger:
+    """Appends records as COMPLETE gzip members (buffered, flushed every 200 records / 60 s).
+
+    A single long-lived gzip stream left a truncated member when a run was killed, and every
+    member appended after it became unreadable (2026-11-21: ~70k records lost from the archive;
+    the SQLite eval cache is the authoritative store). Now a kill loses at most the buffer.
+    """
+
     def __init__(self, path: Path):
-        self.fh = gzip.open(path, "at")
+        self.path = path
+        self.buf: list[str] = []
+        self.t_flush = time.time()
         self.lock = threading.Lock()
 
     def write(self, rec: dict):
         with self.lock:
-            self.fh.write(json.dumps(rec, default=float) + "\n")
+            self.buf.append(json.dumps(rec, default=float) + "\n")
+            if len(self.buf) >= 200 or time.time() - self.t_flush > 60:
+                self._flush()
+
+    def _flush(self):
+        if self.buf:
+            data = gzip.compress("".join(self.buf).encode())
+            with open(self.path, "ab") as fh:
+                fh.write(data)
+                fh.flush()
+                os.fsync(fh.fileno())
+            self.buf = []
+        self.t_flush = time.time()
 
     def close(self):
-        self.fh.close()
+        with self.lock:
+            self._flush()
 
 
 def _round(v: dict) -> dict:
