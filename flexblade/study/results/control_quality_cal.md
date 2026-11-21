@@ -37,3 +37,22 @@ FC has continuous eRPM: gain/phase calibrated at n nodes equally spaced in rpm o
 | +8 | 0.076 | 3.2 | 0.091 | 0 | no | pulse_infeasible, aeroelastic_stability 0.060 |
 
 Cliff between +4 and +5: margin reaches 0.03 at about +4.8 but pulse_infeasible appears (pulse scale 0 at some case). No v7 saved.
+
+## I36 partial preset: v5 + alpha x (resolved v5zs slot presets), no re-resolve (study/i34tools/sa.py)
+
+Scored with control_quality_cal (continuous, 5 nodes) + Goodman (`strip_fatigue_mean="goodman"` set explicitly) + ground_resonance (FLEXBLADE_GROUND_RES=1). NOTE: the earlier sc.py / rt.py skew scan above set NEITHER Goodman nor ground_resonance (v5zs json has strip_fatigue_mean "none"), so its cr_pl values are amplitude-only fatigue. alpha = 0 is v5 (CAL worst-corner mech margin 0.064).
+
+| alpha | mech mode /rev (nominal T0.7..1.4, all builds) | worst-corner mech margin | resid phase deg / gain % | binding lamina sm MPa (T0.7 / T1.0, J3.76e-6) | cr_pl | CAL feasible |
+|---|---|---|---|---|---|---|
+| 0.3 | 0.92 nominal; 0.876-0.966 | 0.034 | 8.2 / 11.8 | 219 / 318 | 0.0818 | YES (no hard viol) |
+| 0.4 | 0.93 nominal; 0.887-0.978 | 0.022 | 8.5 / 10.3 | 215 / 288 | 0.0895 | no: cqc_mech_margin |
+| 0.6 | 0.95 nominal; 0.905-0.996 | 0.004 | 7.3 / 8.4 | 220 / 226 | 0.108 | no: cqc_mech_margin |
+| 0.8 | 0.97 nominal; 0.916-1.008 | 0.001 FLIP | 7.0 / 7.4 | 228 / 265 | 0.126 | no: mech margin + side flip |
+
+Binding check at every alpha: fatigue (strain/stress) at T0.7 (pulse scale 0.29-0.46). The worst corner moves ~-0.105/rev per unit alpha up to 0.4, then saturates near 1P. Linear interpolation alpha=0 (0.064) to 0.4 (0.022) puts margin 0.03-0.035 at alpha 0.28-0.32; alpha 0.3 scored 0.034 -> saved as designs/10in_tt_strap_steelx_v7.json (slot angles in "notes"; +22 % cr_pl vs v5 with Goodman 0.067). Under the old 0.15 hard 1P band v7 fails (pitch antisym+hub 0.92/rev, margin 0.125); under CAL it is feasible.
+
+Tolerance check (study/i34tools/tol.py; nominal + 8 random builds, t/w/L/hinge_radius each U(0.95,1.05), printed presets FIXED; T0.7/1.0/1.4 at J 3.76e-6, margin metrics): cr_pl 0.076-0.092 (nominal 0.082); mech mode 0.90-0.94/rev; the ONLY hard violation on any build is the legacy 0.15 'resonance' band on that mechanism mode (exempt under CAL); no fatigue, ground_resonance or stability violation.
+
+### Skew +5 deg cliff diagnosed (s5 design rescored with sa.py)
+
+pulse_infeasible comes from `harmonic_jitter` (n>=2 resonant-crossing jitter, rotor.py / forced.py). In run_study.pulse_util_fns its u(s) = j*max(s,1) / max(JITTER_MAX_DEG=0.3, 0.10*pitch_1P*s): at vanishing pulse the allowable is the fixed 0.3 deg floor and the jitter does not scale down (max(s,1)), so if nP jitter > 0.3 deg at a point, pulse_scale returns 0. At skew +5 it flips at NOMINAL T1.0, J 2.5e-6 and 3.76e-6 (u0 1.027 / 1.007, i.e. jitter ~0.30-0.31 deg, just over the floor) and on stiff build corner p1 (t,w,h +5 %, L -5 %) at T0.7/T1.0/T1.4 (u0 up to 1.48). At +4 it is just below the floor -> a cliff, not a trend. Note the function is non-monotone (allowable grows with s; for s>=3/pitch_1P u = j/(0.1 pitch_1P), constant), so pulse_scale's "u(1e-9)>1 -> infeasible" shortcut can declare infeasible a point that is feasible at a normal pulse amplitude; the same flip appears on alpha 0.8 at T1.4:p1 (u0 3.7). Fix candidates: treat jitter as a hard check at the operating pulse (s=1) instead of in pulse_scale, or search s over the whole range rather than testing s->0.
