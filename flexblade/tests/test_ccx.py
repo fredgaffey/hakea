@@ -173,3 +173,20 @@ def test_steelx_strips_beam_vs_ccx(tmp_path, size):
         assert 0.8 < q[k] < 1.25, (k, q)
     assert 0.7 < q["k_cross"] < 1.4 and 0.7 < q["k_flap"] < 1.4, q   # 5": ~1.30 (plate/clamp effect)
     assert r["axis_err_deg"] < 1.0
+
+
+@pytest.mark.parametrize("cross_angle", [60.0, 120.0])
+def test_strip_flexure_cross_angle_presets(tmp_path, cross_angle):
+    """k_cross / k_flap ccx vs beam stay within 20 % over the DE cross_angle range, with the
+    10in v10m slot presets present (ccx ignores them; the beam must too -- its unloaded
+    reference state with pre-angled slots is unequilibrated: was 1.80 at 120 deg)."""
+    from pathlib import Path
+    from flexblade.schema import Design
+    f = Path(__file__).parents[1] / "study" / "designs" / "10in_tt_strap_steelx_v10m.json"
+    d = Design.model_validate_json(f.read_text())
+    d.flexure.cross_angle_deg = cross_angle
+    r = ccx.compare_strip_flexure(d, tmp_path)
+    n = d.flexure.strip_laminae          # ccx meshes one lamina, the beam carries the stack
+    for k in ("k_cross", "k_flap", "kx", "ky", "kz"):
+        assert 0.8 < n * r["ratio"][k] < 1.2, (k, n * r["ratio"][k])
+    assert r["axis_err_deg"] < 0.1
