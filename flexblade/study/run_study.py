@@ -55,6 +55,8 @@ from flexblade.schema import Design, Layup, OptimizeRequest, Target, Variable  #
 RAMP_SLEW = 2550.0          # AM32 max_ramp 255 → 255/2000 per 50 µs tick = 2550 /s
 STOCK_SLEW = 160.0
 RES_BAND = 0.15
+MECH_MARGIN = 0.075   # --criterion mech_band: nominal hard 1P margin of the mechanism mode
+GOODMAN = False       # --goodman: strip_fatigue_mean="goodman" on every evaluated design
 # ground resonance (flexblade.ground_resonance): env FLEXBLADE_GROUND_RES=1 (set by --ground-resonance, so
 # worker processes inherit it); FLEXBLADE_ARM_RANGE="lo,hi" Hz overrides the per-size default arm range
 GROUND_RES = os.environ.get("FLEXBLADE_GROUND_RES") == "1"
@@ -389,10 +391,21 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
         if not k.startswith("member:") and k not in SOFT_CHECKS and u > 1:
             viol["check:" + k] = math.log(u)
     splits, margins, which = [], [], []
+    mech_mgs = []
     for tag, sub in _sub_results(r):
         sp = (sub.get("summary") or {}).get("trim_diff_pitch_deg", float("nan"))
         splits.append(sp)
         mg, wh = resonance_margin(sub)
+        if criterion == "mech_band":
+            im = mechanism_mode(sub)
+            if im is not None:
+                mm_ = sub["modes"][im]
+                rpm_ = (sub.get("summary") or {}).get("rpm") or 1.0
+                out["mech_per_rev"] = float(mm_["freq_hz"] * 60 / rpm_)
+                out["mech_mode"] = f"{mm_['label']} {out['mech_per_rev']:.3f}/rev"
+                mech_mgs.append(abs(out["mech_per_rev"] - 1.0))
+                out["res_margin_all"], out["res_which_all"] = mg, wh
+                mg, wh = resonance_margin(sub, skip_1p=im)
         if criterion in ("control_quality", "control_quality_cal"):
             im = mechanism_mode(sub)
             if im is not None:
@@ -420,6 +433,11 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
         viol["resonance"] = 1.0
     elif mg < RES_BAND:
         viol["resonance"] = (RES_BAND - mg) / RES_BAND
+    if mech_mgs:
+        mm_min = min(mech_mgs)
+        out["mech_margin"] = mm_min
+        if mm_min < MECH_MARGIN:
+            viol["mech_band"] = (MECH_MARGIN - mm_min) / MECH_MARGIN
     if GROUND_RES:
         from flexblade import ground_resonance as gr
         af = d.op.airframe
@@ -639,6 +657,10 @@ def _jhub(D):
 J_HUB = None    # tuple of motor.J_hub values: robust/tolerance dimension
 
 
+def _goodman(d: Design) -> Design:
+    return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_fatigue_mean="goodman"))))
+
+
 def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, popmult: int,
              maxiter: int, seed: int) -> dict:
     from scipy.optimize import differential_evolution
@@ -649,6 +671,8 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     bo = _lead_for(BASE_DESIGNS, D)
     if bo:   # fields outside the param space (laminae, balance pins, mount, clamp...) fixed from the lead
         base = bo[0].model_copy(update=dict(name=base.name))
+    if GOODMAN:
+        base = _goodman(base)
     V = variables(concept, D)
     obj = Objective(OptimizeRequest(design=base, variables=V,
                                     targets=[Target(quantity="harmonic.control_ratio", kind="max")]))
@@ -800,13 +824,16 @@ def main(argv=None):
     ap.add_argument("--objective", choices=("cr", "pulse_limited"), default="cr",
                     help="pulse_limited: maximise cr at the pulse that binds the most-utilised "
                          "pulse-scaling check (per-throttle pulse schedule)")
-    ap.add_argument("--criterion", choices=("margin", "control_quality", "control_quality_cal"),
+    ap.add_argument("--criterion", choices=("margin", "control_quality", "control_quality_cal", "mech_band"),
                     default="margin",
                     help="control_quality: the mechanism mode is judged by cyclic phase/gain spread over "
                          "throttle x J x 4 fixed +-5%% tolerance samples instead of the 1P margin; "
                          "control_quality_cal: build tolerance calibrated out per airframe, only the "
                          "RUNTIME residual (rpm bin, temperature, creep, J error) about each calibrated "
                          "node is limited; build samples bound calibratability (authority, 1P side)")
+    ap.add_argument("--mech-margin", type=float, default=0.075,
+                    help="mech_band: nominal hard 1P margin of the mechanism mode (others keep 0.15)")
+    ap.add_argument("--goodman", action="store_true", help='strip_fatigue_mean="goodman" on every design')
     ap.add_argument("--j-hub", default=None, help="comma list of motor.J_hub values (robust dimension)")
     ap.add_argument("--ground-resonance", action=argparse.BooleanOptionalAction, default=None,
                     help="(default on with --objective pulse_limited; ~3 ms/eval) hard check: regressing lag vs the arm/mount mode over the arm-frequency envelope")
@@ -834,6 +861,8 @@ def main(argv=None):
         os.environ["FLEXBLADE_ARM_RANGE"] = a.arm_range
         ARM_RANGE = tuple(float(x) for x in a.arm_range.split(","))
     CRITERION = a.criterion
+    global MECH_MARGIN, GOODMAN
+    MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
     RUNTIME = list(robust.CQ_RUNTIME) if CRITERION == "control_quality_cal" else None
     global INIT_DESIGNS, BASE_DESIGNS, INIT_FRAC, J_HUB_BY_D
