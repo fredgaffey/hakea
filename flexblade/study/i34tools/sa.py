@@ -74,6 +74,14 @@ def main():
                             **(kw if c == "control_quality_cal" else {})) for c in cq.CRITS}
     s = cq.cal_summary(cs)
     c = s["control_quality_cal"]
+    if os.environ.get("SA_GATES") == "minimal":
+        # opt-in gate set (study/results/gate_audit.md): the mechanism mode's raw 1P margin and
+        # side flip duplicate the per-build calibration residual + authority (the unit's side is
+        # measured at calibration; zeta bounds the 1P amplification). resonance (other modes,
+        # damping-aware), Goodman/hard checks, ground resonance and cqc phase/gain/authority stay.
+        c["viol_hard"] = {k: v for k, v in (c["viol_hard"] or {}).items()
+                          if k not in ("cqc_mech_margin", "cqc_mech_side")}
+        c["feasible_pl"], c["gates"] = not c["viol_hard"], "minimal"
     print("SUM", outp.split("/")[-1], json.dumps(dict(
         cr_pl=c["cr_pl"], feas=c["feasible_pl"], viol=c["viol_hard"], ph=c["phase_res_deg"], gain=c["gain_res"],
         mech=c["mech_margin_min"], flip=c["mech_side_flip"], res_margin=c["res_margin"], res_which=c["res_which"]),
