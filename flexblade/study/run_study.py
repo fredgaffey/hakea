@@ -630,6 +630,16 @@ CRITERION = "margin"   # or "control_quality" (robust.control_quality for the me
 OBJECTIVE = "cr"   # or "pulse_limited" (cr_pl; hard = non-scaling checks only)
 PERTURB = None  # robust tolerance samples (robust.CQ_PERTURB under --criterion control_quality[_cal])
 RUNTIME = None  # runtime samples about each calibrated node (robust.CQ_RUNTIME, control_quality_cal)
+INIT_DESIGNS: list = []   # --init-designs: Design objects seeding DE (matched by diameter_in)
+BASE_DESIGNS: list = []   # --base-design: fixed-field overrides (matched by diameter_in)
+INIT_FRAC = 0.3
+J_HUB_BY_D: dict = {}     # --j-hub "7:a,b,c;10:d,e,f" size-specific sets
+
+
+def _jhub(D):
+    return J_HUB_BY_D.get(float(D), J_HUB)
+
+
 J_HUB = None    # tuple of motor.J_hub values: robust/tolerance dimension
 
 
@@ -639,6 +649,10 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
 
     t0 = time.time()
     base, cap = base_design(D, concept, coax)
+    leads = _lead_for(INIT_DESIGNS, D)
+    bo = _lead_for(BASE_DESIGNS, D)
+    if bo:   # fields outside the param space (laminae, balance pins, mount, clamp...) fixed from the lead
+        base = bo[0].model_copy(update=dict(name=base.name))
     V = variables(concept, D)
     obj = Objective(OptimizeRequest(design=base, variables=V,
                                     targets=[Target(quantity="harmonic.control_ratio", kind="max")]))
@@ -649,7 +663,7 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
         designs = [set_design(base, obj.to_values(u)) for u in pop]
-        recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, J_HUB, RUNTIME)
+        recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, _jhub(D), RUNTIME)
         Js = []
         for u, dsg, (mm, err) in zip(pop, designs, recs):
             vals = obj.to_values(u)
@@ -678,9 +692,14 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
               f"cr {b.get('control_ratio', float('nan')):.4f} feas {b.get('feasible')} "
               f"viol {_short(b.get('viol', {}))}  {time.time() - t0:.0f}s", flush=True)
 
+    init = "latinhypercube"
+    if leads:
+        init = seeded_population(obj, leads, popmult * len(V), INIT_FRAC, seed)
+        u0 = None
+        print(f"[{case}] seeding {int(round(INIT_FRAC * len(init)))} of {len(init)} from {len(leads)} lead(s)", flush=True)
     r = differential_evolution(lambda u: 0.0, [(0.0, 1.0)] * len(V), maxiter=maxiter, popsize=popmult,
                                seed=seed, x0=u0, polish=False, tol=1e-4, atol=0.0,
-                               init="latinhypercube", mutation=(0.5, 1.0), recombination=0.7,
+                               init=init, mutation=(0.5, 1.0), recombination=0.7,
                                workers=mapper, updating="deferred", callback=cb)
     bd = set_design(base, best["vals"])
     out = dict(case=case, diameter_in=D, concept=concept, layout="coaxial" if coax else "single",
@@ -691,6 +710,35 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     bd = bd.model_copy(update=dict(name=case))
     (DESIGNS / f"{case}.json").write_text(json.dumps(bd.model_dump(mode="json"), indent=1))
     return out
+
+
+def load_design(path) -> Design:
+    return Design.model_validate_json(Path(path).read_text())
+
+
+def encode_design(obj: Objective, d: Design) -> np.ndarray:
+    """Design -> DE unit vector (inverse of obj.to_values -> set_design); out-of-range values clip."""
+    return obj.to_u({v["path"]: min(max(float(_get(d, v["path"])), v["lo"]), v["hi"]) for v in obj.variables})
+
+
+def seeded_population(obj: Objective, leads: list[Design], npop: int, frac: float, seed: int,
+                      sigma: float = 0.05) -> np.ndarray:
+    """LHS population of npop with round(frac*npop) members replaced by the lead vectors plus
+    Gaussian(sigma*range) perturbations (leads themselves first). Valid scipy init= array."""
+    from scipy.stats import qmc
+    nv = len(obj.variables)
+    pop = qmc.LatinHypercube(d=nv, seed=seed).random(npop)
+    k = min(npop, max(len(leads), int(round(frac * npop)))) if leads else 0
+    rng = np.random.default_rng(seed)
+    U = [encode_design(obj, d) for d in leads]
+    for i in range(k):
+        u = U[i] if i < len(U) else np.clip(U[i % len(U)] + rng.normal(0, sigma, nv), 0.0, 1.0)
+        pop[i] = u
+    return pop
+
+
+def _lead_for(designs: list[Design], D: float) -> list[Design]:
+    return [d for d in designs if abs(d.diameter_in - D) < 1e-6]
 
 
 def _get(d: Design, path: str):
@@ -767,6 +815,11 @@ def main(argv=None):
     ap.add_argument("--ground-resonance", action=argparse.BooleanOptionalAction, default=None,
                     help="(default on with --objective pulse_limited; ~3 ms/eval) hard check: regressing lag vs the arm/mount mode over the arm-frequency envelope")
     ap.add_argument("--arm-range", default=None, help="lo,hi Hz arm envelope (default 7in 200-300, 10in 120-250)")
+    ap.add_argument("--init-designs", default=None, help="comma list of design JSONs seeding the DE population")
+    ap.add_argument("--init-from-leads", action="store_true", help="seed from the 7in v6 / 10in v5 leads")
+    ap.add_argument("--init-frac", type=float, default=0.3, help="fraction of population seeded (default 0.3)")
+    ap.add_argument("--base-design", default=None, help="comma list of design JSONs whose non-DE fields stay fixed "
+                    "(matched by diameter; 'init' = use --init-designs)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
     ap.add_argument("--maxiter", type=int, default=40)
@@ -787,7 +840,19 @@ def main(argv=None):
     CRITERION = a.criterion
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
     RUNTIME = list(robust.CQ_RUNTIME) if CRITERION == "control_quality_cal" else None
-    J_HUB = tuple(float(x) for x in a.j_hub.split(",")) if a.j_hub else None
+    global INIT_DESIGNS, BASE_DESIGNS, INIT_FRAC, J_HUB_BY_D
+    if a.j_hub and ":" in a.j_hub:
+        J_HUB_BY_D = {float(seg.split(":")[0]): tuple(float(x) for x in seg.split(":")[1].split(","))
+                      for seg in a.j_hub.split(";")}
+        J_HUB = None
+    else:
+        J_HUB = tuple(float(x) for x in a.j_hub.split(",")) if a.j_hub else None
+    paths = [x for x in (a.init_designs or "").split(",") if x]
+    if a.init_from_leads:
+        paths += [str(DESIGNS / "7in_tt_strap_steelx_v6.json"), str(DESIGNS / "10in_tt_strap_steelx_v5.json")]
+    INIT_DESIGNS = [load_design(x) for x in paths]
+    INIT_FRAC = a.init_frac
+    BASE_DESIGNS = INIT_DESIGNS if a.base_design == "init" else [load_design(x) for x in (a.base_design or "").split(",") if x]
     ROBUST = tuple(float(x) for x in a.robust.split(",")) if a.robust else None
     if a.salvage:
         salvage(a.salvage)
