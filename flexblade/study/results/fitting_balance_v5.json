@@ -1,0 +1,3451 @@
+{
+ "props": {
+  "v4": {
+   "mass_g": 3.4640572903392473,
+   "com_mm": [
+    17.99,
+    -0.001,
+    3.885
+   ],
+   "Icg_gmm2": [
+    524.5,
+    155.2,
+    597.7
+   ],
+   "Syy": 483.5028113337411,
+   "Szz": 93.28881888193733,
+   "Syz": -75.92164548183956,
+   "Syy_minus_Szz": 390.21399245180373,
+   "Iyy_minus_Izz_pitch_axis": -390.21399245180373
+  },
+  "v4m": {
+   "mass_g": 1.9534494047117874,
+   "com_mm": [
+    19.711,
+    -0.0,
+    2.562
+   ],
+   "Icg_gmm2": [
+    263.2,
+    94.7,
+    292.8
+   ],
+   "Syy": 230.6892532097857,
+   "Szz": 45.318475334935755,
+   "Syz": -54.77995310435045,
+   "Syy_minus_Szz": 185.37077787484995,
+   "Iyy_minus_Izz_pitch_axis": -185.37077787484995
+  },
+  "v4m_pins_z8": {
+   "mass_g": 4.849867809006318,
+   "com_mm": [
+    19.711,
+    -0.0,
+    1.032
+   ],
+   "Icg_gmm2": [
+    456.2,
+    287.7,
+    292.8
+   ],
+   "Syy": 230.68925320978565,
+   "Szz": 230.68925320978562,
+   "Syz": -54.779953104350454,
+   "Syy_minus_Szz": 2.6469779601696886e-14,
+   "Iyy_minus_Izz_pitch_axis": -2.6469779601696886e-14
+  },
+  "v4m_cross120": {
+   "mass_g": 2.1042501672296003,
+   "com_mm": [
+    21.172,
+    -0.003,
+    4.558
+   ],
+   "Icg_gmm2": [
+    224.6,
+    99.0,
+    246.2
+   ],
+   "Syy": 185.91186730328133,
+   "Szz": 82.42181772367928,
+   "Syz": -45.97843969029121,
+   "Syy_minus_Szz": 103.49004957960206,
+   "Iyy_minus_Izz_pitch_axis": -103.49004957960206
+  },
+  "v4m_cross100": {
+   "mass_g": 2.0011198999602007,
+   "com_mm": [
+    22.05,
+    -0.001,
+    5.622
+   ],
+   "Icg_gmm2": [
+    183.6,
+    98.7,
+    199.7
+   ],
+   "Syy": 142.29356046969642,
+   "Szz": 104.51507845237197,
+   "Syz": -40.27599050189481,
+   "Syy_minus_Szz": 37.77848201732447,
+   "Iyy_minus_Izz_pitch_axis": -37.77848201732447
+  },
+  "v4m_cross90": {
+   "mass_g": 1.9283076173795193,
+   "com_mm": [
+    22.474,
+    -0.001,
+    6.106
+   ],
+   "Icg_gmm2": [
+    161.7,
+    98.1,
+    175.3
+   ],
+   "Syy": 119.4494559155898,
+   "Szz": 114.18470358575107,
+   "Syz": -36.98149466754818,
+   "Syy_minus_Szz": 5.26475232983872,
+   "Iyy_minus_Izz_pitch_axis": -5.26475232983872
+  },
+  "v4m_cross80": {
+   "mass_g": 1.8478968294823985,
+   "com_mm": [
+    22.887,
+    -0.001,
+    6.557
+   ],
+   "Icg_gmm2": [
+    140.3,
+    97.3,
+    151.4
+   ],
+   "Syy": 97.1707826447369,
+   "Szz": 122.57256042023415,
+   "Syz": -33.43477962272764,
+   "Syy_minus_Szz": -25.401777775497248,
+   "Iyy_minus_Izz_pitch_axis": 25.401777775497248
+  },
+  "v4m_pin_mass_g_z8": 1.4482092021472652
+ },
+ "search": {
+  "l16": {
+   "x": {
+    "cross": 105.15894896610831,
+    "h": 0.014750316998587538,
+    "L": 0.01491650222510352,
+    "skew": 59.9101877007823,
+    "w": 0.0069693402261359,
+    "pin": 0.0
+   },
+   "cr_min": 0.04902549841950666,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.38202536096171436
+   },
+   "res_margin": 0.09269619585574285,
+   "res_which": "pitch sym 2.79/rev vs 3P",
+   "fatigue": 0.6852851370545954,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.604,
+    "interlayer": 0.636,
+    "creep_strain": 0.859,
+    "fatigue_strain": 0.605,
+    "fatigue_stress": 0.685,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.107,
+    "strap_anchor": 0.143,
+    "esc_duty_slew": 0.091,
+    "esc_duty_peak": 0.836,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.896,
+    "root_envelope": 2.302,
+    "fitting_clearance": 0.079,
+    "aeroelastic_stability": 0.277,
+    "pitch_cf_ratio": 0.169
+   },
+   "hp_margin": 0.0002248852882971164,
+   "hp_which": "pitch sym 6.00/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1608004176216542,
+    "T1": 0.09178538626576602,
+    "T1.4": 0.04902549841950666
+   },
+   "pitch_per_rev_T1": [
+    0.554,
+    0.831,
+    2.794,
+    3.762,
+    5.098
+   ]
+  },
+  "l14": {
+   "x": {
+    "cross": 105.66135449676597,
+    "h": 0.014529996837975586,
+    "L": 0.015161303272303745,
+    "skew": 60.00431648130328,
+    "w": 0.007000861908964662,
+    "pin": 0.0
+   },
+   "cr_min": 0.04764138179333645,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.4368865229446156
+   },
+   "res_margin": 0.08446702155830765,
+   "res_which": "pitch sym 3.24/rev vs 3P",
+   "fatigue": 0.6833216787151943,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.599,
+    "interlayer": 0.632,
+    "creep_strain": 0.863,
+    "fatigue_strain": 0.604,
+    "fatigue_stress": 0.683,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.108,
+    "strap_anchor": 0.144,
+    "esc_duty_slew": 0.091,
+    "esc_duty_peak": 0.838,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.894,
+    "root_envelope": 2.314,
+    "fitting_clearance": 0.078,
+    "aeroelastic_stability": 0.275,
+    "pitch_cf_ratio": 0.173
+   },
+   "hp_margin": 0.006481262290474188,
+   "hp_which": "pitch sym 5.96/rev vs 6P",
+   "cr": {
+    "T0.7": 0.15678056107225236,
+    "T1": 0.08798961818238893,
+    "T1.4": 0.04764138179333645
+   },
+   "pitch_per_rev_T1": [
+    0.548,
+    0.824,
+    2.771,
+    3.659,
+    5.067
+   ]
+  },
+  "s35": {
+   "x": {
+    "cross": 99.74354097666978,
+    "h": 0.014679766127508974,
+    "L": 0.014293829605526038,
+    "skew": 59.73061717296198,
+    "w": 0.007530561398603725,
+    "pin": 0.0
+   },
+   "cr_min": 0.04715134486150703,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.5757579499599066
+   },
+   "res_margin": 0.06363630750601401,
+   "res_which": "flap antisym 1.92/rev vs 2P",
+   "fatigue": 0.6578362099700433,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.609,
+    "interlayer": 0.664,
+    "creep_strain": 0.823,
+    "fatigue_strain": 0.589,
+    "fatigue_stress": 0.658,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.108,
+    "strap_anchor": 0.144,
+    "esc_duty_slew": 0.091,
+    "esc_duty_peak": 0.835,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.897,
+    "root_envelope": 2.357,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.296,
+    "pitch_cf_ratio": 0.169
+   },
+   "hp_margin": 0.013102524705703611,
+   "hp_which": "pitch sym 5.92/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1569636977295695,
+    "T1": 0.09234551219401872,
+    "T1.4": 0.04715134486150703
+   },
+   "pitch_per_rev_T1": [
+    0.553,
+    0.835,
+    2.785,
+    4.269,
+    5.31
+   ]
+  },
+  "l22": {
+   "x": {
+    "cross": 102.02847203766548,
+    "h": 0.015061412962966658,
+    "L": 0.015076538898914457,
+    "skew": 60.26503372155529,
+    "w": 0.007784995814247262,
+    "pin": 0.0
+   },
+   "cr_min": 0.04697535217464463,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.5868868106196828
+   },
+   "res_margin": 0.06196697840704757,
+   "res_which": "flap antisym 1.92/rev vs 2P",
+   "fatigue": 0.7672565949454696,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.625,
+    "interlayer": 0.681,
+    "creep_strain": 0.862,
+    "fatigue_strain": 0.675,
+    "fatigue_stress": 0.767,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.111,
+    "strap_anchor": 0.148,
+    "esc_duty_slew": 0.092,
+    "esc_duty_peak": 0.842,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.897,
+    "root_envelope": 2.388,
+    "fitting_clearance": 0.075,
+    "aeroelastic_stability": 0.284,
+    "pitch_cf_ratio": 0.177
+   },
+   "hp_margin": 0.03689023460140828,
+   "hp_which": "pitch sym 5.78/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1702637908211101,
+    "T1": 0.09111670095383079,
+    "T1.4": 0.04697535217464463
+   },
+   "pitch_per_rev_T1": [
+    0.548,
+    0.836,
+    2.737,
+    3.659,
+    5.308
+   ]
+  },
+  "s27": {
+   "x": {
+    "cross": 123.87835653373972,
+    "h": 0.01908674345358455,
+    "L": 0.012669153781457826,
+    "skew": 58.452710146426114,
+    "w": 0.009952968448095421,
+    "pin": 0.008
+   },
+   "cr_min": 0.041987390429836895,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.6664758189735123
+   },
+   "res_margin": 0.05002862715397316,
+   "res_which": "pitch sym 3.14/rev vs 3P",
+   "fatigue": 0.6842680322775802,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.509,
+    "interlayer": 0.519,
+    "creep_strain": 0.7,
+    "fatigue_strain": 0.684,
+    "fatigue_stress": 0.562,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.133,
+    "strap_anchor": 0.177,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.817,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.938,
+    "root_envelope": 2.309,
+    "fitting_clearance": 0.128,
+    "aeroelastic_stability": 0.576,
+    "pitch_cf_ratio": 0.111
+   },
+   "hp_margin": 0.002597735811251445,
+   "hp_which": "pitch sym 5.01/rev vs 5P",
+   "cr": {
+    "T0.7": 0.14682367347665293,
+    "T1": 0.08434520859321841,
+    "T1.4": 0.041987390429836895
+   },
+   "pitch_per_rev_T1": [
+    0.643,
+    0.882,
+    3.136,
+    6.042,
+    6.042
+   ]
+  },
+  "l01": {
+   "x": {
+    "cross": 122.69343712985139,
+    "h": 0.019956452318480845,
+    "L": 0.013434321473057963,
+    "skew": 58.12715538929674,
+    "w": 0.009244881741341502,
+    "pin": 0.008
+   },
+   "cr_min": 0.040209971397250355,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.6745843911470283
+   },
+   "res_margin": 0.04881234132794576,
+   "res_which": "pitch sym 3.13/rev vs 3P",
+   "fatigue": 0.7556445253388777,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.566,
+    "interlayer": 0.559,
+    "creep_strain": 0.771,
+    "fatigue_strain": 0.756,
+    "fatigue_stress": 0.623,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.133,
+    "strap_anchor": 0.177,
+    "esc_duty_slew": 0.085,
+    "esc_duty_peak": 0.823,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.941,
+    "root_envelope": 2.309,
+    "fitting_clearance": 0.127,
+    "aeroelastic_stability": 0.553,
+    "pitch_cf_ratio": 0.1
+   },
+   "hp_margin": 0.0057380036108115595,
+   "hp_which": "pitch sym 5.97/rev vs 6P",
+   "cr": {
+    "T0.7": 0.16150402929439142,
+    "T1": 0.08884654734673837,
+    "T1.4": 0.040209971397250355
+   },
+   "pitch_per_rev_T1": [
+    0.636,
+    0.884,
+    3.132,
+    5.053,
+    5.966
+   ]
+  },
+  "l07": {
+   "x": {
+    "cross": 119.36220380264041,
+    "h": 0.017893506101491295,
+    "L": 0.013202801526853082,
+    "skew": 56.066851522952525,
+    "w": 0.009928565391593182,
+    "pin": 0.008
+   },
+   "cr_min": 0.0431812253051671,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.6764605989085725
+   },
+   "res_margin": 0.048530910163714136,
+   "res_which": "pitch sym 3.13/rev vs 3P",
+   "fatigue": 0.7276290008996599,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.522,
+    "interlayer": 0.532,
+    "creep_strain": 0.692,
+    "fatigue_strain": 0.728,
+    "fatigue_stress": 0.532,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.128,
+    "strap_anchor": 0.17,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.813,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.934,
+    "root_envelope": 2.483,
+    "fitting_clearance": 0.127,
+    "aeroelastic_stability": 0.573,
+    "pitch_cf_ratio": 0.092
+   },
+   "hp_margin": 0.01422514992734758,
+   "hp_which": "pitch sym 4.93/rev vs 5P",
+   "cr": {
+    "T0.7": 0.14597406803350382,
+    "T1": 0.08498550794185136,
+    "T1.4": 0.0431812253051671
+   },
+   "pitch_per_rev_T1": [
+    0.631,
+    0.879,
+    3.13,
+    5.872,
+    6.166
+   ]
+  },
+  "l20": {
+   "x": {
+    "cross": 101.51182467799231,
+    "h": 0.015583236178690242,
+    "L": 0.013673674617863767,
+    "skew": 61.36798956017165,
+    "w": 0.007790312438385004,
+    "pin": 0.0
+   },
+   "cr_min": 0.054041588632566716,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.6820486405664482
+   },
+   "res_margin": 0.047692703915032775,
+   "res_which": "flap antisym 1.95/rev vs 2P",
+   "fatigue": 0.777798512483947,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.61,
+    "interlayer": 0.671,
+    "creep_strain": 0.825,
+    "fatigue_strain": 0.687,
+    "fatigue_stress": 0.778,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.109,
+    "strap_anchor": 0.145,
+    "esc_duty_slew": 0.091,
+    "esc_duty_peak": 0.838,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.899,
+    "root_envelope": 2.231,
+    "fitting_clearance": 0.081,
+    "aeroelastic_stability": 0.301,
+    "pitch_cf_ratio": 0.183
+   },
+   "hp_margin": 0.010123125971961855,
+   "hp_which": "pitch sym 6.06/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1878045581353273,
+    "T1": 0.11244620260236465,
+    "T1.4": 0.054041588632566716
+   },
+   "pitch_per_rev_T1": [
+    0.574,
+    0.864,
+    2.797,
+    4.373,
+    5.413
+   ]
+  },
+  "s12": {
+   "x": {
+    "cross": 99.24132160362552,
+    "h": 0.015626531673224,
+    "L": 0.01645913738540229,
+    "skew": 49.80085832861234,
+    "w": 0.009044008413447435,
+    "pin": 0.0
+   },
+   "cr_min": 0.04025656453888016,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7135820088236283
+   },
+   "res_margin": 0.042962698676455746,
+   "res_which": "flap antisym 2.04/rev vs 2P",
+   "fatigue": 0.7855338551753954,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.686,
+    "interlayer": 0.689,
+    "creep_strain": 0.751,
+    "fatigue_strain": 0.786,
+    "fatigue_stress": 0.783,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.107,
+    "strap_anchor": 0.142,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.814,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.928,
+    "root_envelope": 3.071,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.403,
+    "pitch_cf_ratio": 0.123
+   },
+   "hp_margin": 0.04480154027545269,
+   "hp_which": "pitch sym 4.78/rev vs 5P",
+   "cr": {
+    "T0.7": 0.15282626201151545,
+    "T1": 0.08013018901275724,
+    "T1.4": 0.04025656453888016
+   },
+   "pitch_per_rev_T1": [
+    0.58,
+    0.861,
+    1.338,
+    3.134,
+    4.776,
+    5.505
+   ]
+  },
+  "l09": {
+   "x": {
+    "cross": 130.86719881520895,
+    "h": 0.020365650853706733,
+    "L": 0.012722259218113813,
+    "skew": 58.36928783871187,
+    "w": 0.009841573586436126,
+    "pin": 0.008
+   },
+   "cr_min": 0.038101509906082236,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7199646599552573
+   },
+   "res_margin": 0.042005301006711404,
+   "res_which": "pitch sym 2.90/rev vs 3P",
+   "fatigue": 0.6409907905475907,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.483,
+    "interlayer": 0.47,
+    "creep_strain": 0.712,
+    "fatigue_strain": 0.641,
+    "fatigue_stress": 0.524,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.138,
+    "strap_anchor": 0.184,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.817,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.945,
+    "root_envelope": 2.223,
+    "fitting_clearance": 0.134,
+    "aeroelastic_stability": 0.61,
+    "pitch_cf_ratio": 0.107
+   },
+   "hp_margin": 0.024474764676097882,
+   "hp_which": "pitch sym 5.12/rev vs 5P",
+   "cr": {
+    "T0.7": 0.13882553895235053,
+    "T1": 0.07785279795201033,
+    "T1.4": 0.038101509906082236
+   },
+   "pitch_per_rev_T1": [
+    0.655,
+    0.88,
+    3.231,
+    5.805
+   ]
+  },
+  "l03": {
+   "x": {
+    "cross": 117.69276830685263,
+    "h": 0.01920469559407129,
+    "L": 0.012185041552555164,
+    "skew": 60.21424754741774,
+    "w": 0.009388940126450493,
+    "pin": 0.008
+   },
+   "cr_min": 0.0500712542537407,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7343064201645987
+   },
+   "res_margin": 0.0398540369753102,
+   "res_which": "pitch sym 3.10/rev vs 3P",
+   "fatigue": 0.7441346603491195,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.56,
+    "interlayer": 0.586,
+    "creep_strain": 0.734,
+    "fatigue_strain": 0.744,
+    "fatigue_stress": 0.716,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.126,
+    "strap_anchor": 0.168,
+    "esc_duty_slew": 0.086,
+    "esc_duty_peak": 0.824,
+    "motor_torque_1p": 0.861,
+    "motor_thermal": 0.93,
+    "root_envelope": 2.024,
+    "fitting_clearance": 0.123,
+    "aeroelastic_stability": 0.55,
+    "pitch_cf_ratio": 0.117
+   },
+   "hp_margin": 0.022265077214024043,
+   "hp_which": "pitch sym 5.11/rev vs 5P",
+   "cr": {
+    "T0.7": 0.17296884323602202,
+    "T1": 0.10381398069505209,
+    "T1.4": 0.0500712542537407
+   },
+   "pitch_per_rev_T1": [
+    0.641,
+    0.893,
+    3.098,
+    5.859,
+    6.201
+   ]
+  },
+  "s11": {
+   "x": {
+    "cross": 122.67530456668418,
+    "h": 0.016028058902346154,
+    "L": 0.013694078099747983,
+    "skew": 52.307156821837204,
+    "w": 0.008856245095801974,
+    "pin": 0.0
+   },
+   "cr_min": 0.05569175702162029,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7460491277382255
+   },
+   "res_margin": 0.03809263083926617,
+   "res_which": "flap antisym 1.99/rev vs 2P",
+   "fatigue": 0.8769140281645945,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.487,
+    "interlayer": 0.46,
+    "creep_strain": 0.7,
+    "fatigue_strain": 0.877,
+    "fatigue_stress": 0.73,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.102,
+    "strap_anchor": 0.136,
+    "esc_duty_slew": 0.082,
+    "esc_duty_peak": 0.804,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.924,
+    "root_envelope": 2.523,
+    "fitting_clearance": 0.132,
+    "aeroelastic_stability": 0.425,
+    "pitch_cf_ratio": 0.071
+   },
+   "hp_margin": 0.01037604725822272,
+   "hp_which": "pitch sym 5.94/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1820461055864933,
+    "T1": 0.1085306436936401,
+    "T1.4": 0.05569175702162029
+   },
+   "pitch_per_rev_T1": [
+    0.621,
+    0.897,
+    3.49,
+    5.72,
+    5.938
+   ]
+  },
+  "s31": {
+   "x": {
+    "cross": 96.1597594821583,
+    "h": 0.01598630155702067,
+    "L": 0.013258531212004288,
+    "skew": 61.42338307806811,
+    "w": 0.007921921299270999,
+    "pin": 0.0
+   },
+   "cr_min": 0.056130776559477825,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7493438348132436
+   },
+   "res_margin": 0.03759842477801345,
+   "res_which": "flap antisym 1.99/rev vs 2P",
+   "fatigue": 0.7927688312540638,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.632,
+    "interlayer": 0.708,
+    "creep_strain": 0.825,
+    "fatigue_strain": 0.705,
+    "fatigue_stress": 0.793,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.109,
+    "strap_anchor": 0.146,
+    "esc_duty_slew": 0.091,
+    "esc_duty_peak": 0.839,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.903,
+    "root_envelope": 2.267,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.305,
+    "pitch_cf_ratio": 0.182
+   },
+   "hp_margin": 0.021991982473188232,
+   "hp_which": "pitch sym 6.13/rev vs 6P",
+   "cr": {
+    "T0.7": 0.18886366418113185,
+    "T1": 0.11910946069858917,
+    "T1.4": 0.056130776559477825
+   },
+   "pitch_per_rev_T1": [
+    0.579,
+    0.87,
+    2.776,
+    4.471,
+    5.529
+   ]
+  },
+  "l21": {
+   "x": {
+    "cross": 122.27268796593796,
+    "h": 0.01869871353159608,
+    "L": 0.012874676319326636,
+    "skew": 61.32409254784969,
+    "w": 0.010249210454878012,
+    "pin": 0.008
+   },
+   "cr_min": 0.03627021622011779,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.761686384163224
+   },
+   "res_margin": 0.0357470423755164,
+   "res_which": "pitch sym 2.92/rev vs 3P",
+   "fatigue": 0.5747054740189153,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.503,
+    "interlayer": 0.538,
+    "creep_strain": 0.724,
+    "fatigue_strain": 0.575,
+    "fatigue_stress": 0.564,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.137,
+    "strap_anchor": 0.182,
+    "esc_duty_slew": 0.087,
+    "esc_duty_peak": 0.825,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.93,
+    "root_envelope": 2.256,
+    "fitting_clearance": 0.125,
+    "aeroelastic_stability": 0.555,
+    "pitch_cf_ratio": 0.195
+   },
+   "hp_margin": 0.021949094589661544,
+   "hp_which": "pitch sym 3.91/rev vs 4P",
+   "cr": {
+    "T0.7": 0.13118137592751805,
+    "T1": 0.07414245396890361,
+    "T1.4": 0.03627021622011779
+   },
+   "pitch_per_rev_T1": [
+    0.623,
+    0.866,
+    2.921,
+    5.693,
+    5.808
+   ]
+  },
+  "s09": {
+   "x": {
+    "cross": 100.46599122929285,
+    "h": 0.015145281846023907,
+    "L": 0.017501057124032507,
+    "skew": 47.445546596467366,
+    "w": 0.007192565728115649,
+    "pin": 0.008
+   },
+   "cr_min": 0.03843975546487329,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7832830983151853
+   },
+   "res_margin": 0.03250753525272221,
+   "res_which": "pitch sym 2.94/rev vs 3P",
+   "fatigue": 0.6147026125076848,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.704,
+    "interlayer": 0.657,
+    "creep_strain": 0.821,
+    "fatigue_strain": 0.599,
+    "fatigue_stress": 0.615,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.11,
+    "strap_anchor": 0.146,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.813,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.92,
+    "root_envelope": 3.179,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.352,
+    "pitch_cf_ratio": 0.068
+   },
+   "hp_margin": 0.053620663661539725,
+   "hp_which": "pitch sym 6.32/rev vs 6P",
+   "cr": {
+    "T0.7": 0.11385746868123234,
+    "T1": 0.06448293479926585,
+    "T1.4": 0.03843975546487329
+   },
+   "pitch_per_rev_T1": [
+    0.557,
+    0.824,
+    1.282,
+    2.942,
+    3.736,
+    5.38
+   ]
+  },
+  "s03": {
+   "x": {
+    "cross": 116.76618860046122,
+    "h": 0.014924027373140787,
+    "L": 0.015310818172236498,
+    "skew": 50.06217365405774,
+    "w": 0.0073119523946191065,
+    "pin": 0.0
+   },
+   "cr_min": 0.04065595531252865,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7836838683413937
+   },
+   "res_margin": 0.03244741974879095,
+   "res_which": "pitch sym 2.94/rev vs 3P",
+   "fatigue": 0.6235069169750405,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.544,
+    "interlayer": 0.492,
+    "creep_strain": 0.751,
+    "fatigue_strain": 0.624,
+    "fatigue_stress": 0.604,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.099,
+    "strap_anchor": 0.132,
+    "esc_duty_slew": 0.083,
+    "esc_duty_peak": 0.805,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.917,
+    "root_envelope": 2.521,
+    "fitting_clearance": 0.109,
+    "aeroelastic_stability": 0.411,
+    "pitch_cf_ratio": 0.067
+   },
+   "hp_margin": 0.0028543153027452695,
+   "hp_which": "pitch sym 3.99/rev vs 4P",
+   "cr": {
+    "T0.7": 0.1272761915250749,
+    "T1": 0.07570985382808507,
+    "T1.4": 0.04065595531252865
+   },
+   "pitch_per_rev_T1": [
+    0.577,
+    0.847,
+    3.331,
+    5.128,
+    5.465
+   ]
+  },
+  "l17": {
+   "x": {
+    "cross": 120.57997689115695,
+    "h": 0.01865974947243033,
+    "L": 0.01346914120385494,
+    "skew": 57.09691465616876,
+    "w": 0.010265522675800193,
+    "pin": 0.008
+   },
+   "cr_min": 0.04025072807338658,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7985273209365594
+   },
+   "res_margin": 0.03022090185951609,
+   "res_which": "pitch sym 3.07/rev vs 3P",
+   "fatigue": 0.7400484277487948,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.527,
+    "interlayer": 0.542,
+    "creep_strain": 0.705,
+    "fatigue_strain": 0.74,
+    "fatigue_stress": 0.559,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.134,
+    "strap_anchor": 0.178,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.816,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.941,
+    "root_envelope": 2.457,
+    "fitting_clearance": 0.127,
+    "aeroelastic_stability": 0.576,
+    "pitch_cf_ratio": 0.12
+   },
+   "hp_margin": 6.799251604938661e-05,
+   "hp_which": "pitch sym 6.00/rev vs 6P",
+   "cr": {
+    "T0.7": 0.147654722375169,
+    "T1": 0.08303799700818819,
+    "T1.4": 0.04025072807338658
+   },
+   "pitch_per_rev_T1": [
+    0.638,
+    0.883,
+    3.067,
+    5.734,
+    6.0
+   ]
+  },
+  "s07": {
+   "x": {
+    "cross": 98.47138135001131,
+    "h": 0.0167152299909881,
+    "L": 0.01654409464029318,
+    "skew": 50.35574682635882,
+    "w": 0.0071728278656324395,
+    "pin": 0.0
+   },
+   "cr_min": 0.0546251973682065,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8052618280741713
+   },
+   "res_margin": 0.029210725788874292,
+   "res_which": "pitch sym 3.04/rev vs 3P",
+   "fatigue": 0.9890280919036201,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.736,
+    "interlayer": 0.711,
+    "creep_strain": 0.856,
+    "fatigue_strain": 0.865,
+    "fatigue_stress": 0.989,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.103,
+    "strap_anchor": 0.138,
+    "esc_duty_slew": 0.085,
+    "esc_duty_peak": 0.818,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.923,
+    "root_envelope": 2.965,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.333,
+    "pitch_cf_ratio": 0.083
+   },
+   "hp_margin": 0.02711704413799465,
+   "hp_which": "pitch sym 5.84/rev vs 6P",
+   "cr": {
+    "T0.7": 0.18085215627681064,
+    "T1": 0.09739365446744278,
+    "T1.4": 0.0546251973682065
+   },
+   "pitch_per_rev_T1": [
+    0.591,
+    0.872,
+    1.31,
+    3.044,
+    3.69,
+    5.562
+   ]
+  },
+  "l00": {
+   "x": {
+    "cross": 92.36692561017358,
+    "h": 0.014652480400139513,
+    "L": 0.014751660555558078,
+    "skew": 61.14781104212747,
+    "w": 0.0073379156385194565,
+    "pin": 0.0
+   },
+   "cr_min": 0.047741046105009254,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.810915263999167
+   },
+   "res_margin": 0.028362710400124946,
+   "res_which": "pitch sym 2.02/rev vs 2P",
+   "fatigue": 0.896201810259236,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.661,
+    "interlayer": 0.742,
+    "creep_strain": 0.928,
+    "fatigue_strain": 0.782,
+    "fatigue_stress": 0.896,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.114,
+    "strap_anchor": 0.152,
+    "esc_duty_slew": 0.096,
+    "esc_duty_peak": 0.857,
+    "motor_torque_1p": 0.859,
+    "motor_thermal": 0.89,
+    "root_envelope": 2.46,
+    "fitting_clearance": 0.073,
+    "aeroelastic_stability": 0.284,
+    "pitch_cf_ratio": 0.205
+   },
+   "hp_margin": 0.015861578344787963,
+   "hp_which": "pitch sym 5.08/rev vs 5P",
+   "cr": {
+    "T0.7": 0.15289591084813425,
+    "T1": 0.08602720963517742,
+    "T1.4": 0.047741046105009254
+   },
+   "pitch_per_rev_T1": [
+    0.522,
+    0.809,
+    1.311,
+    2.553,
+    3.154,
+    5.079
+   ]
+  },
+  "l02": {
+   "x": {
+    "cross": 106.76613581070241,
+    "h": 0.0143605640588778,
+    "L": 0.014238420693211028,
+    "skew": 57.012013331566266,
+    "w": 0.0069545068185767915,
+    "pin": 0.0
+   },
+   "cr_min": 0.045772216687569985,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8143727913503845
+   },
+   "res_margin": 0.027844081297442314,
+   "res_which": "pitch sym 3.00/rev vs 3P",
+   "fatigue": 0.6224117895392933,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.568,
+    "interlayer": 0.58,
+    "creep_strain": 0.794,
+    "fatigue_strain": 0.55,
+    "fatigue_stress": 0.622,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.102,
+    "strap_anchor": 0.136,
+    "esc_duty_slew": 0.087,
+    "esc_duty_peak": 0.821,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.901,
+    "root_envelope": 2.314,
+    "fitting_clearance": 0.088,
+    "aeroelastic_stability": 0.29,
+    "pitch_cf_ratio": 0.123
+   },
+   "hp_margin": 0.003067840915772946,
+   "hp_which": "pitch sym 6.02/rev vs 6P",
+   "cr": {
+    "T0.7": 0.13970005167925523,
+    "T1": 0.08629001449832495,
+    "T1.4": 0.045772216687569985
+   },
+   "pitch_per_rev_T1": [
+    0.56,
+    0.831,
+    3.004,
+    4.727,
+    5.223
+   ]
+  },
+  "s20": {
+   "x": {
+    "cross": 115.54607053709674,
+    "h": 0.01540019540600901,
+    "L": 0.018345114628484805,
+    "skew": 54.93542933275262,
+    "w": 0.00787795270298362,
+    "pin": 0.0
+   },
+   "cr_min": 0.043893198077961285,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8219383671639034
+   },
+   "res_margin": 0.026709244925414488,
+   "res_which": "pitch antisym 3.04/rev vs 3P",
+   "fatigue": 0.8418702563528304,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.599,
+    "interlayer": 0.582,
+    "creep_strain": 0.87,
+    "fatigue_strain": 0.754,
+    "fatigue_stress": 0.842,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.108,
+    "strap_anchor": 0.144,
+    "esc_duty_slew": 0.087,
+    "esc_duty_peak": 0.824,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.91,
+    "root_envelope": 2.636,
+    "fitting_clearance": 0.079,
+    "aeroelastic_stability": 0.327,
+    "pitch_cf_ratio": 0.133
+   },
+   "hp_margin": 0.012804619061991263,
+   "hp_which": "pitch sym 4.94/rev vs 5P",
+   "cr": {
+    "T0.7": 0.14443048978830722,
+    "T1": 0.07486395371106921,
+    "T1.4": 0.043893198077961285
+   },
+   "pitch_per_rev_T1": [
+    0.565,
+    0.828,
+    2.963,
+    3.04,
+    5.111
+   ]
+  },
+  "s19": {
+   "x": {
+    "cross": 119.94067595252012,
+    "h": 0.014868909880390671,
+    "L": 0.012914703419026924,
+    "skew": 59.80756881380749,
+    "w": 0.007979382754412734,
+    "pin": 0.008
+   },
+   "cr_min": 0.038940606017014004,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8228388838104838
+   },
+   "res_margin": 0.026574167428427442,
+   "res_which": "pitch sym 2.97/rev vs 3P",
+   "fatigue": 0.4282054039369296,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.469,
+    "interlayer": 0.483,
+    "creep_strain": 0.765,
+    "fatigue_strain": 0.428,
+    "fatigue_stress": 0.422,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.117,
+    "strap_anchor": 0.157,
+    "esc_duty_slew": 0.088,
+    "esc_duty_peak": 0.825,
+    "motor_torque_1p": 0.861,
+    "motor_thermal": 0.9,
+    "root_envelope": 1.995,
+    "fitting_clearance": 0.125,
+    "aeroelastic_stability": 0.323,
+    "pitch_cf_ratio": 0.117
+   },
+   "hp_margin": 0.019243920937682457,
+   "hp_which": "pitch sym 5.10/rev vs 5P",
+   "cr": {
+    "T0.7": 0.11497201850451573,
+    "T1": 0.07027586639672544,
+    "T1.4": 0.038940606017014004
+   },
+   "pitch_per_rev_T1": [
+    0.559,
+    0.806,
+    2.973,
+    5.096,
+    5.328
+   ]
+  },
+  "l13": {
+   "x": {
+    "cross": 116.1424162006092,
+    "h": 0.018449506984109392,
+    "L": 0.013453653047739855,
+    "skew": 58.094177681991745,
+    "w": 0.009600985450869069,
+    "pin": 0.008
+   },
+   "cr_min": 0.04161944383077867,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.84706627180061
+   },
+   "res_margin": 0.022940059229908494,
+   "res_which": "pitch sym 3.03/rev vs 3P",
+   "fatigue": 0.7654133108567982,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.57,
+    "interlayer": 0.592,
+    "creep_strain": 0.73,
+    "fatigue_strain": 0.765,
+    "fatigue_stress": 0.582,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.128,
+    "strap_anchor": 0.171,
+    "esc_duty_slew": 0.086,
+    "esc_duty_peak": 0.821,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.933,
+    "root_envelope": 2.439,
+    "fitting_clearance": 0.119,
+    "aeroelastic_stability": 0.551,
+    "pitch_cf_ratio": 0.127
+   },
+   "hp_margin": 0.005515997155635444,
+   "hp_which": "pitch sym 5.97/rev vs 6P",
+   "cr": {
+    "T0.7": 0.16092458821263939,
+    "T1": 0.09123993945249977,
+    "T1.4": 0.04161944383077867
+   },
+   "pitch_per_rev_T1": [
+    0.624,
+    0.882,
+    3.027,
+    5.758,
+    5.967
+   ]
+  },
+  "l23": {
+   "x": {
+    "cross": 116.47914460535456,
+    "h": 0.020063704516881987,
+    "L": 0.013608031400079889,
+    "skew": 58.91760084150827,
+    "w": 0.010069437623508967,
+    "pin": 0.008
+   },
+   "cr_min": 0.03584071110375106,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8498164654786299
+   },
+   "res_margin": 0.022527530178205524,
+   "res_which": "pitch sym 2.98/rev vs 3P",
+   "fatigue": 0.8990972017541755,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.599,
+    "interlayer": 0.627,
+    "creep_strain": 0.765,
+    "fatigue_strain": 0.899,
+    "fatigue_stress": 0.694,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.137,
+    "strap_anchor": 0.182,
+    "esc_duty_slew": 0.087,
+    "esc_duty_peak": 0.829,
+    "motor_torque_1p": 0.861,
+    "motor_thermal": 0.944,
+    "root_envelope": 2.435,
+    "fitting_clearance": 0.119,
+    "aeroelastic_stability": 0.554,
+    "pitch_cf_ratio": 0.197
+   },
+   "hp_margin": 0.04870452761171551,
+   "hp_which": "pitch sym 5.71/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1829539204757051,
+    "T1": 0.09457814607804699,
+    "T1.4": 0.03584071110375106
+   },
+   "pitch_per_rev_T1": [
+    0.631,
+    0.899,
+    2.975,
+    5.533,
+    5.708
+   ]
+  },
+  "l05": {
+   "x": {
+    "cross": 120.90183454909,
+    "h": 0.017834347352320173,
+    "L": 0.013424025096869106,
+    "skew": 58.4115943616522,
+    "w": 0.009554817889084476,
+    "pin": 0.008
+   },
+   "cr_min": 0.03857710676934385,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8529117285524345
+   },
+   "res_margin": 0.022063240717134835,
+   "res_which": "pitch sym 3.02/rev vs 3P",
+   "fatigue": 0.6185934776410721,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.521,
+    "interlayer": 0.535,
+    "creep_strain": 0.719,
+    "fatigue_strain": 0.619,
+    "fatigue_stress": 0.5,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.129,
+    "strap_anchor": 0.172,
+    "esc_duty_slew": 0.086,
+    "esc_duty_peak": 0.82,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.928,
+    "root_envelope": 2.37,
+    "fitting_clearance": 0.126,
+    "aeroelastic_stability": 0.552,
+    "pitch_cf_ratio": 0.119
+   },
+   "hp_margin": 0.017637346059890646,
+   "hp_which": "pitch sym 4.91/rev vs 5P",
+   "cr": {
+    "T0.7": 0.1349883375638152,
+    "T1": 0.07768039676008151,
+    "T1.4": 0.03857710676934385
+   },
+   "pitch_per_rev_T1": [
+    0.615,
+    0.862,
+    3.022,
+    5.866,
+    5.866
+   ]
+  },
+  "l11": {
+   "x": {
+    "cross": 120.11005218763692,
+    "h": 0.018753228085344603,
+    "L": 0.012513713142768683,
+    "skew": 61.273818316541,
+    "w": 0.009745245969867377,
+    "pin": 0.008
+   },
+   "cr_min": 0.040919401740604856,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8534241308551987
+   },
+   "res_margin": 0.021986380371720182,
+   "res_which": "pitch sym 2.99/rev vs 3P",
+   "fatigue": 0.6310686992508403,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.53,
+    "interlayer": 0.562,
+    "creep_strain": 0.723,
+    "fatigue_strain": 0.631,
+    "fatigue_stress": 0.594,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.131,
+    "strap_anchor": 0.175,
+    "esc_duty_slew": 0.087,
+    "esc_duty_peak": 0.827,
+    "motor_torque_1p": 0.861,
+    "motor_thermal": 0.926,
+    "root_envelope": 1.997,
+    "fitting_clearance": 0.124,
+    "aeroelastic_stability": 0.553,
+    "pitch_cf_ratio": 0.153
+   },
+   "hp_margin": 0.009725783532274379,
+   "hp_which": "pitch antisym 6.06/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1477959067618101,
+    "T1": 0.08517976600204531,
+    "T1.4": 0.040919401740604856
+   },
+   "pitch_per_rev_T1": [
+    0.624,
+    0.874,
+    2.985,
+    5.837,
+    6.058
+   ]
+  },
+  "l04": {
+   "x": {
+    "cross": 102.22508556552488,
+    "h": 0.013696274620556448,
+    "L": 0.013971610849446753,
+    "skew": 62.38081355040623,
+    "w": 0.0072378082980617715,
+    "pin": 0.0
+   },
+   "cr_min": 0.04616510466975503,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.41649650672613225,
+    "geom:flexure_inside_hub": 0.0434696849806717
+   },
+   "res_margin": 0.08752552399108016,
+   "res_which": "pitch sym 3.25/rev vs 3P",
+   "fatigue": 0.6156934318493044,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.56,
+    "interlayer": 0.622,
+    "creep_strain": 0.852,
+    "fatigue_strain": 0.543,
+    "fatigue_stress": 0.616,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.11,
+    "strap_anchor": 0.147,
+    "esc_duty_slew": 0.094,
+    "esc_duty_peak": 0.847,
+    "motor_torque_1p": 0.858,
+    "motor_thermal": 0.887,
+    "root_envelope": 2.208,
+    "fitting_clearance": 0.08,
+    "aeroelastic_stability": 0.29,
+    "pitch_cf_ratio": 0.22
+   },
+   "hp_margin": 0.004132048542114908,
+   "hp_which": "pitch sym 5.98/rev vs 6P",
+   "cr": {
+    "T0.7": 0.14995169683473988,
+    "T1": 0.08806880639646304,
+    "T1.4": 0.04616510466975503
+   },
+   "pitch_per_rev_T1": [
+    0.532,
+    0.813,
+    2.644,
+    3.926,
+    5.025
+   ]
+  },
+  "l06": {
+   "x": {
+    "cross": 100.7153576089137,
+    "h": 0.014201436813430694,
+    "L": 0.015180746249850299,
+    "skew": 59.281753875694555,
+    "w": 0.007009267363555603,
+    "pin": 0.0
+   },
+   "cr_min": 0.04513339499609855,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.4809113245832114,
+    "geom:flexure_inside_hub": 0.009743926204646432
+   },
+   "res_margin": 0.07786330131251828,
+   "res_which": "pitch sym 3.22/rev vs 3P",
+   "fatigue": 0.6072149025957239,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.618,
+    "interlayer": 0.662,
+    "creep_strain": 0.862,
+    "fatigue_strain": 0.533,
+    "fatigue_stress": 0.607,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.108,
+    "strap_anchor": 0.144,
+    "esc_duty_slew": 0.092,
+    "esc_duty_peak": 0.839,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.893,
+    "root_envelope": 2.418,
+    "fitting_clearance": 0.075,
+    "aeroelastic_stability": 0.28,
+    "pitch_cf_ratio": 0.171
+   },
+   "hp_margin": 0.0003052569734016686,
+   "hp_which": "pitch sym 6.00/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1443809801233293,
+    "T1": 0.08200250865517278,
+    "T1.4": 0.04513339499609855
+   },
+   "pitch_per_rev_T1": [
+    0.536,
+    0.811,
+    2.731,
+    3.661,
+    5.08
+   ]
+  },
+  "l18": {
+   "x": {
+    "cross": 101.8704305032664,
+    "h": 0.013893722709387775,
+    "L": 0.014199413853372008,
+    "skew": 60.02824512657953,
+    "w": 0.007802485093601786,
+    "pin": 0.0
+   },
+   "cr_min": 0.043796511559386186,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.5342823677489127,
+    "geom:flexure_inside_hub": 0.06237791415015781
+   },
+   "res_margin": 0.0698576448376631,
+   "res_which": "flap antisym 1.91/rev vs 2P",
+   "fatigue": 0.6014111866481318,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.566,
+    "interlayer": 0.625,
+    "creep_strain": 0.793,
+    "fatigue_strain": 0.534,
+    "fatigue_stress": 0.601,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.108,
+    "strap_anchor": 0.144,
+    "esc_duty_slew": 0.091,
+    "esc_duty_peak": 0.834,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.896,
+    "root_envelope": 2.327,
+    "fitting_clearance": 0.077,
+    "aeroelastic_stability": 0.297,
+    "pitch_cf_ratio": 0.178
+   },
+   "hp_margin": 0.005211425257144464,
+   "hp_which": "pitch sym 6.03/rev vs 6P",
+   "cr": {
+    "T0.7": 0.14640185826813595,
+    "T1": 0.08546103421454512,
+    "T1.4": 0.043796511559386186
+   },
+   "pitch_per_rev_T1": [
+    0.544,
+    0.823,
+    2.777,
+    4.638,
+    5.325
+   ]
+  },
+  "l08": {
+   "x": {
+    "cross": 101.23478673804777,
+    "h": 0.013845799250396012,
+    "L": 0.014617006689516931,
+    "skew": 60.49702288262941,
+    "w": 0.008050818325075704,
+    "pin": 0.0
+   },
+   "cr_min": 0.04200176821336562,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.5598546923444147,
+    "geom:flexure_inside_hub": 0.08906345113986087
+   },
+   "res_margin": 0.06602179614833781,
+   "res_which": "flap antisym 1.91/rev vs 2P",
+   "fatigue": 0.6038610513177468,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.573,
+    "interlayer": 0.64,
+    "creep_strain": 0.801,
+    "fatigue_strain": 0.532,
+    "fatigue_stress": 0.604,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.11,
+    "strap_anchor": 0.147,
+    "esc_duty_slew": 0.092,
+    "esc_duty_peak": 0.839,
+    "motor_torque_1p": 0.859,
+    "motor_thermal": 0.895,
+    "root_envelope": 2.37,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.298,
+    "pitch_cf_ratio": 0.2
+   },
+   "hp_margin": 0.004306634522858177,
+   "hp_which": "pitch sym 6.03/rev vs 6P",
+   "cr": {
+    "T0.7": 0.14715958005323906,
+    "T1": 0.08279014567463461,
+    "T1.4": 0.04200176821336562
+   },
+   "pitch_per_rev_T1": [
+    0.536,
+    0.819,
+    2.697,
+    4.453,
+    5.336
+   ]
+  },
+  "l12": {
+   "x": {
+    "cross": 103.90633445956611,
+    "h": 0.013956836755242345,
+    "L": 0.014884401312862923,
+    "skew": 59.569300689076606,
+    "w": 0.008122962575534569,
+    "pin": 0.0
+   },
+   "cr_min": 0.04178705658588182,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.5758824010197833,
+    "geom:flexure_inside_hub": 0.07945277539744065
+   },
+   "res_margin": 0.0636176398470325,
+   "res_which": "flap antisym 1.92/rev vs 2P",
+   "fatigue": 0.6470797029604822,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.569,
+    "interlayer": 0.625,
+    "creep_strain": 0.785,
+    "fatigue_strain": 0.571,
+    "fatigue_stress": 0.647,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.109,
+    "strap_anchor": 0.145,
+    "esc_duty_slew": 0.09,
+    "esc_duty_peak": 0.834,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.898,
+    "root_envelope": 2.39,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.295,
+    "pitch_cf_ratio": 0.186
+   },
+   "hp_margin": 0.023111033051376628,
+   "hp_which": "pitch sym 6.14/rev vs 6P",
+   "cr": {
+    "T0.7": 0.14810430162357624,
+    "T1": 0.08255373061199198,
+    "T1.4": 0.04178705658588182
+   },
+   "pitch_per_rev_T1": [
+    0.545,
+    0.825,
+    2.77,
+    4.623,
+    5.382
+   ]
+  },
+  "l19": {
+   "x": {
+    "cross": 121.53280753774126,
+    "h": 0.02038908470345971,
+    "L": 0.013288098695454591,
+    "skew": 55.60252896026857,
+    "w": 0.010559654325475483,
+    "pin": 0.008
+   },
+   "cr_min": 0.043391961543572756,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.028220009175462288,
+    "resonance": 0.6287075844199688
+   },
+   "res_margin": 0.055693862337004685,
+   "res_which": "pitch sym 2.87/rev vs 3P",
+   "fatigue": 1.0286219657990805,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.551,
+    "interlayer": 0.553,
+    "creep_strain": 0.72,
+    "fatigue_strain": 1.029,
+    "fatigue_stress": 0.702,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.138,
+    "strap_anchor": 0.184,
+    "esc_duty_slew": 0.079,
+    "esc_duty_peak": 0.808,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.954,
+    "root_envelope": 2.521,
+    "fitting_clearance": 0.129,
+    "aeroelastic_stability": 0.579,
+    "pitch_cf_ratio": 0.108
+   },
+   "hp_margin": 0.009138985125814347,
+   "hp_which": "pitch antisym 5.95/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1899121560946416,
+    "T1": 0.10231145784086436,
+    "T1.4": 0.043391961543572756
+   },
+   "pitch_per_rev_T1": [
+    0.672,
+    0.915,
+    3.195,
+    5.699,
+    5.945
+   ]
+  },
+  "s23": {
+   "x": {
+    "cross": 94.06358958107705,
+    "h": 0.016616706016356116,
+    "L": 0.012763189444547005,
+    "skew": 50.47279087413699,
+    "w": 0.008079170811567938,
+    "pin": 0.0
+   },
+   "cr_min": 0.0628469896921152,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_stress": 0.08743635163116595,
+    "resonance": 0.7090148978544333
+   },
+   "res_margin": 0.04364776532183501,
+   "res_which": "pitch sym 2.92/rev vs 3P",
+   "fatigue": 1.0913727981338754,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.574,
+    "interlayer": 0.58,
+    "creep_strain": 0.73,
+    "fatigue_strain": 0.951,
+    "fatigue_stress": 1.091,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.099,
+    "strap_anchor": 0.132,
+    "esc_duty_slew": 0.082,
+    "esc_duty_peak": 0.804,
+    "motor_torque_1p": 0.865,
+    "motor_thermal": 0.931,
+    "root_envelope": 2.647,
+    "fitting_clearance": 0.075,
+    "aeroelastic_stability": 0.375,
+    "pitch_cf_ratio": 0.057
+   },
+   "hp_margin": 0.03838300531248107,
+   "hp_which": "pitch sym 5.77/rev vs 6P",
+   "cr": {
+    "T0.7": 0.18091350406848786,
+    "T1": 0.10095400522666516,
+    "T1.4": 0.0628469896921152
+   },
+   "pitch_per_rev_T1": [
+    0.606,
+    0.877,
+    3.689,
+    5.77,
+    6.364
+   ]
+  },
+  "s25": {
+   "x": {
+    "cross": 80.44951592098758,
+    "h": 0.014441178897368947,
+    "L": 0.013383764999671727,
+    "skew": 52.55368663150665,
+    "w": 0.00856309460875777,
+    "pin": 0.008
+   },
+   "cr_min": 0.04201106190223776,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7464517289690115,
+    "geom:flexure_inside_hub": 0.09510173598791864
+   },
+   "res_margin": 0.038032240654648275,
+   "res_which": "flap sym 2.01/rev vs 2P",
+   "fatigue": 0.6123841961559714,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.575,
+    "interlayer": 0.635,
+    "creep_strain": 0.726,
+    "fatigue_strain": 0.569,
+    "fatigue_stress": 0.612,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.101,
+    "strap_anchor": 0.135,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.812,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.918,
+    "root_envelope": 2.843,
+    "fitting_clearance": 0.073,
+    "aeroelastic_stability": 0.343,
+    "pitch_cf_ratio": 0.077
+   },
+   "hp_margin": 0.01634521088913843,
+   "hp_which": "pitch sym 5.08/rev vs 5P",
+   "cr": {
+    "T0.7": 0.12347094658172188,
+    "T1": 0.0764807293053479,
+    "T1.4": 0.04201106190223776
+   },
+   "pitch_per_rev_T1": [
+    0.557,
+    0.824,
+    3.159,
+    5.512,
+    6.207
+   ]
+  },
+  "s30": {
+   "x": {
+    "cross": 86.38538027262503,
+    "h": 0.016146689045021125,
+    "L": 0.017547687869443537,
+    "skew": 45.638738359842755,
+    "w": 0.009743496032024162,
+    "pin": 0.0
+   },
+   "cr_min": 0.03925009210186381,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7576411233692806,
+    "geom:flexure_inside_hub": 0.055706623688427735
+   },
+   "res_margin": 0.03635383149460791,
+   "res_which": "pitch sym 3.09/rev vs 3P",
+   "fatigue": 0.9332020796298568,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.806,
+    "interlayer": 0.803,
+    "creep_strain": 0.886,
+    "fatigue_strain": 0.874,
+    "fatigue_stress": 0.933,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.111,
+    "strap_anchor": 0.148,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.818,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.944,
+    "root_envelope": 3.801,
+    "fitting_clearance": 0.075,
+    "aeroelastic_stability": 0.448,
+    "pitch_cf_ratio": 0.178
+   },
+   "hp_margin": 0.08140391127651392,
+   "hp_which": "pitch sym 3.67/rev vs 4P",
+   "cr": {
+    "T0.7": 0.15373222875566633,
+    "T1": 0.07660106112107534,
+    "T1.4": 0.03925009210186381
+   },
+   "pitch_per_rev_T1": [
+    0.576,
+    0.864,
+    1.384,
+    3.088,
+    3.674,
+    4.568
+   ]
+  },
+  "l15": {
+   "x": {
+    "cross": 117.47437861230215,
+    "h": 0.02006864576878286,
+    "L": 0.013506156035730044,
+    "skew": 56.46622963728817,
+    "w": 0.010739982162820254,
+    "pin": 0.008
+   },
+   "cr_min": 0.04395904685137686,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.06712099398191938,
+    "resonance": 0.7580652263962175
+   },
+   "res_margin": 0.03629021604056737,
+   "res_which": "pitch sym 3.09/rev vs 3P",
+   "fatigue": 1.0694248643196675,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.571,
+    "interlayer": 0.592,
+    "creep_strain": 0.769,
+    "fatigue_strain": 1.069,
+    "fatigue_stress": 0.747,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.136,
+    "strap_anchor": 0.182,
+    "esc_duty_slew": 0.08,
+    "esc_duty_peak": 0.81,
+    "motor_torque_1p": 0.862,
+    "motor_thermal": 0.954,
+    "root_envelope": 2.566,
+    "fitting_clearance": 0.122,
+    "aeroelastic_stability": 0.555,
+    "pitch_cf_ratio": 0.14
+   },
+   "hp_margin": 0.007514127212050581,
+   "hp_which": "pitch sym 5.95/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1982617652915096,
+    "T1": 0.10577908361875987,
+    "T1.4": 0.04395904685137686
+   },
+   "pitch_per_rev_T1": [
+    0.666,
+    0.916,
+    3.091,
+    5.341,
+    5.955
+   ]
+  },
+  "s08": {
+   "x": {
+    "cross": 91.29390966113333,
+    "h": 0.014162250145153,
+    "L": 0.01572969655026833,
+    "skew": 57.65326936048735,
+    "w": 0.008886478579790856,
+    "pin": 0.0
+   },
+   "cr_min": 0.036541602420419816,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7765223629851746,
+    "geom:flexure_inside_hub": 0.15664644996046626
+   },
+   "res_margin": 0.03352164555222381,
+   "res_which": "pitch sym 3.07/rev vs 3P",
+   "fatigue": 0.7923338249259397,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.653,
+    "interlayer": 0.737,
+    "creep_strain": 0.823,
+    "fatigue_strain": 0.689,
+    "fatigue_stress": 0.792,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.114,
+    "strap_anchor": 0.152,
+    "esc_duty_slew": 0.092,
+    "esc_duty_peak": 0.843,
+    "motor_torque_1p": 0.86,
+    "motor_thermal": 0.901,
+    "root_envelope": 2.76,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.296,
+    "pitch_cf_ratio": 0.177
+   },
+   "hp_margin": 0.046826236876218674,
+   "hp_which": "pitch sym 6.28/rev vs 6P",
+   "cr": {
+    "T0.7": 0.13453022310029955,
+    "T1": 0.07191530798702464,
+    "T1.4": 0.036541602420419816
+   },
+   "pitch_per_rev_T1": [
+    0.52,
+    0.806,
+    1.337,
+    2.64,
+    4.247,
+    5.649
+   ]
+  },
+  "s26": {
+   "x": {
+    "cross": 119.27529789162074,
+    "h": 0.017723128358477072,
+    "L": 0.01827332962246177,
+    "skew": 59.43773022958585,
+    "w": 0.00794151759798621,
+    "pin": 0.0
+   },
+   "cr_min": 0.04112103528565761,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_stress": 0.003908856135106181,
+    "resonance": 0.7888559391938745
+   },
+   "res_margin": 0.03167160912091882,
+   "res_which": "pitch antisym 2.94/rev vs 3P",
+   "fatigue": 1.0039165056769874,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.681,
+    "interlayer": 0.665,
+    "creep_strain": 0.991,
+    "fatigue_strain": 0.926,
+    "fatigue_stress": 1.004,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.112,
+    "strap_anchor": 0.15,
+    "esc_duty_slew": 0.089,
+    "esc_duty_peak": 0.834,
+    "motor_torque_1p": 0.859,
+    "motor_thermal": 0.916,
+    "root_envelope": 2.378,
+    "fitting_clearance": 0.091,
+    "aeroelastic_stability": 0.257,
+    "pitch_cf_ratio": 0.165
+   },
+   "hp_margin": 0.045537395457415863,
+   "hp_which": "pitch sym 6.27/rev vs 6P",
+   "cr": {
+    "T0.7": 0.187165060909188,
+    "T1": 0.0891992743270163,
+    "T1.4": 0.04112103528565761
+   },
+   "pitch_per_rev_T1": [
+    0.61,
+    0.846,
+    2.66,
+    2.936,
+    5.334
+   ]
+  },
+  "l10": {
+   "x": {
+    "cross": 93.8558375285486,
+    "h": 0.014875096002489444,
+    "L": 0.015435327692601749,
+    "skew": 59.75108522703251,
+    "w": 0.007956426071711611,
+    "pin": 0.0
+   },
+   "cr_min": 0.044831862727623274,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7996053352773386,
+    "geom:flexure_inside_hub": 0.0020460061223187653
+   },
+   "res_margin": 0.03005919970839921,
+   "res_which": "pitch sym 3.05/rev vs 3P",
+   "fatigue": 0.9118312784362188,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.673,
+    "interlayer": 0.751,
+    "creep_strain": 0.916,
+    "fatigue_strain": 0.795,
+    "fatigue_stress": 0.912,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.115,
+    "strap_anchor": 0.153,
+    "esc_duty_slew": 0.095,
+    "esc_duty_peak": 0.853,
+    "motor_torque_1p": 0.859,
+    "motor_thermal": 0.895,
+    "root_envelope": 2.568,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.282,
+    "pitch_cf_ratio": 0.175
+   },
+   "hp_margin": 0.05807397847384954,
+   "hp_which": "pitch sym 5.29/rev vs 5P",
+   "cr": {
+    "T0.7": 0.15408610295001418,
+    "T1": 0.08084970221788225,
+    "T1.4": 0.044831862727623274
+   },
+   "pitch_per_rev_T1": [
+    0.519,
+    0.813,
+    1.314,
+    2.618,
+    3.157,
+    5.29
+   ]
+  },
+  "s04": {
+   "x": {
+    "cross": 107.89338763705405,
+    "h": 0.014450984209660973,
+    "L": 0.017203104302133912,
+    "skew": 48.852868786584374,
+    "w": 0.007568189181598948,
+    "pin": 0.008
+   },
+   "cr_min": 0.03274436665115942,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8412219218027172,
+    "geom:flexure_inside_hub": 0.050581819724300946
+   },
+   "res_margin": 0.023816711729592432,
+   "res_which": "pitch sym 2.98/rev vs 3P",
+   "fatigue": 0.5161063662498382,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.627,
+    "interlayer": 0.588,
+    "creep_strain": 0.784,
+    "fatigue_strain": 0.516,
+    "fatigue_stress": 0.465,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.113,
+    "strap_anchor": 0.151,
+    "esc_duty_slew": 0.084,
+    "esc_duty_peak": 0.811,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.916,
+    "root_envelope": 2.937,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.341,
+    "pitch_cf_ratio": 0.069
+   },
+   "hp_margin": 0.02378971584027645,
+   "hp_which": "pitch sym 4.10/rev vs 4P",
+   "cr": {
+    "T0.7": 0.09949274455016194,
+    "T1": 0.05706733260101709,
+    "T1.4": 0.03274436665115942
+   },
+   "pitch_per_rev_T1": [
+    0.545,
+    0.803,
+    1.272,
+    2.976,
+    4.095,
+    5.341
+   ]
+  },
+  "s05": {
+   "x": {
+    "cross": 99.6549453095013,
+    "h": 0.01429167353390685,
+    "L": 0.01703677184648784,
+    "skew": 51.06390937442609,
+    "w": 0.007381239750892974,
+    "pin": 0.0
+   },
+   "cr_min": 0.037931797891745146,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.843248441731364,
+    "geom:flexure_inside_hub": 0.08945918168974355
+   },
+   "res_margin": 0.02351273374029539,
+   "res_which": "pitch sym 3.00/rev vs 3P",
+   "fatigue": 0.6421948927106607,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.676,
+    "interlayer": 0.67,
+    "creep_strain": 0.811,
+    "fatigue_strain": 0.561,
+    "fatigue_stress": 0.642,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.103,
+    "strap_anchor": 0.138,
+    "esc_duty_slew": 0.086,
+    "esc_duty_peak": 0.818,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.91,
+    "root_envelope": 2.979,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.359,
+    "pitch_cf_ratio": 0.097
+   },
+   "hp_margin": 0.012925959567245737,
+   "hp_which": "pitch sym 5.92/rev vs 6P",
+   "cr": {
+    "T0.7": 0.117967068363533,
+    "T1": 0.0651541144522864,
+    "T1.4": 0.037931797891745146
+   },
+   "pitch_per_rev_T1": [
+    0.542,
+    0.811,
+    1.283,
+    2.998,
+    3.942,
+    5.365
+   ]
+  },
+  "s18": {
+   "x": {
+    "cross": 82.38953497753064,
+    "h": 0.01728446313049784,
+    "L": 0.01815051718070631,
+    "skew": 44.50612834313954,
+    "w": 0.008655589126927926,
+    "pin": 0.0
+   },
+   "cr_min": 0.054254831546986376,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_stress": 0.1420837484619652,
+    "resonance": 0.6090300561951928,
+    "check:aeroelastic_stability": 6.907755278982137
+   },
+   "res_margin": 0.058645491570721076,
+   "res_which": "flap sym 2.09/rev vs 2P",
+   "fatigue": 1.1526731791007037,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.882,
+    "interlayer": 0.856,
+    "creep_strain": 0.99,
+    "fatigue_strain": 0.995,
+    "fatigue_stress": 1.153,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.111,
+    "strap_anchor": 0.148,
+    "esc_duty_slew": 0.086,
+    "esc_duty_peak": 0.827,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.942,
+    "root_envelope": 3.887,
+    "fitting_clearance": 0.075,
+    "aeroelastic_stability": 1000.0,
+    "pitch_cf_ratio": 0.079
+   },
+   "hp_margin": 0.04971628419776364,
+   "hp_which": "pitch sym 5.25/rev vs 5P",
+   "cr": {
+    "T0.7": 0.18471856185308785,
+    "T1": 0.08373829216539264,
+    "T1.4": 0.054254831546986376
+   },
+   "pitch_per_rev_T1": [
+    0.573,
+    0.856,
+    1.376,
+    1.434,
+    2.728,
+    2.818,
+    5.249
+   ]
+  },
+  "s13": {
+   "x": {
+    "cross": 94.68115927729525,
+    "h": 0.01952911985382231,
+    "L": 0.013217111081258694,
+    "skew": 56.35902916526376,
+    "w": 0.008251785747363866,
+    "pin": 0.0
+   },
+   "cr_min": 0.0946634936365983,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.6692988246396976,
+    "check:fatigue_stress": 0.8027556505725757,
+    "resonance": 0.6678814082137551
+   },
+   "res_margin": 0.049817788767936744,
+   "res_which": "flap antisym 1.97/rev vs 2P",
+   "fatigue": 2.2316821993384193,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.736,
+    "interlayer": 0.78,
+    "creep_strain": 0.817,
+    "fatigue_strain": 1.953,
+    "fatigue_stress": 2.232,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.107,
+    "strap_anchor": 0.142,
+    "esc_duty_slew": 0.086,
+    "esc_duty_peak": 0.825,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.939,
+    "root_envelope": 2.454,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.311,
+    "pitch_cf_ratio": 0.105
+   },
+   "hp_margin": 0.0037184007111761286,
+   "hp_which": "pitch sym 4.98/rev vs 5P",
+   "cr": {
+    "T0.7": 0.3068180533154916,
+    "T1": 0.27164005297108623,
+    "T1.4": 0.0946634936365983
+   },
+   "pitch_per_rev_T1": [
+    0.655,
+    0.953,
+    3.132,
+    4.981,
+    6.091
+   ]
+  },
+  "s22": {
+   "x": {
+    "cross": 98.52049764881755,
+    "h": 0.01683976425700436,
+    "L": 0.012299142617449653,
+    "skew": 46.0449340981215,
+    "w": 0.009230757980101787,
+    "pin": 0.0
+   },
+   "cr_min": 0.06310117632187782,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.05791784862060652,
+    "check:fatigue_stress": 0.10728458238799381,
+    "resonance": 0.6863977369634998
+   },
+   "res_margin": 0.04704033945547503,
+   "res_which": "flap sym 1.95/rev vs 2P",
+   "fatigue": 1.1132510210380995,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.495,
+    "interlayer": 0.481,
+    "creep_strain": 0.692,
+    "fatigue_strain": 1.06,
+    "fatigue_stress": 1.113,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.1,
+    "strap_anchor": 0.133,
+    "esc_duty_slew": 0.08,
+    "esc_duty_peak": 0.797,
+    "motor_torque_1p": 0.866,
+    "motor_thermal": 0.943,
+    "root_envelope": 2.978,
+    "fitting_clearance": 0.088,
+    "aeroelastic_stability": 0.485,
+    "pitch_cf_ratio": 0.038
+   },
+   "hp_margin": 0.0026466324103181504,
+   "hp_which": "pitch sym 5.98/rev vs 6P",
+   "cr": {
+    "T0.7": 0.19730300351309926,
+    "T1": 0.10146516998017542,
+    "T1.4": 0.06310117632187782
+   },
+   "pitch_per_rev_T1": [
+    0.619,
+    0.898,
+    4.452,
+    5.984,
+    6.463
+   ]
+  },
+  "s28": {
+   "x": {
+    "cross": 118.67636496148637,
+    "h": 0.01855204485709079,
+    "L": 0.012554472305301745,
+    "skew": 55.30337229324348,
+    "w": 0.009278157046720173,
+    "pin": 0.0
+   },
+   "cr_min": 0.11635328049235383,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.6389714215643991,
+    "check:fatigue_stress": 0.6052552406489349,
+    "resonance": 0.6898669658567179
+   },
+   "res_margin": 0.04651995512149232,
+   "res_which": "pitch sym 3.12/rev vs 3P",
+   "fatigue": 1.894531202838446,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.548,
+    "interlayer": 0.542,
+    "creep_strain": 0.705,
+    "fatigue_strain": 1.895,
+    "fatigue_stress": 1.832,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.105,
+    "strap_anchor": 0.14,
+    "esc_duty_slew": 0.083,
+    "esc_duty_peak": 0.809,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.938,
+    "root_envelope": 2.409,
+    "fitting_clearance": 0.127,
+    "aeroelastic_stability": 0.356,
+    "pitch_cf_ratio": 0.084
+   },
+   "hp_margin": 0.003744516050008584,
+   "hp_which": "pitch sym 5.98/rev vs 6P",
+   "cr": {
+    "T0.7": 0.4134224757537686,
+    "T1": 0.26785884572338514,
+    "T1.4": 0.11635328049235383
+   },
+   "pitch_per_rev_T1": [
+    0.677,
+    0.96,
+    3.514,
+    5.978,
+    6.433
+   ]
+  },
+  "s01": {
+   "x": {
+    "cross": 79.99242992943543,
+    "h": 0.01933935622783587,
+    "L": 0.014441141669716514,
+    "skew": 46.465318809978456,
+    "w": 0.008272240469518688,
+    "pin": 0.0
+   },
+   "cr_min": 0.09801359967451836,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.8982672953305442,
+    "check:fatigue_stress": 1.0475940057801303,
+    "resonance": 0.7457253027435827
+   },
+   "res_margin": 0.038141204588462596,
+   "res_which": "flap sym 1.99/rev vs 2P",
+   "fatigue": 2.850783890558296,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.772,
+    "interlayer": 0.77,
+    "creep_strain": 0.873,
+    "fatigue_strain": 2.455,
+    "fatigue_stress": 2.851,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.102,
+    "strap_anchor": 0.136,
+    "esc_duty_slew": 0.079,
+    "esc_duty_peak": 0.806,
+    "motor_torque_1p": 0.865,
+    "motor_thermal": 0.954,
+    "root_envelope": 3.247,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.361,
+    "pitch_cf_ratio": 0.058
+   },
+   "hp_margin": 0.05076243700959249,
+   "hp_which": "pitch sym 5.25/rev vs 5P",
+   "cr": {
+    "T0.7": 0.31513759773489247,
+    "T1": 0.27227748434250687,
+    "T1.4": 0.09801359967451836
+   },
+   "pitch_per_rev_T1": [
+    0.655,
+    0.96,
+    1.467,
+    3.203,
+    5.337,
+    6.33
+   ]
+  },
+  "s32": {
+   "x": {
+    "cross": 103.37929708802638,
+    "h": 0.01696253551996694,
+    "L": 0.013765039781987093,
+    "skew": 50.79335228664531,
+    "w": 0.0072957866950668655,
+    "pin": 0.0
+   },
+   "cr_min": 0.06384707687008603,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.1004277002085573,
+    "check:fatigue_stress": 0.22694488714479263,
+    "resonance": 0.7537703624601235
+   },
+   "res_margin": 0.03693444563098147,
+   "res_which": "flap sym 2.02/rev vs 2P",
+   "fatigue": 1.2547607125891496,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.622,
+    "interlayer": 0.595,
+    "creep_strain": 0.761,
+    "fatigue_strain": 1.106,
+    "fatigue_stress": 1.255,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.098,
+    "strap_anchor": 0.131,
+    "esc_duty_slew": 0.083,
+    "esc_duty_peak": 0.806,
+    "motor_torque_1p": 0.865,
+    "motor_thermal": 0.927,
+    "root_envelope": 2.559,
+    "fitting_clearance": 0.085,
+    "aeroelastic_stability": 0.344,
+    "pitch_cf_ratio": 0.064
+   },
+   "hp_margin": 0.016648747012664167,
+   "hp_which": "pitch sym 4.92/rev vs 5P",
+   "cr": {
+    "T0.7": 0.1744605370411034,
+    "T1": 0.11772256575654814,
+    "T1.4": 0.06384707687008603
+   },
+   "pitch_per_rev_T1": [
+    0.616,
+    0.895,
+    3.324,
+    5.526,
+    5.759
+   ]
+  },
+  "s14": {
+   "x": {
+    "cross": 111.28510655166266,
+    "h": 0.017127042527358704,
+    "L": 0.01743413988769739,
+    "skew": 44.7854895713568,
+    "w": 0.0070481637159655625,
+    "pin": 0.0
+   },
+   "cr_min": 0.0550611343726199,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.039705334641758495,
+    "check:fatigue_stress": 0.15513144181863162,
+    "resonance": 0.8059587724517187
+   },
+   "res_margin": 0.029106184132242197,
+   "res_which": "pitch antisym 3.05/rev vs 3P",
+   "fatigue": 1.1678114502782995,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.657,
+    "interlayer": 0.557,
+    "creep_strain": 0.814,
+    "fatigue_strain": 1.041,
+    "fatigue_stress": 1.168,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.099,
+    "strap_anchor": 0.132,
+    "esc_duty_slew": 0.082,
+    "esc_duty_peak": 0.802,
+    "motor_torque_1p": 0.865,
+    "motor_thermal": 0.935,
+    "root_envelope": 3.04,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.424,
+    "pitch_cf_ratio": 0.052
+   },
+   "hp_margin": 0.0263289606794751,
+   "hp_which": "pitch sym 5.84/rev vs 6P",
+   "cr": {
+    "T0.7": 0.17293296012327045,
+    "T1": 0.09623516508774477,
+    "T1.4": 0.0550611343726199
+   },
+   "pitch_per_rev_T1": [
+    0.611,
+    0.891,
+    3.016,
+    4.178,
+    5.327
+   ]
+  },
+  "s21": {
+   "x": {
+    "cross": 91.6028254279201,
+    "h": 0.018501142879235887,
+    "L": 0.014680255772758066,
+    "skew": 45.75941541980781,
+    "w": 0.009572442274348194,
+    "pin": 0.0
+   },
+   "cr_min": 0.0732099607135911,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.7328117295125689,
+    "check:fatigue_stress": 0.5578152308962735,
+    "resonance": 0.8220636479991041
+   },
+   "res_margin": 0.02669045280013438,
+   "res_which": "pitch sym 2.97/rev vs 3P",
+   "fatigue": 2.0809233833627703,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.725,
+    "interlayer": 0.712,
+    "creep_strain": 0.809,
+    "fatigue_strain": 2.081,
+    "fatigue_stress": 1.747,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.106,
+    "strap_anchor": 0.141,
+    "esc_duty_slew": 0.078,
+    "esc_duty_peak": 0.801,
+    "motor_torque_1p": 0.865,
+    "motor_thermal": 0.955,
+    "root_envelope": 3.361,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 0.439,
+    "pitch_cf_ratio": 0.059
+   },
+   "hp_margin": 0.011438067904734006,
+   "hp_which": "pitch sym 4.94/rev vs 5P",
+   "cr": {
+    "T0.7": 0.31161008159324016,
+    "T1": 0.2025083891683868,
+    "T1.4": 0.0732099607135911
+   },
+   "pitch_per_rev_T1": [
+    0.649,
+    0.952,
+    1.454,
+    3.374,
+    5.899,
+    6.366
+   ]
+  },
+  "s33": {
+   "x": {
+    "cross": 106.83017129044332,
+    "h": 0.019183940165092967,
+    "L": 0.014147840008991178,
+    "skew": 43.729672524658724,
+    "w": 0.009363250239812451,
+    "pin": 0.008
+   },
+   "cr_min": 0.08208524475156671,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.676949094418153,
+    "check:fatigue_stress": 0.6700692383641103,
+    "resonance": 0.8320459793533654
+   },
+   "res_margin": 0.025193103096995184,
+   "res_which": "pitch sym 2.98/rev vs 3P",
+   "fatigue": 1.9678647947556018,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.631,
+    "interlayer": 0.566,
+    "creep_strain": 0.725,
+    "fatigue_strain": 1.968,
+    "fatigue_stress": 1.954,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.117,
+    "strap_anchor": 0.156,
+    "esc_duty_slew": 0.077,
+    "esc_duty_peak": 0.793,
+    "motor_torque_1p": 0.866,
+    "motor_thermal": 0.957,
+    "root_envelope": 3.135,
+    "fitting_clearance": 0.09,
+    "aeroelastic_stability": 0.425,
+    "pitch_cf_ratio": 0.034
+   },
+   "hp_margin": 0.01923551792631395,
+   "hp_which": "pitch sym 4.08/rev vs 4P",
+   "cr": {
+    "T0.7": 0.2923453678025447,
+    "T1": 0.18730632611085718,
+    "T1.4": 0.08208524475156671
+   },
+   "pitch_per_rev_T1": [
+    0.668,
+    0.955,
+    3.421,
+    6.261,
+    6.261
+   ]
+  },
+  "s29": {
+   "x": {
+    "cross": 80.71498887804609,
+    "h": 0.019435027186654262,
+    "L": 0.01290688226741784,
+    "skew": 41.59819940813767,
+    "w": 0.009841606551396017,
+    "pin": 0.0
+   },
+   "cr_min": 0.21757055817721227,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 1.565392147726701,
+    "check:fatigue_stress": 1.6386447488041018,
+    "resonance": 0.9114399319074264
+   },
+   "res_margin": 0.013284010213886033,
+   "res_which": "pitch antisym+hub 0.99/rev vs 1P",
+   "fatigue": 5.148187694715067,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.59,
+    "interlayer": 0.569,
+    "creep_strain": 0.693,
+    "fatigue_strain": 4.785,
+    "fatigue_stress": 5.148,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.102,
+    "strap_anchor": 0.136,
+    "esc_duty_slew": 0.076,
+    "esc_duty_peak": 0.784,
+    "motor_torque_1p": 0.866,
+    "motor_thermal": 0.962,
+    "root_envelope": 3.5,
+    "fitting_clearance": 0.075,
+    "aeroelastic_stability": 0.557,
+    "pitch_cf_ratio": 0.026
+   },
+   "hp_margin": 0.03891770497598168,
+   "hp_which": "pitch sym 5.19/rev vs 5P",
+   "cr": {
+    "T0.7": 0.7831291453805442,
+    "T1": 0.26919920477553627,
+    "T1.4": 0.21757055817721227
+   },
+   "pitch_per_rev_T1": [
+    0.665,
+    0.968,
+    4.414,
+    6.248,
+    6.791
+   ]
+  },
+  "s06": {
+   "x": {
+    "cross": 79.90474892763379,
+    "h": 0.014873317814276053,
+    "L": 0.019182391163918355,
+    "skew": 44.59343858090006,
+    "w": 0.008272651132829944,
+    "pin": 0.0
+   },
+   "cr_min": 0.05240197521038351,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7457269611139082,
+    "geom:flexure_inside_hub": 0.22777867183585473,
+    "check:fatigue_strain": 0.4485967253152883,
+    "check:fatigue_stress": 0.6000946632791335
+   },
+   "res_margin": 0.03814095583291377,
+   "res_which": "flap sym 2.00/rev vs 2P",
+   "fatigue": 1.82229129629551,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.896,
+    "interlayer": 0.879,
+    "creep_strain": 0.999,
+    "fatigue_strain": 1.566,
+    "fatigue_stress": 1.822,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.111,
+    "strap_anchor": 0.148,
+    "esc_duty_slew": 0.089,
+    "esc_duty_peak": 0.832,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.92,
+    "root_envelope": 4.088,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.399,
+    "pitch_cf_ratio": 0.086
+   },
+   "hp_margin": 0.015154796502945267,
+   "hp_which": "pitch sym 5.08/rev vs 5P",
+   "cr": {
+    "T0.7": 0.10516171033218678,
+    "T1": 0.05909110990492888,
+    "T1.4": 0.05240197521038351
+   },
+   "pitch_per_rev_T1": [
+    0.52,
+    0.79,
+    1.33,
+    1.381,
+    2.667,
+    2.789,
+    5.206
+   ]
+  },
+  "s17": {
+   "x": {
+    "cross": 97.21532023356505,
+    "h": 0.01941666535386822,
+    "L": 0.018201184507424716,
+    "skew": 43.143281586545264,
+    "w": 0.008103680263316803,
+    "pin": 0.0
+   },
+   "cr_min": 0.07778627607236892,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.8958161246939078,
+    "check:fatigue_stress": 1.0318330293574869,
+    "resonance": 0.8036018295372548,
+    "check:aeroelastic_stability": 1.716621508150399
+   },
+   "res_margin": 0.029459725569411788,
+   "res_which": "pitch antisym 3.02/rev vs 3P",
+   "fatigue": 2.8062049792688115,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.786,
+    "interlayer": 0.716,
+    "creep_strain": 0.919,
+    "fatigue_strain": 2.449,
+    "fatigue_stress": 2.806,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.105,
+    "strap_anchor": 0.141,
+    "esc_duty_slew": 0.078,
+    "esc_duty_peak": 0.802,
+    "motor_torque_1p": 0.864,
+    "motor_thermal": 0.957,
+    "root_envelope": 3.654,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 5.566,
+    "pitch_cf_ratio": 0.061
+   },
+   "hp_margin": 0.03745654392136699,
+   "hp_which": "pitch sym 4.81/rev vs 5P",
+   "cr": {
+    "T0.7": 0.3511059920699546,
+    "T1": 0.13726198433940573,
+    "T1.4": 0.07778627607236892
+   },
+   "pitch_per_rev_T1": [
+    0.64,
+    0.912,
+    1.356,
+    2.051,
+    3.016
+   ]
+  },
+  "s15": {
+   "x": {
+    "cross": 90.16635782438001,
+    "h": 0.014524620489395193,
+    "L": 0.019133422964945825,
+    "skew": 52.73693101383259,
+    "w": 0.00709705374528831,
+    "pin": 0.0
+   },
+   "cr_min": 0.05490959285889416,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.7513499314696098,
+    "geom:flexure_inside_hub": 0.13398767962013397,
+    "check:fatigue_strain": 0.48984690987819013,
+    "check:fatigue_stress": 0.6359073560667685,
+    "check:creep_strain": 0.05288802067563384
+   },
+   "res_margin": 0.03729751027955852,
+   "res_which": "pitch sym 3.09/rev vs 3P",
+   "fatigue": 1.8887351194698883,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.83,
+    "interlayer": 0.883,
+    "creep_strain": 1.054,
+    "fatigue_strain": 1.632,
+    "fatigue_stress": 1.889,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.114,
+    "strap_anchor": 0.152,
+    "esc_duty_slew": 0.094,
+    "esc_duty_peak": 0.851,
+    "motor_torque_1p": 0.861,
+    "motor_thermal": 0.899,
+    "root_envelope": 3.358,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 0.268,
+    "pitch_cf_ratio": 0.119
+   },
+   "hp_margin": 0.0072796226121030205,
+   "hp_which": "pitch sym 4.03/rev vs 4P",
+   "cr": {
+    "T0.7": 0.10986572415884235,
+    "T1": 0.06878450577011568,
+    "T1.4": 0.05490959285889416
+   },
+   "pitch_per_rev_T1": [
+    0.515,
+    0.764,
+    1.152,
+    1.152,
+    2.45,
+    2.624,
+    5.047
+   ]
+  },
+  "s00": {
+   "x": {
+    "cross": 95.71722821234815,
+    "h": 0.019189610098936286,
+    "L": 0.019404201684514275,
+    "skew": 44.444504182995644,
+    "w": 0.009615124336736313,
+    "pin": 0.0
+   },
+   "cr_min": 0.042261910902957424,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.34971958413856513,
+    "check:fatigue_stress": 0.48766477309880607,
+    "resonance": 0.6235223221705546,
+    "check:creep_strain": 0.022825320096329756,
+    "check:aeroelastic_stability": 6.907755278982137,
+    "split": 0.17265822595784108
+   },
+   "res_margin": 0.05647165167441681,
+   "res_which": "pitch antisym 1.94/rev vs 2P",
+   "fatigue": 1.6285088384873254,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.884,
+    "interlayer": 0.84,
+    "creep_strain": 1.023,
+    "fatigue_strain": 1.419,
+    "fatigue_stress": 1.629,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.112,
+    "strap_anchor": 0.15,
+    "esc_duty_slew": 0.079,
+    "esc_duty_peak": 0.796,
+    "motor_torque_1p": 0.863,
+    "motor_thermal": 0.962,
+    "root_envelope": 3.891,
+    "fitting_clearance": 0.076,
+    "aeroelastic_stability": 1000.0,
+    "pitch_cf_ratio": 0.129
+   },
+   "hp_margin": 0.0001085246344192381,
+   "hp_which": "pitch sym 4.00/rev vs 4P",
+   "cr": {
+    "T0.7": 0.20560788642825986,
+    "T1": 0.07446257895500008,
+    "T1.4": 0.042261910902957424
+   },
+   "pitch_per_rev_T1": [
+    0.612,
+    0.814,
+    1.242,
+    1.548,
+    1.935,
+    4.0
+   ]
+  },
+  "s16": {
+   "x": {
+    "cross": 85.68768457716604,
+    "h": 0.018837696978117425,
+    "L": 0.014570373871129912,
+    "skew": 60.41184819393696,
+    "w": 0.008837624296216304,
+    "pin": 0.008
+   },
+   "cr_min": 0.04335930572801678,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.19336417498073022,
+    "check:fatigue_stress": 0.19663154913300726,
+    "resonance": 0.7147035946941592,
+    "check:interlayer": 0.1340772298610562,
+    "check:creep_strain": 0.13553827801122995,
+    "split": 0.4659734281942882
+   },
+   "res_margin": 0.04279446079587612,
+   "res_which": "pitch sym 3.10/rev vs 3P",
+   "fatigue": 1.2172954445062394,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.972,
+    "interlayer": 1.143,
+    "creep_strain": 1.145,
+    "fatigue_strain": 1.213,
+    "fatigue_stress": 1.217,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.13,
+    "strap_anchor": 0.174,
+    "esc_duty_slew": 0.102,
+    "esc_duty_peak": 0.889,
+    "motor_torque_1p": 0.859,
+    "motor_thermal": 0.92,
+    "root_envelope": 2.589,
+    "fitting_clearance": 0.073,
+    "aeroelastic_stability": 0.261,
+    "pitch_cf_ratio": 0.164
+   },
+   "hp_margin": 0.011166613455180663,
+   "hp_which": "pitch sym 4.04/rev vs 4P",
+   "cr": {
+    "T0.7": 0.2796269216369396,
+    "T1": 0.10204791843850068,
+    "T1.4": 0.04335930572801678
+   },
+   "pitch_per_rev_T1": [
+    0.518,
+    0.866,
+    1.391,
+    2.366,
+    2.66,
+    5.203
+   ]
+  },
+  "s34": {
+   "x": {
+    "cross": 87.14591650085009,
+    "h": 0.016624729367487177,
+    "L": 0.015891998989481997,
+    "skew": 61.57865275050452,
+    "w": 0.007195913172812711,
+    "pin": 0.0
+   },
+   "cr_min": 0.06683400126403023,
+   "feasible": false,
+   "viol": {
+    "resonance": 0.8092324902437467,
+    "check:fatigue_strain": 1.0786385193050347,
+    "check:fatigue_stress": 1.2179733200137275,
+    "check:interlayer": 0.10092968588767848,
+    "check:creep_strain": 0.2094676187474113,
+    "split": 0.28734444155911065
+   },
+   "res_margin": 0.028615126463438,
+   "res_which": "pitch sym 1.01/rev vs 1P",
+   "fatigue": 3.3803299396560726,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 0.948,
+    "interlayer": 1.106,
+    "creep_strain": 1.233,
+    "fatigue_strain": 2.941,
+    "fatigue_stress": 3.38,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.129,
+    "strap_anchor": 0.172,
+    "esc_duty_slew": 0.106,
+    "esc_duty_peak": 0.9,
+    "motor_torque_1p": 0.857,
+    "motor_thermal": 0.895,
+    "root_envelope": 2.673,
+    "fitting_clearance": 0.073,
+    "aeroelastic_stability": 0.266,
+    "pitch_cf_ratio": 0.205
+   },
+   "hp_margin": 0.009351135447385084,
+   "hp_which": "pitch sym 5.94/rev vs 6P",
+   "cr": {
+    "T0.7": 0.17567378303450384,
+    "T1": 0.08380002004623954,
+    "T1.4": 0.06683400126403023
+   },
+   "pitch_per_rev_T1": [
+    0.522,
+    0.795,
+    1.197,
+    2.114,
+    2.43,
+    4.672
+   ]
+  },
+  "s10": {
+   "x": {
+    "cross": 82.35330852863251,
+    "h": 0.017803936163046163,
+    "L": 0.019731388676426972,
+    "skew": 56.35640850676916,
+    "w": 0.00765843488108235,
+    "pin": 0.008
+   },
+   "cr_min": 0.03706364912780448,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.8570094826637651,
+    "check:fatigue_stress": 1.0022314301908772,
+    "resonance": 0.7506398542686457,
+    "check:creep_strain": 0.2510940103185651,
+    "split": 3.1916596007081655,
+    "check:static_stress": 0.12016477045768229,
+    "check:interlayer": 0.20047046842755267
+   },
+   "res_margin": 0.03740402185970315,
+   "res_which": "pitch antisym 1.95/rev vs 2P",
+   "fatigue": 2.724354257179077,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 1.128,
+    "interlayer": 1.222,
+    "creep_strain": 1.285,
+    "fatigue_strain": 2.356,
+    "fatigue_stress": 2.724,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.1,
+    "strap_anchor": 0.133,
+    "esc_duty_slew": 0.082,
+    "esc_duty_peak": 0.799,
+    "motor_torque_1p": 0.851,
+    "motor_thermal": 0.954,
+    "root_envelope": 3.468,
+    "fitting_clearance": 0.073,
+    "aeroelastic_stability": 0.29,
+    "pitch_cf_ratio": 0.128
+   },
+   "hp_margin": 0.013394699624171391,
+   "hp_which": "pitch sym 5.07/rev vs 5P",
+   "cr": {
+    "T0.7": 0.09757101054462643,
+    "T1": 0.05924109690332512,
+    "T1.4": 0.03706364912780448
+   },
+   "pitch_per_rev_T1": [
+    0.556,
+    0.957,
+    1.141,
+    2.257,
+    2.77,
+    4.628
+   ]
+  },
+  "s02": {
+   "x": {
+    "cross": 83.84640752574205,
+    "h": 0.01781639218769785,
+    "L": 0.019309576615185765,
+    "skew": 51.006516354108996,
+    "w": 0.009383382453290484,
+    "pin": 0.0
+   },
+   "cr_min": 0.03472965209824687,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.16847646456443802,
+    "check:fatigue_stress": 0.3166800730115733,
+    "split": 0.9847879500215155,
+    "resonance": 0.7674510934013847,
+    "check:aeroelastic_stability": 0.31711959006216733,
+    "check:static_stress": 0.10870950094340148,
+    "check:interlayer": 0.17749672347993595,
+    "check:creep_strain": 0.23121932348912655
+   },
+   "res_margin": 0.03488233598979229,
+   "res_which": "pitch sym 2.04/rev vs 2P",
+   "fatigue": 1.3725633816056848,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 1.115,
+    "interlayer": 1.194,
+    "creep_strain": 1.26,
+    "fatigue_strain": 1.184,
+    "fatigue_stress": 1.373,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.12,
+    "strap_anchor": 0.16,
+    "esc_duty_slew": 0.089,
+    "esc_duty_peak": 0.843,
+    "motor_torque_1p": 0.859,
+    "motor_thermal": 0.946,
+    "root_envelope": 3.659,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 1.373,
+    "pitch_cf_ratio": 0.131
+   },
+   "hp_margin": 0.07940481149775769,
+   "hp_which": "pitch sym 5.52/rev vs 6P",
+   "cr": {
+    "T0.7": 0.1065239821054178,
+    "T1": 0.056833071689435244,
+    "T1.4": 0.03472965209824687
+   },
+   "pitch_per_rev_T1": [
+    0.523,
+    0.652,
+    1.028,
+    1.275,
+    1.412,
+    2.292
+   ]
+  },
+  "s24": {
+   "x": {
+    "cross": 92.03487474505916,
+    "h": 0.01568471642124507,
+    "L": 0.0199933212960956,
+    "skew": 56.8331311080746,
+    "w": 0.008080180319013697,
+    "pin": 0.008
+   },
+   "cr_min": 0.05371968392041394,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.80939761382568,
+    "check:fatigue_stress": 0.9519492242709766,
+    "split": 0.4307143621821181,
+    "resonance": 0.717215890163596,
+    "geom:flexure_inside_hub": 0.03217353546792836,
+    "check:static_stress": 0.04635426793877812,
+    "check:interlayer": 0.131522688963038,
+    "check:creep_strain": 0.25952386367138686,
+    "check:aeroelastic_stability": 0.10575599393740086
+   },
+   "res_margin": 0.04241761647546061,
+   "res_which": "pitch sym 1.03/rev vs 1P",
+   "fatigue": 2.5907547027046176,
+   "util": {
+    "hdt_temperature": 0.179,
+    "static_stress": 1.047,
+    "interlayer": 1.141,
+    "creep_strain": 1.296,
+    "fatigue_strain": 2.247,
+    "fatigue_stress": 2.591,
+    "strip_clamp_wrap": 0.0,
+    "strap_tension": 0.128,
+    "strap_anchor": 0.171,
+    "esc_duty_slew": 0.1,
+    "esc_duty_peak": 0.876,
+    "motor_torque_1p": 0.855,
+    "motor_thermal": 0.904,
+    "root_envelope": 3.265,
+    "fitting_clearance": 0.074,
+    "aeroelastic_stability": 1.112,
+    "pitch_cf_ratio": 0.131
+   },
+   "hp_margin": 0.08479770587497037,
+   "hp_which": "pitch sym 5.49/rev vs 6P",
+   "cr": {
+    "T0.7": 0.09748762466526537,
+    "T1": 0.07302877449186526,
+    "T1.4": 0.05371968392041394
+   },
+   "pitch_per_rev_T1": [
+    0.546,
+    0.742,
+    1.027,
+    1.279,
+    2.083,
+    2.286
+   ]
+  }
+ },
+ "tol": {
+  "key": "l16",
+  "x": {
+   "cross": 105.15894896610831,
+   "h": 0.014750316998587538,
+   "L": 0.01491650222510352,
+   "skew": 59.9101877007823,
+   "w": 0.0069693402261359,
+   "pin": 0.0
+  },
+  "summary": {
+   "p20": 0.04781021621540903,
+   "all_feasible": false,
+   "all_targets": false,
+   "n_feasible": 0,
+   "n_targets": 0,
+   "n": 9,
+   "p20_per_throttle": {
+    "T0.7": 0.15220042482227686,
+    "T1": 0.08642208423062263,
+    "T1.4": 0.04781021621540903
+   },
+   "min_res": 0.02758169891196638,
+   "max_fat": 0.887252775231779,
+   "min_hp": 0.0002248852882971164
+  },
+  "samples": {
+   "nominal": {
+    "cr": {
+     "T0.7": 0.1608004176216542,
+     "T1": 0.09178538626576602,
+     "T1.4": 0.04902549841950666
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.38202536096171436
+    },
+    "res_margin": 0.09269619585574285,
+    "res_which": "pitch sym 2.79/rev vs 3P",
+    "fatigue": 0.6852851370545954
+   },
+   "random00": {
+    "cr": {
+     "T0.7": 0.15646513450873914,
+     "T1": 0.08584597829212035,
+     "T1.4": 0.047828281088312385
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.4847020896971701
+    },
+    "res_margin": 0.07729468654542448,
+    "res_which": "pitch sym 3.22/rev vs 3P",
+    "fatigue": 0.7639947954381537
+   },
+   "random01": {
+    "cr": {
+     "T0.7": 0.14806561073408647,
+     "T1": 0.09170835352407843,
+     "T1.4": 0.047783118906053995
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.8161220072535574
+    },
+    "res_margin": 0.02758169891196638,
+    "res_which": "pitch antisym 2.98/rev vs 3P",
+    "fatigue": 0.6412919488469369
+   },
+   "random02": {
+    "cr": {
+     "T0.7": 0.15386019151107289,
+     "T1": 0.09458902981990115,
+     "T1.4": 0.04854164863017078
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.5502555477112802
+    },
+    "res_margin": 0.06746166784330798,
+    "res_which": "pitch sym 2.85/rev vs 3P",
+    "fatigue": 0.641504478051238
+   },
+   "random03": {
+    "cr": {
+     "T0.7": 0.16190751682833707,
+     "T1": 0.09295784896277666,
+     "T1.4": 0.04990676564580798
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.4619219832038418
+    },
+    "res_margin": 0.08071170251942372,
+    "res_which": "pitch sym 2.82/rev vs 3P",
+    "fatigue": 0.7266722401357983
+   },
+   "random04": {
+    "cr": {
+     "T0.7": 0.16227211392452812,
+     "T1": 0.09056507417939796,
+     "T1.4": 0.0496447064040922
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.546702412473785
+    },
+    "res_margin": 0.06799463812893225,
+    "res_which": "pitch sym 3.19/rev vs 3P",
+    "fatigue": 0.6873803875895574
+   },
+   "random05": {
+    "cr": {
+     "T0.7": 0.1520173035710062,
+     "T1": 0.08680615485629083,
+     "T1.4": 0.048140197123866364
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.5582743437238834
+    },
+    "res_margin": 0.0662588484414175,
+    "res_which": "pitch sym 3.18/rev vs 3P",
+    "fatigue": 0.6555973470381282
+   },
+   "random06": {
+    "cr": {
+     "T0.7": 0.15567823695951738,
+     "T1": 0.0970977365627732,
+     "T1.4": 0.05077224973774654
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.4195987432474378
+    },
+    "res_margin": 0.08706018851288433,
+    "res_which": "pitch sym 2.81/rev vs 3P",
+    "fatigue": 0.6167922445753329
+   },
+   "random07": {
+    "cr": {
+     "T0.7": 0.15232250565645727,
+     "T1": 0.0812430247955839,
+     "T1.4": 0.04719951708331188
+    },
+    "feasible": false,
+    "viol": {
+     "resonance": 0.7065146959023588
+    },
+    "res_margin": 0.04402279561464617,
+    "res_which": "pitch sym 3.11/rev vs 3P",
+    "fatigue": 0.887252775231779
+   }
+  }
+ }
+}

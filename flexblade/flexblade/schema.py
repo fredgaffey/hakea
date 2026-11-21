@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -259,6 +259,13 @@ class Flexure(_M):
     fitting_slim: bool = Field(False, description="slim steelx fittings: stepped jaws (1.5 mm "
                                "faces past the exit radius), 2 mm web, no filler between the jaws "
                                "(walls >= 1.2 mm, clamp lands kept)")
+    fitting_balance_mass: Union[float, Literal["auto"]] = Field(
+        0.0, description="kg per pin: a pair of balance pins (e.g. tungsten) pressed along the rotor "
+        "axis into the blade-side (root) fitting at (x_cg, 0, +-fitting_balance_z) about the pitch "
+        "axis; their normal spread cancels the fitting's chordwise propeller moment (I25). 'auto' = "
+        "exact cancellation, fittings.balance_pin_mass")
+    fitting_balance_z: float = Field(0.008, gt=0.0, description="m, balance pin offset along the "
+                                     "rotor axis from the pitch axis")
     fitting_material: Optional[str] = Field(None, description="printed fitting material for "
                                             "the mass model; None = hub pa6_cf, root = blade layup")
     taper: float = 1.0
