@@ -1724,6 +1724,13 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                                   f"root airfoil thickness (soft)"))
     except Exception as ex:   # pragma: no cover
         model.warnings.append(f"root envelope check failed: {ex}")
+    try:   # soft check: clamped-strip fittings clearance over the lag/pitch range (cached, ~0.5 s)
+        from .fittings import clearance_check
+        c = clearance_check(model.design)
+        if c is not None:
+            out.append(c)
+    except Exception as ex:   # pragma: no cover
+        model.warnings.append(f"fitting clearance check failed: {ex}")
     return out
 
 

@@ -1279,6 +1279,10 @@ def export_print_parts(design: Design, out_dir: str | os.PathLike, blades: str =
     import trimesh
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    from .fittings import is_clamped_strip
+    if is_clamped_strip(design):
+        # bought steel strips clamped in printed fittings: CSG parts (fittings.py), not OCC lofts
+        return _export_strip_parts(design, out_dir, blades, fmt)
     geo = _step_geometry(design)
     parts = [p for p in geo.parts if blades == "all" or (p.blade == 1 and p.role != "spoke"
                                                           and p.rotor in ("", "upper"))]
@@ -1340,6 +1344,46 @@ def export_print_parts(design: Design, out_dir: str | os.PathLike, blades: str =
     manifest = dict(design=stem, design_hash=design.hash(), units="mm", blades=blades,
                     print_frame="build_dir->+Z, raster_dir->+X, on bed (z>=0)",
                     print_rotation=Rp.tolist(), shift_mm=shift.tolist(), files=files, parts=info)
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1))
+    return manifest
+
+
+def _export_strip_parts(design: Design, out_dir: Path, blades: str, fmt: str) -> dict:
+    """export_print_parts for clamped-strip flexures: watertight manifold3d parts from
+    fittings.strip_print_parts (hub + spokes + hub fittings; blade k + shank + root fitting).
+    Frame H, mm, z up (= build direction), no print rotation; the strips/strand are bought."""
+    from . import fittings as FT
+    from .materials import get_material
+    parts = FT.strip_print_parts(design)
+    fits = parts.pop("_fits")
+    keys = [k for k in parts if blades == "all" or k == "blade1"]
+    stem = design.name or "rotor"
+    meshes, info, files = {}, {}, {}
+    for k in keys:
+        m, kept, dropped = FT.to_trimesh(parts[k])
+        m.apply_translation([0.0, 0.0, -m.bounds[0][2]])
+        meshes[k] = m
+        mat = HUB_MATERIAL if k == "hub" else design.blade.layup.material
+        info[k] = dict(watertight=bool(m.is_watertight), volume_mm3=float(m.volume),
+                       mass_g=float(m.volume) * get_material(mat).rho * 1e-6, material=mat,
+                       components=kept, fragments_dropped=dropped, n_triangles=int(len(m.faces)))
+    if fmt == "stl":
+        for k, m in meshes.items():
+            f = out_dir / f"{stem}_{k}.stl"
+            m.export(str(f))
+            files[k] = str(f)
+    elif fmt == "3mf":
+        f = out_dir / f"{stem}.3mf"
+        write_3mf(f, meshes)
+        files = {"3mf": str(f)}
+    else:
+        raise ValueError(fmt)
+    p = fits.params
+    manifest = dict(design=stem, design_hash=design.hash(), units="mm", blades=blades,
+                    print_frame="rotor frame H, z up = build direction, each part on bed (z>=0)",
+                    files=files, parts=info, strip=dict(free_length=p.L, land=p.land, slot_t=p.slot_t,
+                                                        slot_w=p.slot_w, jaw_r=p.jaw_r),
+                    notes=fits.notes)
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1))
     return manifest
 

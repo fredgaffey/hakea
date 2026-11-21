@@ -311,7 +311,7 @@ def fitting_clearance(design: Design, lag_deg: float = 5.0, pitch_deg: float = 8
 
 @lru_cache(maxsize=16)
 def _clearance_cached(key, design_json, lag, pitch):
-    return fitting_clearance(Design.model_validate_json(design_json), lag, pitch)
+    return fitting_clearance(Design.model_validate_json(design_json), lag, pitch, n=3)
 
 
 def clearance_check(design: Design, summary: dict | None = None):
