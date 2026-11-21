@@ -422,7 +422,8 @@ class Element:
         if not self.material_fracs:
             return 1.0 + 1j * self.loss_eta
         from .materials import get_material
-        return sum(fr * get_material(m).complex_scale(freq_hz) for m, fr in self.material_fracs.items())
+        return (sum(fr * get_material(m).complex_scale(freq_hz) for m, fr in self.material_fracs.items())
+                + 1j * self.loss_eta)   # extra structural loss (e.g. laminated-strip friction)
 
 
 # --------------------------------------------------------------------------- model / state

@@ -89,9 +89,10 @@ def strip_params(design: Design) -> StripParams:
     f = design.flexure
     strips, _, _ = strip_members(design)
     m = strips[0]
-    t, w = m.thickness * 1e3, m.width * 1e3
+    t_lam = m.thickness * 1e3
+    t, w = t_lam * max(1, int(getattr(f, "strip_laminae", 1))), m.width * 1e3   # stack thickness
     L = float(np.linalg.norm(np.subtract(m.p1, m.p0))) * 1e3
-    R = f.strip_clamp_radius * 1e3 if f.strip_clamp_radius > 0 else 10.0 * t
+    R = f.strip_clamp_radius * 1e3 if f.strip_clamp_radius > 0 else 10.0 * t_lam
     d = f.strap_strand_diameter * 1e3
     return StripParams(t=t, w=w, L=L, land=max(4.0 * math.sqrt(w), 5.0), slot_t=t + SLOT_ALLOW,
                        slot_w=w + 2 * SIDE, jaw_r=R, wall=WALL, strand_d=d,

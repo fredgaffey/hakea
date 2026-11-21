@@ -283,6 +283,9 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                                          st_r, stations, coll))
 
     # flexure member sections (computed per blade below, cached) — gather stiffness scale
+    from .laminate import laminate_section
+    n_lam = int(getattr(design.flexure, "strip_laminae", 1) or 1)
+    eta_lam = float(getattr(design.flexure, "strip_lam_eta", 0.0) or 0.0)
     def member_sections(m: FlexureMember, Rk: np.ndarray, xi0: float, xi1: float, e1, e2, e3):
         if m.kind == "rigid":
             return None, None, None
@@ -302,6 +305,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 phi = 1.0 - 2.0 * t / m.width
                 fq = 1.0 + phi * (Eq / E0 - 1.0)
                 sp = dataclasses.replace(sp, EIy=sp.EIy * fq, EA=sp.EA * fq)
+            if n_lam > 1 and not m.cable and m.kind == "blade" and m.layup.material.startswith(SHIM_STEELS):
+                sp = laminate_section(sp, n_lam)     # unbonded shim stack (laminate.py)
             return _cable_section(sp, m.cable_bend_factor) if m.cable else sp
         if m.taper == 1.0 or m.layup.kind != "solid":
             s = sec_at(0.5)
@@ -381,6 +386,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 max_GJ = max(max_GJ, max(s.GJ for s in secs))
                 ids.append(fe.add_element(Element(nodes[i], nodes[i + 1], e2, secs, msecs, fr, tag=tag,
                                                   kind="flexure", blade=k)))
+                if eta_lam > 0 and not m.cable and m.kind == "blade" and m.layup.material.startswith(SHIM_STEELS):
+                    fe.elements[ids[-1]].loss_eta = eta_lam
             member_elems[tag] = ids
             # member-end anchorage on the printed fittings (zero-length punch springs)
             n_in, n_out = nodes[0], nodes[-1]

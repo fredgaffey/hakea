@@ -251,6 +251,15 @@ class Flexure(_M):
     strip_clamp: Literal["sharp", "radiused", "compliant"] = Field(
         "radiused", description="clamp-edge model for steel shim strips (fatigue Kt/fretting): "
         "sharp square jaw, radiused jaw (strip_clamp_radius), or compliant TPU/soft pad lip")
+    strip_laminae: int = Field(1, ge=1, le=8, description="steel shim strips: number of "
+                               "unbonded laminae per strip (each `thickness` thick, clamped "
+                               "together at both ends, free to slide between): bending about "
+                               "the thin axis n*E*w*t^3/12, axial / in-plane / torsion / mass x n, "
+                               "fatigue strain at the lamina thickness (laminate.py)")
+    strip_lam_eta: float = Field(0.0, ge=0.0, description="equivalent loss factor (2*zeta_eq) of "
+                                 "interlaminar Coulomb friction at the clamp ends, added to the "
+                                 "strip elements' complex stiffness (laminate.friction_eta at the "
+                                 "operating 1P amplitude); 0 = none")
     strip_clamp_radius: float = Field(0.0, ge=0.0, description="m, jaw radius for 'radiused'; "
                                       "0 = auto 10x strip thickness")
     fitting_mass: Literal["auto", "none"] = Field(
