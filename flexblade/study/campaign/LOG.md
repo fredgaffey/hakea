@@ -409,3 +409,5 @@ Idea backlog (unscreened):
 - CRM2204 de2 on Mac running; laptop load 71 (DE8 + helpers' ccx) — no new compute.
 - HELPERS: k_cross-vs-angle (opus), DE8 7" debug (sonnet).
 - REVIEW: v10m lesson — every DE optimum sitting at a variable BOUND (cross 120°) should trigger an automatic ccx spot-check; add "bound-hugging" flag in DE summary. Ideal families unchanged: steelx cross-spring + strap remains only verified family; cr ceiling ~0.07 (10") under default gates.
+- ⚠ DE8 WASTED 2 h: Mac worker venv lacked manifold3d (needed since 12625c9 strip fittings). Errors return instantly → work stealing fed ~all jobs to Mac → 1434 failed evals (all at end of evals.jsonl.gz; DE7 and earlier clean; SQLite cache stores successes only, so no poisoning). Fix landed (remote.DEPS + bootstrap probe + test); manifold3d installed on Mac; DE8 killed (main PID) and runner restarted it at 05:33 on model 6789b52.
+- LESSON: DE summary should report error-rate per host; >5 % errors → abort. → backlog.
