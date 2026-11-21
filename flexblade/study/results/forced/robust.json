@@ -1,0 +1,753 @@
+{
+ "nominal": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1608,
+   "T1": 0.0918,
+   "T1.4": 0.049
+  },
+  "res": [
+   0.274,
+   "pitch sym 1.27/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.3016729552072692,
+    "root_envelope"
+   ],
+   [
+    0.8956703547656817,
+    "motor_thermal"
+   ],
+   [
+    0.8599774866482769,
+    "motor_torque_1p"
+   ],
+   [
+    0.8586817232995111,
+    "creep_strain"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.20915825791884626,
+    "np_strip_stress_MPa": 100.12974401679453,
+    "np_strip_strain_amp": 0.00045295279117341233,
+    "np_strip_fat_util": 0.1617688539905044,
+    "strip_strain_amp_1p": 0.0015575497322026233
+   },
+   "T1": {
+    "np_jitter_deg": 0.16315440644971077,
+    "np_strip_stress_MPa": 27.1469094843504,
+    "np_strip_strain_amp": 0.00012280335422215868,
+    "np_strip_fat_util": 0.0438583407936281,
+    "strip_strain_amp_1p": 0.001081861303148491
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.006575736438177467,
+    "np_strip_stress_MPa": 1.9031707546540664,
+    "np_strip_strain_amp": 8.60929500883953e-06,
+    "np_strip_fat_util": 0.003074748217442689,
+    "strip_strain_amp_1p": 0.0008978634532535525
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap sym 1.84/rev ~ 2P (zeta 0.0368)",
+    "pitch sym 3.29/rev ~ 3P (zeta 0.0272)",
+    "pitch sym 5.44/rev ~ 5P (zeta 0.0197)",
+    "pitch sym 5.44/rev ~ 6P (zeta 0.0197)",
+    "pitch sym 6.00/rev ~ 6P (zeta 0.0181)"
+   ],
+   "T1": [
+    "pitch sym 2.79/rev ~ 3P (zeta 0.0250)",
+    "pitch sym 3.76/rev ~ 4P (zeta 0.0243)",
+    "pitch sym 5.10/rev ~ 5P (zeta 0.0199)"
+   ],
+   "T1.4": [
+    "pitch sym 4.33/rev ~ 4P (zeta 0.0219)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.375,
+    "worst nP crossing 'flap sym' 1.84/rev x 2P, zeta 0.0368, Q=14; modal parts torque 3e-05, aero 0.0117, imbalance 7.86e-06; limit max(0.3 deg, 0.1 x 1P 5.57 deg)"
+   ],
+   "T1": [
+    0.483,
+    "worst nP crossing 'pitch sym' 2.79/rev x 3P, zeta 0.0250, Q=20; modal parts torque 0.000361, aero 0.00484; limit max(0.3 deg, 0.1 x 1P 3.38 deg)"
+   ],
+   "T1.4": [
+    0.022,
+    "worst nP crossing 'pitch sym' 4.33/rev x 4P, zeta 0.0219, Q=23; modal parts torque 3.02e-05, aero 0.000158; limit max(0.3 deg, 0.1 x 1P 2.10 deg)"
+   ]
+  }
+ },
+ "random00": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1565,
+   "T1": 0.0858,
+   "T1.4": 0.0478
+  },
+  "res": [
+   0.235,
+   "pitch sym 1.23/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.3788301878475444,
+    "root_envelope"
+   ],
+   [
+    0.8952988805164167,
+    "motor_thermal"
+   ],
+   [
+    0.8759363779367513,
+    "creep_strain"
+   ],
+   [
+    0.8599294284585611,
+    "motor_torque_1p"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.19438003164831824,
+    "np_strip_stress_MPa": 107.11169077169207,
+    "np_strip_strain_amp": 0.00048453673559980127,
+    "np_strip_fat_util": 0.17304883414278618,
+    "strip_strain_amp_1p": 0.001492179837676125
+   },
+   "T1": {
+    "np_jitter_deg": 0.16843531320576982,
+    "np_strip_stress_MPa": 28.348044776667987,
+    "np_strip_strain_amp": 0.00012823688037939015,
+    "np_strip_fat_util": 0.045798885849782194,
+    "strip_strain_amp_1p": 0.0011691332279456822
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.006674785771527319,
+    "np_strip_stress_MPa": 1.951973455101674,
+    "np_strip_strain_amp": 8.830061771019969e-06,
+    "np_strip_fat_util": 0.003153593489649989,
+    "strip_strain_amp_1p": 0.0007895623568442034
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap sym 1.83/rev ~ 2P (zeta 0.0370)",
+    "pitch sym 3.22/rev ~ 3P (zeta 0.0251)",
+    "pitch sym 5.25/rev ~ 5P (zeta 0.0200)",
+    "pitch sym 5.98/rev ~ 6P (zeta 0.0183)"
+   ],
+   "T1": [
+    "pitch sym 2.78/rev ~ 3P (zeta 0.0241)",
+    "pitch sym 5.08/rev ~ 5P (zeta 0.0200)"
+   ],
+   "T1.4": [
+    "pitch sym 4.32/rev ~ 4P (zeta 0.0219)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.355,
+    "worst nP crossing 'flap sym' 1.83/rev x 2P, zeta 0.0370, Q=14; modal parts torque 4.23e-05, aero 0.0116, imbalance 8.32e-06; limit max(0.3 deg, 0.1 x 1P 5.48 deg)"
+   ],
+   "T1": [
+    0.518,
+    "worst nP crossing 'pitch sym' 2.78/rev x 3P, zeta 0.0241, Q=21; modal parts torque 0.000331, aero 0.00475; limit max(0.3 deg, 0.1 x 1P 3.25 deg)"
+   ],
+   "T1.4": [
+    0.022,
+    "worst nP crossing 'pitch sym' 4.32/rev x 4P, zeta 0.0219, Q=23; modal parts torque 3.03e-05, aero 0.000162; limit max(0.3 deg, 0.1 x 1P 2.17 deg)"
+   ]
+  }
+ },
+ "random01": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1481,
+   "T1": 0.0917,
+   "T1.4": 0.0478
+  },
+  "res": [
+   0.275,
+   "flap antisym 1.27/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.242611983686691,
+    "root_envelope"
+   ],
+   [
+    0.8963148992244151,
+    "motor_thermal"
+   ],
+   [
+    0.8601632643582673,
+    "motor_torque_1p"
+   ],
+   [
+    0.8320408795342786,
+    "esc_duty_peak"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.22016438632656285,
+    "np_strip_stress_MPa": 92.6906385402079,
+    "np_strip_strain_amp": 0.0004193008167022885,
+    "np_strip_fat_util": 0.14975029167938875,
+    "strip_strain_amp_1p": 0.0014062944525761731
+   },
+   "T1": {
+    "np_jitter_deg": 0.1528247415850298,
+    "np_strip_stress_MPa": 25.00765822668612,
+    "np_strip_strain_amp": 0.00011312611158367013,
+    "np_strip_fat_util": 0.040402182708453624,
+    "strip_strain_amp_1p": 0.0015859917565543768
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.021004077552245357,
+    "np_strip_stress_MPa": 7.415018815967646,
+    "np_strip_strain_amp": 3.354301463841331e-05,
+    "np_strip_fat_util": 0.011979648085147612,
+    "strip_strain_amp_1p": 0.0007801719518694656
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap antisym 1.88/rev ~ 2P (zeta 0.0376)",
+    "pitch sym 5.86/rev ~ 6P (zeta 0.0198)",
+    "pitch sym 6.19/rev ~ 6P (zeta 0.0175)"
+   ],
+   "T1": [
+    "pitch sym 2.85/rev ~ 3P (zeta 0.0269)",
+    "pitch sym 5.25/rev ~ 5P (zeta 0.0196)"
+   ],
+   "T1.4": [
+    "pitch antisym 2.98/rev ~ 3P (zeta 0.0257)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.423,
+    "worst nP crossing 'flap antisym' 1.88/rev x 2P, zeta 0.0376, Q=13; modal parts torque 3.47e-05, aero 0.0121, imbalance 6.39e-06; limit max(0.3 deg, 0.1 x 1P 5.20 deg)"
+   ],
+   "T1": [
+    0.468,
+    "worst nP crossing 'pitch sym' 2.85/rev x 3P, zeta 0.0269, Q=19; modal parts torque 0.000383, aero 0.00491; limit max(0.3 deg, 0.1 x 1P 3.27 deg)"
+   ],
+   "T1.4": [
+    0.07,
+    "worst nP crossing 'pitch antisym' 2.98/rev x 3P, zeta 0.0257, Q=19; modal parts torque 0.000557, aero 0.00078; limit max(0.3 deg, 0.1 x 1P 1.86 deg)"
+   ]
+  }
+ },
+ "random02": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1539,
+   "T1": 0.0946,
+   "T1.4": 0.0485
+  },
+  "res": [
+   0.277,
+   "flap antisym 1.27/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.3255413656660475,
+    "root_envelope"
+   ],
+   [
+    0.8998412768363769,
+    "motor_thermal"
+   ],
+   [
+    0.8604693315399137,
+    "motor_torque_1p"
+   ],
+   [
+    0.8318766934094088,
+    "esc_duty_peak"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.22182989845975032,
+    "np_strip_stress_MPa": 90.5785428301564,
+    "np_strip_strain_amp": 0.00040974641649396725,
+    "np_strip_fat_util": 0.1463380058907026,
+    "strip_strain_amp_1p": 0.0014119936183194868
+   },
+   "T1": {
+    "np_jitter_deg": 0.15410098420916557,
+    "np_strip_stress_MPa": 25.037002916762102,
+    "np_strip_strain_amp": 0.00011325885694726364,
+    "np_strip_fat_util": 0.04044959176687987,
+    "strip_strain_amp_1p": 0.0010311818181835126
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.01638635232520286,
+    "np_strip_stress_MPa": 5.683226219608278,
+    "np_strip_strain_amp": 2.5708975932363513e-05,
+    "np_strip_fat_util": 0.009181777118701254,
+    "strip_strain_amp_1p": 0.0008804508789974004
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap antisym 1.90/rev ~ 2P (zeta 0.0372)",
+    "pitch sym 5.92/rev ~ 6P (zeta 0.0196)",
+    "pitch sym 6.28/rev ~ 6P (zeta 0.0176)"
+   ],
+   "T1": [
+    "pitch sym 2.85/rev ~ 3P (zeta 0.0260)",
+    "pitch sym 5.31/rev ~ 5P (zeta 0.0198)"
+   ],
+   "T1.4": [
+    "pitch antisym 2.80/rev ~ 3P (zeta 0.0262)",
+    "pitch sym 4.52/rev ~ 5P (zeta 0.0224)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.41,
+    "worst nP crossing 'flap antisym' 1.90/rev x 2P, zeta 0.0372, Q=13; modal parts torque 3.96e-05, aero 0.0125, imbalance 6.91e-06; limit max(0.3 deg, 0.1 x 1P 5.42 deg)"
+   ],
+   "T1": [
+    0.456,
+    "worst nP crossing 'pitch sym' 2.85/rev x 3P, zeta 0.0260, Q=19; modal parts torque 0.000371, aero 0.00483; limit max(0.3 deg, 0.1 x 1P 3.38 deg)"
+   ],
+   "T1.4": [
+    0.055,
+    "worst nP crossing 'pitch antisym' 2.80/rev x 3P, zeta 0.0262, Q=19; modal parts torque 0.000526, aero 0.000551; limit max(0.3 deg, 0.1 x 1P 1.91 deg)"
+   ]
+  }
+ },
+ "random03": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1619,
+   "T1": 0.093,
+   "T1.4": 0.0499
+  },
+  "res": [
+   0.274,
+   "pitch sym 1.27/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.240721966349567,
+    "root_envelope"
+   ],
+   [
+    0.8946530926774612,
+    "motor_thermal"
+   ],
+   [
+    0.8600075251843189,
+    "motor_torque_1p"
+   ],
+   [
+    0.8463437609827968,
+    "creep_strain"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.20981824058353976,
+    "np_strip_stress_MPa": 104.23865574515084,
+    "np_strip_strain_amp": 0.0004715401056054955,
+    "np_strip_fat_util": 0.16840718057339124,
+    "strip_strain_amp_1p": 0.0015888095781225668
+   },
+   "T1": {
+    "np_jitter_deg": 0.16579248520749723,
+    "np_strip_stress_MPa": 27.488715427511416,
+    "np_strip_strain_amp": 0.00012434956766267717,
+    "np_strip_fat_util": 0.044410559879527564,
+    "strip_strain_amp_1p": 0.0010972710198016778
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.006705583009177524,
+    "np_strip_stress_MPa": 1.9565741147739,
+    "np_strip_strain_amp": 8.850873585333846e-06,
+    "np_strip_fat_util": 0.0031610262804763734,
+    "strip_strain_amp_1p": 0.0009687849165317083
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap sym 1.83/rev ~ 2P (zeta 0.0370)",
+    "pitch sym 5.43/rev ~ 5P (zeta 0.0199)",
+    "pitch sym 5.43/rev ~ 6P (zeta 0.0199)",
+    "pitch sym 5.97/rev ~ 6P (zeta 0.0180)"
+   ],
+   "T1": [
+    "pitch sym 2.82/rev ~ 3P (zeta 0.0256)",
+    "pitch sym 3.84/rev ~ 4P (zeta 0.0242)",
+    "pitch sym 5.08/rev ~ 5P (zeta 0.0197)"
+   ],
+   "T1.4": [
+    "pitch sym 4.33/rev ~ 4P (zeta 0.0216)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.373,
+    "worst nP crossing 'flap sym' 1.83/rev x 2P, zeta 0.0370, Q=14; modal parts torque 3.83e-05, aero 0.0116, imbalance 7.48e-06; limit max(0.3 deg, 0.1 x 1P 5.62 deg)"
+   ],
+   "T1": [
+    0.483,
+    "worst nP crossing 'pitch sym' 2.82/rev x 3P, zeta 0.0256, Q=20; modal parts torque 0.000372, aero 0.00502; limit max(0.3 deg, 0.1 x 1P 3.43 deg)"
+   ],
+   "T1.4": [
+    0.022,
+    "worst nP crossing 'pitch sym' 4.33/rev x 4P, zeta 0.0216, Q=23; modal parts torque 2.99e-05, aero 0.000161; limit max(0.3 deg, 0.1 x 1P 2.14 deg)"
+   ]
+  }
+ },
+ "random04": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1623,
+   "T1": 0.0906,
+   "T1.4": 0.0496
+  },
+  "res": [
+   0.229,
+   "pitch sym 1.22/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.29075670154843,
+    "root_envelope"
+   ],
+   [
+    0.903763925224662,
+    "creep_strain"
+   ],
+   [
+    0.8915367386007522,
+    "motor_thermal"
+   ],
+   [
+    0.85935132714476,
+    "motor_torque_1p"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.20878881648909892,
+    "np_strip_stress_MPa": 101.97159512339687,
+    "np_strip_strain_amp": 0.0004612846970207042,
+    "np_strip_fat_util": 0.1647445346502515,
+    "strip_strain_amp_1p": 0.0014935323355283723
+   },
+   "T1": {
+    "np_jitter_deg": 0.15699966840406052,
+    "np_strip_stress_MPa": 26.318190209942472,
+    "np_strip_strain_amp": 0.00011905451103746708,
+    "np_strip_fat_util": 0.042519468227666814,
+    "strip_strain_amp_1p": 0.001235991197381322
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.0056778450048295325,
+    "np_strip_stress_MPa": 1.771021827522316,
+    "np_strip_strain_amp": 8.011498360274658e-06,
+    "np_strip_fat_util": 0.0028612494143838065,
+    "strip_strain_amp_1p": 0.0008248754665157561
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap sym 1.81/rev ~ 2P (zeta 0.0358)",
+    "pitch sym 3.19/rev ~ 3P (zeta 0.0260)",
+    "pitch sym 5.20/rev ~ 5P (zeta 0.0201)",
+    "pitch sym 5.85/rev ~ 6P (zeta 0.0179)"
+   ],
+   "T1": [
+    "pitch sym 2.71/rev ~ 3P (zeta 0.0245)",
+    "pitch sym 4.95/rev ~ 5P (zeta 0.0198)"
+   ],
+   "T1.4": [
+    "pitch sym 4.18/rev ~ 4P (zeta 0.0217)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.377,
+    "worst nP crossing 'flap sym' 1.81/rev x 2P, zeta 0.0358, Q=14; modal parts torque 4.16e-05, aero 0.0113, imbalance 8.94e-06; limit max(0.3 deg, 0.1 x 1P 5.53 deg)"
+   ],
+   "T1": [
+    0.477,
+    "worst nP crossing 'pitch sym' 2.71/rev x 3P, zeta 0.0245, Q=20; modal parts torque 0.000359, aero 0.00457; limit max(0.3 deg, 0.1 x 1P 3.29 deg)"
+   ],
+   "T1.4": [
+    0.019,
+    "worst nP crossing 'pitch sym' 4.18/rev x 4P, zeta 0.0217, Q=23; modal parts torque 3.23e-05, aero 0.000157; limit max(0.3 deg, 0.1 x 1P 2.20 deg)"
+   ]
+  }
+ },
+ "random05": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.152,
+   "T1": 0.0868,
+   "T1.4": 0.0481
+  },
+  "res": [
+   0.255,
+   "flap sym 1.25/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.249502464672724,
+    "root_envelope"
+   ],
+   [
+    0.8998765692568536,
+    "creep_strain"
+   ],
+   [
+    0.8898785173992023,
+    "motor_thermal"
+   ],
+   [
+    0.859080643094891,
+    "motor_torque_1p"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.13237556782332632,
+    "np_strip_stress_MPa": 28.97504037367134,
+    "np_strip_strain_amp": 0.00013107319448869693,
+    "np_strip_fat_util": 0.046811855174534615,
+    "strip_strain_amp_1p": 0.001568173449137415
+   },
+   "T1": {
+    "np_jitter_deg": 0.15860624073599844,
+    "np_strip_stress_MPa": 25.597951616929468,
+    "np_strip_strain_amp": 0.00011579639743476643,
+    "np_strip_fat_util": 0.04135585622670229,
+    "strip_strain_amp_1p": 0.0010696029289499886
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.005253611977990549,
+    "np_strip_stress_MPa": 1.6679439868149972,
+    "np_strip_strain_amp": 7.545209385754986e-06,
+    "np_strip_fat_util": 0.002694717637769638,
+    "strip_strain_amp_1p": 0.0008659057315307108
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "pitch sym 3.18/rev ~ 3P (zeta 0.0274)",
+    "pitch sym 5.02/rev ~ 5P (zeta 0.0198)",
+    "pitch sym 5.72/rev ~ 6P (zeta 0.0180)"
+   ],
+   "T1": [
+    "pitch sym 2.71/rev ~ 3P (zeta 0.0254)",
+    "pitch sym 4.86/rev ~ 5P (zeta 0.0196)"
+   ],
+   "T1.4": [
+    "pitch sym 4.15/rev ~ 4P (zeta 0.0212)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.254,
+    "worst nP crossing 'pitch sym' 3.18/rev x 3P, zeta 0.0274, Q=18; modal parts torque 0.000804, aero 0.00523; limit max(0.3 deg, 0.1 x 1P 5.22 deg)"
+   ],
+   "T1": [
+    0.496,
+    "worst nP crossing 'pitch sym' 2.71/rev x 3P, zeta 0.0254, Q=20; modal parts torque 0.00036, aero 0.00467; limit max(0.3 deg, 0.1 x 1P 3.19 deg)"
+   ],
+   "T1.4": [
+    0.018,
+    "worst nP crossing 'pitch sym' 4.15/rev x 4P, zeta 0.0212, Q=24; modal parts torque 3.13e-05, aero 0.000152; limit max(0.3 deg, 0.1 x 1P 2.08 deg)"
+   ]
+  }
+ },
+ "random06": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1557,
+   "T1": 0.0971,
+   "T1.4": 0.0508
+  },
+  "res": [
+   0.277,
+   "flap antisym 1.27/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.22085233621783,
+    "root_envelope"
+   ],
+   [
+    0.8942528151983256,
+    "motor_thermal"
+   ],
+   [
+    0.8600188457593141,
+    "motor_torque_1p"
+   ],
+   [
+    0.8489948275027198,
+    "creep_strain"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.22910854368493963,
+    "np_strip_stress_MPa": 91.77405163192257,
+    "np_strip_strain_amp": 0.00041515449032806736,
+    "np_strip_fat_util": 0.14826946083145265,
+    "strip_strain_amp_1p": 0.0015383594624460283
+   },
+   "T1": {
+    "np_jitter_deg": 0.13272958576011185,
+    "np_strip_stress_MPa": 26.0800883238007,
+    "np_strip_strain_amp": 0.00011797741936035783,
+    "np_strip_fat_util": 0.04213479262869922,
+    "strip_strain_amp_1p": 0.0014569904024265726
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.018787885517701663,
+    "np_strip_stress_MPa": 6.614206722467424,
+    "np_strip_strain_amp": 2.992041401640923e-05,
+    "np_strip_fat_util": 0.01068586214871758,
+    "strip_strain_amp_1p": 0.0009425395170678282
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap antisym 1.85/rev ~ 2P (zeta 0.0355)",
+    "pitch sym 3.69/rev ~ 4P (zeta 0.0297)",
+    "pitch sym 5.72/rev ~ 6P (zeta 0.0199)",
+    "pitch sym 6.03/rev ~ 6P (zeta 0.0170)"
+   ],
+   "T1": [
+    "pitch sym 2.81/rev ~ 3P (zeta 0.0274)",
+    "pitch sym 4.33/rev ~ 4P (zeta 0.0220)",
+    "pitch sym 5.09/rev ~ 5P (zeta 0.0192)"
+   ],
+   "T1.4": [
+    "pitch antisym 2.74/rev ~ 3P (zeta 0.0266)",
+    "pitch sym 4.32/rev ~ 4P (zeta 0.0218)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.42,
+    "worst nP crossing 'flap antisym' 1.85/rev x 2P, zeta 0.0355, Q=14; modal parts torque 3.07e-05, aero 0.0118, imbalance 7.74e-06; limit max(0.3 deg, 0.1 x 1P 5.46 deg)"
+   ],
+   "T1": [
+    0.396,
+    "worst nP crossing 'pitch sym' 2.81/rev x 3P, zeta 0.0274, Q=18; modal parts torque 0.000434, aero 0.00456; limit max(0.3 deg, 0.1 x 1P 3.35 deg)"
+   ],
+   "T1.4": [
+    0.063,
+    "worst nP crossing 'pitch antisym' 2.74/rev x 3P, zeta 0.0266, Q=19; modal parts torque 0.00054, aero 0.000643; limit max(0.3 deg, 0.1 x 1P 1.94 deg)"
+   ]
+  }
+ },
+ "random07": {
+  "feasible": true,
+  "viol": {},
+  "cr": {
+   "T0.7": 0.1523,
+   "T1": 0.0812,
+   "T1.4": 0.0472
+  },
+  "res": [
+   0.183,
+   "pitch sym 1.17/rev vs 1P"
+  ],
+  "top_util": [
+   [
+    2.3227800283124957,
+    "root_envelope"
+   ],
+   [
+    0.903034977260737,
+    "fatigue_stress"
+   ],
+   [
+    0.8905840878137393,
+    "motor_thermal"
+   ],
+   [
+    0.8637574636188713,
+    "creep_strain"
+   ]
+  ],
+  "np": {
+   "T0.7": {
+    "np_jitter_deg": 0.19333065398038718,
+    "np_strip_stress_MPa": 110.92498604559029,
+    "np_strip_strain_amp": 0.0005017867820754107,
+    "np_strip_fat_util": 0.17920956502693236,
+    "strip_strain_amp_1p": 0.0013140224206428892
+   },
+   "T1": {
+    "np_jitter_deg": 0.17691554863415151,
+    "np_strip_stress_MPa": 32.3543357930928,
+    "np_strip_strain_amp": 0.00014635997373153351,
+    "np_strip_fat_util": 0.0522714191898334,
+    "strip_strain_amp_1p": 0.0012592235778626235
+   },
+   "T1.4": {
+    "np_jitter_deg": 0.00460606555518363,
+    "np_strip_stress_MPa": 1.455358017939644,
+    "np_strip_strain_amp": 6.5835430106742235e-06,
+    "np_strip_fat_util": 0.00235126536095508,
+    "strip_strain_amp_1p": 0.0006993950974848867
+   }
+  },
+  "np_info": {
+   "T0.7": [
+    "flap sym 1.83/rev ~ 2P (zeta 0.0386)",
+    "pitch sym 3.11/rev ~ 3P (zeta 0.0242)",
+    "pitch sym 5.10/rev ~ 5P (zeta 0.0207)",
+    "pitch sym 6.01/rev ~ 6P (zeta 0.0185)"
+   ],
+   "T1": [
+    "pitch sym 2.70/rev ~ 3P (zeta 0.0244)",
+    "pitch antisym 3.19/rev ~ 3P (zeta 0.0270)",
+    "pitch sym 5.10/rev ~ 5P (zeta 0.0203)"
+   ],
+   "T1.4": [
+    "pitch sym 4.31/rev ~ 4P (zeta 0.0221)"
+   ]
+  },
+  "jit": {
+   "T0.7": [
+    0.37,
+    "worst nP crossing 'flap sym' 1.83/rev x 2P, zeta 0.0386, Q=13; modal parts torque 3.54e-05, aero 0.0112, imbalance 7.68e-06; limit max(0.3 deg, 0.1 x 1P 5.23 deg)"
+   ],
+   "T1": [
+    0.581,
+    "worst nP crossing 'pitch sym' 2.70/rev x 3P, zeta 0.0244, Q=21; modal parts torque 0.000307, aero 0.00464; limit max(0.3 deg, 0.1 x 1P 3.05 deg)"
+   ],
+   "T1.4": [
+    0.015,
+    "worst nP crossing 'pitch sym' 4.31/rev x 4P, zeta 0.0221, Q=23; modal parts torque 3.09e-05, aero 0.000123; limit max(0.3 deg, 0.1 x 1P 2.22 deg)"
+   ]
+  }
+ }
+}
