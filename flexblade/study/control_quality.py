@@ -4,7 +4,10 @@ cyclic gain G = hub moment / torque pulse over throttle {0.7,1,1.4} x J_hub {0.9
 (nominal + robust.CQ_PERTURB, 4 fixed +-5 % samples): phase within +-15 deg of the per-throttle
 median, gain within +-25 % of the median at each (throttle, J). All other modes keep the hard margin.
 
-Stages: score | tol <name> | probe.   PYTHONPATH=flexblade python flexblade/study/control_quality.py score
+Stage `cal [names]`: margin / control_quality / control_quality_cal side by side
+(-> study/results/control_quality_cal.json/.md); see robust.CQ_RUNTIME.
+
+Stages: score | tol <name> | probe | cal.   PYTHONPATH=flexblade python flexblade/study/control_quality.py score
 Raw -> study/results/control_quality.json
 """
 from __future__ import annotations
@@ -143,6 +146,101 @@ def probe():
                                  "cyc_gain", "cyc_phase_deg", "cr_pl")})
 
 
+# ---------------------------------------------------------------- control_quality_cal (stage "cal")
+RES_CAL = HERE / "results" / "control_quality_cal.json"
+CRITS = ("margin", "control_quality", "control_quality_cal")
+J10 = (2.5e-6, 3.76e-6, 5.49e-6)     # 10" J axis (itemised 3.59e-6; 0.92e-6 is not buildable)
+
+
+def cal_designs():
+    """name -> (Design, J axis)."""
+    return {"10in_v5": (load_design("10in_tt_strap_steelx_v5"), J10),
+            "7in_v6": (load_design("7in_tt_strap_steelx_v6"), JS),
+            "7in_v5": (load_design("7in_tt_strap_steelx_v5"), JS),
+            "7in_v6+ballast": (ballast_v6(), JS),
+            "10in_v4": (load_design("10in_tt_strap_steelx_v4"), J10)}
+
+
+def _eval_multi(dv, crits=CRITS):
+    r = api.evaluate(dv, ["trim", "modes", "harmonic", "checks"]).model_dump(mode="json")
+    return {c: rs.metrics(dv, r, criterion=c) for c in crits}
+
+
+def cal_eval(d, js):
+    """One pass over the control_quality_cal variant set (a superset of the margin / CQ sets);
+    every criterion is combined from its own tag subset of the same (cached) evaluations."""
+    v = robust.variants(d, robust.THRUST_FACTORS, list(robust.CQ_PERTURB), js, list(robust.CQ_RUNTIME))
+    with ProcessPoolExecutor(WORKERS) as ex:
+        ms = list(ex.map(_eval_multi, [dv for _, dv in v], chunksize=1))
+    tags = [t for t, _ in v]
+    sel = {"margin": lambda t: ":p" not in t and ":r" not in t, "control_quality": lambda t: ":r" not in t,
+           "control_quality_cal": lambda t: True}
+    return {c: robust.combine([m[c] for t, m in zip(tags, ms) if sel[c](t)], [t for t in tags if sel[c](t)])
+            for c in CRITS}
+
+
+def cal_summary(cs):
+    def base(c):
+        return dict(cr_pl=c.get("cr_pl"), feasible_pl=c.get("feasible_pl"),
+                    viol_hard={k: round(v, 4) for k, v in (c.get("viol_hard") or {}).items()},
+                    res_margin=c.get("res_margin"), res_which=c.get("res_which"))
+    out = {k: base(c) for k, c in cs.items()}
+    cq = cs["control_quality"].get("cq") or {}
+    out["control_quality"].update(phase_spread_deg=cq.get("phase_spread_deg"), gain_spread=cq.get("gain_spread"))
+    q = cs["control_quality_cal"].get("cqc") or {}
+    out["control_quality_cal"].update(
+        {k: q.get(k) for k in ("phase_res_deg", "gain_res", "groups", "authority_min", "cr_pl_ratio_min",
+                               "mech_margin_min", "mech_side_flip")},
+        per_node={n: {k: (round(x, 4) if isinstance(x, float) else x) for k, x in v.items() if k != "groups"}
+                  for n, v in (q.get("per_node") or {}).items()},
+        worst_phase_node=max(q.get("per_node") or {"-": {"phase_res": 0}},
+                             key=lambda n: (q.get("per_node") or {}).get(n, {}).get("phase_res", 0)),
+        worst_gain_node=max(q.get("per_node") or {"-": {"gain_res": 0}},
+                            key=lambda n: (q.get("per_node") or {}).get(n, {}).get("gain_res", 0)))
+    return out
+
+
+def cal_md(res):
+    L = ["# control_quality_cal: post-calibration residual (study/control_quality.py cal)", "",
+         "Build tolerance (nominal + 4 CQ_PERTURB corners) is calibrated out per airframe (FC schedule of "
+         "cyclic gain+phase per throttle at measured J). Residual = LINEAR worst-case stack of one-at-a-time "
+         "runtime deviations about each calibrated (throttle, build, J) node: rpm +-5 % (thrust ~ rpm^2), "
+         "temp +20 C (op.ambient_C 45: printed parts derate; steel strip E -0.6 %) / -20 C (strip E +0.6 % "
+         "only, = 0.3 x creep, model has no stiffening below 25 C), creep strip k -2 %, J error +-10 %. "
+         "Strip E applied as strip width (thin strip: EI/EA/GJ linear in w). Aramid strap: no T dependence "
+         "in the model (skipped). Limits: phase <= 15 deg, gain <= 25 %; calibratability: |G_b| >= 0.5 |G_nom|, "
+         "mechanism-mode 1P margin >= 0.03 on the nominal side, every build sample. Other modes keep the hard "
+         "0.15 margin (from the nominal-build points). J axis: 7\" {0.92,2.5,5.49}e-6, 10\" {2.5,3.76,5.49}e-6.", "",
+         "| design | margin: feas / cr_pl | CQ: feas, phase±, gain± | CAL: feas | resid phase° | resid gain % "
+         "| groups (rpm/temp/creep/J) ph°/gain% | authority min | cr_pl ratio min | mech margin min | CAL viol |",
+         "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for n, s in res.items():
+        m, q, c = s["margin"], s["control_quality"], s["control_quality_cal"]
+        g = c.get("groups") or {}
+        gs = " ".join(f"{k} {v[0]:.1f}/{100 * v[1]:.0f}" for k, v in g.items())
+        L.append(f"| {n} | {m['feasible_pl']} / {m['cr_pl']:.4f} | {q['feasible_pl']}, {q['phase_spread_deg']:.1f}, "
+                 f"{100 * q['gain_spread']:.0f} % | {c['feasible_pl']} | {c['phase_res_deg']:.1f} "
+                 f"({c['worst_phase_node']}) | {100 * c['gain_res']:.1f} ({c['worst_gain_node']}) | {gs} | "
+                 f"{c['authority_min']:.2f} | {c['cr_pl_ratio_min']:.2f} | {c['mech_margin_min']:.3f}"
+                 f"{' FLIP' if c['mech_side_flip'] else ''} | {c['viol_hard']} |")
+    L += ["", "margin-criterion hard violations: " + "; ".join(f"{n}: {s['margin']['viol_hard']}" for n, s in res.items())]
+    return "\n".join(L) + "\n"
+
+
+def cal(names=None):
+    res = json.loads(RES_CAL.read_text()) if RES_CAL.exists() else {}
+    for n, (d, js) in cal_designs().items():
+        if names and n not in names:
+            continue
+        res[n] = cal_summary(cal_eval(d, js))
+        RES_CAL.write_text(json.dumps(res, indent=1, default=float))
+        RES_CAL.with_suffix(".md").write_text(cal_md(res))
+        c = res[n]["control_quality_cal"]
+        print(n, {k: res[n][k]["feasible_pl"] for k in CRITS}, "cr_pl", res[n]["margin"]["cr_pl"],
+              "res", c["phase_res_deg"], c["gain_res"], "auth", c["authority_min"], "mech", c["mech_margin_min"],
+              flush=True)
+
+
 if __name__ == "__main__":
     st = sys.argv[1]
-    {"score": score, "probe": probe}.get(st, lambda: tol(sys.argv[2]))()
+    {"score": score, "probe": probe, "cal": lambda: cal(sys.argv[2:])}.get(st, lambda: tol(sys.argv[2]))()

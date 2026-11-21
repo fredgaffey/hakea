@@ -389,11 +389,12 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
         sp = (sub.get("summary") or {}).get("trim_diff_pitch_deg", float("nan"))
         splits.append(sp)
         mg, wh = resonance_margin(sub)
-        if criterion == "control_quality":
+        if criterion in ("control_quality", "control_quality_cal"):
             im = mechanism_mode(sub)
             if im is not None:
                 mm_ = sub["modes"][im]
                 rpm_ = (sub.get("summary") or {}).get("rpm") or 1.0
+                out["mech_per_rev"] = float(mm_["freq_hz"] * 60 / rpm_)
                 out["mech_mode"] = f"{mm_['label']} {mm_['freq_hz'] * 60 / rpm_:.3f}/rev"
                 out["res_margin_all"], out["res_which_all"] = mg, wh
                 mg, wh = resonance_margin(sub, skip_1p=im)
@@ -613,7 +614,8 @@ def _round(v: dict) -> dict:
 ROBUST = None   # thrust factors tuple when --robust
 CRITERION = "margin"   # or "control_quality" (robust.control_quality for the mechanism mode)
 OBJECTIVE = "cr"   # or "pulse_limited" (cr_pl; hard = non-scaling checks only)
-PERTURB = None  # robust tolerance samples (robust.CQ_PERTURB under --criterion control_quality)
+PERTURB = None  # robust tolerance samples (robust.CQ_PERTURB under --criterion control_quality[_cal])
+RUNTIME = None  # runtime samples about each calibrated node (robust.CQ_RUNTIME, control_quality_cal)
 J_HUB = None    # tuple of motor.J_hub values: robust/tolerance dimension
 
 
@@ -633,7 +635,7 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
         designs = [set_design(base, obj.to_values(u)) for u in pop]
-        recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, J_HUB)
+        recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, J_HUB, RUNTIME)
         Js = []
         for u, dsg, (mm, err) in zip(pop, designs, recs):
             vals = obj.to_values(u)
@@ -740,9 +742,13 @@ def main(argv=None):
     ap.add_argument("--objective", choices=("cr", "pulse_limited"), default="cr",
                     help="pulse_limited: maximise cr at the pulse that binds the most-utilised "
                          "pulse-scaling check (per-throttle pulse schedule)")
-    ap.add_argument("--criterion", choices=("margin", "control_quality"), default="margin",
+    ap.add_argument("--criterion", choices=("margin", "control_quality", "control_quality_cal"),
+                    default="margin",
                     help="control_quality: the mechanism mode is judged by cyclic phase/gain spread over "
-                         "throttle x J x 4 fixed +-5%% tolerance samples instead of the 1P margin")
+                         "throttle x J x 4 fixed +-5%% tolerance samples instead of the 1P margin; "
+                         "control_quality_cal: build tolerance calibrated out per airframe, only the "
+                         "RUNTIME residual (rpm bin, temperature, creep, J error) about each calibrated "
+                         "node is limited; build samples bound calibratability (authority, 1P side)")
     ap.add_argument("--j-hub", default=None, help="comma list of motor.J_hub values (robust dimension)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
@@ -752,10 +758,11 @@ def main(argv=None):
     ap.add_argument("--redo", action="store_true", help="re-run cases already in cases.jsonl")
     ap.add_argument("--salvage", nargs="*", help="rebuild these cases from evals.jsonl.gz and exit")
     a = ap.parse_args(argv)
-    global ROBUST, OBJECTIVE, J_HUB, CRITERION, PERTURB
+    global ROBUST, OBJECTIVE, J_HUB, CRITERION, PERTURB, RUNTIME
     OBJECTIVE = a.objective
     CRITERION = a.criterion
-    PERTURB = list(robust.CQ_PERTURB) if CRITERION == "control_quality" else None
+    PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
+    RUNTIME = list(robust.CQ_RUNTIME) if CRITERION == "control_quality_cal" else None
     J_HUB = tuple(float(x) for x in a.j_hub.split(",")) if a.j_hub else None
     ROBUST = tuple(float(x) for x in a.robust.split(",")) if a.robust else None
     if a.salvage:

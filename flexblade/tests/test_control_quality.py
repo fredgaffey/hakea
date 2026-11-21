@@ -74,3 +74,80 @@ def test_mechanism_mode_by_participation_not_label():
     m_[1]["freq_hz"], m_[2]["freq_hz"] = 30.0, 9.6
     mg, wh = R.resonance_margin(r, skip_1p=R.mechanism_mode(r))
     assert mg > 0.5          # only the 3/rev mode (and its 2P hub check) remains
+
+
+# ---------------------------------------------------------------- control_quality_cal
+def _m(g, ph, mpr=0.9, cr=0.1):
+    return dict(control_ratio=cr, cr_pl=cr, viol={}, viol_hard={}, util={}, criterion="control_quality_cal",
+                cyc_gain=g, cyc_phase_deg=ph, mech_per_rev=mpr)
+
+
+def _cal_set(build_gain=1.0, build_phase=0.0, rt=None, build_mpr=0.9):
+    """nominal build + one build corner p0 (calibrated out), each with the runtime samples."""
+    rt = rt or {"rpm+": (1.05, 3.0), "rpm-": (0.97, -2.0), "temp+": (1.02, 1.0), "creep": (0.95, 2.0),
+                "J+": (1.0, 4.0), "J-": (1.0, -1.0)}
+    tags, ms = [], []
+    for p, g0, ph0, mpr in (("", 1.0, 0.0, 0.9), (":p0", build_gain, build_phase, build_mpr)):
+        tags.append(f"T1{p}:J1")
+        ms.append(_m(g0, ph0, mpr, cr=0.1 * g0))
+        for r, (gm, dph) in rt.items():
+            tags.append(f"T1{p}:r{r}:J1")
+            ms.append(_m(g0 * gm, ph0 + dph, mpr))
+    return tags, ms
+
+
+def test_cal_residual_is_linear_stack_and_build_offset_is_calibrated_out():
+    # build corner: gain 0.6x, phase +80 deg -> FAILS control_quality, but is calibrated out here
+    tags, ms = _cal_set(build_gain=0.6, build_phase=80.0)
+    c = robust.control_quality_cal(tags, ms)
+    # rpm 3 + temp (1 + 0.3*2) + creep 2 + J 4 = 10.6 deg; gain 5 + (2 + 0.3*5) + 5 + 0 = 13.5 %
+    assert c["phase_res_deg"] == pytest.approx(10.6)
+    assert c["gain_res"] == pytest.approx(0.135)
+    assert c["groups"]["rpm"] == pytest.approx([3.0, 0.05])
+    assert c["authority_min"] == pytest.approx(0.6) and c["cr_pl_ratio_min"] == pytest.approx(0.6)
+    assert c["mech_margin_min"] == pytest.approx(0.1) and not c["mech_side_flip"]
+    assert robust.control_quality_cal_viol(c) == {}
+    nom = [(t, m) for t, m in zip(tags, ms) if ":r" not in t]
+    cq = robust.control_quality([t for t, _ in nom], [m["cyc_gain"] for _, m in nom],
+                                [m["cyc_phase_deg"] for _, m in nom])
+    assert robust.control_quality_viol(cq)            # the uncalibrated criterion rejects it
+
+
+def test_cal_limits_residual_and_calibratability():
+    big = {"rpm+": (1.0, 12.0), "rpm-": (1.0, -2.0), "creep": (1.3, 0.0)}
+    c = robust.control_quality_cal(*_cal_set(rt=big))
+    v = robust.control_quality_cal_viol(c)
+    assert c["phase_res_deg"] == pytest.approx(12.0) and "cqc_phase" not in v
+    assert c["gain_res"] == pytest.approx(0.3 * 1.3)          # creep 30 % + temp- 0.3 x 30 %
+    assert v["cqc_gain"] == pytest.approx(0.39 / 0.25 - 1)
+    v = robust.control_quality_cal_viol(robust.control_quality_cal(*_cal_set(build_gain=0.4)))
+    assert v["cqc_authority"] == pytest.approx(0.2)
+    v = robust.control_quality_cal_viol(robust.control_quality_cal(*_cal_set(build_mpr=0.98)))
+    assert v["cqc_mech_margin"] == pytest.approx(1 - 0.02 / 0.03)
+    v = robust.control_quality_cal_viol(robust.control_quality_cal(*_cal_set(build_mpr=1.05)))
+    assert "cqc_mech_side" in v and "cqc_mech_margin" not in v   # crossed 1P: phase flips
+
+
+def test_cal_combine_uses_nominal_points_for_hard_checks():
+    tags, ms = _cal_set(build_gain=0.4)
+    out = robust.combine(ms, tags)
+    assert [p["tag"] for p in out["points"]] == ["T1:J1"]
+    assert out["cr_pl"] == pytest.approx(0.1)
+    assert "cqc_authority" in out["viol_hard"] and out["feasible_pl"] is False
+
+
+def test_runtime_variants_tags_and_perturbations():
+    from flexblade.schema import Design
+    p = Path(__file__).resolve().parents[1] / "study" / "designs" / "7in_tt_strap_steelx_v6.json"
+    d = Design.model_validate_json(p.read_text())
+    v = dict(robust.variants(d, (1.0,), [{"flexure.thickness": 1.05}], (2e-6,), list(robust.CQ_RUNTIME)))
+    assert len(v) == 2 * (1 + len(robust.CQ_RUNTIME))
+    n, r = v["T1:J2e-06"], v["T1:p0:rcreep:J2e-06"]
+    assert r.flexure.width == pytest.approx(0.98 * n.flexure.width)
+    assert r.flexure.thickness == pytest.approx(1.05 * n.flexure.thickness)
+    assert v["T1:rJ+:J2e-06"].motor.J_hub == pytest.approx(2.2e-6)
+    assert v["T1:rrpm+:J2e-06"].op.vehicle_mass == pytest.approx(1.1025 * n.op.vehicle_mass)
+    assert v["T1:rtemp+:J2e-06"].op.ambient_C == 45.0 and n.op.ambient_C == d.op.ambient_C
+    # without runtime samples the variant set (and so the evaluation cache keys) is unchanged
+    assert [t for t, _ in robust.variants(d, (1.0,), None, (2e-6,))] == ["T1:J2e-06"]
+    assert robust.variants(d, (1.0,), None, (2e-6,))[0][1] == n
