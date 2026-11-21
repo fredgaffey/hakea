@@ -21,11 +21,10 @@ def design():
 
 def test_classification():
     assert rs.PULSE_EXP["motor_thermal"] == 2
-    for k in ("motor_torque_1p", "esc_duty_slew", "esc_duty_peak", "fatigue_strain", "fatigue_stress",
-              "harmonic_jitter"):
+    for k in ("motor_torque_1p", "esc_duty_slew", "esc_duty_peak", "fatigue_strain", "fatigue_stress"):
         assert rs.PULSE_EXP[k] == 1
     for k in ("static_stress", "creep_strain", "interlayer", "strap_tension", "strip_clamp_wrap",
-              "aeroelastic_stability", "air_resonance", "pitch_cf_ratio"):
+              "aeroelastic_stability", "air_resonance", "pitch_cf_ratio", "harmonic_jitter"):
         assert k not in rs.PULSE_EXP
 
 

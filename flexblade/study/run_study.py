@@ -490,7 +490,7 @@ def score(m: dict) -> float:
 #   motor_thermal    rise ∝ R(I0² + ½(c dI)²) + b w², dI ∝ pulse (motor.thermal)      u = u0 + (u1-u0) s²
 #   fatigue_strain/  srss(1P amp ∝ s [linear harmonic solve, no mean-stress term],
 #   fatigue_stress   nP forced = motor nP torque (∝ s) ⊕ aero 2P/imbalance (fixed))   ~ s, bounded below
-#   harmonic_jitter  jitter = motor-torque part (∝ s) ⊕ aero/imbalance part (fixed), allowable
+#   harmonic_jitter  (NOT pulse-scaled: hard check evaluated once at s=1; was) jitter = motor-torque part (∝ s) ⊕ aero/imbalance part (fixed), allowable
 #                    max(0.3°, 0.1 × 1P pitch ∝ s)                                     mixed, bounded below
 #   control_ratio    linear 1/rev harmonic response to dQ                               cr ∝ s
 # For the mixed (fixed ⊕ ∝s) parts the true value lies between x and x·s; we take the conservative
@@ -500,7 +500,7 @@ def score(m: dict) -> float:
 # One throttle point uses ONE pulse scale for all its checks; across throttle the scale may differ
 # (robust.combine takes min cr_pl over points): the FC schedules the pulse gain with throttle.
 PULSE_EXP = {"motor_torque_1p": 1, "esc_duty_slew": 1, "esc_duty_peak": 1, "motor_thermal": 2,
-             "fatigue_strain": 1, "fatigue_stress": 1, "harmonic_jitter": 1}
+             "fatigue_strain": 1, "fatigue_stress": 1}
 PULSE_S_MAX = 50.0
 _NP_RE = re.compile(r"1P ([0-9.eE+-]+) \+ nP ([0-9.eE+-]+)")
 
@@ -531,10 +531,6 @@ def pulse_util_fns(d: Design, r: dict) -> list[tuple[str, object]]:
             if mm:
                 a, b = float(mm.group(1)), float(mm.group(2))
                 f = (lambda s, a=a, b=b: frc.combine(a * s, b * max(s, 1.0)))
-        elif nm == "harmonic_jitter":
-            j = float(c["value"])
-            p1 = float(s_.get("pitch_amp_deg", 0.0) or 0.0)
-            f = (lambda s, j=j, p1=p1: j * max(s, 1.0) / max(frc.JITTER_MAX_DEG, frc.JITTER_FRAC_1P * p1 * s))
         if f is None:
             p = PULSE_EXP[nm]
             f = (lambda s, u1=u1, p=p: u1 * s ** p)
