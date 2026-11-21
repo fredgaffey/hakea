@@ -3,6 +3,7 @@ steelx_de PYTHONPATH=. ~/venv-flexblade/bin/python study/run_study.py --hosts "$
 steelx_de2 PYTHONPATH=. ~/venv-flexblade/bin/python study/run_study.py --hosts "$H" --sizes 7,10,5 --concepts tt_strap_steelx --maxiter 60 --popmult 10 --seed 31 --redo --robust 0.7,1.0,1.4 >> study/campaign/steelx_de2.log 2>&1
 steelx_de3 PYTHONPATH=. ~/venv-flexblade/bin/python study/run_study.py --hosts "$H" --sizes 10,7 --concepts tt_strap_steelx --maxiter 60 --popmult 10 --seed 41 --redo --robust 0.7,1.0,1.4 >> study/campaign/steelx_de3.log 2>&1
 steelx_de4 PYTHONPATH=. ~/venv-flexblade/bin/python study/run_study.py --hosts "$H" --sizes 7,10 --concepts tt_strap_steelx --maxiter 40 --popmult 10 --seed 51 --redo --robust 0.7,1.0,1.4 --objective pulse_limited --j-hub 0.92e-6,2.5e-6,5.49e-6 >> study/campaign/steelx_de4.log 2>&1
+steelx_de5 PYTHONPATH=. ~/venv-flexblade/bin/python study/run_study.py --hosts "$H" --sizes 7,10 --concepts tt_strap_steelx --maxiter 30 --popmult 8 --seed 61 --redo --robust 0.7,1.0,1.4 --objective pulse_limited --ground-resonance --j-hub "7:0.65e-6,2.5e-6,5.49e-6;10:2.5e-6,3.76e-6,5.49e-6" --init-from-leads --init-frac 0.3 --base-design init >> study/campaign/steelx_de5.log 2>&1
 surrogate_v5 PYTHONPATH=. nice -n 5 ~/venv-flexblade/bin/python study/surrogate.py run --design study/designs/7in_tt_strap_steelx_v5.json --n 360 --rounds 3 --workers 16 >> study/campaign/surrogate_v5.log 2>&1
 ideal_s4 ROBUST=0.7,1.0,1.4 TAG=robust_ SEEDS=4 study/campaign/ideal_seeds.sh
 ideal_s5 ROBUST=0.7,1.0,1.4 TAG=robust_ SEEDS=5 study/campaign/ideal_seeds.sh

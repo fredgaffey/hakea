@@ -738,7 +738,7 @@ def seeded_population(obj: Objective, leads: list[Design], npop: int, frac: floa
 
 
 def _lead_for(designs: list[Design], D: float) -> list[Design]:
-    return [d for d in designs if abs(d.diameter_in - D) < 1e-6]
+    return [d for d in designs if abs(d.blade.diameter_in - D) < 1e-6]
 
 
 def _get(d: Design, path: str):
