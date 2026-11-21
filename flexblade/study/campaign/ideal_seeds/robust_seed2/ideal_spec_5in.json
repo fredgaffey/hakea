@@ -1,0 +1,166 @@
+{
+ "diameter_in": 5.0,
+ "control_ratio": 0.020040406827518,
+ "feasible": true,
+ "binding_constraint": "check:motor_thermal",
+ "binding_utilisation": 0.9875202392430296,
+ "violations": {},
+ "motor_thermal_util": 0.9875202392430296,
+ "motor_thermal_enforced": true,
+ "rpm": 22549.96523277651,
+ "thrust": 8.236590299593443,
+ "torque_mod_frac": 3.843203365649519,
+ "capability": {
+  "rpm": 19509.711101997065,
+  "Q": 0.054859271566232964,
+  "dQ_max": 0.2219319338109763,
+  "frac": 4.045477226999494,
+  "limit": "current"
+ },
+ "stiffness": {
+  "frame": "blade-1 frame H at the hinge point: x radial, y in-plane, z rotor axis; [ux,uy,uz,rx,ry,rz] -> [F;M], N/m, N m/rad",
+  "hinge_point": [
+   0.013471538486249626,
+   0.0,
+   0.0
+  ],
+  "hinge_axis": [
+   0.7673238755737916,
+   0.0,
+   -0.6412597523425406
+  ],
+  "skew_deg": 50.114179675517605,
+  "k_hinge": 0.01135606108779501,
+  "k_cross": 106.66071112163819,
+  "k_flap": 0.9592312492412588,
+  "k_axial": 97503.02827730415,
+  "k_inplane": 1380995.3612934693,
+  "k_outplane": 58520805.043670036,
+  "k_pitch": 43.86707141568336,
+  "k_lag": 62.804995767042634,
+  "k_lag_pitch": 52.47723305418632,
+  "loss_eta": 0.05094921018695692,
+  "K6": [
+   [
+    97503.02827730415,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    1380995.3612934693,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    58520805.043670036,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    43.86707141568336,
+    0.0,
+    52.47723305418632
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.9592312492412588,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    52.47723305418632,
+    0.0,
+    62.804995767042634
+   ]
+  ]
+ },
+ "mass": {
+  "elastic_axis_chord_frac": 0.41347787253513146,
+  "tip_mass": 4.919745246401391e-05,
+  "tip_mass_chord": 0.0031429461191305966,
+  "lag_inertia": 1.5910296933272435e-09,
+  "hinge_radius": 0.013471538486249626
+ },
+ "dynamics": {
+  "lag_per_rev": 0.609236977483408,
+  "flap_per_rev": 1.1880953550829625,
+  "pitch_per_rev": 0.7855367252471037,
+  "pitch_amp_deg": 0.515831322440106,
+  "lag_amp_deg": 0.3933133248470775,
+  "moment_phase_deg": 126.59240401935821,
+  "min_damping": 0.012319782231604551,
+  "res_margin": 0.18106218376325467
+ },
+ "targets": {
+  "skew_deg": 50.114179675517605,
+  "k_hinge": 0.01135606108779501,
+  "k_cross_over_k_hinge": 9392.403783057523,
+  "k_flap_over_k_hinge": 84.46865879157677,
+  "k_lag_over_k_flap": 65.47430123520338,
+  "k_lag_pitch_over_k_lag": 0.8355582611427246,
+  "k_axial": 97503.02827730415,
+  "k_inplane": 1380995.3612934693,
+  "k_outplane": 58520805.043670036,
+  "lag_per_rev": 0.609236977483408
+ },
+ "J": -2.0040406827518,
+ "n_evals": 7930,
+ "generations": 60,
+ "de_message": "Maximum number of iterations has been exceeded.",
+ "wall_s": 1660.8847975730896,
+ "x": {
+  "flexure.skew_deg": 50.1141797,
+  "flexure.hinge_radius": 0.0134715,
+  "flexure.ideal.k_hinge": 0.0113561,
+  "flexure.ideal.k_cross": 106.6607111,
+  "flexure.ideal.k_flap": 0.9592312,
+  "flexure.ideal.k_axial": 97503.0282773,
+  "flexure.ideal.k_inplane": 1380995.3612935,
+  "flexure.ideal.k_outplane": 58520805.04367,
+  "flexure.ideal.loss_eta": 0.0509492,
+  "blade.elastic_axis_chord_frac": 0.4134779,
+  "flexure.ideal.tip_mass": 4.92e-05,
+  "flexure.ideal.tip_mass_chord": 0.0031429,
+  "flexure.ideal.lag_inertia": 0.0
+ },
+ "reference": {
+  "design": "5in_tpu_rod",
+  "control_ratio": 0.03146315546386659,
+  "feasible": false,
+  "binding": [
+   "resonance (pitch antisym 2.92/rev vs 3P)",
+   5.595869699074464
+  ],
+  "lag_per_rev": 0.53787381143083,
+  "distance": {
+   "rms": 1.8409327617437465,
+   "terms": {
+    "k_hinge": 1.1356177157240284,
+    "k_cross_over_k_hinge": -3.1999438568479563,
+    "k_flap_over_k_hinge": -0.5360978729021875,
+    "skew_deg": 0.08386730104589411,
+    "k_lag_over_k_flap": -2.6703550699667353,
+    "k_axial": 0.0,
+    "k_inplane": -1.713701004328701,
+    "k_outplane": -2.2849501520596047
+   }
+  }
+ }
+}
