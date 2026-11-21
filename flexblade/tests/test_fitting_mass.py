@@ -54,3 +54,26 @@ def test_model_lumps_fittings(design):
     assert m1 - m0 == pytest.approx(B * mp["root"][0], rel=1e-9)
     m_h, c_h, I_h = mp["hub"]
     assert j1 - j0 == pytest.approx(B * (I_h[2, 2] + m_h * (c_h[0] ** 2 + c_h[1] ** 2)), rel=1e-9)
+
+
+def test_fitting_balance_cancels_propeller_moment(design):
+    """I25: the root fitting's propeller-moment stiffness Omega^2 (Syy - Szz) about the pitch axis is
+    chordwise-dominated for v4 (stiffening); 'auto' +-z pins cancel it exactly, a ~90 deg cross angle
+    cancels it geometrically (jaws stacked along the rotor axis)."""
+    from flexblade.optimize import set_design
+    d = _fl(design, fitting_slim=True)
+    m, c, I = FT.fitting_mass_props(d)["root"]
+    syy, szz, syz = FT.pitch_axis_moments(m, c, I)
+    assert syy - szz > 1e-7                                  # > 100 g mm^2: pitch-stiffening
+    # parallel-axis check against an added point mass
+    s2 = FT.pitch_axis_moments(*FT.add_point_masses(m, c, I, [(1e-3, np.array([c[0], 0.0, 0.01]))]))
+    assert s2[1] - szz == pytest.approx(1e-3 * 0.01 ** 2, rel=1e-6) and s2[0] == pytest.approx(syy, rel=1e-9)
+    z = 0.008
+    mb = FT.balance_pin_mass(_fl(d, fitting_balance_z=z))
+    assert mb == pytest.approx((syy - szz) / (2 * z * z), rel=1e-9)
+    mp = FT.fitting_mass_props(_fl(d, fitting_balance_mass="auto", fitting_balance_z=z))["root"]
+    assert mp[0] == pytest.approx(m + 2 * mb, rel=1e-9)
+    yb, zb, _ = FT.pitch_axis_moments(*mp)
+    assert abs(yb - zb) < 1e-6 * (syy - szz)
+    s90 = FT.pitch_axis_moments(*FT.fitting_mass_props(set_design(d, {"flexure.cross_angle_deg": 90.0}))["root"])
+    assert abs(s90[0] - s90[1]) < 0.1 * (syy - szz)
