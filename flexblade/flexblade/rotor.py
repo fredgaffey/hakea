@@ -308,6 +308,13 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
         from .beam import GAUSS3, GAUSS4
         return [sec_at(x) for x in GAUSS3[0]], [sec_at(x) for x in GAUSS4[0]], _ea_fracs(sec_at(0.5), m.layup)
 
+    # clamped steel strips: the printed CSG hub/root fittings as rigid bodies (fittings.py)
+    fit_mp, fit_pending = None, []
+    if ideal_hinge is None and design.flexure.fitting_mass == "auto":
+        from .fittings import fitting_mass_props, is_clamped_strip
+        if is_clamped_strip(design):
+            fit_mp = fitting_mass_props(design)
+
     max_EA = max(s[0].EA for s in blade_secs)
     max_EI = max(max(s[0].EIy, s[0].EIz) for s in blade_secs)
     max_GJ = max(s[0].GJ for s in blade_secs)
@@ -459,11 +466,21 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 Mn[3:, :3] = m_ * S
                 Mn[3:, 3:] = Ic + m_ * ((c @ c) * np.eye(3) - np.outer(c, c))
                 fe.add_lumped_inertia(master, Mn)
+        if fit_mp is not None:
+            Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
+            m_, c1, I1 = fit_mp["hub"]          # hub side: rigid with the hub node (origin)
+            Rh = Rk @ Mt
+            fe.add_lumped_inertia(hub, _rigid6(m_, Rh @ c1, Rh @ I1 @ Rh.T))
+            m_, c1, I1 = fit_mp["root"]         # blade side: pre-lagged with the blade chain
+            Rb = Rp @ Rk @ Mt
+            fit_pending.append((k, master, m_, pk + Rp @ (Rk @ Mt @ c1 - pk), Rb @ I1 @ Rb.T))
         blades.append(BladeInfo(k=k, psi0=psi0, Rk=Rk, master=master, chain_nodes=chain,
                                 chain_r=r_chain, aero_nodes=chain[n_sh:], aero_r=r_aero,
                                 blade_elems=blade_elems, member_elems=member_elems, members=mem_H,
                                 hinge_point=Rk @ H0, hinge_dir=Rk @ a))
     stiff = stiff_section(STIFF_FACTOR * max_EA, STIFF_FACTOR * max_EI, STIFF_FACTOR * max_GJ)
+    for k, mnode, m_, cw, Ic in fit_pending:
+        _fitting_body(fe, mnode, m_, cw, Ic, stiff, k)
     merges: list[tuple[int, int]] = []
     for n0, n1, e2, tag, k in pending_stiff:
         if np.linalg.norm(fe.X0[n1] - fe.X0[n0]) < 1e-9:
@@ -480,6 +497,41 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     if full_springs:
         _compensate_links(model, full_springs)
     return model
+
+
+def _rigid6(m: float, c: np.ndarray, Ic: np.ndarray) -> np.ndarray:
+    """6x6 lumped mass of a rigid body (mass m, centre c from the node, inertia Ic about c)."""
+    S = skew(c)
+    Mn = np.zeros((6, 6))
+    Mn[:3, :3] = m * np.eye(3)
+    Mn[:3, 3:] = -m * S
+    Mn[3:, :3] = m * S
+    Mn[3:, 3:] = Ic + m * ((c @ c) * np.eye(3) - np.outer(c, c))
+    return Mn
+
+
+def _fitting_body(fe: FEModel, node: int, m: float, cw: np.ndarray, Ic: np.ndarray, stiff, k: int) -> None:
+    """Rigid body (m, centre cw, inertia Ic about cw) hung on `node` as 6 point masses on a stiff
+    cantilever element, so it gets centrifugal, Coriolis and hub-acceleration (Omega-dot) terms
+    like the blade mass points (fe.lumped carries no rotating terms)."""
+    if m <= 0:
+        return
+    xa = fe.X0[node]
+    lam, V = np.linalg.eigh(0.5 * (Ic + Ic.T))
+    J = np.maximum(0.5 * lam.sum() - lam, 0.0)      # principal second moments about cw
+    d = np.sqrt(3.0 * J / m)
+    pts = [cw + sg * d[i] * V[:, i] for i in range(3) for sg in (1.0, -1.0)]
+    dv = cw - xa
+    e1 = dv / np.linalg.norm(dv) if np.linalg.norm(dv) > 1e-5 else unit(np.r_[xa[:2], 0.0] + [1e-9, 0, 0])
+    ref = np.array([0.0, 0.0, 1.0]) if abs(e1[2]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    e2 = unit(ref - e1 * (e1 @ ref))
+    e3 = np.cross(e1, e2)
+    L = 2.0 * (np.linalg.norm(dv) + d.max()) + 1e-3
+    nb = fe.add_node(xa + e1 * L, f"b{k}.fitting")
+    xm = np.array([[(p - xa) @ e1 / L, (p - xa) @ e2, (p - xa) @ e3, m / 6.0] for p in pts])
+    el = Element(node, nb, e2, [stiff], tag=f"b{k}.fitting", kind="rigid", blade=k)
+    el.extra_mpts = xm
+    fe.add_element(el)
 
 
 def _compensate_links(model: RotorModel, springs) -> None:

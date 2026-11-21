@@ -41,6 +41,8 @@ CH_CLEAR = 0.3          # mm, strand channel diameter over the strand
 WEB_T = 3.0             # mm, web slab thickness (connects the jaws)
 CH_LEN = 8.0            # mm, strand channel length from the strand end to the knot well
 SEG = 48
+WEB_T_SLIM = 2.0        # mm, slim web slab thickness (> WALL, two perimeters + skin)
+JAW_FACE_SLIM = 1.5     # mm, slim jaw face wall over the slot beyond the exit radius (>= WALL)
 
 
 def _mf():
@@ -61,6 +63,7 @@ class StripParams:
     strand_d: float
     channel_d: float
     well_d: float
+    slim: bool = False      # stepped jaws, thin web, per-jaw web hulls (fittings ~40 % lighter)
 
 
 def strip_members(design: Design):
@@ -92,7 +95,7 @@ def strip_params(design: Design) -> StripParams:
     d = f.strap_strand_diameter * 1e3
     return StripParams(t=t, w=w, L=L, land=max(4.0 * math.sqrt(w), 5.0), slot_t=t + SLOT_ALLOW,
                        slot_w=w + 2 * SIDE, jaw_r=R, wall=WALL, strand_d=d,
-                       channel_d=d + CH_CLEAR, well_d=max(2.5 * d, 3.5))
+                       channel_d=d + CH_CLEAR, well_d=max(2.5 * d, 3.5), slim=bool(f.fitting_slim))
 
 
 # --------------------------------------------------------------------------- primitives
@@ -205,7 +208,15 @@ def _side(design, strips, wires, P, s, end, prm: StripParams):
                 if i == 0:
                     notes.append(f"crossing edge gap {edge_gap:.2f} mm < 2 walls: U jaws, slot open "
                                  f"on the crossing edge (strip overhangs the jaw by {OPEN_LIP} mm)")
-        jaws.append(_box([0, lo_w, -hn], [prm.land, hi_w, hn], Rm, o))
+        if prm.slim and prm.land > R + prm.wall + 1.0:
+            # stepped jaw: full radiused-exit thickness over the first R + wall, then faces of
+            # JAW_FACE_SLIM over the rest of the (unchanged) clamp land
+            x1 = R + prm.wall
+            hs = H + JAW_FACE_SLIM
+            jaws.append(_union([_box([0, lo_w, -hn], [x1, hi_w, hn], Rm, o),
+                                _box([x1 - 0.01, lo_w, -hs], [prm.land, hi_w, hs], Rm, o)]))
+        else:
+            jaws.append(_box([0, lo_w, -hn], [prm.land, hi_w, hn], Rm, o))
         depth = prm.land + (80.0 if end == 0 else 0.3)
         cuts.append(_box([-0.5, cl_w, -H], [depth, ch_w, H], Rm, o))
         fl = _box([-0.5, cl_w, -(H + R)], [R, ch_w, H + R], Rm, o)
@@ -214,9 +225,13 @@ def _side(design, strips, wires, P, s, end, prm: StripParams):
         cuts.append(_sub(fl, cyls))
     env = _hull_of_part(design, "blade1_hub_fitting" if end == 0 else "blade1_root_fitting")
     zc = h_exit + min(2.0, 0.6 * hn)
-    # web: slab WEB_T thick of the hull of jaws + envelope, beyond the strip exit plane
-    web = mf.Manifold.batch_hull([*jaws, env]).trim_by_plane(tuple(e), float(e @ P + zc)) \
-        .trim_by_plane(tuple(-e), float(-(e @ P) - zc - WEB_T))
+    web_t = WEB_T_SLIM if prm.slim else WEB_T
+    # web: slab web_t thick of the hull of jaws + envelope, beyond the strip exit plane
+    # (slim: union of per-jaw hulls with the envelope, no filler between the jaws)
+    hulls = [mf.Manifold.batch_hull([j, env]) for j in jaws] if prm.slim else \
+        [mf.Manifold.batch_hull([*jaws, env])]
+    web = _union([h.trim_by_plane(tuple(e), float(e @ P + zc))
+                  .trim_by_plane(tuple(-e), float(-(e @ P) - zc - web_t)) for h in hulls])
     # strand post + channel + knot well
     planes = []
     for (p0, p1, L, t, w, n), c in zip(fr, centres):
@@ -239,6 +254,57 @@ def _side(design, strips, wires, P, s, end, prm: StripParams):
         cuts.append(_cyl(wc - np.array([0, 0, prm.channel_d / 2]), [0, 0, 1.0], prm.well_d / 2, 60.0))
     part = _union(jaws + [web] + posts)
     return part, cuts, notes, (e, float(e @ P + zc))
+
+
+# --------------------------------------------------------------------------- mass properties
+def mass_properties(m) -> tuple[float, np.ndarray, np.ndarray]:
+    """Closed manifold (mm) -> (volume mm^3, centroid mm, second-moment tensor about the
+    centroid int (x-c)(x-c)^T dV in mm^5). Signed tetrahedra from the origin."""
+    mo = m.to_mesh()
+    V = np.asarray(mo.vert_properties, float)[:, :3]
+    F = np.asarray(mo.tri_verts, np.int64)
+    if not len(F):
+        return 0.0, np.zeros(3), np.zeros((3, 3))
+    a, b, c = V[F[:, 0]], V[F[:, 1]], V[F[:, 2]]
+    det = np.einsum("ij,ij->i", a, np.cross(b, c))
+    vol = det.sum() / 6.0
+    com = (det[:, None] * (a + b + c)).sum(0) / 24.0 / vol
+    s = a + b + c
+    C = (np.einsum("t,ti,tj->ij", det, a, a) + np.einsum("t,ti,tj->ij", det, b, b)
+         + np.einsum("t,ti,tj->ij", det, c, c) + np.einsum("t,ti,tj->ij", det, s, s)) / 120.0
+    return float(vol), com, C - vol * np.outer(com, com)
+
+
+def _geom_key(design: Design) -> str:
+    import hashlib, json
+    d = design.model_dump(mode="json")
+    for k in ("name", "notes", "op", "motor", "analysis"):
+        d.pop(k, None)
+    return hashlib.sha256(json.dumps(d, sort_keys=True).encode()).hexdigest()[:16]
+
+
+@lru_cache(maxsize=64)
+def _fit_geom_cached(key, design_json):
+    fits = build_strip_fittings(Design.model_validate_json(design_json))
+    return {side: mass_properties(_sub(getattr(fits, side), [fits.keepout]))
+            for side in ("hub", "blade")}
+
+
+def fitting_mass_props(design: Design) -> dict:
+    """Blade-1 fittings as rigid bodies, SI, frame H: {'hub'|'root': (mass kg, com m (3,),
+    inertia about com kg m^2 (3,3))}. Geometry cached per geometry hash; density from
+    materials.py (flexure.fitting_material, else hub pa6_cf / root = blade layup material)."""
+    from .geometry import HUB_MATERIAL
+    from .materials import get_material
+    g = _fit_geom_cached(_geom_key(design), design.model_dump_json())
+    fm = design.flexure.fitting_material
+    out = {}
+    for side, key, mat in (("hub", "hub", fm or HUB_MATERIAL), ("blade", "root", fm or design.blade.layup.material)):
+        vol, com, C = g[side]
+        rho = get_material(mat).rho * 1e-9          # kg/mm^3
+        Cs = rho * C * 1e-6                          # kg m^2
+        out[key] = (rho * vol, com * 1e-3, np.trace(Cs) * np.eye(3) - Cs)
+    return out
 
 
 def _keepout(strips, prm: StripParams):

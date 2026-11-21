@@ -253,6 +253,14 @@ class Flexure(_M):
         "sharp square jaw, radiused jaw (strip_clamp_radius), or compliant TPU/soft pad lip")
     strip_clamp_radius: float = Field(0.0, ge=0.0, description="m, jaw radius for 'radiused'; "
                                       "0 = auto 10x strip thickness")
+    fitting_mass: Literal["auto", "none"] = Field(
+        "auto", description="clamped steel strips (steelx): 'auto' lumps the CSG hub/root fitting "
+        "mass + inertia (fittings.py) into the beam model; 'none' = legacy (shank only)")
+    fitting_slim: bool = Field(False, description="slim steelx fittings: stepped jaws (1.5 mm "
+                               "faces past the exit radius), 2 mm web, no filler between the jaws "
+                               "(walls >= 1.2 mm, clamp lands kept)")
+    fitting_material: Optional[str] = Field(None, description="printed fitting material for "
+                                            "the mass model; None = hub pa6_cf, root = blade layup")
     taper: float = 1.0
     twist_deg: float = Field(0.0, description="pre-twist of members about their axis")
     layup: Layup = Layup()
