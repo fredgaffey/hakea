@@ -108,3 +108,31 @@ zeta_af 0.02 -> 0.08 at 190: 0.016 -> 0.021 (weak); k_t 100-430: 0.016-0.017 (no
 - (c) blade knob: flexure thickness x1.15 raises nu_lag and moves the band down (unstable 100-130, >= 0.017 from 150 Hz), width x1.3 makes it worse (band 110-160).  Cost: cr_pl 0.0650 -> 0.0632 (x1.08) / 0.0611 (x1.15) and both FAIL the hard resonance check (pitch antisym + hub 0.90-0.92/rev vs 1P; v6 0.88/rev, margin 0.18 -> 0.14 / 0.11).  Rejected: no v6c.
 - (d) mount: 45 g on the mount (vs 55): band 110-130, >= 0.015 from 140 Hz; 70 g: unstable for every f_arm >= 150 Hz (-0.004 to -0.007) -> keep <= 55 g on the mount (this is what sinks the XY stage's moving frame and the ring).  Stiffer washers (k_lat x1.5, G 6.5 -> 9.75 eq.): band 110-130, >= 0.018 from 140 Hz, but raises the hub/1P ratio at T0.7 (not checked).
 **Recommendation: (a), arm f_x and f_y >= 180 Hz, keep the v6b twin mount (<= 55 g on it).  Verified T {0.7,1,1.4} x J {2.5,3.76,5.49}e-6 x arm {190,225,260} x I_t x1/x2: min zeta 0.0137 / 0.0116 (190), 0.0229 / 0.0210 (225), 0.0273 / 0.0229 (260) >= 0.005.**  No design change.  If the airframe cannot reach 180 Hz, the fallback is a light mount (45 g) + f_arm >= 140 Hz, or a deliberately soft arm < 65 Hz (zeta 0.024, but poor for control).
+
+
+## I32: 10in_v5 ground-resonance arm band, re-check of the four leads after the frame_zeta fix (study/mounts_tilt_diag10.py; raw results/mounts_tilt_diag10.json, verify_*.json, mounts_tilt_*.json re-run)
+**10in_v5 + v5c twin mount (m 126 g, k_t 145, f_y 1.15 f_x, zeta_af 0.02, J 2.5/3.76/5.49e-6, I_t x1/x2; worst over J, I_t; 1P 108 / 128 / 152 Hz at T0.7 / 1.0 / 1.4):**
+
+| T | unstable (zeta < 0) arm f_x | zeta < 0.005 | zeta at f_x >= 110 |
+|---|---|---|---|
+| 0.7 | 50 (-0.013) | <= 50 | 0.014 |
+| 1.0 | 50-60 (-0.017 / -0.011) | <= 60 | 0.012 |
+| 1.4 | 60-90 (min -0.024 at 70) | 50, 60-90, 100 is 0.006 | 0.009 from 110 |
+
+The band is 50-95 Hz (10 Hz grid; 0.4-0.65 x 1P at T1.4, same mechanism as 7in: regressing lag meets hub/arm), far lower in absolute terms than the 7in 75-175 Hz because 10in 1P is 152 vs 260 Hz.  **Spec f_arm >= 120 Hz (min ~110, zeta then floored at the lag-mode 0.009 not by the arm); mount <= 126 g (modelled; not swept).**  Tube (E 70 GPa, tip 126 g + 0.24 m_tube, arm length GUESSED 180-220 mm, nominal 200): 200 mm needs 22x20 (136 Hz; 20x18 = 117 is marginal-borderline, 18x16 = 99 is in the band edge); 180 mm: 20x18 (138); 220 mm: 25x23 (143).  The 10 mm clamp tube is deep in the band at any of these lengths.
+
+**Re-run of the four leads with the fixed frame_zeta (old = before fix, from the stored json):**
+
+| lead / check | old min zeta | new min zeta | verdict |
+|---|---|---|---|
+| 7in v5 rigid-arm Floquet (air_zeta, 48 pts) | -0.0034 | -0.0034 (0/48 points changed) | none |
+| 10in v4 rigid-arm (zaf .02 / .05) | -0.0033 / 0.0023 | -0.0033 / 0.0023 | none |
+| 10in v5 rigid-arm (zaf .02 / .05) | -0.0043 / 0.0028 | -0.0043 / 0.0028 | none |
+| 7in v6 rigid-arm (zaf .02 / .05), no stored old | n/a | -0.0044 / 0.0067 | n/a |
+| 7in v6 twin mount, 190/225/260, I_t x1 / x2 / x3 | 0.0137 / 0.0116 / 0.0123 (190) | identical to 4 dp, all 9 cells | none |
+| 10in v5 twin mount, all cells | 0.0089 | 0.0089 | none |
+| 10in v5 non-tilt "mount" variant (verify_10in_v5 floq) | 0.0088 | 0.0089 | none |
+| 10in v4 non-tilt "mount" variant | 0.0107 | **-1.0 at 190 Hz, T0.7** (other cells 0.0113-0.0187, slightly up) | CHANGED, see below |
+| 7in v6 with that non-tilt 10in mount (not its mount) | n/a | -0.09 to -0.14 | n/a, not a valid config |
+
+No feasibility verdict changes for the leads' actual configurations (rigid arm, twin mount): the earlier twin-mount floors were already computed with the fixed metric (mounts_tilt json unchanged), and the rigid-arm cases have no tilt mode to alias.  One new anomaly: with the non-tilt single-washer mount (v4 verification variant, hub mode only) the fixed code returns zeta = -1.0 at 190 Hz T0.7, because two REAL positive roots (s = +7 and +35 rad/s, Im s = 0, |s| just above the 0.05 Omega cut-off) now get wf ~ 0; the old alias heuristic gave 0.0173 for the same point.  This is probably a spurious static/reduction root of the non-tilt hub model (not part of any lead's design mount), but it is unresolved: frame_zeta should treat Im s ~ 0 real roots explicitly (use |Re s|/|s|) before that variant is quoted again.  Followup, not done here.

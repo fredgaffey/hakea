@@ -130,3 +130,24 @@ The stored design op pulse is the original; the FC applies this schedule (Lua in
 | 1.4 | 5.49e-06 | 1.150 | 1.092 | 0.0715 | 0.0822 | motor_torque_1p | 0.167 |
 
 Procedure: measure J_hub (bifilar), pick the matching J column, program the pulse for each throttle.
+
+## Arm stiffness (ground resonance, tap test)
+The regressing lag mode (omega_lag - Omega) crosses the hub-on-mount / arm mode: **forbidden f_arm band 50-95 (45-100 with margin) Hz** (cantilever frequency of the arm with motor + mount, x and y; unstable or zeta < 0.005 there).  **Spec: f_arm >= 120 Hz on both axes** (set by study/results/mounts_tilt.md I32; arm length 180-220 mm is an assumption).
+
+**Mount-mass limit: <= 126 g on the mount** (the modelled motor-side mass; the 10in limit was not swept, the 7in one is 55 g); more mass moves the band up and the margin disappears.
+
+**Tap test (mount locked, i.e. washers bolted solid / clamped, motor + prop adapter fitted, no blades).**  Phone or accelerometer taped to the motor can; flick the motor can with a fingernail, record >= 2 s at >= 1 kHz (phone: a physics-toolbox accelerometer app or audio of the tap on the arm), FFT, read the lowest peak.  Do it twice, tapping along x and y (x = along the arm axis normal to the rotor axis, y = the other lateral), peak must be >= 120 Hz on both.  Unlocked-washer taps show the hub mode instead (0.63-0.69/rev), which is a different, intended mode: do not confuse them.
+
+Minimum tube sizes (cantilever CF tube, E 70 GPa, rho 1600, tip mass 126 g + 0.24 tube mass; f = sqrt(3EI/L^3/m)/2pi; "OK" means >= 120 Hz):
+
+| tube OD x ID mm | L 180 mm: f_arm Hz (tube g) | L 200 mm: f_arm Hz (tube g) | L 220 mm: f_arm Hz (tube g) |
+|---|---|---|---|
+| 12 x 10 | 61 NO (10.0) | 52 NO (11.1) | 45 NO (12.2) |
+| 14 x 12 | 78 NO (11.8) | 67 NO (13.1) | 58 NO (14.4) |
+| 16 x 14 | 97 NO (13.6) | 83 NO (15.1) | 72 NO (16.6) |
+| 18 x 16 | 117 NO (15.4) | 99 NO (17.1) | 86 NO (18.8) |
+| 20 x 18 | 138 OK (17.2) | 117 NO (19.1) | 101 NO (21.0) |
+| 22 x 20 | 160 OK (19.0) | 136 OK (21.1) | 118 NO (23.2) |
+| 25 x 23 | 194 OK (21.7) | 166 OK (24.1) | 143 OK (26.5) |
+
+Clamp/joint compliance lowers the real number, so take the tap-test as authoritative; a bonded-in socket shorter than the tube adds a series spring.
