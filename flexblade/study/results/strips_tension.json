@@ -1,0 +1,604 @@
+{
+ "base": {
+  "variant": "base",
+  "N": {
+   "b1.flex0": [
+    3.0,
+    8.8
+   ],
+   "b1.flex1": [
+    21.0,
+    24.8
+   ],
+   "b1.flex2": [
+    460.5,
+    461.2
+   ],
+   "b2.flex0": [
+    -8.2,
+    -2.4
+   ],
+   "b2.flex1": [
+    12.8,
+    16.6
+   ],
+   "b2.flex2": [
+    460.9,
+    461.5
+   ]
+  },
+  "rpm": 7723.836077572038,
+  "strip_ltb": 0.3006796818113229,
+  "fatigue": 1.103,
+  "fatigue_by": {
+   "fatigue_strain": 0.966,
+   "fatigue_stress": 1.103
+  },
+  "strap_tension": 0.036219891993960536,
+  "mech_per_rev": 0.8458840515692007,
+  "control_ratio": 0.12284750030347422,
+  "hub_moment_mean": 0.25965587527371614,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 5
+ },
+ "strap_d2.0": {
+  "variant": "strap_d2.0",
+  "N": {
+   "b1.flex0": [
+    2.8,
+    8.6
+   ],
+   "b1.flex1": [
+    21.1,
+    24.9
+   ],
+   "b1.flex2": [
+    459.2,
+    459.6
+   ],
+   "b2.flex0": [
+    -8.1,
+    -2.3
+   ],
+   "b2.flex1": [
+    12.6,
+    16.4
+   ],
+   "b2.flex2": [
+    459.6,
+    460.0
+   ]
+  },
+  "rpm": 7721.360570454696,
+  "strip_ltb": 0.30632839209886104,
+  "fatigue": 1.15,
+  "fatigue_by": {
+   "fatigue_strain": 1.15,
+   "fatigue_stress": 1.079
+  },
+  "strap_tension": 0.061006667246541406,
+  "mech_per_rev": 0.8376475025522663,
+  "control_ratio": 0.11660852282743236,
+  "hub_moment_mean": 0.24646889830346655,
+  "max_util": 2.7365233225249463,
+  "max_util_by": "root_envelope",
+  "sec": 6
+ },
+ "strap_L13": {
+  "variant": "strap_L13",
+  "N": {
+   "b1.flex0": [
+    1.9,
+    7.6
+   ],
+   "b1.flex1": [
+    21.3,
+    25.0
+   ],
+   "b1.flex2": [
+    461.0,
+    462.3
+   ],
+   "b2.flex0": [
+    -7.3,
+    -1.5
+   ],
+   "b2.flex1": [
+    12.1,
+    15.9
+   ],
+   "b2.flex2": [
+    461.5,
+    462.7
+   ]
+  },
+  "rpm": 7712.541179108553,
+  "strip_ltb": 0.32378422085585906,
+  "fatigue": 0.948,
+  "fatigue_by": {
+   "fatigue_strain": 0.83,
+   "fatigue_stress": 0.948
+  },
+  "strap_tension": 0.03631147789611176,
+  "mech_per_rev": 0.7828471695540623,
+  "control_ratio": 0.08873801238094278,
+  "hub_moment_mean": 0.18756056263174883,
+  "max_util": 2.709078423921734,
+  "max_util_by": "root_envelope",
+  "sec": 7
+ },
+ "rel_k3e6": {
+  "variant": "rel_k3e6",
+  "N": {
+   "b1.flex0": [
+    -2.7,
+    3.2
+   ],
+   "b1.flex1": [
+    15.1,
+    18.9
+   ],
+   "b1.flex2": [
+    482.2,
+    482.9
+   ],
+   "b2.flex0": [
+    -10.9,
+    -4.5
+   ],
+   "b2.flex1": [
+    13.6,
+    17.4
+   ],
+   "b2.flex2": [
+    472.5,
+    473.1
+   ]
+  },
+  "rpm": 7757.166371211873,
+  "strip_ltb": 0.5372002995902331,
+  "fatigue": 1.851,
+  "fatigue_by": {
+   "fatigue_strain": 1.694,
+   "fatigue_stress": 1.851
+  },
+  "strap_tension": 0.03789335131351255,
+  "mech_per_rev": 0.8734285693667938,
+  "control_ratio": 0.15488938708987474,
+  "hub_moment_mean": 0.32738101529196084,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 7
+ },
+ "rel_k1e7": {
+  "variant": "rel_k1e7",
+  "N": {
+   "b1.flex0": [
+    -1.7,
+    4.1
+   ],
+   "b1.flex1": [
+    16.2,
+    20.1
+   ],
+   "b1.flex2": [
+    479.5,
+    480.2
+   ],
+   "b2.flex0": [
+    -10.3,
+    -3.9
+   ],
+   "b2.flex1": [
+    15.2,
+    19.0
+   ],
+   "b2.flex2": [
+    469.9,
+    470.5
+   ]
+  },
+  "rpm": 7760.19757084405,
+  "strip_ltb": 0.581603332035217,
+  "fatigue": 2.006,
+  "fatigue_by": {
+   "fatigue_strain": 1.837,
+   "fatigue_stress": 2.006
+  },
+  "strap_tension": 0.03768762143442289,
+  "mech_per_rev": 0.8598808412561061,
+  "control_ratio": 0.14166430747010406,
+  "hub_moment_mean": 0.29942790582084344,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 7
+ },
+ "rel_k3e7": {
+  "variant": "rel_k3e7",
+  "N": {
+   "b1.flex0": [
+    -0.8,
+    5.0
+   ],
+   "b1.flex1": [
+    17.3,
+    21.1
+   ],
+   "b1.flex2": [
+    477.5,
+    478.2
+   ],
+   "b2.flex0": [
+    -10.0,
+    -3.5
+   ],
+   "b2.flex1": [
+    15.9,
+    19.7
+   ],
+   "b2.flex2": [
+    469.4,
+    470.0
+   ]
+  },
+  "rpm": 7766.800659673857,
+  "strip_ltb": 0.5969322494594687,
+  "fatigue": 2.065,
+  "fatigue_by": {
+   "fatigue_strain": 1.891,
+   "fatigue_stress": 2.065
+  },
+  "strap_tension": 0.03753057430208517,
+  "mech_per_rev": 0.8526877223314813,
+  "control_ratio": 0.13580707482654197,
+  "hub_moment_mean": 0.287047801504607,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 6
+ },
+ "bonded": {
+  "variant": "bonded",
+  "N": {
+   "b1.flex0": [
+    -0.2,
+    5.6
+   ],
+   "b1.flex1": [
+    18.1,
+    21.9
+   ],
+   "b1.flex2": [
+    475.4,
+    476.1
+   ],
+   "b2.flex0": [
+    -9.8,
+    -3.3
+   ],
+   "b2.flex1": [
+    16.3,
+    20.1
+   ],
+   "b2.flex2": [
+    468.6,
+    469.2
+   ]
+  },
+  "rpm": 7766.800659673857,
+  "strip_ltb": 0.6567885106177981,
+  "fatigue": 2.106,
+  "fatigue_by": {
+   "fatigue_strain": 1.929,
+   "fatigue_stress": 2.106
+  },
+  "strap_tension": 0.03736362393872069,
+  "mech_per_rev": 0.8484237330362789,
+  "control_ratio": 0.1327857861607791,
+  "hub_moment_mean": 0.2806618730076881,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 7
+ },
+ "base_T0.7": {
+  "variant": "base_T0.7",
+  "N": {
+   "b1.flex0": [
+    2.1,
+    6.2
+   ],
+   "b1.flex1": [
+    14.7,
+    17.4
+   ],
+   "b1.flex2": [
+    324.2,
+    324.6
+   ],
+   "b2.flex0": [
+    -6.2,
+    -2.1
+   ],
+   "b2.flex1": [
+    9.0,
+    11.6
+   ],
+   "b2.flex2": [
+    324.4,
+    324.8
+   ]
+  },
+  "rpm": 6480.118837023524,
+  "strip_ltb": 0.3144372904449058,
+  "fatigue": 1.323,
+  "fatigue_by": {
+   "fatigue_strain": 1.323,
+   "fatigue_stress": 1.283
+  },
+  "strap_tension": 0.02549122437993906,
+  "mech_per_rev": 0.8640185490892244,
+  "control_ratio": 0.2521844863871678,
+  "hub_moment_mean": 0.37311974901472644,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 4
+ },
+ "base_T1.4": {
+  "variant": "base_T1.4",
+  "N": {
+   "b1.flex0": [
+    4.2,
+    12.3
+   ],
+   "b1.flex1": [
+    29.7,
+    35.0
+   ],
+   "b1.flex2": [
+    645.6,
+    646.5
+   ],
+   "b2.flex0": [
+    -9.8,
+    -1.6
+   ],
+   "b2.flex1": [
+    18.4,
+    23.7
+   ],
+   "b2.flex2": [
+    646.2,
+    647.1
+   ]
+  },
+  "rpm": 9144.995039683816,
+  "strip_ltb": 0.3039107518074426,
+  "fatigue": 0.874,
+  "fatigue_by": {
+   "fatigue_strain": 0.764,
+   "fatigue_stress": 0.874
+  },
+  "strap_tension": 0.05078217431614589,
+  "mech_per_rev": 0.8290758545904622,
+  "control_ratio": 0.06252203354339242,
+  "hub_moment_mean": 0.18500904474977192,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 2
+ },
+ "cross100": {
+  "variant": "cross100",
+  "N": {
+   "b1.flex0": [
+    1.9,
+    8.0
+   ],
+   "b1.flex1": [
+    20.3,
+    24.2
+   ],
+   "b1.flex2": [
+    457.8,
+    458.5
+   ],
+   "b2.flex0": [
+    -9.1,
+    -3.0
+   ],
+   "b2.flex1": [
+    12.3,
+    16.2
+   ],
+   "b2.flex2": [
+    458.2,
+    458.8
+   ]
+  },
+  "rpm": 7706.937519431451,
+  "strip_ltb": 0.3240417945843415,
+  "fatigue": 1.181,
+  "fatigue_by": {
+   "fatigue_strain": 1.03,
+   "fatigue_stress": 1.181
+  },
+  "strap_tension": 0.03600675798639777,
+  "mech_per_rev": 0.8311565516759732,
+  "control_ratio": 0.11007002989459841,
+  "hub_moment_mean": 0.23264885230129326,
+  "max_util": 2.817145845735413,
+  "max_util_by": "root_envelope",
+  "sec": 2
+ },
+ "cross110": {
+  "variant": "cross110",
+  "N": {
+   "b1.flex0": [
+    4.3,
+    9.8
+   ],
+   "b1.flex1": [
+    21.9,
+    25.6
+   ],
+   "b1.flex2": [
+    463.0,
+    463.7
+   ],
+   "b2.flex0": [
+    -7.2,
+    -1.7
+   ],
+   "b2.flex1": [
+    13.4,
+    17.1
+   ],
+   "b2.flex2": [
+    463.4,
+    464.0
+   ]
+  },
+  "rpm": 7739.604952654442,
+  "strip_ltb": 0.27407287218271026,
+  "fatigue": 1.02,
+  "fatigue_by": {
+   "fatigue_strain": 0.971,
+   "fatigue_stress": 1.02
+  },
+  "strap_tension": 0.036415921721709536,
+  "mech_per_rev": 0.8583743560626583,
+  "control_ratio": 0.13504657641628703,
+  "hub_moment_mean": 0.28544037864397737,
+  "max_util": 2.597296152120933,
+  "max_util_by": "root_envelope",
+  "sec": 3
+ },
+ "skew60": {
+  "variant": "skew60",
+  "N": {
+   "b1.flex0": [
+    3.6,
+    9.7
+   ],
+   "b1.flex1": [
+    21.5,
+    25.5
+   ],
+   "b1.flex2": [
+    461.0,
+    461.7
+   ],
+   "b2.flex0": [
+    -7.4,
+    -1.2
+   ],
+   "b2.flex1": [
+    13.6,
+    17.6
+   ],
+   "b2.flex2": [
+    461.4,
+    462.1
+   ]
+  },
+  "rpm": 7724.940112243933,
+  "strip_ltb": 0.27929093064277094,
+  "fatigue": 1.192,
+  "fatigue_by": {
+   "fatigue_strain": 1.047,
+   "fatigue_stress": 1.192
+  },
+  "strap_tension": 0.03625990303804203,
+  "mech_per_rev": 0.8706601980182177,
+  "control_ratio": 0.14332228600266733,
+  "hub_moment_mean": 0.30293228210847045,
+  "max_util": 2.7618397804957993,
+  "max_util_by": "root_envelope",
+  "sec": 3
+ },
+ "skew64": {
+  "variant": "skew64",
+  "N": {
+   "b1.flex0": [
+    2.4,
+    7.9
+   ],
+   "b1.flex1": [
+    20.5,
+    24.1
+   ],
+   "b1.flex2": [
+    460.1,
+    460.8
+   ],
+   "b2.flex0": [
+    -9.0,
+    -3.6
+   ],
+   "b2.flex1": [
+    11.9,
+    15.5
+   ],
+   "b2.flex2": [
+    460.5,
+    461.2
+   ]
+  },
+  "rpm": 7723.950386609963,
+  "strip_ltb": 0.34126211117125377,
+  "fatigue": 1.022,
+  "fatigue_by": {
+   "fatigue_strain": 0.896,
+   "fatigue_stress": 1.022
+  },
+  "strap_tension": 0.03618983828795848,
+  "mech_per_rev": 0.8171643528227686,
+  "control_ratio": 0.10497110730097121,
+  "hub_moment_mean": 0.22187154543114482,
+  "max_util": 2.661526586069598,
+  "max_util_by": "root_envelope",
+  "sec": 3
+ },
+ "no_preset": {
+  "variant": "no_preset",
+  "N": {
+   "b1.flex0": [
+    0.6,
+    6.4
+   ],
+   "b1.flex1": [
+    20.4,
+    24.3
+   ],
+   "b1.flex2": [
+    455.4,
+    456.0
+   ],
+   "b2.flex0": [
+    -12.3,
+    -6.5
+   ],
+   "b2.flex1": [
+    9.2,
+    13.0
+   ],
+   "b2.flex2": [
+    455.7,
+    456.4
+   ]
+  },
+  "rpm": 7680.649311719154,
+  "strip_ltb": 0.7351158223564689,
+  "fatigue": 1.174,
+  "fatigue_by": {
+   "fatigue_strain": 1.034,
+   "fatigue_stress": 1.174
+  },
+  "strap_tension": 0.03581393225263622,
+  "mech_per_rev": 0.8200560807447994,
+  "control_ratio": 0.08588793160864647,
+  "hub_moment_mean": 0.18153650666232948,
+  "max_util": 2.709078423921733,
+  "max_util_by": "root_envelope",
+  "sec": 7
+ }
+}
