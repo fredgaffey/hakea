@@ -53,3 +53,9 @@ Result: mech margin rises with +skew, but mech_side_flip stays true in all four,
 | 0.5 | +2 | 0.100 | no | resonance 0.259 (pitch antisym+hub 0.93/rev vs 1P) |
 Re-solving presets removed the mech_side_flip violation (it was the preset mismatch) and lifts cr_pl to 0.100, but the pitch antisym+hub mode now sits at 0.92-0.93/rev, inside the 1P band. v9 deleted; v8 stays the lead.
 Next: re-solve presets plus a pitch-mode retune (skew/length) to move that mode above ~1.0/rev, or below 0.85.
+
+## v9 modal scan (presets re-solved via resolve_candidate, J10 hub range, T0.7/1.0/1.4) + sa.py scoring
+- Mechanism mode sits BELOW 1P: nominal v8 0.93/0.90/0.87 per rev (T0.7/1/1.4); the 0.92 "pitch antisym+hub" violation is the margin criterion, the cqc blocker is mech_side_flip (perturbed p0 variants reach 0.96-0.97 at T0.7 and cross 1P at low nodes). Need mode <=~0.88 at T0.7 (RES_BAND 0.15).
+- Levers: skew +1..+5 lowers it (precone .5: +1 0.93, +2 0.92, +4 0.88 @T0.7); length x0.95/x0.9 and thickness x1.05/x1.1 RAISE it (0.94-0.96), wrong way; length x1.05 lowers it (0.90) but at T1.4 the mode jumps to 1.11 (mode switch above 1P) - avoid.
+- sa.py (CAL+Goodman+ground_res): precone 0.5 skew+2 cr_pl 0.092 (flip, margin-crit resonance 0.92); precone 0.5 skew+4 cr_pl 0.076 (flip, harmonic_jitter 0.013, margin-crit resonance clean 0.19); precone 0.9 skew+5 cr_pl 0.0795 (flip, harmonic_jitter 0.044, 0.88/rev pitch antisym+hub).
+- None feasible (cqc_mech_side flip persists even at 0.88/rev); no v9 saved, v8 stays lead.
