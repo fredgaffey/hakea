@@ -28,3 +28,12 @@ Mount sizing (mount_calc_10in.py; STLs mount_tube_clamp / mount_tpu_washer / mou
 
 ## Verdict
 No disqualifier. feasible_pl True, cr_pl 0.0822 (v4 failed the resonance hard check). ccx per-lamina x 8 within 6 %. Rigid arm at zeta_af 0.02 is slightly unstable at T0.7 (as v4); min zeta +0.0028 at 0.05 and +0.0088 with the TPU mount. Caveats: resonance margin 0.163 vs 0.15 need and tolerance 8/9 are thin; mount hub mode close to 1P at T0.7.
+
+## Soft mount v5b (decoupled twin TPU washers; study/mount_soft_10in.py)
+Problem: single washer (ri4/ro9/t10, 53 kN/m) gave hub mode 99-102 Hz, 0.93 x 1P at T0.7. Fix: 2 washers ri 4 / ro 5.8 / t 12 mm, 40 % infill, G 6.5 MPa, eta 0.15, centres 30 mm apart, preloaded.
+- k_lat 24.0 kN/m (arm-coupled hub mode 68.8-69.5 Hz at f_arm 190-260, zeta 0.072-0.074; 0.65 x 1P(T0.7) = 108 Hz; 1P at T1/T1.4 128/152 Hz is further above).
+- Sag: 0.051 mm per 1g lateral, 0.152 mm at 3g, axial 0.204 mm at 16.65 N (both washers preloaded; 0.41 mm if only one carried thrust).
+- Tilt: k_tilt 19.4 N m/rad -> 0.50 deg at 0.17 N m, 0.89 deg at 0.30 N m. Single soft washer (ro 6.5, t 10, 21 kN/m): k_tilt 1.06 -> 9.2-16.2 deg, rejected. Spacing 20 mm: 9.2 N m/rad, 1.06-1.87 deg (marginal).
+- 1P imbalance at 2 g mm: 27.5 um (108 Hz), 22.9 (128), 20.4 (152) vs 106/45/30 um before.
+- Floquet (J 3.76e-6, f_y = 1.15 f_x, zeta_arm 0.02, f_arm 190/225/260): min zeta +0.0063 (T0.7), +0.0087 (T1), +0.0127 (T1.4), identical across arm freq; previous TPU mount +0.0088 at worst. Air-resonance zeta 0.0129 / 0.0114 / 0.0088.
+- Verdict: hub mode in the 60-75 Hz window, tilt <1 deg, sag <0.3 mm; stability stays positive but T0.7 min zeta falls to 0.0063 (thin). Floquet model has translation only (no tilt DOF); tilt mode ~75 Hz estimate needs a bench check. Not re-run: J 2.5e-6 / 5.49e-6.
