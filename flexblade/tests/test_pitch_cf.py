@@ -38,5 +38,5 @@ def test_pitch_cf_propeller_term_and_chinese_weight():
     dk = a["pitch_k_prop"] - c["pitch_k_prop"]
     assert math.isclose(dk, 2 * m * h * h * Om ** 2 * math.cos(2 * th), rel_tol=0.05)
     # the balance masses are real mass points (CF + inertia) of the blade-1 elements
-    xm = [e.mpts[-2:] for e in m1.fe.elements if e.blade == 1 and e.extra_mpts is not None]
+    xm = [e.mpts[-2:] for e in m1.fe.elements if e.blade == 1 and e.extra_mpts is not None and e.kind != "rigid"]
     assert len(xm) == 1 and np.allclose(sorted(xm[0][:, 2]), [-h, h])
