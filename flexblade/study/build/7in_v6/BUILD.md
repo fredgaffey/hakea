@@ -133,3 +133,24 @@ The stored design op pulse is the original; the FC applies this schedule (Lua in
 | 1.4 | 5.49e-06 | 1.232 | 1.170 | 0.0528 | 0.0650 | motor_torque_1p | 0.306 |
 
 Procedure: measure J_hub (bifilar), pick the matching J column, program the pulse for each throttle; if J falls between columns use the smaller pulse of the two bracketing rows.
+
+## Arm stiffness (ground resonance, tap test)
+The regressing lag mode (omega_lag - Omega) crosses the hub-on-mount / arm mode: **forbidden f_arm band 75-175 Hz** (cantilever frequency of the arm with motor + mount, x and y; unstable or zeta < 0.005 there).  **Spec: f_arm >= 180 Hz on both axes** (set by study/results/mounts_tilt.md I31/I32).
+
+**Mount-mass limit: <= 55 g on the mount** (everything moving with the motor side of the washers); more mass moves the band up and the margin disappears.
+
+**Tap test (mount locked, i.e. washers bolted solid / clamped, motor + prop adapter fitted, no blades).**  Phone or accelerometer taped to the motor can; flick the motor can with a fingernail, record >= 2 s at >= 1 kHz (phone: a physics-toolbox accelerometer app or audio of the tap on the arm), FFT, read the lowest peak.  Do it twice, tapping along x and y (x = along the arm axis normal to the rotor axis, y = the other lateral), peak must be >= 180 Hz on both.  Unlocked-washer taps show the hub mode instead (0.63-0.69/rev), which is a different, intended mode: do not confuse them.
+
+Minimum tube sizes (cantilever CF tube, E 70 GPa, rho 1600, tip mass 85 g + 0.24 tube mass; f = sqrt(3EI/L^3/m)/2pi; "OK" means >= 180 Hz):
+
+| tube OD x ID mm | L 120 mm: f_arm Hz (tube g) | L 150 mm: f_arm Hz (tube g) |
+|---|---|---|
+| 12 x 10 | 137 NO (6.6) | 98 NO (8.3) |
+| 14 x 12 | 175 NO (7.8) | 125 NO (9.8) |
+| 16 x 14 | 217 OK (9.0) | 155 NO (11.3) |
+| 18 x 16 | 261 OK (10.3) | 186 OK (12.8) |
+| 20 x 18 | 308 OK (11.5) | 219 OK (14.3) |
+| 22 x 20 | 357 OK (12.7) | 254 OK (15.8) |
+| 25 x 23 | 435 OK (14.5) | 310 OK (18.1) |
+
+Clamp/joint compliance lowers the real number, so take the tap-test as authoritative; a bonded-in socket shorter than the tube adds a series spring.
