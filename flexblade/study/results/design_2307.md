@@ -41,14 +41,12 @@ DE finished; see Final design below.
 - Base/seed util elsewhere is fine: T0.7 0.92, T1.0 0.91 (limit: current); T1.15 0.905, T1.25 0.902 (limit: thermal). motor_thermal at T1.4 is 1.04-1.08 (>1) too.
 - J_hub (0.58e-6..3.46e-6), torque_mod_frac (2.2-2.37) and vehicle_mass 0.79 do not change the result: identical 1P util across the three J_hub values.
 - Fix = CLI: lower the top thrust factor, e.g. `--robust 0.7,1.0,1.25` (T1.25 thermal util 0.98, T1.4 infeasible by physics), or give the 6in a lower --vehicle-mass / bigger motor if 1.4x margin is truly required.
-
 ## Final design (DE best, `designs/6in_tt_strap_steelx_2307.json`; scored with robust T0.7/1.0/1.25, not 1.4)
 - Strip (1095 steel shim, skewed cross-blade, mirror_z): t 0.188 mm, w 10.08 mm, L 4.49 mm, skew 38.9 deg, cross angle 58.3 deg, hinge r 17.38 mm.
 - Strap: aramid yarn, 1 strand d 1.25 mm, length 2.74 mm, pin-wrap on 3.6 mm pin. Blade: PA6-CF solid, 12 stations, root cutout 0.22, precone 0 in the file (precone 1.0-1.3 not tried).
 - Score (`sa.py file`, SA_JHUB=0.58e-6,1.57e-6,3.46e-6, SA_WORKERS=2, Goodman + ground resonance): cr_pl 0.0123, feasible, no hard violations; phase_res 1.34 deg, gain_res 0.176, mech margin 0.094, res_margin 0.207 (pitch sym 0.87/rev vs 1P).
 - sa.py has no throttle env; THRUST_FACTORS/CQ_RPM_RANGE in robust.py (0.7..1.4) were patched at runtime to 0.7..1.25 by a wrapper, so T1.4 was excluded as in "DE debug".
 - Binding: T0.7 and T1.0 motor_torque_1p (current limit, s=1.08/1.09; T1.0 esc_duty_peak 0.58, thermal 0.67); T1.25 motor_thermal (util 0.947, duty 0.66).
-
 ## Vehicle-mass sensitivity (same design, T1.0 trim, one evaluation each)
 | mass kg | rpm | hover I / duty | thermal util | 1P capability use (torque_1p util) |
 |---|---|---|---|---|
@@ -56,7 +54,6 @@ DE finished; see Final design below.
 | 0.70 | 14.2k | 13 A / 0.55 | 0.74 | 0.83 |
 | 0.79 | 15.0k | 14 A / 0.58 | 0.89 | 0.98 |
 Duty/current are from a hand calculation with the motor model (Kt 0.00735, Kv_eff 1342, R+Rb), checked to match the 0.58 above. Authority is not a plain "too much mass" problem at 0.79 kg hover: hover is fine and the pulse just fits, but all margin goes by 1.25x thrust, where the thermal limit binds, and 1.4x is infeasible.
-
 ## Verdict
 - Viable at hover for the 6" Hakea with the 2307 up to about 0.79 kg (1P utilisation 0.98, thermal 0.89), comfortably at <= 0.7 kg (0.83 / 0.74).
 - Throttle range is limited to 0.7-1.25x hover thrust. The 1.4x point is physically unreachable: mean torque exceeds the 40 A limit (the 40 A is a guess).
