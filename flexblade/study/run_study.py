@@ -276,19 +276,58 @@ def np_crossings_info(r1: dict, kmax: int = 6, band: float = 0.10) -> list[str]:
     return out
 
 
-def resonance_margin(r1: dict) -> tuple[float, str]:
+def modal_participation(U: np.ndarray, Phi: np.ndarray) -> np.ndarray:
+    """Share of each mode in a (complex) forced response U ~= Phi q (least squares, all modes in the
+    basis): c_k = |q_k| ||Phi_k|| / sum.  U: (n,), Phi: (n, m) real mode shapes (same dof weighting)."""
+    Phi = np.asarray(Phi, float)
+    q = np.linalg.lstsq(Phi.astype(complex), np.asarray(U, complex), rcond=None)[0]
+    c = np.abs(q) * np.linalg.norm(Phi, axis=0)
+    return c / max(float(c.sum()), 1e-300)
+
+
+def mechanism_mode(r1: dict) -> int | None:
+    """Index (into r1["modes"]) of the cyclic MECHANISM mode = the elastic mode with the largest
+    participation in the 1/rev pulse response (harmonic displacement), not chosen by label.
+    Translations are weighted by 1/R so they are commensurate with rotations."""
+    h = r1.get("harmonic") or {}
+    ms = r1.get("modes") or []
+    rpm = (r1.get("summary") or {}).get("rpm") or (r1.get("trim") or {}).get("rpm")
+    if not ms or not rpm or h.get("displacement_re") is None or any(m.get("shape") is None for m in ms):
+        return None
+    U = np.asarray(h["displacement_re"], float) + 1j * np.asarray(h["displacement_im"], float)
+    nodes = np.asarray(h.get("nodes") or [[1.0, 0, 0]], float)
+    R = max(float(np.max(np.linalg.norm(nodes, axis=1))), 1e-6)
+    w = np.r_[np.full(3, 1.0 / R), np.ones(3)]
+    try:
+        Phi = np.stack([(np.asarray(m["shape"], float) * w).ravel() for m in ms], 1)
+        if Phi.shape[0] != U.size:
+            return None
+        c = modal_participation((U * w).ravel(), Phi)
+    except Exception:  # noqa: BLE001
+        return None
+    f1 = rpm / 60.0
+    c = np.where([m["freq_hz"] >= 0.05 * f1 for m in ms], c, -1.0)   # never the rigid spin
+    return int(np.argmax(c)) if c.max() >= 0 else None
+
+
+def resonance_margin(r1: dict, skip_1p: int | None = None) -> tuple[float, str]:
+    """min damping-aware margin of every elastic mode to 1P (hub modes also 2P).
+    skip_1p: mode index exempt from the 1P check (control_quality criterion: the mechanism
+    mode is judged by cyclic phase/gain spread instead; its 2P check, if hub, is kept)."""
     rpm = (r1.get("summary") or {}).get("rpm") or (r1.get("trim") or {}).get("rpm")
     if not rpm or not r1.get("modes"):
         return float("nan"), "no modes"
     f1 = rpm / 60.0
     best, which = float("inf"), ""
-    for m in r1["modes"]:
+    for i, m in enumerate(r1["modes"]):
         f = m["freq_hz"]
         if f < 0.05 * f1:          # rigid spin
             continue
         z = m.get("damping_ratio")
         hub = (m.get("participation") or {}).get("hub", 0.0) > HUB_MODE_FRAC
         for k in ((1, 2) if hub else (1,)):
+            if k == 1 and i == skip_1p:
+                continue
             mg = abs(f / (k * f1) - 1.0)
             # damping-aware (stability.margin_1p_eff): a well-damped mode near kP counts as the
             # undamped margin with the same amplification, so it is not rejected outright
@@ -323,8 +362,11 @@ def geometry_violations(d: Design) -> dict[str, float]:
     return v
 
 
-def metrics(d: Design, r: dict) -> dict:
-    """Constraint breakdown + headline metrics from a (stripped) Results dict."""
+def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
+    """Constraint breakdown + headline metrics from a (stripped) Results dict.
+    criterion: "margin" (hard 0.15 1P margin on every mode) or "control_quality" (mechanism mode
+    exempt from the 1P margin; judged across the robust set by robust.control_quality)."""
+    criterion = criterion or CRITERION
     out: dict = {}
     viol: dict[str, float] = {}
     util: dict[str, float] = {}
@@ -347,6 +389,14 @@ def metrics(d: Design, r: dict) -> dict:
         sp = (sub.get("summary") or {}).get("trim_diff_pitch_deg", float("nan"))
         splits.append(sp)
         mg, wh = resonance_margin(sub)
+        if criterion == "control_quality":
+            im = mechanism_mode(sub)
+            if im is not None:
+                mm_ = sub["modes"][im]
+                rpm_ = (sub.get("summary") or {}).get("rpm") or 1.0
+                out["mech_mode"] = f"{mm_['label']} {mm_['freq_hz'] * 60 / rpm_:.3f}/rev"
+                out["res_margin_all"], out["res_which_all"] = mg, wh
+                mg, wh = resonance_margin(sub, skip_1p=im)
         margins.append(mg)
         which.append(wh)
     sp = max((abs(x) for x in splits if math.isfinite(x)), default=float("nan"))
@@ -385,6 +435,11 @@ def metrics(d: Design, r: dict) -> dict:
     out["flap_per_rev"] = float(s.get("flap_freq_per_rev", float("nan")))
     out["pitch_per_rev"] = float(s.get("pitch_freq_per_rev", float("nan")))
     out["moment_phase_deg"] = float(s.get("hub_moment_phase_deg", float("nan")))
+    # complex cyclic gain G = mean fixed-frame hub moment / 1P torque pulse (rotor.harmonic_1p):
+    # |G| = moment_per_torque, arg G = moment azimuth relative to the command (torque) peak
+    out["cyc_gain"] = float(s.get("moment_per_torque", h.get("moment_per_torque", float("nan"))))
+    out["cyc_phase_deg"] = out["moment_phase_deg"]
+    out["criterion"] = criterion
     out["rpm"] = float(s.get("rpm", s.get("rpm_upper", float("nan"))))
     out["thrust"] = float(s.get("thrust", s.get("thrust_total", float("nan"))))
     out["fom"] = float((r.get("trim") or {}).get("figure_of_merit", s.get("figure_of_merit", float("nan"))))
@@ -556,7 +611,9 @@ def _round(v: dict) -> dict:
 
 
 ROBUST = None   # thrust factors tuple when --robust
+CRITERION = "margin"   # or "control_quality" (robust.control_quality for the mechanism mode)
 OBJECTIVE = "cr"   # or "pulse_limited" (cr_pl; hard = non-scaling checks only)
+PERTURB = None  # robust tolerance samples (robust.CQ_PERTURB under --criterion control_quality)
 J_HUB = None    # tuple of motor.J_hub values: robust/tolerance dimension
 
 
@@ -576,7 +633,7 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
         designs = [set_design(base, obj.to_values(u)) for u in pop]
-        recs = robust.map_metrics(pool, designs, metrics, ROBUST, None, J_HUB)
+        recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, J_HUB)
         Js = []
         for u, dsg, (mm, err) in zip(pop, designs, recs):
             vals = obj.to_values(u)
@@ -683,6 +740,9 @@ def main(argv=None):
     ap.add_argument("--objective", choices=("cr", "pulse_limited"), default="cr",
                     help="pulse_limited: maximise cr at the pulse that binds the most-utilised "
                          "pulse-scaling check (per-throttle pulse schedule)")
+    ap.add_argument("--criterion", choices=("margin", "control_quality"), default="margin",
+                    help="control_quality: the mechanism mode is judged by cyclic phase/gain spread over "
+                         "throttle x J x 4 fixed +-5%% tolerance samples instead of the 1P margin")
     ap.add_argument("--j-hub", default=None, help="comma list of motor.J_hub values (robust dimension)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
@@ -692,8 +752,10 @@ def main(argv=None):
     ap.add_argument("--redo", action="store_true", help="re-run cases already in cases.jsonl")
     ap.add_argument("--salvage", nargs="*", help="rebuild these cases from evals.jsonl.gz and exit")
     a = ap.parse_args(argv)
-    global ROBUST, OBJECTIVE, J_HUB
+    global ROBUST, OBJECTIVE, J_HUB, CRITERION, PERTURB
     OBJECTIVE = a.objective
+    CRITERION = a.criterion
+    PERTURB = list(robust.CQ_PERTURB) if CRITERION == "control_quality" else None
     J_HUB = tuple(float(x) for x in a.j_hub.split(",")) if a.j_hub else None
     ROBUST = tuple(float(x) for x in a.robust.split(",")) if a.robust else None
     if a.salvage:
