@@ -79,10 +79,25 @@ The forced-response criterion (forced.py) assumes torque harmonics 3 % at 2P, 1 
 ## Laminated strips (studied, NOT the build)
 Studied in study/v6L.py (equal total EI, pulse-limited robust over throttle {0.7,1,1.4} x J_hub {0.92,2.5,5.49}e-6): 2 x 0.13 mm laminae (w 4.49) cr_pl 0.0644, 3 x 0.10 (w 6.57) 0.0613, 4 x 0.10 (w 4.93) 0.0678 but resonance-infeasible; v6 solid 0.0650. Laminates cut the fatigue-bound low-J cases (e.g. T1 J0.92e-6 cr_pl 0.146 -> 0.198 with 2 x 0.13) but the worst case is the motor 1P torque at high J and throttle, which they do not move (<10 %), so the single 0.15 mm strip is built. If you try 2 x 0.13 mm anyway: cut w = 4.49 mm, stack unbonded with a thin film of light oil (e.g. 3-in-1 / sewing-machine oil) between the laminae, epoxy only on the clamp lands, keep oil off the lands, damper layer over the stack.
 
-## Damped isotropic motor mount (air-resonance margin)
-Parts (make_mount.py, STL in this folder): `mount_tube_clamp.stl` (split clamp for a 10 mm tube, bore 10.1, M3 pinch bolt, 22x24x20 block, vertical post d 7.8 with 18 mm flange, M4 tap), `mount_tpu_washer.stl` (TPU 85A, ri 4 / ro 9 / t 10 mm, print 40 % gyroid or equivalent so that the in-plane shear stiffness is 53 kN/m; measure and trim), `mount_carrier.stl` (30x30x4 plate, motor holes M3 on 16x16 and 19x19, central d 9 hole, collar lip d 23). Stack: clamp flange / TPU washer / carrier, carrier hangs on the washer; M4 screw with a large washer 1 mm above the carrier is a bump stop (do not preload it). Axis of the washer = motor axis, so k_x = k_y by construction (G pi (ro^2-ri^2)/t).
-Model (stability.mount_stiffness / mount_modes, `airframe.mount`): k_m = 53 kN/m, eta 0.15 (TPU tan-delta 0.1-0.2, handbook/DMA range, VERIFY on a printed sample with a tap test), motor + carrier 45 g. Hub mode 123-129 Hz (0.67-0.70 x 185), zeta_af 0.063-0.070 (strain-energy estimate matches the complex eigenvalue), arm mode pushed to 240-320 Hz at zeta 0.025-0.03. Tap test: the motor bell on the carrier should ring at ~125 Hz, x and y equal within 5 %.
-Costs: axial sag under 10 N thrust ~55 um; tilt stiffness is low (~4.4 N m/rad), so the 0.1 N m cyclic moment tilts the disc ~1.3 deg relative to the arm (steady, the moment is still carried to the airframe); 1P hub amplitude ~40 um for 2 g mm unbalance (balance the rotor). Reduce the tilt with a larger washer (tilt ~ ro^4) if the flight controller sees it.
+## Damped isotropic motor mount, twin washers, tilt-stiff (air-resonance and tilt-whirl margin)
+**Rule: never tilt-soft-mount a 2-blade rotor.** A single soft washer gives rotating stiffness about the blade axis k_t + Omega^2 (J_p - I_t) that goes negative when the motor+hub transverse inertia I_t exceeds the polar J_p: synchronous 1/rev tilt divergence (the 7in v6 single washer was unstable, zeta -0.09...-0.14). Decouple: translation soft (hub mode <= 0.7 x lowest 1P), tilt stiff (k_t >= 2x Omega_max^2 (I_t - J_p), designed 2.5x at 2x the estimated I_t).
+
+Parts (make_mount.py -> ../mount_twin.py, watertight STLs in this folder, parameters in mount_parts.json): `mount_tube_clamp.stl` (split clamp for a 10 mm tube, bore 10.1, M3 pinch bolt, M4 tap), 2x `mount_tpu_washer.stl` (TPU 85A, ri 4 / ro 8 / t 22 mm, 40 % gyroid), `mount_carrier.stl` (plate + skirt holding both washers, motor holes M3 on 16x16 and 19x19), `mount_post.stl` (d 7.8 rod with two d 16 x 2 flanges on the washer inner faces, M4 at the clamp end), `mount_cap.stl` (retainer ring, M2 x3). Washer centres 76 mm apart. Preload the M4 so BOTH washers carry thrust (then the pair is a stiff tilt joint: tilt k = 2 Ec pi (ro^2-ri^2)/t (d/2)^2 + local term).
+
+Sized (study/mounts_tilt.py): k_lat 35.6 kN/m, k_t 177 N m/rad (rule x2.5 at 2x I_t needs 166), axial k 121 kN/m (sag 0.08 mm per 10 N). Mass on the mount assumed 55 g. Lateral hub mode 122-126 Hz (0.67-0.69 x lowest 1P 183 Hz at T0.7), zeta_af 0.067-0.072. Floquet min zeta over the T x J x arm scan: 0.0043 (estimated I_t), 0.0116 (2x I_t), 0.0123 (3x I_t); all positive. Details: study/results/mounts_tilt.md. TPU properties (G, eta) must be verified on a printed sample (tap test: the motor bell should ring at the hub-mode frequency, x = y within 5 %).
+
+## Bench: transverse inertia I_t of motor + carrier + hub (bifilar about a diameter)
+Measure next to J_p. Hang the motor + hub + carrier (no blades) bifilar from two threads (length l ~ 0.5 m, separation 2a ~ 60 mm) with the rotor axis HORIZONTAL (a bar through the carrier holds it) so the oscillation is a twist about a diameter through the centre of mass (use the cup axis point where the washers sit as the tilt centre; add m h^2 for the offset h of the centre of mass from the tilt centre by the parallel-axis theorem): I = m g a^2 T^2 / (4 pi^2 l). Compare with the estimate I_t_est = 1.62e-05 kg m^2 (0.5 J_p + m (15 mm)^2, J_p = 7.64e-06). Then look up the minimum k_t (rule k_t >= margin x Omega_max^2 (I_t - J_p), Omega_max = 1636 rad/s = 1P at T1.4, J_p = 7.64e-06); the built mount has k_t = 177 N m/rad:
+
+| measured motor+hub I_t (kg m^2) | min k_t at 2x margin (N m/rad) | at 2.5x |
+|---|---|---|
+| 8.10e-06 (0.5x est.) | 2 | 3 |
+| 1.62e-05 (1x est.) | 46 | 57 |
+| 3.24e-05 (2x est.) | 133 | 166 |
+| 4.86e-05 (3x est.) | 219 | 274 |
+| 6.48e-05 (4x est.) | 306 | 382 |
+
+If the measured I_t needs more than the built k_t at 2x margin, lengthen the washer spacing (k_t ~ d^2) before flying. Measure J_p the same way about the axis (existing bifilar section).
 
 ## Minimum-inertia hub build (J_hub itemised)
 Direct-to-bell clamp: the printed hub assembly is screwed straight onto the motor bell (no nut, no adapter). Itemised polar inertia about the rotor axis (the bell stays in J_rotor = 6.99e-6):

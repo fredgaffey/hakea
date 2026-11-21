@@ -1,0 +1,56 @@
+{
+ "ri": 4,
+ "ro": 5.8,
+ "t": 12,
+ "d": 84,
+ "k_lat": 24014.334244040372,
+ "k_t": 145.04163188114958,
+ "k_ax": 81648.73642973727,
+ "parts": {
+  "carrier": {
+   "watertight": true,
+   "extents": [
+    30.0,
+    30.0,
+    100.0
+   ],
+   "cm3": 10.7
+  },
+  "cap": {
+   "watertight": true,
+   "extents": [
+    16.0,
+    16.0,
+    2.0
+   ],
+   "cm3": 0.27
+  },
+  "clamp": {
+   "watertight": true,
+   "extents": [
+    22.0,
+    24.0,
+    34.0
+   ],
+   "cm3": 8.94
+  },
+  "washer": {
+   "watertight": true,
+   "extents": [
+    11.6,
+    11.6,
+    12.0
+   ],
+   "cm3": 0.66
+  },
+  "post": {
+   "watertight": true,
+   "extents": [
+    11.6,
+    11.6,
+    102.0
+   ],
+   "cm3": 5.1
+  }
+ }
+}
