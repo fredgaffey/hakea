@@ -52,7 +52,7 @@ def test_blade_vars_and_core_fraction():
     assert "blade.chord_scale" not in {v.path for v in rs.variables("tt_strap_steelx", 10.0)}
     d = Design()
     d = d.model_copy(update=dict(blade=d.blade.model_copy(update=dict(
-        stations=[BladeStation(r_frac=0.5, chord=0.04)]))))
+        stations=[BladeStation(r_frac=0.5, chord=0.04, twist_deg=10.0)]))))
     d2 = set_design(set_design(d, {"blade.chord_scale": 1.3}), {"blade.chord_scale": 1.3})
     assert abs(d2.blade.stations[0].chord - 0.052) < 1e-12
 
