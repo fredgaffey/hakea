@@ -1,0 +1,400 @@
+{
+ "v5": {
+  "x": {},
+  "cr_pl": 0.08221596674584668,
+  "feasible": true,
+  "viol": {},
+  "phase": 6.81522017668185,
+  "gain": 0.1496597531883621,
+  "auth": 0.7451020850243356,
+  "mech": 0.06366967181360239,
+  "flip": false,
+  "cq_ratio": 1.6704557816913503,
+  "other_margin": 0.166791639809603,
+  "other_which": "pitch sym+hub 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.08221596674584668
+ },
+ "L23": {
+  "x": {
+   "flexure.length": 0.023
+  },
+  "cr_pl": 0.09360137484771447,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.0951
+  },
+  "phase": 11.712256521539127,
+  "gain": 0.1691544329516857,
+  "auth": 0.6409753238434558,
+  "mech": 0.027148473548334384,
+  "flip": false,
+  "cq_ratio": 0.9049491182778129,
+  "other_margin": 0.1993067471291039,
+  "other_which": "pitch sym 1.20/rev vs 1P",
+  "cr_pl_margin_crit": 0.09360137484771447
+ },
+ "L21": {
+  "x": {
+   "flexure.length": 0.021
+  },
+  "cr_pl": 0.10841535731278555,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.883,
+   "cqc_mech_side": 1.0
+  },
+  "phase": 14.976867466619138,
+  "gain": 0.20043889759388153,
+  "auth": 0.5388129983630923,
+  "mech": 0.003509991841457949,
+  "flip": true,
+  "cq_ratio": 0,
+  "other_margin": 0.24350213106962304,
+  "other_which": "pitch sym 1.24/rev vs 1P",
+  "cr_pl_margin_crit": 0.10841535731278555
+ },
+ "L22": {
+  "x": {
+   "flexure.length": 0.022
+  },
+  "cr_pl": 0.10033192354416474,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.6712
+  },
+  "phase": 14.532085594757392,
+  "gain": 0.18012563242594162,
+  "auth": 0.5846546377195241,
+  "mech": 0.009865097600418538,
+  "flip": false,
+  "cq_ratio": 0.32883658668061794,
+  "other_margin": 0.21903663838951126,
+  "other_which": "pitch sym 1.22/rev vs 1P",
+  "cr_pl_margin_crit": 0.10033192354416474
+ },
+ "skew57": {
+  "x": {
+   "flexure.skew_deg": 57.0
+  },
+  "cr_pl": 0.10405138661087948,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.1171
+  },
+  "phase": 12.163693188648937,
+  "gain": 0.14832515619732092,
+  "auth": 0.6961728411537668,
+  "mech": 0.0264869645394481,
+  "flip": false,
+  "cq_ratio": 0.8828988179816033,
+  "other_margin": 0.17137302037845714,
+  "other_which": "pitch sym 1.17/rev vs 1P",
+  "cr_pl_margin_crit": 0.10405138661087948
+ },
+ "skew63": {
+  "x": {
+   "flexure.skew_deg": 63.0
+  },
+  "cr_pl": 0.06265344805980916,
+  "feasible": true,
+  "viol": {},
+  "phase": 3.222060610176179,
+  "gain": 0.1217779021205344,
+  "auth": 0.7828361848888722,
+  "mech": 0.1028602068403871,
+  "flip": false,
+  "cq_ratio": 2.052917611871428,
+  "other_margin": 0.1615398022337049,
+  "other_which": "pitch sym+hub 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.06265344805980916
+ },
+ "hr-5": {
+  "x": {
+   "flexure.hinge_radius": 0.020425
+  },
+  "cr_pl": 0.07509266321496197,
+  "feasible": true,
+  "viol": {},
+  "phase": 4.86996149683279,
+  "gain": 0.13880512698328834,
+  "auth": 0.7634391574128536,
+  "mech": 0.08290364461803235,
+  "flip": false,
+  "cq_ratio": 1.801086209373946,
+  "other_margin": 0.157853454493051,
+  "other_which": "pitch sym 1.15/rev vs 1P",
+  "cr_pl_margin_crit": 0.07509266321496197
+ },
+ "v4L22.7": {
+  "x": {
+   "base": "v4",
+   "flexure.length": 0.0227
+  },
+  "cr_pl": 0.08549980437758206,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.3615
+  },
+  "phase": 14.367823923072066,
+  "gain": 0.20068813770214983,
+  "auth": 0.5978875853387641,
+  "mech": 0.01915601548823309,
+  "flip": false,
+  "cq_ratio": 0.6385338496077697,
+  "other_margin": 0.21758919624759931,
+  "other_which": "pitch sym 1.21/rev vs 1P",
+  "cr_pl_margin_crit": 0.08549980437758206
+ },
+ "v4L22.0": {
+  "x": {
+   "base": "v4",
+   "flexure.length": 0.022
+  },
+  "cr_pl": 0.09000528236851517,
+  "feasible": false,
+  "viol": {
+   "cqc_phase": 0.0728,
+   "cqc_mech_margin": 0.7992
+  },
+  "phase": 16.091525131649675,
+  "gain": 0.22616820160430323,
+  "auth": 0.551128086463564,
+  "mech": 0.006022968298341036,
+  "flip": false,
+  "cq_ratio": 0.20076560994470122,
+  "other_margin": 0.2331202837123454,
+  "other_which": "pitch sym 1.23/rev vs 1P",
+  "cr_pl_margin_crit": 0.09000528236851517
+ },
+ "skew58": {
+  "x": {
+   "flexure.skew_deg": 58.0
+  },
+  "cr_pl": 0.10037662601663876,
+  "feasible": true,
+  "viol": {},
+  "phase": 10.813964497759653,
+  "gain": 0.15636131076772242,
+  "auth": 0.7129761469707139,
+  "mech": 0.038571019009580154,
+  "flip": false,
+  "cq_ratio": 1.285700633652672,
+  "other_margin": 0.1699134954350776,
+  "other_which": "pitch sym 1.17/rev vs 1P",
+  "cr_pl_margin_crit": 0.10037662601663876
+ },
+ "skew56hr-5": {
+  "x": {
+   "flexure.skew_deg": 56.0,
+   "flexure.hinge_radius": 0.020425
+  },
+  "cr_pl": 0.10105977530314378,
+  "feasible": false,
+  "viol": {
+   "check:aeroelastic_stability": 0.4238,
+   "geom:flexure_inside_hub": 0.0089
+  },
+  "phase": 11.136266969933075,
+  "gain": 0.15816467040384308,
+  "auth": 0.7056782774957885,
+  "mech": 0.034149114949374004,
+  "flip": false,
+  "cq_ratio": 1.1383038316458003,
+  "other_margin": 0.16341838445433843,
+  "other_which": "pitch sym 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.10105977530314378
+ },
+ "skew58.5": {
+  "x": {
+   "flexure.skew_deg": 58.5
+  },
+  "cr_pl": 0.09602602500890423,
+  "feasible": true,
+  "viol": {},
+  "phase": 9.853557511060126,
+  "gain": 0.15750557649179445,
+  "auth": 0.7213879479655974,
+  "mech": 0.044737572737889364,
+  "flip": false,
+  "cq_ratio": 1.4912524245963121,
+  "other_margin": 0.16915933625601354,
+  "other_which": "pitch sym+hub 1.17/rev vs 1P",
+  "cr_pl_margin_crit": 0.09602602500890423
+ },
+ "skew55hr-5": {
+  "x": {
+   "flexure.skew_deg": 55.0,
+   "flexure.hinge_radius": 0.020425
+  },
+  "cr_pl": 0.10479734934360399,
+  "feasible": false,
+  "viol": {
+   "check:aeroelastic_stability": 0.836,
+   "geom:flexure_inside_hub": 0.0132,
+   "cqc_mech_margin": 0.2338
+  },
+  "phase": 12.21684720184923,
+  "gain": 0.15133179789932324,
+  "auth": 0.6898472621985281,
+  "mech": 0.022985806873013104,
+  "flip": false,
+  "cq_ratio": 0.7661935624337701,
+  "other_margin": 0.1647036719159798,
+  "other_which": "flap sym 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.10479734934360399
+ },
+ "v4L23.3": {
+  "x": {
+   "base": "v4",
+   "flexure.length": 0.0233
+  },
+  "cr_pl": 0.08207985413344662,
+  "feasible": true,
+  "viol": {},
+  "phase": 12.714922309977839,
+  "gain": 0.19765677876483803,
+  "auth": 0.6386512324032527,
+  "mech": 0.031004238931334638,
+  "flip": false,
+  "cq_ratio": 1.033474631044488,
+  "other_margin": 0.20589226246379466,
+  "other_which": "pitch sym 1.20/rev vs 1P",
+  "cr_pl_margin_crit": 0.08207985413344662
+ },
+ "tol:v6": {
+  "n_pass": 7,
+  "n": 9,
+  "cases": {
+   "nominal": {
+    "cr_pl": 0.09602602500890423,
+    "feasible": true,
+    "viol": {},
+    "phase": 9.853557511060126,
+    "gain": 0.15750557649179445,
+    "auth": 0.7213879479655974,
+    "mech": 0.04473757258611244,
+    "flip": false,
+    "cq_ratio": 1.4912524195370813,
+    "other_margin": 0.16915933631071622,
+    "other_which": "pitch sym+hub 1.17/rev vs 1P",
+    "cr_pl_margin_crit": 0.09602602500890423
+   },
+   "random00": {
+    "cr_pl": 0.09630254521596006,
+    "feasible": true,
+    "viol": {},
+    "phase": 7.566594864083298,
+    "gain": 0.14430167668157373,
+    "auth": 0.7627283773094535,
+    "mech": 0.05521992107894358,
+    "flip": false,
+    "cq_ratio": 1.7324816020791474,
+    "other_margin": 0.15546898286238942,
+    "other_which": "pitch sym+hub 1.15/rev vs 1P",
+    "cr_pl_margin_crit": 0.09630254521596006
+   },
+   "random01": {
+    "cr_pl": 0.08828459766431097,
+    "feasible": true,
+    "viol": {},
+    "phase": 9.000819369282768,
+    "gain": 0.15761930004505026,
+    "auth": 0.6987959665886063,
+    "mech": 0.04490539337609245,
+    "flip": false,
+    "cq_ratio": 1.4968464458697484,
+    "other_margin": 0.1814870813846452,
+    "other_which": "pitch sym 1.18/rev vs 1P",
+    "cr_pl_margin_crit": 0.08828459766431097
+   },
+   "random02": {
+    "cr_pl": 0.0886473404435523,
+    "feasible": true,
+    "viol": {},
+    "phase": 10.886003666291444,
+    "gain": 0.165007212764135,
+    "auth": 0.686733637854252,
+    "mech": 0.03711770244494217,
+    "flip": false,
+    "cq_ratio": 1.237256748164739,
+    "other_margin": 0.18211702993533496,
+    "other_which": "pitch sym+hub 1.18/rev vs 1P",
+    "cr_pl_margin_crit": 0.0886473404435523
+   },
+   "random03": {
+    "cr_pl": 0.09639889424695033,
+    "feasible": true,
+    "viol": {},
+    "phase": 10.055487969321756,
+    "gain": 0.15211353885696444,
+    "auth": 0.7167205529475319,
+    "mech": 0.041933722047057476,
+    "flip": false,
+    "cq_ratio": 1.3977907349019159,
+    "other_margin": 0.17163897838838027,
+    "other_which": "pitch sym 1.17/rev vs 1P",
+    "cr_pl_margin_crit": 0.09639889424695033
+   },
+   "random04": {
+    "cr_pl": 0.0897595087390753,
+    "feasible": true,
+    "viol": {},
+    "phase": 11.069626828091714,
+    "gain": 0.1791924576254589,
+    "auth": 0.7040194052869152,
+    "mech": 0.04634715201242878,
+    "flip": false,
+    "cq_ratio": 1.3550592294524386,
+    "other_margin": 0.17108922499549828,
+    "other_which": "pitch sym 1.17/rev vs 1P",
+    "cr_pl_margin_crit": 0.0897595087390753
+   },
+   "random05": {
+    "cr_pl": 0.09074181897712427,
+    "feasible": true,
+    "viol": {},
+    "phase": 7.161336802012801,
+    "gain": 0.1441885949201988,
+    "auth": 0.7431315404952507,
+    "mech": 0.059844915636879215,
+    "flip": false,
+    "cq_ratio": 1.7338403230738362,
+    "other_margin": 0.15952404209077864,
+    "other_which": "pitch sym 1.16/rev vs 1P",
+    "cr_pl_margin_crit": 0.09074181897712427
+   },
+   "random06": {
+    "cr_pl": 0.09238630948317585,
+    "feasible": false,
+    "viol": {
+     "cqc_mech_margin": 0.5908
+    },
+    "phase": 14.288785078688345,
+    "gain": 0.2082636565962805,
+    "auth": 0.5797220657159466,
+    "mech": 0.012275155716021113,
+    "flip": false,
+    "cq_ratio": 0.4091718572007038,
+    "other_margin": 0.20713702421947766,
+    "other_which": "pitch sym 1.20/rev vs 1P",
+    "cr_pl_margin_crit": 0.09238630948317585
+   },
+   "random07": {
+    "cr_pl": 0.07346214972758162,
+    "feasible": false,
+    "viol": {
+     "resonance": 0.0594
+    },
+    "phase": 2.9239602116836227,
+    "gain": 0.10953140253789964,
+    "auth": 0.830559013303547,
+    "mech": 0.1042895244448463,
+    "flip": false,
+    "cq_ratio": 2.2824504590224337,
+    "other_margin": 0.1410895744087437,
+    "other_which": "pitch sym 1.14/rev vs 1P",
+    "cr_pl_margin_crit": 0.07346214972758162
+   }
+  }
+ }
+}
