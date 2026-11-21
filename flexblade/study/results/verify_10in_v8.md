@@ -21,3 +21,18 @@ Tools: study/i34tools/tol.py (tolerance), study/verify_10in_v5.py ccx 10in_tt_st
 
 ## Verdict
 Stiffness pass (<= 11 %, 20 % limit). Preset/hover pass/fail NOT established. Tolerance: v8 is worse than v5 on resonance.
+
+## 3. Loaded preset strip (study/ccx_preset_strip.py; one 0.1 mm lamina, hex20 40x12x2, NLGEOM)
+- Clamp frames = R_node @ Q_slot from the beam hover solve (preset included); relative blade-clamp motion imposed.
+  Binding strip b2.flex0 (preset hub 4.38 / blade -3.87 deg): hover u_z -2.81/-2.92 mm, theta_y 12.2/12.7 deg (T0.7/T1).
+- All-6-DOF imposition is ill-conditioned (axial misfit of ~7 um -> -58 MPa membrane, past Euler; ccx 3-10x beam).
+  Used mixed BCs: u_z, theta_x, theta_y imposed; u_x, u_y, theta_z free (beam N ~ 0). Membrane then agrees (<1 MPa).
+- Beam sigma_m 219 MPa (T0.7) is the strip max at an INTERIOR element end; at the clamp edges beam sm(xKt 1.05) is 150 hub / 79 blade.
+- Clamp-edge surface stress, ccx median over width vs beam out-of-plane bending (in-plane, free in ccx, is 31-38 hub / 1-5 blade):
+  T0.7 hub 110 vs 112 (-2 %), blade 80 vs 72 (+11 %); T1.0 hub 113 vs 187 (-40 %), blade 84 vs 111 (-25 %).
+  vs full beam sm: T0.7 0.77 / 1.05, T1.0 0.50 / 0.75 (hub / blade).
+- Verdict: T0.7 PASS (out-of-plane, <=11 %); T1.0 FAIL (beam 25-40 % HIGHER than ccx, conservative). ccx stress barely moves
+  T0.7->T1 (end kinematics nearly equal); the beam's jump and its interior 219/265 MPa peak are not reproduced -> look at
+  the beam strip discretisation/slot-frame stress recovery (not investigated). Beam in-plane part unchecked.
+- Principal-axis offset (axis stage, beam flexure_only_model): v8 0.453 deg, v8 presets=0 0.0008 deg, v8 skew60 0.456 deg,
+  skew60 presets=0 0.0008 deg -> caused by the (blade-asymmetric) strip presets, not by the skew.
