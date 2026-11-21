@@ -105,7 +105,7 @@ def hinge_axis(design: Design, blade: int = 1) -> tuple[np.ndarray, np.ndarray]:
     """(point, unit direction) of the virtual lag hinge for blade 1 (or 2: mirrored)."""
     f = design.flexure
     d = np.radians(f.skew_deg)
-    s = 1.0 if blade % 2 == 1 else -1.0
+    s = 1.0 if (blade % 2 == 1 or getattr(f, "blade2_flexure", "mirror_z") == "c2") else -1.0
     return np.array([f.hinge_radius, 0.0, 0.0]), np.array([s * np.sin(d), 0.0, -np.cos(d)])
 
 
@@ -343,10 +343,20 @@ def strap_members(design: Design, others: list[FlexureMember] | None = None) -> 
     return out
 
 
-def mirror_member(m: FlexureMember) -> FlexureMember:
-    """Mirror z → −z (blade-2 flexure in its own blade frame)."""
+def blade_flexure_T(design: Design, k: int) -> np.ndarray:
+    """Point map blade-1 flexure → blade-k flexure in blade k's own frame (flexure.blade2_flexure):
+    mirror_z diag(1,1,−1) (default), rot_x diag(1,−1,−1) (180° about the pitch axis), c2 identity."""
+    mode = getattr(design.flexure, "blade2_flexure", "mirror_z")
+    if k % 2 == 1 or mode == "c2":
+        return np.eye(3)
+    return np.diag([1.0, -1.0, -1.0]) if mode == "rot_x" else np.diag([1.0, 1.0, -1.0])
+
+
+def mirror_member(m: FlexureMember, T: np.ndarray | None = None) -> FlexureMember:
+    """Map by T (default mirror z → −z): blade-2 flexure in its own blade frame."""
+    T = np.diag([1.0, 1.0, -1.0]) if T is None else np.asarray(T, float)
     def mz(v):
-        return (float(v[0]), float(v[1]), float(-v[2]))
+        return tuple(map(float, T @ np.asarray(v, float)))
     o = m.orientation
     return m.model_copy(update=dict(
         p0=mz(m.p0), p1=mz(m.p1), width_dir=mz(m.width_dir),
