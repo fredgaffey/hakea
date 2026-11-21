@@ -11,6 +11,7 @@ def test_parser_and_resolve_called(monkeypatch):
     monkeypatch.setattr(rs, "RESOLVE_PRESETS", 0)
     assert rs._resolve_all(["x"]) == ["x"] and not calls
     monkeypatch.setattr(rs, "RESOLVE_PRESETS", 6)
+    monkeypatch.setattr(rs, "RESOLVE_WORKERS", 1)  # in-process so calls are visible
     assert rs._resolve_all(["a", "b"]) == ["a", "b"] and calls == [6, 6]
     # parser: flag accepted bare (6) and with N, via main's salvage-free early exit path
     import argparse

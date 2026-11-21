@@ -726,16 +726,27 @@ def resolve_candidate(d: Design, iters: int, alpha: float = PRESET_ALPHA, info: 
     return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_preset_deg=p))))
 
 
+def _resolve_one(d: Design) -> Design:
+    try:
+        return resolve_candidate(d, RESOLVE_PRESETS)
+    except Exception:  # noqa: BLE001  keep stale presets rather than lose the candidate
+        return d
+
+
+RESOLVE_WORKERS = int(os.environ.get("RESOLVE_WORKERS", "16"))
+
+
 def _resolve_all(designs: list[Design]) -> list[Design]:
+    """Processes (fork), not threads: the re-solve is GIL-bound Python. Runs between DE
+    evaluation phases, so it reuses the idle local cores without oversubscribing."""
     if not RESOLVE_PRESETS:
         return designs
-    def one(d):
-        try:
-            return resolve_candidate(d, RESOLVE_PRESETS)
-        except Exception:  # noqa: BLE001  keep stale presets rather than lose the candidate
-            return d
-    with ThreadPoolExecutor(max_workers=max(1, min(len(designs), os.cpu_count() or 1))) as ex:
-        return list(ex.map(one, designs))
+    n = max(1, min(len(designs), RESOLVE_WORKERS))
+    if n == 1:
+        return [_resolve_one(d) for d in designs]
+    import multiprocessing as mp
+    with mp.get_context("fork").Pool(n) as pool:
+        return pool.map(_resolve_one, designs, chunksize=1)
 
 
 def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, popmult: int,
