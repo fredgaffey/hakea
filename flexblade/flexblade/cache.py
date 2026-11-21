@@ -62,10 +62,16 @@ def _round(o):
     return o
 
 
+def _tol_tag() -> str:
+    """active opt-in robust tolerance set; empty (key unchanged) for the default set"""
+    t = os.environ.get("CQ_TOL")
+    return f"|tol={t}" if t else ""
+
+
 def make_key(design, kind: str = "") -> str:
     d = design.model_dump(mode="json") if hasattr(design, "model_dump") else design
     s = json.dumps(_round(d), sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(f"{s}|{kind}|{model_version()}".encode()).hexdigest()
+    return hashlib.sha256(f"{s}|{kind}|{model_version()}{_tol_tag()}".encode()).hexdigest()
 
 
 def _db() -> sqlite3.Connection | None:
