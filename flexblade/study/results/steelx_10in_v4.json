@@ -1,0 +1,2987 @@
+{
+ "diag": {
+  "v3": {
+   "cr": {
+    "T0.7": 0.06091906487734452,
+    "T1": 0.034651631511910766,
+    "T1.4": 0.019875912789800918
+   },
+   "cr_min": 0.019875912789800918,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.24212836680578162,
+    "check:fatigue_stress": 0.11748110409939704,
+    "check:aeroelastic_stability": 6.907755278982137,
+    "resonance": 0.8882005116407967,
+    "check:harmonic_jitter": 1.260872841705057,
+    "check:pitch_cf_ratio": 6.907755278982137
+   },
+   "res_margin": 0.016769923253880492,
+   "res_which": "pitch antisym+hub 1.97/rev vs 2P",
+   "np_info": [
+    "flap antisym 3.71/rev ~ 4P (zeta 0.0127)",
+    "flap antisym 4.08/rev ~ 4P (zeta 0.0125)",
+    "flap antisym 4.61/rev ~ 5P (zeta 0.0123)",
+    "pitch antisym+hub 1.94/rev ~ 2P (zeta 0.0032)",
+    "pitch antisym+hub 1.97/rev ~ 2P (zeta 0.0040)"
+   ],
+   "fatigue": 1.2739577162032127,
+   "jitter": 3.5284999655841016,
+   "min_zeta": -0.0046345567781250156,
+   "strain_1p": 0.001761492503457754,
+   "pcf": {
+    "T0.7": 0.594,
+    "T1": Infinity,
+    "T1.4": 0.334
+   },
+   "k_struct": {
+    "T0.7": -0.4055,
+    "T1": -0.5144,
+    "T1.4": -4.087
+   },
+   "M_cyc": {
+    "T0.7": 0.09013284886347088,
+    "T1": 0.07324121115741594,
+    "T1.4": 0.058814843829715226
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.606,
+     0.0406
+    ],
+    [
+     "pitch antisym+hub",
+     0.768,
+     0.0524
+    ],
+    [
+     "pitch sym",
+     1.065,
+     0.0405
+    ],
+    [
+     "flap antisym",
+     1.168,
+     0.0113
+    ],
+    [
+     "pitch sym",
+     1.528,
+     -0.0007
+    ],
+    [
+     "pitch antisym+hub",
+     1.969,
+     0.004
+    ],
+    [
+     "flap antisym",
+     4.084,
+     0.0125
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.272,
+    "blade": 0.259,
+    "flex0": 1.125,
+    "flex1": 0.548,
+    "flex2": 1.274
+   }
+  },
+  "7in_tt_strap_steelx_v5": {
+   "cr": {
+    "T0.7": 0.1608004176216542,
+    "T1": 0.09178538626576602,
+    "T1.4": 0.04902549841950666
+   },
+   "cr_min": 0.04902549841950666,
+   "feasible": true,
+   "viol": {},
+   "res_margin": 0.2744539162262567,
+   "res_which": "pitch sym 1.27/rev vs 1P",
+   "np_info": [
+    "flap sym 1.84/rev ~ 2P (zeta 0.0368)",
+    "pitch sym 2.79/rev ~ 3P (zeta 0.0250)",
+    "pitch sym 3.29/rev ~ 3P (zeta 0.0272)",
+    "pitch sym 3.76/rev ~ 4P (zeta 0.0243)",
+    "pitch sym 4.33/rev ~ 4P (zeta 0.0219)",
+    "pitch sym 5.10/rev ~ 5P (zeta 0.0199)",
+    "pitch sym 5.44/rev ~ 5P (zeta 0.0197)",
+    "pitch sym 5.44/rev ~ 6P (zeta 0.0197)",
+    "pitch sym 6.00/rev ~ 6P (zeta 0.0181)"
+   ],
+   "fatigue": 0.686472846374201,
+   "jitter": 0.4834066618757245,
+   "min_zeta": 0.01806716521067992,
+   "strain_1p": 0.0015575497322026233,
+   "pcf": {
+    "T0.7": 0.118,
+    "T1": 0.14,
+    "T1.4": 0.169
+   },
+   "k_struct": {
+    "T0.7": 0.0098,
+    "T1": -0.0395,
+    "T1.4": -0.0815
+   },
+   "M_cyc": {
+    "T0.7": 0.09753272078140801,
+    "T1": 0.07953140725520734,
+    "T1.4": 0.05947236107022634
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.554,
+     0.0359
+    ],
+    [
+     "pitch antisym+hub",
+     0.831,
+     0.0215
+    ],
+    [
+     "flap antisym",
+     1.288,
+     0.0433
+    ],
+    [
+     "flap sym",
+     1.625,
+     0.0411
+    ],
+    [
+     "pitch sym",
+     2.794,
+     0.025
+    ],
+    [
+     "pitch sym",
+     3.762,
+     0.0243
+    ],
+    [
+     "pitch sym",
+     5.098,
+     0.0199
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.237,
+    "blade": 0.236,
+    "flex0": 0.655,
+    "flex1": 0.686,
+    "flex2": 0.562
+   }
+  },
+  "7in_tt_strap_steelx_v5L": {
+   "cr": {
+    "T0.7": 0.15038332824958145,
+    "T1": 0.09233331625542904,
+    "T1.4": 0.05311779487810235
+   },
+   "cr_min": 0.05311779487810235,
+   "feasible": true,
+   "viol": {},
+   "res_margin": 0.25680166538067395,
+   "res_which": "flap antisym 1.25/rev vs 1P",
+   "np_info": [
+    "flap sym 1.84/rev ~ 2P (zeta 0.0368)",
+    "pitch sym 2.88/rev ~ 3P (zeta 0.0282)",
+    "pitch sym 3.64/rev ~ 4P (zeta 0.0311)",
+    "pitch sym 4.52/rev ~ 5P (zeta 0.0222)",
+    "pitch sym 5.17/rev ~ 5P (zeta 0.0209)",
+    "pitch sym 5.30/rev ~ 5P (zeta 0.0201)",
+    "pitch sym 6.24/rev ~ 6P (zeta 0.0182)"
+   ],
+   "fatigue": 0.5153004537110067,
+   "jitter": 0.44097426810077855,
+   "min_zeta": 0.01824220175517497,
+   "strain_1p": 0.001020611492793821,
+   "pcf": {
+    "T0.7": 0.116,
+    "T1": 0.138,
+    "T1.4": 0.158
+   },
+   "k_struct": {
+    "T0.7": 0.0272,
+    "T1": -0.0055,
+    "T1.4": -0.0309
+   },
+   "M_cyc": {
+    "T0.7": 0.09121428526918254,
+    "T1": 0.08000618483068163,
+    "T1.4": 0.06443668658323681
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.552,
+     0.0387
+    ],
+    [
+     "pitch antisym+hub",
+     0.816,
+     0.0246
+    ],
+    [
+     "flap antisym",
+     1.322,
+     0.0457
+    ],
+    [
+     "flap sym",
+     1.562,
+     0.0425
+    ],
+    [
+     "pitch sym",
+     2.876,
+     0.0282
+    ],
+    [
+     "pitch antisym",
+     3.507,
+     0.024
+    ],
+    [
+     "pitch sym",
+     5.3,
+     0.0201
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.229,
+    "blade": 0.227,
+    "flex0": 0.437,
+    "flex1": 0.378,
+    "flex2": 0.515
+   }
+  }
+ },
+ "batch": {
+  "A": {
+   "cr": {
+    "T0.7": 0.20546475148376128,
+    "T1": 0.12133527122355457,
+    "T1.4": 0.06079222463730038
+   },
+   "cr_min": 0.06079222463730038,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.5806059028489182,
+    "check:fatigue_stress": 0.7068882076699496,
+    "resonance": 0.1082054721483052
+   },
+   "res_margin": 0.13376917917775422,
+   "res_which": "pitch sym 1.13/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.47/rev ~ 5P (zeta 0.0134)",
+    "flap antisym 5.47/rev ~ 6P (zeta 0.0134)",
+    "flap sym 1.94/rev ~ 2P (zeta 0.0281)",
+    "pitch antisym 4.76/rev ~ 5P (zeta 0.0130)",
+    "pitch antisym 5.84/rev ~ 6P (zeta 0.0104)",
+    "pitch sym 2.76/rev ~ 3P (zeta 0.0108)",
+    "pitch sym 3.01/rev ~ 3P (zeta 0.0101)",
+    "pitch sym 3.70/rev ~ 4P (zeta 0.0129)",
+    "pitch sym 4.69/rev ~ 5P (zeta 0.0125)"
+   ],
+   "fatigue": 2.0276717378663096,
+   "jitter": 0.16035774646866935,
+   "min_zeta": 0.009531117174744586,
+   "strain_1p": 0.0023289557181296046,
+   "pcf": {
+    "T0.7": 0.083,
+    "T1": 0.088,
+    "T1.4": 0.097
+   },
+   "k_struct": {
+    "T0.7": -0.0544,
+    "T1": -0.1147,
+    "T1.4": -0.1934
+   },
+   "M_cyc": {
+    "T0.7": 0.30399552963498666,
+    "T1": 0.25645956143427373,
+    "T1.4": 0.17989036457930652
+   },
+   "fat_np": {
+    "T0.7": 0.184,
+    "T1": 0.045,
+    "T1.4": 0.016
+   },
+   "e1p": {
+    "T0.7": 2.329,
+    "T1": 1.813,
+    "T1.4": 1.764
+   },
+   "near1p": {
+    "T0.7": [
+     0.856,
+     0.036
+    ],
+    "T1": [
+     0.86,
+     0.037
+    ],
+    "T1.4": [
+     1.127,
+     0.035
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.542,
+     0.0186
+    ],
+    [
+     "pitch antisym+hub",
+     0.86,
+     0.0372
+    ],
+    [
+     "flap sym",
+     1.168,
+     0.0358
+    ],
+    [
+     "flap sym",
+     1.733,
+     0.029
+    ],
+    [
+     "pitch sym",
+     2.755,
+     0.0108
+    ],
+    [
+     "pitch sym",
+     4.695,
+     0.0125
+    ],
+    [
+     "pitch antisym",
+     4.757,
+     0.013
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.22,
+    "blade": 0.228,
+    "flex0": 2.028,
+    "flex1": 0.966,
+    "flex2": 1.483
+   },
+   "x": {}
+  },
+  "B_L30": {
+   "cr": {
+    "T0.7": 0.16376527408995356,
+    "T1": 0.10431030759191541,
+    "T1.4": 0.06087482855543405
+   },
+   "cr_min": 0.06087482855543405,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.6771263279549811,
+    "check:fatigue_stress": 0.8023164851588146,
+    "resonance": 0.5874831558960283
+   },
+   "res_margin": 0.06187752661559576,
+   "res_which": "pitch sym 1.04/rev vs 1P",
+   "np_info": [
+    "pitch antisym 3.96/rev ~ 4P (zeta 0.0100)",
+    "pitch antisym+hub 3.07/rev ~ 3P (zeta 0.0130)",
+    "pitch sym 2.73/rev ~ 3P (zeta 0.0092)",
+    "pitch sym 3.64/rev ~ 4P (zeta 0.0080)"
+   ],
+   "fatigue": 2.2307023368785632,
+   "jitter": 0.41947944447721175,
+   "min_zeta": 0.008022365777028579,
+   "strain_1p": 0.003946739050680194,
+   "pcf": {
+    "T0.7": 0.093,
+    "T1": 0.11,
+    "T1.4": 0.128
+   },
+   "k_struct": {
+    "T0.7": -0.0709,
+    "T1": -0.1522,
+    "T1.4": -0.2941
+   },
+   "M_cyc": {
+    "T0.7": 0.24229903607932876,
+    "T1": 0.2204748501267093,
+    "T1.4": 0.18013479795935472
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.557,
+     0.028
+    ],
+    [
+     "pitch antisym+hub",
+     0.851,
+     0.05
+    ],
+    [
+     "pitch sym",
+     1.075,
+     0.0326
+    ],
+    [
+     "flap antisym",
+     1.328,
+     0.0215
+    ],
+    [
+     "pitch sym",
+     2.727,
+     0.0092
+    ],
+    [
+     "pitch antisym+hub",
+     3.065,
+     0.013
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.093,
+    "blade": 0.09,
+    "flex0": 2.231,
+    "flex1": 0.795,
+    "flex2": 1.968
+   },
+   "x": {
+    "flexure.length": 0.03
+   }
+  },
+  "C_x115": {
+   "cr": {
+    "T0.7": 0.2149057085058624,
+    "T1": 0.1211289289742947,
+    "T1.4": 0.07027939699155555
+   },
+   "cr_min": 0.07027939699155555,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.4119925479177737,
+    "check:fatigue_stress": 0.475861431623839,
+    "check:harmonic_jitter": 0.8551288089229931,
+    "resonance": 0.6362374285799598
+   },
+   "res_margin": 0.054564385713006036,
+   "res_which": "pitch sym+hub 2.11/rev vs 2P",
+   "np_info": [
+    "flap sym 1.86/rev ~ 2P (zeta 0.0285)",
+    "pitch antisym 4.78/rev ~ 5P (zeta 0.0130)",
+    "pitch antisym 5.79/rev ~ 6P (zeta 0.0106)",
+    "pitch sym 2.93/rev ~ 3P (zeta 0.0103)",
+    "pitch sym 3.14/rev ~ 3P (zeta 0.0097)",
+    "pitch sym 3.80/rev ~ 4P (zeta 0.0141)",
+    "pitch sym 4.71/rev ~ 5P (zeta 0.0129)",
+    "pitch sym 5.50/rev ~ 5P (zeta 0.0135)",
+    "pitch sym 5.50/rev ~ 6P (zeta 0.0135)",
+    "pitch sym+hub 2.11/rev ~ 2P (zeta 0.0104)"
+   ],
+   "fatigue": 1.6093999885635129,
+   "jitter": 2.3516772780839497,
+   "min_zeta": 0.009741566266264188,
+   "strain_1p": 0.00284479922975393,
+   "pcf": {
+    "T0.7": 0.085,
+    "T1": 0.089,
+    "T1.4": 0.098
+   },
+   "k_struct": {
+    "T0.7": -0.0787,
+    "T1": -0.1443,
+    "T1.4": -0.2276
+   },
+   "M_cyc": {
+    "T0.7": 0.3179639047916451,
+    "T1": 0.2560234273883618,
+    "T1.4": 0.20796387075243852
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.539,
+     0.0185
+    ],
+    [
+     "pitch antisym+hub",
+     0.861,
+     0.0339
+    ],
+    [
+     "flap sym",
+     1.18,
+     0.0363
+    ],
+    [
+     "flap sym",
+     1.666,
+     0.0295
+    ],
+    [
+     "pitch sym",
+     2.931,
+     0.0103
+    ],
+    [
+     "pitch sym",
+     4.714,
+     0.0129
+    ],
+    [
+     "pitch antisym",
+     4.778,
+     0.013
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.202,
+    "blade": 0.213,
+    "flex0": 1.609,
+    "flex1": 1.155,
+    "flex2": 1.51
+   },
+   "x": {
+    "flexure.cross_angle_deg": 115.0
+   }
+  },
+  "D_hr26": {
+   "cr": {
+    "T0.7": 0.44453339376499085,
+    "T1": 0.25078841753485387,
+    "T1.4": 0.11788087733641024
+   },
+   "cr_min": 0.11788087733641024,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 1.1609277782798377,
+    "check:fatigue_stress": 1.2764388485976659,
+    "resonance": 0.5027733445462618
+   },
+   "res_margin": 0.07458399831806073,
+   "res_which": "pitch antisym+hub 0.95/rev vs 1P",
+   "np_info": [
+    "flap sym 2.04/rev ~ 2P (zeta 0.0258)",
+    "pitch antisym 4.62/rev ~ 5P (zeta 0.0120)",
+    "pitch antisym 5.92/rev ~ 6P (zeta 0.0105)",
+    "pitch sym 3.11/rev ~ 3P (zeta 0.0103)",
+    "pitch sym 3.22/rev ~ 3P (zeta 0.0096)",
+    "pitch sym 5.80/rev ~ 6P (zeta 0.0127)"
+   ],
+   "fatigue": 3.5838543258507682,
+   "jitter": 0.08555699462768175,
+   "min_zeta": 0.009620645067403115,
+   "strain_1p": 0.004317387711229955,
+   "pcf": {
+    "T0.7": 0.062,
+    "T1": 0.067,
+    "T1.4": 0.077
+   },
+   "k_struct": {
+    "T0.7": -0.0301,
+    "T1": -0.0849,
+    "T1.4": -0.1619
+   },
+   "M_cyc": {
+    "T0.7": 0.6577097215076662,
+    "T1": 0.5300774204005604,
+    "T1.4": 0.3488214837915995
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.622,
+     0.0182
+    ],
+    [
+     "pitch antisym+hub",
+     0.949,
+     0.0386
+    ],
+    [
+     "pitch sym",
+     1.211,
+     0.0292
+    ],
+    [
+     "flap antisym",
+     1.786,
+     0.0263
+    ],
+    [
+     "pitch sym",
+     3.109,
+     0.0103
+    ],
+    [
+     "pitch antisym",
+     4.621,
+     0.012
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.312,
+    "blade": 0.333,
+    "flex0": 3.584,
+    "flex1": 1.764,
+    "flex2": 3.193
+   },
+   "x": {
+    "flexure.hinge_radius": 0.026
+   }
+  },
+  "E_nobal": {
+   "cr": {
+    "T0.7": 0.827080356534139,
+    "T1": 0.3843802499413345,
+    "T1.4": 0.18603142736037112
+   },
+   "cr_min": 0.18603142736037112,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 1.2292703750771807,
+    "check:fatigue_stress": 1.1254752683548577,
+    "resonance": 0.6337805082856631
+   },
+   "res_margin": 0.05493292375715053,
+   "res_which": "pitch antisym+hub 0.96/rev vs 1P",
+   "np_info": [
+    "pitch antisym 3.28/rev ~ 3P (zeta 0.0157)",
+    "pitch sym 2.87/rev ~ 3P (zeta 0.0181)",
+    "pitch sym 4.35/rev ~ 4P (zeta 0.0139)",
+    "pitch sym 5.15/rev ~ 5P (zeta 0.0133)",
+    "pitch sym 6.05/rev ~ 6P (zeta 0.0126)"
+   ],
+   "fatigue": 3.4187342323819703,
+   "jitter": 0.1594786186175469,
+   "min_zeta": 0.012329922448772528,
+   "strain_1p": 0.007610870103382441,
+   "pcf": {
+    "T0.7": 0.132,
+    "T1": 0.163,
+    "T1.4": 0.211
+   },
+   "k_struct": {
+    "T0.7": 0.0024,
+    "T1": -0.0296,
+    "T1.4": -0.1135
+   },
+   "M_cyc": {
+    "T0.7": 1.2237073717978366,
+    "T1": 0.8124429881755143,
+    "T1.4": 0.5504858802375955
+   },
+   "fat_np": {
+    "T0.7": 0.001,
+    "T1": 0.074,
+    "T1.4": 0.003
+   },
+   "e1p": {
+    "T0.7": 7.611,
+    "T1": 3.365,
+    "T1.4": 1.616
+   },
+   "near1p": {
+    "T0.7": [
+     0.959,
+     0.024
+    ],
+    "T1": [
+     0.934,
+     0.034
+    ],
+    "T1.4": [
+     0.914,
+     0.051
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.554,
+     0.0301
+    ],
+    [
+     "pitch antisym+hub",
+     0.934,
+     0.0341
+    ],
+    [
+     "flap antisym",
+     1.308,
+     0.0364
+    ],
+    [
+     "flap sym",
+     1.333,
+     0.0352
+    ],
+    [
+     "pitch sym",
+     2.871,
+     0.0181
+    ],
+    [
+     "pitch antisym",
+     3.284,
+     0.0157
+    ],
+    [
+     "pitch sym",
+     5.153,
+     0.0133
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.54,
+    "blade": 0.533,
+    "flex0": 2.296,
+    "flex1": 3.082,
+    "flex2": 3.419
+   },
+   "x": {
+    "balance": []
+   }
+  },
+  "F_l6": {
+   "cr": {
+    "T0.7": 0.18676047285719105,
+    "T1": 0.11254583507012417,
+    "T1.4": 0.060700061575747054
+   },
+   "cr_min": 0.060700061575747054,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 1.1063153264374543,
+    "check:fatigue_stress": 0.5981090208349022,
+    "check:aeroelastic_stability": 0.18342097385787703,
+    "check:harmonic_jitter": 2.2069160782516377,
+    "geom:flexure_inside_hub": 0.03700023547726182,
+    "resonance": 0.826061498138278
+   },
+   "res_margin": 0.026090775279258294,
+   "res_which": "pitch sym+hub 1.95/rev vs 2P",
+   "np_info": [
+    "flap antisym 4.01/rev ~ 4P (zeta 0.0136)",
+    "flap antisym 4.59/rev ~ 5P (zeta 0.0135)",
+    "flap antisym 5.27/rev ~ 5P (zeta 0.0129)",
+    "pitch antisym 2.93/rev ~ 3P (zeta 0.0134)",
+    "pitch sym 1.90/rev ~ 2P (zeta 0.0042)",
+    "pitch sym 2.04/rev ~ 2P (zeta 0.0049)",
+    "pitch sym 2.08/rev ~ 2P (zeta 0.0284)",
+    "pitch sym 3.79/rev ~ 4P (zeta 0.0095)",
+    "pitch sym 5.16/rev ~ 5P (zeta 0.0068)",
+    "pitch sym+hub 1.95/rev ~ 2P (zeta 0.0045)"
+   ],
+   "fatigue": 3.0231983474719044,
+   "jitter": 9.087647540322484,
+   "min_zeta": 0.004162088279473324,
+   "strain_1p": 0.0015245911218252032,
+   "pcf": {
+    "T0.7": 0.08,
+    "T1": 0.089,
+    "T1.4": 0.101
+   },
+   "k_struct": {
+    "T0.7": -0.0331,
+    "T1": -0.0954,
+    "T1.4": -0.1922
+   },
+   "M_cyc": {
+    "T0.7": 0.27632159993919664,
+    "T1": 0.23788182292153598,
+    "T1.4": 0.17961764472339586
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.562,
+     0.0212
+    ],
+    [
+     "pitch antisym+hub",
+     0.845,
+     0.0431
+    ],
+    [
+     "flap sym",
+     1.189,
+     0.0356
+    ],
+    [
+     "flap antisym",
+     1.728,
+     0.0282
+    ],
+    [
+     "pitch sym+hub",
+     1.952,
+     0.0045
+    ],
+    [
+     "pitch sym",
+     3.792,
+     0.0095
+    ],
+    [
+     "flap antisym",
+     4.588,
+     0.0135
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.382,
+    "blade": 0.381,
+    "flex0": 1.819,
+    "flex1": 1.168,
+    "flex2": 3.023
+   },
+   "x": {
+    "flexure.strip_laminae": 6,
+    "flexure.thickness": 7.5e-05,
+    "flexure.width": 0.01333
+   }
+  },
+  "G_b05": {
+   "cr": {
+    "T0.7": 0.22752343944138523,
+    "T1": 0.13401280525070777,
+    "T1.4": 0.07514063415138031
+   },
+   "cr_min": 0.07514063415138031,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.5484117465752331,
+    "check:fatigue_stress": 0.5244270475054649,
+    "check:harmonic_jitter": 2.0688863135537785,
+    "resonance": 0.872433592816369,
+    "geom:flexure_inside_hub": 0.03700023547726182,
+    "check:aeroelastic_stability": 0.1723877807178713
+   },
+   "res_margin": 0.019134961077544643,
+   "res_which": "pitch sym+hub 1.97/rev vs 2P",
+   "np_info": [
+    "flap antisym 1.87/rev ~ 2P (zeta 0.0290)",
+    "flap antisym 4.02/rev ~ 4P (zeta 0.0144)",
+    "flap antisym 4.57/rev ~ 5P (zeta 0.0141)",
+    "flap antisym 5.21/rev ~ 5P (zeta 0.0138)",
+    "pitch antisym 2.81/rev ~ 3P (zeta 0.0163)",
+    "pitch sym 4.35/rev ~ 4P (zeta 0.0095)",
+    "pitch sym+hub 1.88/rev ~ 2P (zeta 0.0042)",
+    "pitch sym+hub 1.97/rev ~ 2P (zeta 0.0049)",
+    "pitch sym+hub 2.10/rev ~ 2P (zeta 0.0057)"
+   ],
+   "fatigue": 1.7305023577766574,
+   "jitter": 7.916002262499665,
+   "min_zeta": 0.004208263665889768,
+   "strain_1p": 0.004029830575612653,
+   "pcf": {
+    "T0.7": 0.104,
+    "T1": 0.117,
+    "T1.4": 0.127
+   },
+   "k_struct": {
+    "T0.7": -0.0212,
+    "T1": -0.0697,
+    "T1.4": -0.1742
+   },
+   "M_cyc": {
+    "T0.7": 0.3366324782128101,
+    "T1": 0.283255354478503,
+    "T1.4": 0.22234876504121878
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.553,
+     0.0263
+    ],
+    [
+     "pitch antisym+hub",
+     0.837,
+     0.0472
+    ],
+    [
+     "flap sym",
+     1.209,
+     0.0438
+    ],
+    [
+     "flap antisym",
+     1.49,
+     0.0291
+    ],
+    [
+     "pitch sym+hub",
+     1.965,
+     0.0049
+    ],
+    [
+     "pitch antisym",
+     3.357,
+     0.0137
+    ],
+    [
+     "flap antisym",
+     4.57,
+     0.0141
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.209,
+    "blade": 0.208,
+    "flex0": 1.689,
+    "flex1": 0.706,
+    "flex2": 1.731
+   },
+   "x": {
+    "flexure.strip_laminae": 6,
+    "flexure.thickness": 7.5e-05,
+    "flexure.width": 0.01333,
+    "balance": [
+     {
+      "mass": 0.0005,
+      "r_frac": 0.2,
+      "normal_offset": 0.01
+     },
+     {
+      "mass": 0.0005,
+      "r_frac": 0.2,
+      "normal_offset": -0.01
+     }
+    ]
+   }
+  },
+  "H_nob_l6": {
+   "cr": {
+    "T0.7": 0.34406650106498654,
+    "T1": 0.17599437031004841,
+    "T1.4": 0.10001749753547054
+   },
+   "cr_min": 0.10001749753547054,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.29306839115374883,
+    "check:fatigue_stress": 0.4175933447035192,
+    "geom:flexure_inside_hub": 0.03700023547726182,
+    "check:harmonic_jitter": 1.174370005686598,
+    "resonance": 0.831778199905683
+   },
+   "res_margin": 0.025233270014147546,
+   "res_which": "pitch sym+hub 2.05/rev vs 2P",
+   "np_info": [
+    "flap antisym 4.00/rev ~ 4P (zeta 0.0147)",
+    "flap antisym 4.52/rev ~ 5P (zeta 0.0142)",
+    "flap antisym 5.15/rev ~ 5P (zeta 0.0129)",
+    "pitch antisym 2.72/rev ~ 3P (zeta 0.0173)",
+    "pitch antisym 3.16/rev ~ 3P (zeta 0.0160)",
+    "pitch antisym 3.83/rev ~ 4P (zeta 0.0132)",
+    "pitch sym+hub 1.91/rev ~ 2P (zeta 0.0054)",
+    "pitch sym+hub 2.05/rev ~ 2P (zeta 0.0063)"
+   ],
+   "fatigue": 1.5183031228388775,
+   "jitter": 3.2361035746603033,
+   "min_zeta": 0.005439265637306088,
+   "strain_1p": 0.0037534525243904356,
+   "pcf": {
+    "T0.7": 0.133,
+    "T1": 0.144,
+    "T1.4": 0.154
+   },
+   "k_struct": {
+    "T0.7": 0.0019,
+    "T1": -0.0416,
+    "T1.4": -0.2172
+   },
+   "M_cyc": {
+    "T0.7": 0.5090638538512229,
+    "T1": 0.37198943530159706,
+    "T1.4": 0.29596192939657934
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.556,
+     0.0287
+    ],
+    [
+     "pitch antisym+hub",
+     0.857,
+     0.0446
+    ],
+    [
+     "flap sym",
+     1.25,
+     0.0502
+    ],
+    [
+     "flap antisym",
+     1.316,
+     0.0281
+    ],
+    [
+     "pitch sym+hub",
+     2.049,
+     0.0063
+    ],
+    [
+     "pitch antisym",
+     3.16,
+     0.016
+    ],
+    [
+     "flap antisym",
+     4.52,
+     0.0142
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.228,
+    "blade": 0.223,
+    "flex0": 1.518,
+    "flex1": 0.932,
+    "flex2": 1.295
+   },
+   "x": {
+    "flexure.strip_laminae": 6,
+    "flexure.thickness": 7.5e-05,
+    "flexure.width": 0.01333,
+    "balance": []
+   }
+  },
+  "I_sk55": {
+   "cr": {
+    "T0.7": 0.26918308987650524,
+    "T1": 0.16314892375647297,
+    "T1.4": 0.08813311185114386
+   },
+   "cr_min": 0.08813311185114386,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.9962612891928517,
+    "check:fatigue_stress": 0.6997123126625804,
+    "resonance": 0.15177785616542094,
+    "geom:flexure_inside_hub": 0.04538974130283768,
+    "check:harmonic_jitter": 1.3255502931268468
+   },
+   "res_margin": 0.12723332157518685,
+   "res_which": "pitch sym+hub 2.25/rev vs 2P",
+   "np_info": [
+    "flap antisym 4.02/rev ~ 4P (zeta 0.0136)",
+    "flap antisym 4.59/rev ~ 5P (zeta 0.0134)",
+    "flap sym 2.06/rev ~ 2P (zeta 0.0280)",
+    "pitch antisym 3.12/rev ~ 3P (zeta 0.0128)",
+    "pitch antisym 5.29/rev ~ 5P (zeta 0.0086)",
+    "pitch sym 2.10/rev ~ 2P (zeta 0.0060)",
+    "pitch sym 2.15/rev ~ 2P (zeta 0.0061)",
+    "pitch sym 3.98/rev ~ 4P (zeta 0.0096)",
+    "pitch sym 5.27/rev ~ 5P (zeta 0.0116)"
+   ],
+   "fatigue": 2.708137933171489,
+   "jitter": 3.7642562294844297,
+   "min_zeta": 0.006004522549281719,
+   "strain_1p": 0.004934962920439492,
+   "pcf": {
+    "T0.7": 0.053,
+    "T1": 0.058,
+    "T1.4": 0.066
+   },
+   "k_struct": {
+    "T0.7": -0.0616,
+    "T1": -0.1487,
+    "T1.4": -0.2915
+   },
+   "M_cyc": {
+    "T0.7": 0.3982700457613909,
+    "T1": 0.3448387349624706,
+    "T1.4": 0.2607948256047752
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.568,
+     0.0164
+    ],
+    [
+     "pitch antisym+hub",
+     0.9,
+     0.0302
+    ],
+    [
+     "flap sym",
+     1.192,
+     0.0379
+    ],
+    [
+     "flap antisym",
+     1.714,
+     0.0284
+    ],
+    [
+     "pitch sym",
+     2.151,
+     0.0061
+    ],
+    [
+     "pitch sym",
+     3.981,
+     0.0096
+    ],
+    [
+     "flap antisym",
+     4.588,
+     0.0134
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.26,
+    "blade": 0.262,
+    "flex0": 2.013,
+    "flex1": 0.842,
+    "flex2": 2.708
+   },
+   "x": {
+    "flexure.strip_laminae": 6,
+    "flexure.thickness": 7.5e-05,
+    "flexure.width": 0.01333,
+    "flexure.skew_deg": 55.0
+   }
+  },
+  "J_b05_w": {
+   "cr": {
+    "T0.7": 0.2325412139061249,
+    "T1": 0.09531558989894869,
+    "T1.4": 0.05090973839951282
+   },
+   "cr_min": 0.05090973839951282,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.661841390851937,
+    "check:fatigue_stress": 0.16084324137270725,
+    "check:aeroelastic_stability": 0.3762817644192537,
+    "geom:flexure_inside_hub": 0.2055143452969838,
+    "check:harmonic_jitter": 2.383573914907573,
+    "resonance": 0.5155244961167718
+   },
+   "res_margin": 0.07267132558248424,
+   "res_which": "pitch sym+hub 2.15/rev vs 2P",
+   "np_info": [
+    "flap antisym 2.01/rev ~ 2P (zeta 0.0304)",
+    "flap antisym 3.70/rev ~ 4P (zeta 0.0115)",
+    "pitch antisym 4.24/rev ~ 4P (zeta 0.0122)",
+    "pitch antisym 4.56/rev ~ 5P (zeta 0.0101)",
+    "pitch antisym+hub 3.18/rev ~ 3P (zeta 0.0076)",
+    "pitch sym 2.03/rev ~ 2P (zeta 0.0038)",
+    "pitch sym 4.40/rev ~ 4P (zeta 0.0038)",
+    "pitch sym+hub 2.15/rev ~ 2P (zeta 0.0034)"
+   ],
+   "fatigue": 1.9383583254910757,
+   "jitter": 10.843587754428555,
+   "min_zeta": 0.003432044500936005,
+   "strain_1p": 0.0028834968734597313,
+   "pcf": {
+    "T0.7": 0.107,
+    "T1": 0.123,
+    "T1.4": 0.136
+   },
+   "k_struct": {
+    "T0.7": -0.0258,
+    "T1": -0.0858,
+    "T1.4": -0.1669
+   },
+   "M_cyc": {
+    "T0.7": 0.34405653024597843,
+    "T1": 0.20146321953074509,
+    "T1.4": 0.15064708449090525
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.556,
+     0.0226
+    ],
+    [
+     "pitch antisym+hub",
+     0.813,
+     0.0356
+    ],
+    [
+     "flap sym",
+     1.272,
+     0.0374
+    ],
+    [
+     "flap antisym",
+     1.646,
+     0.0303
+    ],
+    [
+     "pitch sym+hub",
+     2.145,
+     0.0034
+    ],
+    [
+     "pitch antisym+hub",
+     3.175,
+     0.0076
+    ],
+    [
+     "pitch antisym",
+     4.235,
+     0.0122
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.284,
+    "blade": 0.281,
+    "flex0": 1.175,
+    "flex1": 0.6,
+    "flex2": 1.938
+   },
+   "x": {
+    "flexure.strip_laminae": 6,
+    "flexure.thickness": 7.5e-05,
+    "flexure.width": 0.018,
+    "balance": [
+     {
+      "mass": 0.0005,
+      "r_frac": 0.2,
+      "normal_offset": 0.01
+     },
+     {
+      "mass": 0.0005,
+      "r_frac": 0.2,
+      "normal_offset": -0.01
+     }
+    ]
+   }
+  },
+  "K_n6w56": {
+   "cr": {
+    "T0.7": 0.2418296622835779,
+    "T1": 0.13829347973857894,
+    "T1.4": 0.07935378174826067
+   },
+   "cr_min": 0.07935378174826067,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.6300603037692597,
+    "check:fatigue_stress": 0.7552470418452171,
+    "resonance": 0.06868275489782769
+   },
+   "res_margin": 0.13969758676532584,
+   "res_which": "flap sym 1.13/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.56/rev ~ 6P (zeta 0.0131)",
+    "pitch antisym 3.63/rev ~ 4P (zeta 0.0149)",
+    "pitch antisym 4.36/rev ~ 4P (zeta 0.0138)",
+    "pitch antisym 5.27/rev ~ 5P (zeta 0.0119)",
+    "pitch sym 3.91/rev ~ 4P (zeta 0.0107)"
+   ],
+   "fatigue": 2.1281371973609975,
+   "jitter": 0.1708505977785886,
+   "min_zeta": 0.010747418804573146,
+   "strain_1p": 0.004376719318157712,
+   "pcf": {
+    "T0.7": 0.088,
+    "T1": 0.094,
+    "T1.4": 0.105
+   },
+   "k_struct": {
+    "T0.7": -0.0633,
+    "T1": -0.1278,
+    "T1.4": -0.2103
+   },
+   "M_cyc": {
+    "T0.7": 0.35779926112122656,
+    "T1": 0.2923031761937538,
+    "T1.4": 0.23481589651651946
+   },
+   "fat_np": {
+    "T0.7": 0.025,
+    "T1": 0.018,
+    "T1.4": 0.008
+   },
+   "e1p": {
+    "T0.7": 2.108,
+    "T1": 4.377,
+    "T1.4": 0.92
+   },
+   "near1p": {
+    "T0.7": [
+     0.855,
+     0.037
+    ],
+    "T1": [
+     0.855,
+     0.042
+    ],
+    "T1.4": [
+     1.132,
+     0.038
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.54,
+     0.0214
+    ],
+    [
+     "pitch antisym+hub",
+     0.855,
+     0.042
+    ],
+    [
+     "flap sym",
+     1.183,
+     0.0358
+    ],
+    [
+     "flap sym",
+     1.584,
+     0.0303
+    ],
+    [
+     "pitch sym",
+     3.588,
+     0.0127
+    ],
+    [
+     "pitch antisym",
+     4.358,
+     0.0138
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.142,
+    "blade": 0.137,
+    "flex0": 2.128,
+    "flex1": 0.854,
+    "flex2": 1.087
+   },
+   "x": {
+    "flexure.strip_laminae": 6,
+    "flexure.width": 0.0056
+   }
+  },
+  "L_n8w42": {
+   "cr": {
+    "T0.7": 0.2889832906466684,
+    "T1": 0.15819148576396574,
+    "T1.4": 0.08872641265977006
+   },
+   "cr_min": 0.08872641265977006,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.5734444800044847,
+    "check:fatigue_stress": 0.6978499413188994
+   },
+   "res_margin": 0.16057872837624254,
+   "res_which": "flap sym 1.15/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.64/rev ~ 6P (zeta 0.0130)",
+    "pitch antisym 4.00/rev ~ 4P (zeta 0.0141)",
+    "pitch antisym 4.81/rev ~ 5P (zeta 0.0121)",
+    "pitch sym 2.95/rev ~ 3P (zeta 0.0161)",
+    "pitch sym 4.03/rev ~ 4P (zeta 0.0117)"
+   ],
+   "fatigue": 2.00942767218615,
+   "jitter": 0.1711000091375696,
+   "min_zeta": 0.011736104522229505,
+   "strain_1p": 0.004340926234413095,
+   "pcf": {
+    "T0.7": 0.096,
+    "T1": 0.104,
+    "T1.4": 0.117
+   },
+   "k_struct": {
+    "T0.7": -0.0547,
+    "T1": -0.1171,
+    "T1.4": -0.2013
+   },
+   "M_cyc": {
+    "T0.7": 0.4275654478998961,
+    "T1": 0.334360476162904,
+    "T1.4": 0.26255046293184675
+   },
+   "fat_np": {
+    "T0.7": 0.028,
+    "T1": 0.016,
+    "T1.4": 0.013
+   },
+   "e1p": {
+    "T0.7": 1.953,
+    "T1": 4.341,
+    "T1.4": 0.725
+   },
+   "near1p": {
+    "T0.7": [
+     0.868,
+     0.034
+    ],
+    "T1": [
+     0.86,
+     0.042
+    ],
+    "T1.4": [
+     0.852,
+     0.051
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.538,
+     0.0231
+    ],
+    [
+     "pitch antisym+hub",
+     0.86,
+     0.0421
+    ],
+    [
+     "flap sym",
+     1.22,
+     0.0381
+    ],
+    [
+     "flap sym",
+     1.489,
+     0.0312
+    ],
+    [
+     "pitch sym",
+     3.437,
+     0.014
+    ],
+    [
+     "pitch antisym",
+     3.997,
+     0.0141
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.196,
+    "blade": 0.196,
+    "flex0": 2.009,
+    "flex1": 0.792,
+    "flex2": 1.068
+   },
+   "x": {
+    "flexure.strip_laminae": 8,
+    "flexure.width": 0.0042
+   }
+  },
+  "M_w6": {
+   "cr": {
+    "T0.7": 0.23385457040340374,
+    "T1": 0.14020374090384335,
+    "T1.4": 0.07965944938736508
+   },
+   "cr_min": 0.07965944938736508,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.996682414029817,
+    "check:fatigue_stress": 1.1231662270413094,
+    "resonance": 0.28920954768027496
+   },
+   "res_margin": 0.10661856784795876,
+   "res_which": "pitch sym 1.10/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.44/rev ~ 5P (zeta 0.0136)",
+    "flap antisym 5.44/rev ~ 6P (zeta 0.0136)",
+    "pitch antisym 3.99/rev ~ 4P (zeta 0.0136)",
+    "pitch antisym 4.76/rev ~ 5P (zeta 0.0116)",
+    "pitch sym 2.90/rev ~ 3P (zeta 0.0127)",
+    "pitch sym 2.93/rev ~ 3P (zeta 0.0119)",
+    "pitch sym 3.06/rev ~ 3P (zeta 0.0153)"
+   ],
+   "fatigue": 3.074573606347783,
+   "jitter": 0.25316712157490384,
+   "min_zeta": 0.011612172393490498,
+   "strain_1p": 0.002327817426454353,
+   "pcf": {
+    "T0.7": 0.092,
+    "T1": 0.098,
+    "T1.4": 0.11
+   },
+   "k_struct": {
+    "T0.7": -0.1071,
+    "T1": -0.1754,
+    "T1.4": -0.2608
+   },
+   "M_cyc": {
+    "T0.7": 0.3459997078523884,
+    "T1": 0.2963407881406213,
+    "T1.4": 0.2357203980932696
+   },
+   "fat_np": {
+    "T0.7": 0.057,
+    "T1": 0.044,
+    "T1.4": 0.032
+   },
+   "e1p": {
+    "T0.7": 2.328,
+    "T1": 1.702,
+    "T1.4": 1.168
+   },
+   "near1p": {
+    "T0.7": [
+     0.862,
+     0.042
+    ],
+    "T1": [
+     1.129,
+     0.037
+    ],
+    "T1.4": [
+     1.098,
+     0.038
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.543,
+     0.0207
+    ],
+    [
+     "pitch antisym+hub",
+     0.863,
+     0.0449
+    ],
+    [
+     "flap sym",
+     1.129,
+     0.0367
+    ],
+    [
+     "flap sym",
+     1.524,
+     0.03
+    ],
+    [
+     "pitch sym",
+     2.9,
+     0.0127
+    ],
+    [
+     "pitch antisym",
+     3.991,
+     0.0136
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.097,
+    "blade": 0.102,
+    "flex0": 3.075,
+    "flex1": 0.945,
+    "flex2": 1.33
+   },
+   "x": {
+    "flexure.width": 0.006
+   }
+  },
+  "N_L25": {
+   "cr": {
+    "T0.7": 0.18333860376996847,
+    "T1": 0.10572673732458046,
+    "T1.4": 0.06468303163747051
+   },
+   "cr_min": 0.06468303163747051,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.6464863680360061,
+    "check:fatigue_stress": 0.7753001244822288,
+    "resonance": 0.37583964205332815
+   },
+   "res_margin": 0.09362405369200077,
+   "res_which": "pitch sym 1.08/rev vs 1P",
+   "np_info": [
+    "flap sym 1.88/rev ~ 2P (zeta 0.0264)",
+    "pitch antisym 3.02/rev ~ 3P (zeta 0.0145)",
+    "pitch antisym 3.99/rev ~ 4P (zeta 0.0103)",
+    "pitch antisym 5.29/rev ~ 5P (zeta 0.0126)",
+    "pitch sym 3.74/rev ~ 4P (zeta 0.0108)",
+    "pitch sym 5.12/rev ~ 5P (zeta 0.0100)"
+   ],
+   "fatigue": 2.1712436727892466,
+   "jitter": 0.2518206753801856,
+   "min_zeta": 0.007984041118933563,
+   "strain_1p": 0.0030918538303369983,
+   "pcf": {
+    "T0.7": 0.084,
+    "T1": 0.093,
+    "T1.4": 0.11
+   },
+   "k_struct": {
+    "T0.7": -0.0574,
+    "T1": -0.1218,
+    "T1.4": -0.2195
+   },
+   "M_cyc": {
+    "T0.7": 0.2712587709235149,
+    "T1": 0.22346867825581498,
+    "T1.4": 0.19140365750359395
+   },
+   "fat_np": {
+    "T0.7": 0.155,
+    "T1": 0.012,
+    "T1.4": 0.016
+   },
+   "e1p": {
+    "T0.7": 2.384,
+    "T1": 1.915,
+    "T1.4": 3.092
+   },
+   "near1p": {
+    "T0.7": [
+     0.854,
+     0.039
+    ],
+    "T1": [
+     1.118,
+     0.03
+    ],
+    "T1.4": [
+     1.085,
+     0.036
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.55,
+     0.022
+    ],
+    [
+     "pitch antisym+hub",
+     0.843,
+     0.0449
+    ],
+    [
+     "pitch sym",
+     1.118,
+     0.0301
+    ],
+    [
+     "flap antisym",
+     1.62,
+     0.0269
+    ],
+    [
+     "pitch sym",
+     3.742,
+     0.0108
+    ],
+    [
+     "pitch antisym",
+     3.993,
+     0.0103
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.205,
+    "blade": 0.205,
+    "flex0": 2.171,
+    "flex1": 0.983,
+    "flex2": 1.509
+   },
+   "x": {
+    "flexure.length": 0.025
+   }
+  },
+  "O_b15": {
+   "cr": {
+    "T0.7": 0.186007829590259,
+    "T1": 0.11073205760406953,
+    "T1.4": 0.06271755606930587
+   },
+   "cr_min": 0.06271755606930587,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.6180067767497186,
+    "check:fatigue_stress": 0.744695471804499,
+    "resonance": 0.1722766462430686
+   },
+   "res_margin": 0.1241585030635397,
+   "res_which": "pitch sym 1.12/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.47/rev ~ 5P (zeta 0.0128)",
+    "flap antisym 5.47/rev ~ 6P (zeta 0.0128)",
+    "flap sym 2.00/rev ~ 2P (zeta 0.0251)",
+    "pitch antisym 3.94/rev ~ 4P (zeta 0.0119)",
+    "pitch antisym 5.93/rev ~ 6P (zeta 0.0097)",
+    "pitch sym 4.73/rev ~ 5P (zeta 0.0115)"
+   ],
+   "fatigue": 2.105800061834664,
+   "jitter": 0.27121623215624485,
+   "min_zeta": 0.00897367766206338,
+   "strain_1p": 0.005160923551843703,
+   "pcf": {
+    "T0.7": 0.069,
+    "T1": 0.072,
+    "T1.4": 0.076
+   },
+   "k_struct": {
+    "T0.7": -0.0775,
+    "T1": -0.1533,
+    "T1.4": -0.2526
+   },
+   "M_cyc": {
+    "T0.7": 0.27520802602004535,
+    "T1": 0.23404814316137204,
+    "T1.4": 0.1855876157542036
+   },
+   "fat_np": {
+    "T0.7": 0.211,
+    "T1": 0.009,
+    "T1.4": 0.021
+   },
+   "e1p": {
+    "T0.7": 5.161,
+    "T1": 4.027,
+    "T1.4": 2.911
+   },
+   "near1p": {
+    "T0.7": [
+     0.872,
+     0.031
+    ],
+    "T1": [
+     0.877,
+     0.033
+    ],
+    "T1.4": [
+     1.12,
+     0.028
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.558,
+     0.0175
+    ],
+    [
+     "pitch antisym+hub",
+     0.877,
+     0.0326
+    ],
+    [
+     "pitch sym",
+     1.156,
+     0.0272
+    ],
+    [
+     "flap sym",
+     1.772,
+     0.0255
+    ],
+    [
+     "pitch sym",
+     3.303,
+     0.0099
+    ],
+    [
+     "pitch sym",
+     4.735,
+     0.0115
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.261,
+    "blade": 0.266,
+    "flex0": 2.106,
+    "flex1": 0.742,
+    "flex2": 1.6
+   },
+   "x": {
+    "balance": [
+     {
+      "mass": 0.0015,
+      "r_frac": 0.2,
+      "normal_offset": 0.01
+     },
+     {
+      "mass": 0.0015,
+      "r_frac": 0.2,
+      "normal_offset": -0.01
+     }
+    ]
+   }
+  },
+  "P_n6": {
+   "cr": {
+    "T0.7": 0.21245793504985777,
+    "T1": 0.11134739552509046,
+    "T1.4": 0.06239273644956822
+   },
+   "cr_min": 0.06239273644956822,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.12014985333101236,
+    "check:fatigue_stress": 0.24122650625481046
+   },
+   "res_margin": 0.1786178713563087,
+   "res_which": "flap sym 1.17/rev vs 1P",
+   "np_info": [
+    "flap sym 1.82/rev ~ 2P (zeta 0.0297)",
+    "flap sym 2.04/rev ~ 2P (zeta 0.0288)",
+    "pitch antisym 4.10/rev ~ 4P (zeta 0.0127)",
+    "pitch antisym 4.93/rev ~ 5P (zeta 0.0113)",
+    "pitch sym 3.88/rev ~ 4P (zeta 0.0147)",
+    "pitch sym 4.26/rev ~ 4P (zeta 0.0106)",
+    "pitch sym 5.06/rev ~ 5P (zeta 0.0092)",
+    "pitch sym 5.21/rev ~ 5P (zeta 0.0121)",
+    "pitch sym 5.77/rev ~ 6P (zeta 0.0112)",
+    "pitch sym 6.52/rev ~ 6P (zeta 0.0111)"
+   ],
+   "fatigue": 1.272809301927968,
+   "jitter": 0.3364311061263922,
+   "min_zeta": 0.009168795728891874,
+   "strain_1p": 0.0019773180095082566,
+   "pcf": {
+    "T0.7": 0.08,
+    "T1": 0.085,
+    "T1.4": 0.093
+   },
+   "k_struct": {
+    "T0.7": -0.0004,
+    "T1": -0.0576,
+    "T1.4": -0.1344
+   },
+   "M_cyc": {
+    "T0.7": 0.31434229970945465,
+    "T1": 0.23534874843276218,
+    "T1.4": 0.18462644152237154
+   },
+   "fat_np": {
+    "T0.7": 0.115,
+    "T1": 0.112,
+    "T1.4": 0.013
+   },
+   "e1p": {
+    "T0.7": 1.931,
+    "T1": 1.446,
+    "T1.4": 1.977
+   },
+   "near1p": {
+    "T0.7": [
+     0.843,
+     0.03
+    ],
+    "T1": [
+     0.835,
+     0.036
+    ],
+    "T1.4": [
+     1.173,
+     0.035
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.53,
+     0.0213
+    ],
+    [
+     "pitch antisym+hub",
+     0.835,
+     0.036
+    ],
+    [
+     "flap sym",
+     1.248,
+     0.0337
+    ],
+    [
+     "flap sym",
+     1.819,
+     0.0297
+    ],
+    [
+     "pitch sym",
+     4.259,
+     0.0106
+    ],
+    [
+     "pitch antisym",
+     4.93,
+     0.0113
+    ],
+    [
+     "pitch sym",
+     5.207,
+     0.0121
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.271,
+    "blade": 0.269,
+    "flex0": 1.273,
+    "flex1": 0.792,
+    "flex2": 1.088
+   },
+   "x": {
+    "flexure.strip_laminae": 6
+   }
+  },
+  "Q_t12": {
+   "cr": {
+    "T0.7": 0.2576430899953289,
+    "T1": 0.11887357747748556,
+    "T1.4": 0.06295901754675469
+   },
+   "cr_min": 0.06295901754675469,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.19487057234722802,
+    "check:fatigue_stress": 0.2999284575258699
+   },
+   "res_margin": 0.2193145195937729,
+   "res_which": "flap sym 1.21/rev vs 1P",
+   "np_info": [
+    "flap antisym 4.96/rev ~ 5P (zeta 0.0128)",
+    "flap antisym 6.12/rev ~ 6P (zeta 0.0116)",
+    "flap sym 1.83/rev ~ 2P (zeta 0.0302)",
+    "flap sym 2.04/rev ~ 2P (zeta 0.0291)",
+    "flap sym 4.34/rev ~ 4P (zeta 0.0135)",
+    "pitch antisym 5.57/rev ~ 6P (zeta 0.0137)",
+    "pitch sym 3.95/rev ~ 4P (zeta 0.0103)",
+    "pitch sym 5.56/rev ~ 6P (zeta 0.0096)"
+   ],
+   "fatigue": 1.3497622387916088,
+   "jitter": 0.390372460801526,
+   "min_zeta": 0.009580827384395562,
+   "strain_1p": 0.0023639402133516924,
+   "pcf": {
+    "T0.7": 0.078,
+    "T1": 0.083,
+    "T1.4": 0.089
+   },
+   "k_struct": {
+    "T0.7": 0.0239,
+    "T1": -0.0297,
+    "T1.4": -0.1021
+   },
+   "M_cyc": {
+    "T0.7": 0.3811960301429838,
+    "T1": 0.2512564173514689,
+    "T1.4": 0.18630212478014035
+   },
+   "fat_np": {
+    "T0.7": 0.134,
+    "T1": 0.133,
+    "T1.4": 0.006
+   },
+   "e1p": {
+    "T0.7": 2.364,
+    "T1": 1.547,
+    "T1.4": 1.062
+   },
+   "near1p": {
+    "T0.7": [
+     0.866,
+     0.024
+    ],
+    "T1": [
+     0.842,
+     0.032
+    ],
+    "T1.4": [
+     0.835,
+     0.039
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.525,
+     0.0209
+    ],
+    [
+     "pitch antisym+hub",
+     0.842,
+     0.0324
+    ],
+    [
+     "flap sym",
+     1.341,
+     0.0343
+    ],
+    [
+     "flap sym",
+     1.827,
+     0.0302
+    ],
+    [
+     "pitch sym",
+     3.949,
+     0.0103
+    ],
+    [
+     "flap antisym",
+     4.963,
+     0.0128
+    ],
+    [
+     "pitch antisym",
+     5.569,
+     0.0137
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.3,
+    "blade": 0.298,
+    "flex0": 1.35,
+    "flex1": 0.968,
+    "flex2": 1.215
+   },
+   "x": {
+    "flexure.thickness": 0.00012
+   }
+  },
+  "R_sk65": {
+   "cr": {
+    "T0.7": 0.16779136667116304,
+    "T1": 0.09858174128286218,
+    "T1.4": 0.05470763591928065
+   },
+   "cr_min": 0.05470763591928065,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.3949747097456127,
+    "check:fatigue_stress": 0.5180906383783189,
+    "check:harmonic_jitter": 1.0732657178705838,
+    "resonance": 0.14067646237948966
+   },
+   "res_margin": 0.12889853064307655,
+   "res_which": "pitch sym 1.12/rev vs 1P",
+   "np_info": [
+    "flap sym 1.91/rev ~ 2P (zeta 0.0281)",
+    "pitch antisym 5.49/rev ~ 5P (zeta 0.0130)",
+    "pitch antisym 5.49/rev ~ 6P (zeta 0.0130)",
+    "pitch sym 1.99/rev ~ 2P (zeta 0.0092)",
+    "pitch sym 2.15/rev ~ 2P (zeta 0.0097)",
+    "pitch sym 4.30/rev ~ 4P (zeta 0.0109)",
+    "pitch sym 5.34/rev ~ 5P (zeta 0.0097)"
+   ],
+   "fatigue": 1.6788191147594518,
+   "jitter": 2.9249158699811986,
+   "min_zeta": 0.009178842415308757,
+   "strain_1p": 0.0013319334065148806,
+   "pcf": {
+    "T0.7": 0.13,
+    "T1": 0.14,
+    "T1.4": 0.157
+   },
+   "k_struct": {
+    "T0.7": -0.0259,
+    "T1": -0.0667,
+    "T1.4": -0.1185
+   },
+   "M_cyc": {
+    "T0.7": 0.24825584442599544,
+    "T1": 0.20836670062943646,
+    "T1.4": 0.16188544883012837
+   },
+   "fat_np": {
+    "T0.7": 0.182,
+    "T1": 0.266,
+    "T1.4": 0.307
+   },
+   "e1p": {
+    "T0.7": 1.332,
+    "T1": 0.956,
+    "T1.4": 0.771
+   },
+   "near1p": {
+    "T0.7": [
+     0.81,
+     0.049
+    ],
+    "T1": [
+     1.168,
+     0.036
+    ],
+    "T1.4": [
+     1.12,
+     0.041
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.539,
+     0.0245
+    ],
+    [
+     "pitch antisym+hub",
+     0.815,
+     0.0522
+    ],
+    [
+     "flap sym",
+     1.168,
+     0.0364
+    ],
+    [
+     "flap sym",
+     1.716,
+     0.0289
+    ],
+    [
+     "pitch sym",
+     2.145,
+     0.0097
+    ],
+    [
+     "pitch sym",
+     4.303,
+     0.0109
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.216,
+    "blade": 0.216,
+    "flex0": 1.679,
+    "flex1": 0.576,
+    "flex2": 1.097
+   },
+   "x": {
+    "flexure.skew_deg": 65.0
+   }
+  },
+  "S_x95": {
+   "cr": {
+    "T0.7": 0.1917285455003363,
+    "T1": 0.11062031856753322,
+    "T1.4": 0.05975898870940783
+   },
+   "cr_min": 0.05975898870940783,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.7075697439928298,
+    "check:fatigue_stress": 0.8436815575103873,
+    "resonance": 0.24732161203426567
+   },
+   "res_margin": 0.11290175819486015,
+   "res_which": "pitch sym 1.11/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.48/rev ~ 5P (zeta 0.0131)",
+    "flap antisym 5.48/rev ~ 6P (zeta 0.0131)",
+    "flap sym 2.01/rev ~ 2P (zeta 0.0279)",
+    "pitch antisym 3.63/rev ~ 4P (zeta 0.0135)",
+    "pitch antisym 4.75/rev ~ 5P (zeta 0.0131)",
+    "pitch sym 2.79/rev ~ 3P (zeta 0.0119)",
+    "pitch sym 2.90/rev ~ 3P (zeta 0.0106)",
+    "pitch sym 4.64/rev ~ 5P (zeta 0.0119)",
+    "pitch sym 5.82/rev ~ 6P (zeta 0.0103)"
+   ],
+   "fatigue": 2.324910532166673,
+   "jitter": 0.4358795387202041,
+   "min_zeta": 0.010282805999903291,
+   "strain_1p": 0.004649635287670531,
+   "pcf": {
+    "T0.7": 0.081,
+    "T1": 0.086,
+    "T1.4": 0.096
+   },
+   "k_struct": {
+    "T0.7": -0.0362,
+    "T1": -0.0924,
+    "T1.4": -0.1668
+   },
+   "M_cyc": {
+    "T0.7": 0.283672115604349,
+    "T1": 0.23381196662328702,
+    "T1.4": 0.1768329145702969
+   },
+   "fat_np": {
+    "T0.7": 0.17,
+    "T1": 0.008,
+    "T1.4": 0.072
+   },
+   "e1p": {
+    "T0.7": 1.765,
+    "T1": 4.65,
+    "T1.4": 0.899
+   },
+   "near1p": {
+    "T0.7": [
+     0.841,
+     0.04
+    ],
+    "T1": [
+     1.151,
+     0.034
+    ],
+    "T1.4": [
+     1.106,
+     0.035
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.541,
+     0.019
+    ],
+    [
+     "pitch antisym+hub",
+     0.847,
+     0.0428
+    ],
+    [
+     "pitch sym",
+     1.151,
+     0.0345
+    ],
+    [
+     "flap sym",
+     1.79,
+     0.0286
+    ],
+    [
+     "pitch sym",
+     2.627,
+     0.0113
+    ],
+    [
+     "pitch sym",
+     4.643,
+     0.0119
+    ],
+    [
+     "pitch antisym",
+     4.75,
+     0.0131
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.242,
+    "blade": 0.242,
+    "flex0": 2.325,
+    "flex1": 0.748,
+    "flex2": 1.401
+   },
+   "x": {
+    "flexure.cross_angle_deg": 95.0
+   }
+  },
+  "T_hr18": {
+   "cr": {
+    "T0.7": 0.1405417097331432,
+    "T1": 0.08171845476948693,
+    "T1.4": 0.05424461919317382
+   },
+   "cr_min": 0.05424461919317382,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.32674993081186815,
+    "check:fatigue_stress": 0.4553537578680521,
+    "geom:flexure_inside_hub": 0.1210572729984496,
+    "check:aeroelastic_stability": 1.5671659832084723,
+    "resonance": 0.23337976807386604
+   },
+   "res_margin": 0.11499303478892009,
+   "res_which": "flap sym 1.10/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.25/rev ~ 5P (zeta 0.0138)",
+    "flap sym 1.87/rev ~ 2P (zeta 0.0297)",
+    "pitch antisym 4.66/rev ~ 5P (zeta 0.0119)",
+    "pitch sym 2.84/rev ~ 3P (zeta 0.0108)",
+    "pitch sym 3.74/rev ~ 4P (zeta 0.0137)",
+    "pitch sym 4.54/rev ~ 5P (zeta 0.0140)",
+    "pitch sym 5.71/rev ~ 6P (zeta 0.0103)"
+   ],
+   "fatigue": 1.5767310654061013,
+   "jitter": 0.22015382385071963,
+   "min_zeta": 0.0010431781108009557,
+   "strain_1p": 0.0038820036908300344,
+   "pcf": {
+    "T0.7": 0.102,
+    "T1": 0.108,
+    "T1.4": 0.118
+   },
+   "k_struct": {
+    "T0.7": -0.076,
+    "T1": -0.1424,
+    "T1.4": -0.2212
+   },
+   "M_cyc": {
+    "T0.7": 0.20793859373737925,
+    "T1": 0.17272371718406576,
+    "T1.4": 0.16051533533020937
+   },
+   "fat_np": {
+    "T0.7": 0.175,
+    "T1": 0.008,
+    "T1.4": 0.008
+   },
+   "e1p": {
+    "T0.7": 2.18,
+    "T1": 2.874,
+    "T1.4": 3.882
+   },
+   "near1p": {
+    "T0.7": [
+     1.225,
+     0.038
+    ],
+    "T1": [
+     1.146,
+     0.041
+    ],
+    "T1.4": [
+     1.102,
+     0.047
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.476,
+     0.0196
+    ],
+    [
+     "pitch antisym+hub",
+     0.777,
+     0.0375
+    ],
+    [
+     "flap sym",
+     1.146,
+     0.0413
+    ],
+    [
+     "flap sym",
+     1.684,
+     0.0308
+    ],
+    [
+     "pitch sym",
+     2.392,
+     0.012
+    ],
+    [
+     "pitch sym",
+     4.543,
+     0.014
+    ],
+    [
+     "pitch antisym",
+     4.659,
+     0.0119
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.193,
+    "blade": 0.194,
+    "flex0": 1.577,
+    "flex1": 0.903,
+    "flex2": 1.082
+   },
+   "x": {
+    "flexure.hinge_radius": 0.018
+   }
+  },
+  "U_n8s26": {
+   "cr": {
+    "T0.7": 0.2981354749710254,
+    "T1": 0.12789449012233906,
+    "T1.4": 0.06702417456803172
+   },
+   "cr_min": 0.06702417456803172,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.05524300040912747,
+    "check:fatigue_stress": 0.08434553663516488
+   },
+   "res_margin": 0.18685425622346385,
+   "res_which": "pitch antisym+hub 0.88/rev vs 1P",
+   "np_info": [
+    "flap sym 1.87/rev ~ 2P (zeta 0.0304)",
+    "flap sym 2.10/rev ~ 2P (zeta 0.0293)",
+    "pitch antisym 4.53/rev ~ 5P (zeta 0.0120)",
+    "pitch sym 3.99/rev ~ 4P (zeta 0.0140)",
+    "pitch sym 4.34/rev ~ 4P (zeta 0.0130)",
+    "pitch sym 4.80/rev ~ 5P (zeta 0.0129)",
+    "pitch sym 5.55/rev ~ 6P (zeta 0.0135)",
+    "pitch sym 6.06/rev ~ 6P (zeta 0.0178)",
+    "pitch sym 6.09/rev ~ 6P (zeta 0.0106)"
+   ],
+   "fatigue": 1.0880047743736139,
+   "jitter": 0.35904701940295003,
+   "min_zeta": 0.010582595551288368,
+   "strain_1p": 0.0020197686127075023,
+   "pcf": {
+    "T0.7": 0.076,
+    "T1": 0.082,
+    "T1.4": 0.089
+   },
+   "k_struct": {
+    "T0.7": 0.0647,
+    "T1": 0.0118,
+    "T1.4": -0.0614
+   },
+   "M_cyc": {
+    "T0.7": 0.4411065691915442,
+    "T1": 0.2703234147488993,
+    "T1.4": 0.19833133711761677
+   },
+   "fat_np": {
+    "T0.7": 0.083,
+    "T1": 0.09,
+    "T1.4": 0.016
+   },
+   "e1p": {
+    "T0.7": 1.819,
+    "T1": 2.02,
+    "T1.4": 1.596
+   },
+   "near1p": {
+    "T0.7": [
+     0.882,
+     0.022
+    ],
+    "T1": [
+     0.844,
+     0.031
+    ],
+    "T1.4": [
+     0.832,
+     0.04
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.529,
+     0.0218
+    ],
+    [
+     "pitch antisym+hub",
+     0.844,
+     0.0309
+    ],
+    [
+     "flap sym",
+     1.387,
+     0.0344
+    ],
+    [
+     "flap sym",
+     1.87,
+     0.0304
+    ],
+    [
+     "pitch sym",
+     4.797,
+     0.0129
+    ],
+    [
+     "pitch sym",
+     5.554,
+     0.0135
+    ],
+    [
+     "pitch sym",
+     6.062,
+     0.0178
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.343,
+    "blade": 0.34,
+    "flex0": 1.088,
+    "flex1": 0.742,
+    "flex2": 1.057
+   },
+   "x": {
+    "flexure.strip_laminae": 8,
+    "flexure.strap_strand_diameter": 0.0026
+   }
+  },
+  "V_n8s26sk65": {
+   "cr": {
+    "T0.7": 0.21692936737179105,
+    "T1": 0.09506716007634086,
+    "T1.4": 0.048250617758951966
+   },
+   "cr_min": 0.048250617758951966,
+   "feasible": true,
+   "viol": {},
+   "res_margin": 0.23579792903160102,
+   "res_which": "flap sym 1.23/rev vs 1P",
+   "np_info": [
+    "flap antisym 5.03/rev ~ 5P (zeta 0.0114)",
+    "flap sym 1.86/rev ~ 2P (zeta 0.0304)",
+    "flap sym 2.08/rev ~ 2P (zeta 0.0295)",
+    "pitch antisym 4.08/rev ~ 4P (zeta 0.0114)",
+    "pitch antisym 5.27/rev ~ 5P (zeta 0.0114)",
+    "pitch sym 3.63/rev ~ 4P (zeta 0.0112)",
+    "pitch sym 4.20/rev ~ 4P (zeta 0.0096)",
+    "pitch sym 5.84/rev ~ 6P (zeta 0.0099)",
+    "pitch sym 6.35/rev ~ 6P (zeta 0.0100)"
+   ],
+   "fatigue": 0.7734883206409447,
+   "jitter": 0.5186174667763238,
+   "min_zeta": 0.009582973007565746,
+   "strain_1p": 0.0015294553365180034,
+   "pcf": {
+    "T0.7": 0.117,
+    "T1": 0.127,
+    "T1.4": 0.141
+   },
+   "k_struct": {
+    "T0.7": 0.0767,
+    "T1": 0.0403,
+    "T1.4": -0.0088
+   },
+   "M_cyc": {
+    "T0.7": 0.3209580108088864,
+    "T1": 0.20093812734023264,
+    "T1.4": 0.14277847655058407
+   },
+   "fat_np": {
+    "T0.7": 0.083,
+    "T1": 0.088,
+    "T1.4": 0.017
+   },
+   "e1p": {
+    "T0.7": 1.329,
+    "T1": 1.529,
+    "T1.4": 1.216
+   },
+   "near1p": {
+    "T0.7": [
+     0.822,
+     0.032
+    ],
+    "T1": [
+     0.782,
+     0.043
+    ],
+    "T1.4": [
+     1.232,
+     0.034
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.504,
+     0.031
+    ],
+    [
+     "pitch antisym+hub",
+     0.782,
+     0.0426
+    ],
+    [
+     "flap antisym",
+     1.383,
+     0.0328
+    ],
+    [
+     "flap sym",
+     1.86,
+     0.0304
+    ],
+    [
+     "pitch sym",
+     4.199,
+     0.0096
+    ],
+    [
+     "flap antisym",
+     5.029,
+     0.0114
+    ],
+    [
+     "pitch antisym",
+     5.266,
+     0.0114
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.306,
+    "blade": 0.304,
+    "flex0": 0.773,
+    "flex1": 0.544,
+    "flex2": 0.712
+   },
+   "x": {
+    "flexure.strip_laminae": 8,
+    "flexure.strap_strand_diameter": 0.0026,
+    "flexure.skew_deg": 65.0
+   }
+  },
+  "W_n8t12s26": {
+   "cr": {
+    "T0.7": 0.6798023617778172,
+    "T1": 0.22984864839586885,
+    "T1.4": 0.0901952131749109
+   },
+   "cr_min": 0.0901952131749109,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 0.7666288600442722,
+    "check:fatigue_stress": 0.39320000992795195,
+    "resonance": 0.609286307899317
+   },
+   "res_margin": 0.05860705381510245,
+   "res_which": "pitch antisym+hub 0.95/rev vs 1P",
+   "np_info": [
+    "flap antisym 1.82/rev ~ 2P (zeta 0.0335)",
+    "flap antisym 2.11/rev ~ 2P (zeta 0.0304)",
+    "flap sym 1.93/rev ~ 2P (zeta 0.0314)",
+    "flap sym 2.15/rev ~ 2P (zeta 0.0298)",
+    "pitch antisym 5.31/rev ~ 5P (zeta 0.0216)",
+    "pitch antisym 6.37/rev ~ 6P (zeta 0.0210)",
+    "pitch sym 4.82/rev ~ 5P (zeta 0.0132)",
+    "pitch sym 5.10/rev ~ 5P (zeta 0.0192)",
+    "pitch sym 6.10/rev ~ 6P (zeta 0.0209)",
+    "pitch sym 6.24/rev ~ 6P (zeta 0.0102)"
+   ],
+   "fatigue": 2.1524976381158325,
+   "jitter": 0.25906890418008616,
+   "min_zeta": 0.010205149970912295,
+   "strain_1p": 0.0036648940599759406,
+   "pcf": {
+    "T0.7": 0.07,
+    "T1": 0.076,
+    "T1.4": 0.082
+   },
+   "k_struct": {
+    "T0.7": 0.1865,
+    "T1": 0.1376,
+    "T1.4": 0.0676
+   },
+   "M_cyc": {
+    "T0.7": 1.0058021024209365,
+    "T1": 0.4858182041333903,
+    "T1.4": 0.2668967927748385
+   },
+   "fat_np": {
+    "T0.7": 0.104,
+    "T1": 0.153,
+    "T1.4": 0.006
+   },
+   "e1p": {
+    "T0.7": 3.665,
+    "T1": 1.787,
+    "T1.4": 0.644
+   },
+   "near1p": {
+    "T0.7": [
+     0.953,
+     0.016
+    ],
+    "T1": [
+     0.912,
+     0.019
+    ],
+    "T1.4": [
+     0.872,
+     0.025
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.558,
+     0.0179
+    ],
+    [
+     "pitch antisym+hub",
+     0.912,
+     0.0191
+    ],
+    [
+     "flap antisym",
+     1.821,
+     0.0335
+    ],
+    [
+     "flap sym",
+     1.93,
+     0.0314
+    ],
+    [
+     "pitch sym",
+     6.095,
+     0.0209
+    ],
+    [
+     "pitch sym",
+     6.244,
+     0.0102
+    ],
+    [
+     "pitch antisym",
+     6.366,
+     0.021
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.602,
+    "blade": 0.597,
+    "flex0": 1.482,
+    "flex1": 1.287,
+    "flex2": 2.152
+   },
+   "x": {
+    "flexure.strip_laminae": 8,
+    "flexure.thickness": 0.00012,
+    "flexure.strap_strand_diameter": 0.0026
+   }
+  },
+  "X_n8w10s26": {
+   "cr": {
+    "T0.7": 0.31626756066765704,
+    "T1": 0.1229579960348815,
+    "T1.4": 0.06144424528533715
+   },
+   "cr_min": 0.06144424528533715,
+   "feasible": true,
+   "viol": {},
+   "res_margin": 0.1612191666174705,
+   "res_which": "pitch antisym+hub 0.89/rev vs 1P",
+   "np_info": [
+    "flap antisym 1.94/rev ~ 2P (zeta 0.0308)",
+    "flap sym 1.94/rev ~ 2P (zeta 0.0308)",
+    "flap sym 2.18/rev ~ 2P (zeta 0.0296)",
+    "flap sym 4.27/rev ~ 4P (zeta 0.0129)",
+    "pitch antisym 5.85/rev ~ 6P (zeta 0.0127)",
+    "pitch sym 4.68/rev ~ 5P (zeta 0.0096)",
+    "pitch sym 5.05/rev ~ 5P (zeta 0.0102)",
+    "pitch sym 6.44/rev ~ 6P (zeta 0.0090)",
+    "pitch sym+hub 3.30/rev ~ 3P (zeta 0.0093)"
+   ],
+   "fatigue": 0.9833468131102867,
+   "jitter": 0.4376132286667454,
+   "min_zeta": 0.00898156305831693,
+   "strain_1p": 0.002372475944501028,
+   "pcf": {
+    "T0.7": 0.073,
+    "T1": 0.079,
+    "T1.4": 0.087
+   },
+   "k_struct": {
+    "T0.7": 0.0974,
+    "T1": 0.0445,
+    "T1.4": -0.0303
+   },
+   "M_cyc": {
+    "T0.7": 0.46793391040179616,
+    "T1": 0.25988942390744246,
+    "T1.4": 0.1818197598726744
+   },
+   "fat_np": {
+    "T0.7": 0.2,
+    "T1": 0.084,
+    "T1.4": 0.037
+   },
+   "e1p": {
+    "T0.7": 2.372,
+    "T1": 1.691,
+    "T1.4": 0.613
+   },
+   "near1p": {
+    "T0.7": [
+     0.893,
+     0.019
+    ],
+    "T1": [
+     0.84,
+     0.028
+    ],
+    "T1.4": [
+     0.819,
+     0.039
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.526,
+     0.0218
+    ],
+    [
+     "pitch antisym+hub",
+     0.84,
+     0.0275
+    ],
+    [
+     "flap sym",
+     1.479,
+     0.0341
+    ],
+    [
+     "flap sym",
+     1.936,
+     0.0308
+    ],
+    [
+     "pitch sym",
+     4.676,
+     0.0096
+    ],
+    [
+     "pitch sym",
+     5.055,
+     0.0102
+    ],
+    [
+     "pitch antisym",
+     5.852,
+     0.0127
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.38,
+    "blade": 0.376,
+    "flex0": 0.983,
+    "flex1": 0.7,
+    "flex2": 0.98
+   },
+   "x": {
+    "flexure.strip_laminae": 8,
+    "flexure.width": 0.01,
+    "flexure.strap_strand_diameter": 0.0026
+   }
+  },
+  "Y_n8s26nob": {
+   "cr": {
+    "T0.7": 0.8568229619942379,
+    "T1": 0.4747855824522175,
+    "T1.4": 0.21283414152626615
+   },
+   "cr_min": 0.21283414152626615,
+   "feasible": false,
+   "viol": {
+    "check:fatigue_strain": 1.011467825963503,
+    "check:fatigue_stress": 0.5717494497876862,
+    "resonance": 0.6601332766232876
+   },
+   "res_margin": 0.05098000850650686,
+   "res_which": "pitch antisym+hub 0.96/rev vs 1P",
+   "np_info": [
+    "flap sym 1.89/rev ~ 2P (zeta 0.0314)",
+    "pitch antisym 3.21/rev ~ 3P (zeta 0.0170)",
+    "pitch antisym 4.24/rev ~ 4P (zeta 0.0134)",
+    "pitch sym 3.28/rev ~ 3P (zeta 0.0169)",
+    "pitch sym 4.36/rev ~ 4P (zeta 0.0137)",
+    "pitch sym 4.70/rev ~ 5P (zeta 0.0126)",
+    "pitch sym 5.72/rev ~ 6P (zeta 0.0115)",
+    "pitch sym 5.73/rev ~ 6P (zeta 0.0133)"
+   ],
+   "fatigue": 2.7496340386364686,
+   "jitter": 0.12652878093757822,
+   "min_zeta": 0.011475734611785868,
+   "strain_1p": 0.004375764544673985,
+   "pcf": {
+    "T0.7": 0.109,
+    "T1": 0.125,
+    "T1.4": 0.147
+   },
+   "k_struct": {
+    "T0.7": 0.1,
+    "T1": 0.069,
+    "T1.4": 0.0357
+   },
+   "M_cyc": {
+    "T0.7": 1.26771306637208,
+    "T1": 1.00352767190563,
+    "T1.4": 0.6297978325766358
+   },
+   "fat_np": {
+    "T0.7": 0.103,
+    "T1": 0.038,
+    "T1.4": 0.006
+   },
+   "e1p": {
+    "T0.7": 4.376,
+    "T1": 3.143,
+    "T1.4": 1.655
+   },
+   "near1p": {
+    "T0.7": [
+     0.96,
+     0.02
+    ],
+    "T1": [
+     0.951,
+     0.024
+    ],
+    "T1.4": [
+     0.928,
+     0.034
+    ]
+   },
+   "modes_T1": [
+    [
+     "pitch sym",
+     0.567,
+     0.0254
+    ],
+    [
+     "pitch antisym+hub",
+     0.951,
+     0.0243
+    ],
+    [
+     "flap antisym",
+     1.435,
+     0.0351
+    ],
+    [
+     "flap sym",
+     1.623,
+     0.0333
+    ],
+    [
+     "pitch sym",
+     3.276,
+     0.0169
+    ],
+    [
+     "pitch antisym",
+     4.239,
+     0.0134
+    ],
+    [
+     "pitch sym",
+     5.726,
+     0.0133
+    ]
+   ],
+   "fat_members": {
+    "shank": 0.784,
+    "blade": 0.774,
+    "flex0": 1.771,
+    "flex1": 1.37,
+    "flex2": 2.75
+   },
+   "x": {
+    "flexure.strip_laminae": 8,
+    "flexure.strap_strand_diameter": 0.0026,
+    "balance": []
+   }
+  }
+ }
+}
