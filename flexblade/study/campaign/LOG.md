@@ -404,3 +404,8 @@ Idea backlog (unscreened):
 - ★ v10m SAVED (designs/10in_tt_strap_steelx_v10m.json): v8 + cross_angle 120° + re-solved presets. SA_GATES=minimal (with ζ≥0.02): FEASIBLE, cr_pl 0.124 (+73 % vs v8), phase resid 7.5°, gain resid 7.6 % (better than v8), no flip. Default gates: fails only cqc_mech_margin (0.0135 vs 0.03). PENDING FRED. Not yet: ccx verify, two_per_rev forces, fatigue at corners.
 - ⚠ v10m VERIFICATION FAILS (results/verify_10in_v10m.md): ccx/beam k_cross = 1.80 at 120° crossing (v8: 1.11) → the BEAM MODEL IS WRONG AT WIDE CROSSING ANGLES — the cr_pl 0.124 gain is likely a model artefact. Also: full-pulse Goodman 1.064 at T0.7, tol.py resonance margin 0.080 (mech mode 0.95/rev; minimal path skips the 1P mech mode), 1P vertical 10.3 N (no improvement). v10m DEMOTED (keep file, flagged). v8 remains lead.
 - ⇒ MODEL FIX PRIORITY: k_cross vs cross_angle (ccx sweep 60–130°) — DEs (DE8 has cross_angle as a variable?) may exploit this artefact. → opus helper.
+## Iteration 32 (05:30 11-22)
+- DE8: 10" gen 7, best legacy cr 0.080 infeasible, stalled since gen 2. 7" BROKEN: identical J +7.31 (motor_torque_1p 6.91 + convergence) gens 1–3 → all candidates fail, incl seeds → helper debugging (resolve-presets / one-sided / J-hub mapping suspects). If confirmed, kill DE8 7" waste: rerun 7" after fix.
+- CRM2204 de2 on Mac running; laptop load 71 (DE8 + helpers' ccx) — no new compute.
+- HELPERS: k_cross-vs-angle (opus), DE8 7" debug (sonnet).
+- REVIEW: v10m lesson — every DE optimum sitting at a variable BOUND (cross 120°) should trigger an automatic ccx spot-check; add "bound-hugging" flag in DE summary. Ideal families unchanged: steelx cross-spring + strap remains only verified family; cr ceiling ~0.07 (10") under default gates.
