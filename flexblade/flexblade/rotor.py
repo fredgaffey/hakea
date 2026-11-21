@@ -1756,6 +1756,40 @@ KT_COMPLIANT, FRET_COMPLIANT = 1.05, 1.0
 R_FULL_FRAC = 10.0  # jaw radius (in strip thicknesses) at which the radiused Kt is reached
 
 
+LTB_SF = 1.5      # strip lateral-torsional buckling: required load factor on the static stress state
+
+
+def strip_ltb_factor(fe: FEModel, st: State, elems: list) -> float:
+    """Linear buckling load factor of one strip (element chain `elems`) at state st, both strip ends
+    clamped: smallest alpha with (K_mat + alpha K_sigma) singular on the interior nodes. K_sigma is
+    the beam's own consistent initial-stress Hessian (CR + Wagner term), so it carries the in-plane
+    moment M3 (lateral-torsional buckling), the axial force and the actual M3 distribution
+    (moment-gradient factor). Validated: uniform M3 on a 6-element 0.1x9 mm x8 strip gives
+    M_cr 423 vs 2 pi/L sqrt(EIy GJ) = 389 mN m. inf if the state does not destabilise the strip."""
+    from .beam import element_cr
+    deg: dict[int, int] = {}
+    for e in elems:
+        deg[e.n0] = deg.get(e.n0, 0) + 1
+        deg[e.n1] = deg.get(e.n1, 0) + 1
+    inner = sorted(n for n, k in deg.items() if k > 1)
+    if not inner:
+        return float("inf")
+    idx = {n: k for k, n in enumerate(inner)}
+    m = 6 * len(inner)
+    Km, Ks = np.zeros((m, m)), np.zeros((m, m))
+    for e in elems:
+        c = element_cr(e, st)
+        Kme = c.B.T @ e.K7 @ c.B
+        loc = np.array([6 * idx[n] + j if n in idx else -1 for n in (e.n0, e.n1) for j in range(6)])
+        ok = loc >= 0
+        ix = np.ix_(loc[ok], loc[ok])
+        Km[ix] += Kme[np.ix_(ok, ok)]
+        Ks[ix] += c.Kr[np.ix_(ok, ok)]
+    Km, Ks = 0.5 * (Km + Km.T), 0.5 * (Ks + Ks.T)
+    ev = sl.eigh(Ks, Km, eigvals_only=True)
+    return float(-1.0 / ev.min()) if ev.min() < 0 else float("inf")
+
+
 def strip_kt(f) -> float:
     """Clamp-edge stress concentration Kt alone (no fretting knock-down) -- applied to the mean."""
     t = f.thickness
@@ -1799,6 +1833,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
     gdiag: dict[str, dict] = {}
     cables = {k + 1: {f"flex{j}" for j, m in enumerate(bi.members) if m.cable}
               for k, bi in enumerate(model.blades)}
+    chains: dict[tuple, dict] = {}
     for i, (e, c) in enumerate(zip(fe.elements, sa.cr)):
         if e.kind in ("rigid", "spring") or e.massless:
             continue
@@ -1811,6 +1846,11 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
         t_hat = unit(st.x[e.n1] - st.x[e.n0])
         is_cable = e.kind == "flexure" and name in cables.get(e.blade, ())
         fa, fb = element_end_forces(e, c, st)
+        if e.kind == "flexure" and not is_cable:
+            ch = chains.setdefault((e.blade, name), dict(els=[], M3=0.0, L=0.0))
+            ch["els"].append(e)
+            ch["M3"] = max(ch["M3"], abs(float(fa[5])), abs(float(fb[5])))
+            ch["L"] += e.L0
         secs = [e.sections[0], e.sections[-1]]
         used.setdefault(name, set()).update(fb_.material for sec in secs for fb_ in sec.fibres)
         for sec, sf in zip(secs, (fa, fb)):
@@ -1903,6 +1943,25 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                          note=f"jaw R={Rj*1e3:.2f} mm, wrap stress E t/2R={sw/1e6:.0f} MPa vs Xt; "
                               f"active only if kappa_op={kap:.0f}>1/R={1/Rj:.0f} 1/m; "
                               f"fatigue x{kfac:.2f} ({ff.strip_clamp})"))
+    for n in shim_groups:     # lateral-torsional buckling of the thin strip under its in-plane M3
+        worst = None
+        for (b, nm), ch in chains.items():
+            if nm != n:
+                continue
+            a = strip_ltb_factor(fe, st, ch["els"])
+            if worst is None or a < worst[0]:
+                worst = (a, b, ch)
+        if worst is None:
+            continue
+        a, b, ch = worst
+        s0 = ch["els"][0].sections[0]
+        mcr_u = 2 * np.pi / ch["L"] * np.sqrt(s0.EIy * s0.GJ)
+        mcr = a * ch["M3"]
+        out.append(Check(name="strip_ltb", member=n, value=ch["M3"], allowable=mcr / LTB_SF,
+                         utilisation=LTB_SF / a,
+                         note=f"b{b}: max|M3| {ch['M3']*1e3:.0f} mN m, beam buckling factor {a:.2f} "
+                              f"(M_cr,eff {mcr*1e3:.0f}; uniform-M clamped 2pi/L sqrt(EIy GJ) "
+                              f"{mcr_u*1e3:.0f}); util = M3/(M_cr,eff/{LTB_SF:g})"))
     f = model.design.flexure
     if f.strap_strands > 0 and model.blades:
         cable_tags = {f"flex{j}" for j, m in enumerate(model.blades[0].members) if m.cable}
