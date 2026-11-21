@@ -34,6 +34,37 @@ CQ_PHASE_MAX_DEG = 15.0   # +- about the per-throttle median (the FC trims a fix
 CQ_GAIN_MAX = 0.25        # +- about the median gain at each (throttle, J) (the FC gain schedule)
 
 
+# control_quality_cal criterion: the BUILD tolerance (CQ_PERTURB corners) is calibrated out once
+# per airframe (bench/in-flight sysid of G per throttle at the measured J -> FC schedule); only
+# RUNTIME variation about each calibrated node must fit in the limits. One-at-a-time runtime
+# samples, applied on top of every (throttle, build sample, J) node (tag ':r<name>'):
+#   rpm+/rpm-  rpm +-5 % (schedule bin half-width) via thrust ~ rpm^2
+#   temp+      +20 C: part temperature op.ambient_C 45 C (printed parts derate via
+#              materials.temp_knockdown; steel/aramid have no T dependence in the model) and
+#              steel strip E -0.03 %/C -> x0.994
+#   creep      strip-stiffness relaxation -2 %
+#   J+/J-      J_hub measurement error +-10 % (the schedule uses the measured J)
+# temp- (-20 C) is not evaluated: below 25 C the model has no part-temperature effect, so only the
+# strip E +0.6 % remains -> its deviation is taken as 0.3 x the creep (-2 %) deviation (linear).
+# Strip E is applied as a strip-WIDTH multiplier (EI, EA, GJ of a thin strip are all linear in w;
+# the in-plane bending / mass shifts are second order) so the variant stays a pure Design (cached).
+CQ_RUNTIME = (
+    ("rpm+", {"thrust": 1.05 ** 2}),
+    ("rpm-", {"thrust": 0.95 ** 2}),
+    ("temp+", {"ambient_C": 45.0, "strip_E": 1.0 - 0.0003 * 20}),
+    ("creep", {"strip_E": 0.98}),
+    ("J+", {"J": 1.10}),
+    ("J-", {"J": 0.90}),
+)
+CQ_RUNTIME_GROUPS = (("rpm", ("rpm+", "rpm-")), ("temp", ("temp+",)), ("creep", ("creep",)),
+                     ("J", ("J+", "J-")))
+CQ_TEMP_MINUS_FROM_CREEP = 0.006 / 0.02    # temp- deviation = 0.3 x creep deviation
+CQC_PHASE_MAX_DEG = 15.0   # residual about the calibrated value, worst-case LINEAR stack of groups
+CQC_GAIN_MAX = 0.25
+CQC_AUTHORITY_MIN = 0.5    # |G| of every build sample >= 0.5 x nominal at the same (throttle, J)
+CQC_MECH_MARGIN_MIN = 0.03  # mechanism mode |f/1P - 1| for every build sample, on the nominal side
+
+
 def _wrap(a):
     return (a + 180.0) % 360.0 - 180.0
 
@@ -88,14 +119,119 @@ def control_quality_viol(cq: dict) -> dict:
     return v
 
 
-def variants(design, thrust_factors=THRUST_FACTORS, perturb=None, j_hub=None):
+def _parse_tag(t):
+    parts = t.split(":")
+    get = lambda c: next((x for x in parts[1:] if x.startswith(c)), "")   # noqa: E731
+    return parts[0], get("p"), get("r")[1:], get("J")
+
+
+def control_quality_cal(tags, ms) -> dict:
+    """Post-calibration residual + calibratability over the robust set (control_quality_cal).
+
+    tags 'T<f>[:p<i>][:r<name>][:J<J>]', ms per-point metrics (cyc_gain, cyc_phase_deg,
+    mech_per_rev, cr_pl). Node = (throttle, build sample, J): calibrated value = its ':r'-free
+    point. Per runtime group (CQ_RUNTIME_GROUPS) the worst |dphase| / |G/G_cal - 1|; the residual
+    is their LINEAR sum (+ temp- = CQ_TEMP_MINUS_FROM_CREEP x creep). Calibratability per build
+    sample: |G_b|/|G_nom| at the same (T, J), and the mechanism-mode 1P margin with the same side
+    of 1P as the nominal build."""
+    nodes: dict = {}
+    for t, m in zip(tags, ms):
+        T, p, r, J = _parse_tag(t)
+        nodes.setdefault((T, p, J), {})[r] = m
+    nan = float("nan")
+    out = dict(phase_res_deg=0.0, gain_res=0.0, authority_min=float("inf"), cr_pl_ratio_min=float("inf"),
+               mech_margin_min=float("inf"), mech_side_flip=False, groups={}, per_node={})
+    for (T, p, J), rr in sorted(nodes.items()):
+        c = rr.get("")
+        if c is None:
+            continue
+        g0, ph0 = c.get("cyc_gain", nan), c.get("cyc_phase_deg", nan)
+        ok0 = math.isfinite(g0) and g0 > 0 and math.isfinite(ph0)
+        dev = {}
+        for name, members in CQ_RUNTIME_GROUPS:
+            if not any(r in rr for r in members):
+                continue
+            dp = dg = 0.0
+            for r in members:
+                if r not in rr:
+                    continue
+                g, ph = rr[r].get("cyc_gain", nan), rr[r].get("cyc_phase_deg", nan)
+                if not (ok0 and math.isfinite(g) and math.isfinite(ph)):
+                    dp = dg = float("inf")
+                    break
+                dp, dg = max(dp, abs(_wrap(ph - ph0))), max(dg, abs(g / g0 - 1.0))
+            dev[name] = (dp, dg)
+        if "creep" in dev:
+            t_ = dev.get("temp", (0.0, 0.0))
+            dev["temp"] = (t_[0] + CQ_TEMP_MINUS_FROM_CREEP * dev["creep"][0],
+                           t_[1] + CQ_TEMP_MINUS_FROM_CREEP * dev["creep"][1])
+        if not ok0:
+            dev = {k: (float("inf"), float("inf")) for k in dev} or {"cal": (float("inf"), float("inf"))}
+        ps, gs = sum(v[0] for v in dev.values()), sum(v[1] for v in dev.values())
+        node = dict(phase_res=ps, gain_res=gs, gain=g0, phase=ph0, groups=dev)
+        nom = nodes.get((T, "", J), {}).get("")
+        if p and nom is not None:
+            gn = nom.get("cyc_gain", nan)
+            a = g0 / gn if (ok0 and math.isfinite(gn) and gn > 0) else 0.0
+            node["authority"] = a
+            out["authority_min"] = min(out["authority_min"], a)
+            cn, cb = nom.get("cr_pl"), c.get("cr_pl")
+            if cn and cb is not None and cn > 0:
+                out["cr_pl_ratio_min"] = min(out["cr_pl_ratio_min"], cb / cn)
+        mpr = c.get("mech_per_rev", nan)
+        mpr0 = (nom or c).get("mech_per_rev", nan)
+        if math.isfinite(mpr):
+            out["mech_margin_min"] = min(out["mech_margin_min"], abs(mpr - 1.0))
+            if math.isfinite(mpr0) and (mpr - 1.0) * (mpr0 - 1.0) < 0:
+                out["mech_side_flip"] = True
+        else:
+            out["mech_margin_min"] = 0.0
+        node["mech_per_rev"] = mpr
+        out["per_node"][f"{T}:{p or 'nom'}:{J}"] = node
+        out["phase_res_deg"], out["gain_res"] = max(out["phase_res_deg"], ps), max(out["gain_res"], gs)
+        for k, v in dev.items():
+            o = out["groups"].setdefault(k, [0.0, 0.0])
+            o[0], o[1] = max(o[0], v[0]), max(o[1], v[1])
+    return out
+
+
+def control_quality_cal_viol(c: dict) -> dict:
+    v = {}
+    if c["phase_res_deg"] > CQC_PHASE_MAX_DEG:
+        v["cqc_phase"] = min(c["phase_res_deg"] / CQC_PHASE_MAX_DEG - 1.0, 10.0)
+    if c["gain_res"] > CQC_GAIN_MAX:
+        v["cqc_gain"] = min(c["gain_res"] / CQC_GAIN_MAX - 1.0, 10.0)
+    if math.isfinite(c["authority_min"]) and c["authority_min"] < CQC_AUTHORITY_MIN:
+        v["cqc_authority"] = 1.0 - c["authority_min"] / CQC_AUTHORITY_MIN
+    if c["mech_margin_min"] < CQC_MECH_MARGIN_MIN:
+        v["cqc_mech_margin"] = 1.0 - c["mech_margin_min"] / CQC_MECH_MARGIN_MIN
+    if c["mech_side_flip"]:
+        v["cqc_mech_side"] = 1.0
+    return v
+
+
+def _apply_runtime(d, rt: dict):
+    upd = {}
+    if "strip_E" in rt:
+        upd["flexure.width"] = float(get_path(d, "flexure.width")) * rt["strip_E"]
+    if "J" in rt:
+        upd["motor.J_hub"] = float(d.motor.J_hub) * rt["J"]
+    if upd:
+        d = set_design(d, upd)
+    if "ambient_C" in rt:
+        d = d.model_copy(update=dict(op=d.op.model_copy(update=dict(ambient_C=float(rt["ambient_C"])))))
+    return d
+
+
+def variants(design, thrust_factors=THRUST_FACTORS, perturb=None, j_hub=None, runtime=None):
     """-> list of (tag, Design).  j_hub: optional motor.J_hub values (unknown until measured),
     each evaluated at every thrust factor and perturbation (tag suffix ':J<value>')."""
     out = []
     pert = [("nom", {})] + [(f"p{i}", p) for i, p in enumerate(perturb or [])]
     js = [None] if not j_hub else list(j_hub)
+    rts = [("", {})] + list(runtime or [])     # runtime: CQ_RUNTIME-style (name, spec) samples
     for f in thrust_factors:
-        for (ptag, p), J in ((pp, J) for pp in pert for J in js):
+        for (ptag, p), (rtag, rt), J in ((pp, rr, J) for pp in pert for rr in rts for J in js):
             d = design
             if J is not None:
                 d = d.model_copy(update=dict(motor=d.motor.model_copy(update=dict(J_hub=float(J)))))
@@ -105,10 +241,11 @@ def variants(design, thrust_factors=THRUST_FACTORS, perturb=None, j_hub=None):
                 # pre-lag is built-in geometry: solve it once at the nominal thrust, not per point
                 d = d.model_copy(update=dict(flexure=d.flexure.model_copy(
                     update=dict(pre_lag_ref_mass=design.op.vehicle_mass))))
+            d = _apply_runtime(d, rt)
             d = d.model_copy(update=dict(op=d.op.model_copy(
-                update=dict(vehicle_mass=design.op.vehicle_mass * f, rpm=None,
+                update=dict(vehicle_mass=design.op.vehicle_mass * f * rt.get("thrust", 1.0), rpm=None,
                             pulse_capability_margin=PULSE_MARGIN))))
-            out.append((f"T{f:g}" + ("" if ptag == "nom" else ":" + ptag)
+            out.append((f"T{f:g}" + ("" if ptag == "nom" else ":" + ptag) + (":r" + rtag if rtag else "")
                         + ("" if J is None else f":J{J:.3g}"), d))
     return out
 
@@ -119,8 +256,15 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
     if not ok:
         return dict(error="no point evaluated")
     tags, ms = zip(*ok)
-    cq = None
-    if all(m.get("criterion") == "control_quality" for m in ms):
+    cq = cqc = None
+    if all(m.get("criterion") == "control_quality_cal" for m in ms):
+        # build samples (':p') and runtime samples (':r') only feed the calibration residual /
+        # calibratability; cr_pl and the hard checks come from the nominal points
+        cqc = control_quality_cal(tags, ms)
+        nom = [(t, m) for t, m in zip(tags, ms) if ":p" not in t and ":r" not in t]
+        if nom:
+            tags, ms = zip(*nom)
+    elif all(m.get("criterion") == "control_quality" for m in ms):
         # the CQ tolerance samples (':p<i>' tags) only measure the G spread; cr_pl, checks and
         # the remaining hard margins come from the nominal points (tolerance is verified separately)
         cq = control_quality(tags, [m.get("cyc_gain", float("nan")) for m in ms],
@@ -148,6 +292,10 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
         out["cq"] = cq
         cqv = control_quality_viol(cq)
         viol.update(cqv)
+    if cqc is not None:
+        out["cqc"] = cqc
+        cqv = control_quality_cal_viol(cqc)
+        viol.update(cqv)
     out["feasible"] = not viol
     if all("cr_pl" in m for m in ms):
         # pulse-limited: each point has its own pulse scale (FC schedules the gain with throttle);
@@ -171,13 +319,13 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
     return out
 
 
-def map_metrics(pool, designs, metrics_fn: Callable, factors=None, perturb=None, j_hub=None):
+def map_metrics(pool, designs, metrics_fn: Callable, factors=None, perturb=None, j_hub=None, runtime=None):
     """pool.map over designs -> list of (metrics | None, error). factors=None: single point."""
     if not factors:
         recs = pool.map(designs)
         return [(metrics_fn(d, r["results"]), None) if "results" in r
                 else (None, r.get("error", "?")[:200]) for d, r in zip(designs, recs)]
-    vs = [variants(d, factors, perturb, j_hub) for d in designs]
+    vs = [variants(d, factors, perturb, j_hub, runtime) for d in designs]
     flat = [dv for v in vs for _, dv in v]
     recs = pool.map(flat)
     out, k = [], 0
