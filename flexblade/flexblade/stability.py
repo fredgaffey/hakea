@@ -141,11 +141,54 @@ def damped_modes(model, ss, lin, aero, targets_hz, n_basis: int = 20, iters: int
 # ------------------------------------------------------------------------- airframe coupling
 
 
+def mount_stiffness(mt) -> float:
+    """In-plane stiffness N/m of an annular elastomer washer loaded in transverse shear (axis along
+    the motor axis): k = infill G pi (ro^2 - ri^2) / t.  Axisymmetric, so k_x = k_y exactly.
+    (A bonded ring loaded laterally as a bushing is ~10-100x stiffer, incompressible limit.)"""
+    ri, ro, t = mt.r_in_mm * 1e-3, mt.r_out_mm * 1e-3, mt.length_mm * 1e-3
+    return float(mt.infill * mt.G_mpa * 1e6 * np.pi * (ro**2 - ri**2) / t)
+
+
+def mount_modes(m_hub, m_arm, k_arm, zeta_arm, k_m, eta):
+    """2-DOF hub (on mount) + arm (on rigid support) with complex stiffnesses.  Returns
+    (f1_hz, zeta1, modal mass at the hub coordinate, strain-energy zeta1, f2_hz, zeta2) of the lower mode."""
+    K = np.array([[k_m * (1 + 1j * eta), -k_m * (1 + 1j * eta)],
+                  [-k_m * (1 + 1j * eta), k_m * (1 + 1j * eta) + k_arm * (1 + 2j * zeta_arm)]])
+    M = np.diag([m_hub, m_arm])
+    w2, V = np.linalg.eig(np.linalg.solve(M, K))
+    o = np.argsort(w2.real)
+    w2, V = w2[o], V[:, o]
+    w = np.sqrt(w2)
+    f = w.real / (2 * np.pi)
+    z = -w.imag / w.real * -1  # eigenvalue of -w^2: zeta = Im(w2)/(2 Re(w2)) below
+    z = w2.imag / (2 * w2.real)
+    v = V[:, 0].real
+    mm = float(v @ M @ v / v[0] ** 2)
+    um = 0.5 * k_m * (v[0] - v[1]) ** 2
+    ua = 0.5 * k_arm * v[1] ** 2
+    z_se = 0.5 * (eta * um + 2 * zeta_arm * ua) / (um + ua)
+    return float(f[0]), float(z[0]), mm, float(z_se), float(f[1]), float(z[1])
+
+
 def make_airframe(af, vehicle_mass: float, m_rotor: float) -> Airframe:
     """Schema Airframe -> modal mass/stiffness/damping.  f is the support frequency with the
     (non-spinning) rotor mass on it: k = (m_af + m_rotor) ω²."""
     m = af.mass if af.mass is not None else 0.25 * vehicle_mass
     mt = m + m_rotor
+    if getattr(af, "mount", None) is not None:
+        mnt = af.mount
+        km = mount_stiffness(mnt)
+        fy = af.f_y_hz if af.f_y_hz is not None else af.f_hz
+        out = []
+        for f_arm in (af.f_hz, fy):       # arm rigid-mount frequency per axis (mount is isotropic)
+            k_arm = mt * (2 * np.pi * f_arm) ** 2
+            f1, z1, mm, _, _, _ = mount_modes(mnt.mass_motor_kg + m_rotor, m - mnt.mass_motor_kg,
+                                              k_arm, af.zeta, km, mnt.eta)
+            out.append((f1, z1, mm))
+        (fx, zx, mx), (fy_, zy, my) = out
+        m_af = 0.5 * (mx + my) - m_rotor
+        return Airframe(m_af, (m_af + m_rotor) * (2 * np.pi * fx) ** 2, (m_af + m_rotor) * (2 * np.pi * fy_) ** 2,
+                        2 * zx * (m_af + m_rotor) * 2 * np.pi * fx, 2 * zy * (m_af + m_rotor) * 2 * np.pi * fy_)
     wx = 2 * np.pi * af.f_hz
     wy = 2 * np.pi * (af.f_y_hz if af.f_y_hz is not None else af.f_hz)
     return Airframe(m, mt * wx ** 2, mt * wy ** 2, 2 * af.zeta * mt * wx, 2 * af.zeta * mt * wy)

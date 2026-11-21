@@ -345,6 +345,21 @@ class Motor(_M):
                                                     "max_ramp 16 per 50 us tick of 2000 -> 160/s")
 
 
+class Mount(_M):
+    """Axisymmetric elastomer shear washer (axis = motor axis) between motor carrier and the arm-tube
+    post, in series with the arm.  In-plane stiffness is isotropic by construction (see stability.mount_stiffness)."""
+    type: Literal["tpu_ring"] = "tpu_ring"
+    G_mpa: float = Field(6.5, description="dynamic shear modulus at ~200 Hz, MPa (TPU 95A ~ 9 static, "
+                         "~12 at 200 Hz; 85A ~ 5-6.5)")
+    eta: float = Field(0.15, description="loss factor tan(delta) of the elastomer (TPU 0.1-0.2)")
+    r_in_mm: float = Field(4.0, description="ring inner radius (M4/M5 centre post bore), mm")
+    r_out_mm: float = Field(9.0, description="ring outer radius, mm")
+    length_mm: float = Field(8.0, description="elastomer thickness t between post flange and carrier (shear gap), mm")
+    infill: float = Field(0.6, description="stiffness knockdown of printed/infilled TPU vs solid")
+    mass_motor_kg: float = Field(0.045, description="motor + carrier mass on the ring, kg "
+                                 "(part of Airframe.mass)")
+
+
 class Airframe(_M):
     """In-plane hub support (arm/airframe) seen by one rotor, from an arm tap test.
     Placeholder defaults until measured on the vehicle."""
@@ -353,6 +368,8 @@ class Airframe(_M):
                                     "isotropic (rotating-frame constant coefficients). Anisotropic "
                                     "support with a 2-bladed rotor -> periodic -> Floquet")
     zeta: float = Field(0.02, description="airframe mode damping ratio")
+    mount: Optional[Mount] = Field(None, description="damped isotropic motor mount in series with the "
+                                   "arm; f_hz/f_y_hz are then the RIGID-mount arm frequencies. None = rigid")
     mass: Optional[float] = Field(None, description="effective in-plane modal mass at the hub, kg, "
                                   "EXCLUDING the rotor (added from the FE model); None = 0.25 x "
                                   "vehicle_mass")
