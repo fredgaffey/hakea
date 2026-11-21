@@ -387,3 +387,4 @@ Idea backlog (unscreened):
 - DE8 STARTED 03:26 (bal.* + --one-sided + --resolve-presets 6; local:20 + mac:9; seed 91).
 - 2307 Mac DE (6", T≤1.25): gen 7 feasible but cr 0.008 — the 2307 on 6" at 0.79 kg has almost no 1P headroom; cyclic authority comes out ~10× below the leads. Real AUW needed; flagged for Fred.
 - REVIEW: for Fred's hardware the honest answer is forming: 2307@6" (0.79 kg guess) ≈ marginal; CRM2204 half (0.18 kg/rotor, 7") ≈ 0.11 but CAL-infeasible (de2 queued). Lighter vehicle per motor torque is THE lever for authority (cr ∝ ΔQ/Q_hover).
+- v9c: mode is BELOW 1P (v8 0.93/0.90/0.87 at T0.7/1/1.4). The persistent mech_side_flip comes from the ±tolerance p0 variants reaching 0.96–0.97 at T0.7 and crossing 1P. Skew +4/+5 lowers the mode (0.88) but still flips in a corner; cr_pl falls to 0.076–0.080. Manual v9 search STOPPED — DE8 (one-sided + resolve-presets) now does this systematically.
