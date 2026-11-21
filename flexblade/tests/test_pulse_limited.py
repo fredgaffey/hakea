@@ -72,12 +72,12 @@ def test_fatigue_np_part_conservative(design):
     assert f(0.5) == pytest.approx(math.hypot(0.3, 0.3))       # nP aero part kept when scaling down
 
 
-def test_jitter_floor_makes_pulse_infeasible(design):
-    j = 1.5 * frc.JITTER_MAX_DEG     # fixed aero part above the floor: no pulse can fix it
+def test_jitter_above_floor_is_hard_not_pulse_scaled(design):
+    j = 1.5 * frc.JITTER_MAX_DEG     # jitter fails at s=1: hard violation, pulse scaling untouched
     r = dict(checks=[_chk("harmonic_jitter", 1.0, value=j)], summary=dict(pitch_amp_deg=0.1))
     out = dict(control_ratio=0.1, viol={})
     rs.add_pulse_limited(design, r, out)
-    assert out["pulse_scale"] == 0.0 and out["viol_hard"].get("pulse_infeasible") == 1.0
+    assert out["pulse_scale"] > 0.0 and "pulse_infeasible" not in out["viol_hard"]
 
 
 def test_combine_per_throttle_schedule_and_j_variants(design):
