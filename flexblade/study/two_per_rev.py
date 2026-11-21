@@ -135,7 +135,7 @@ def blade_amps(model, U, hubd):
 
 
 def case(precone):
-    d0 = pl.load_design("10in_tt_strap_steelx_v8")
+    d0 = pl.load_design(__import__("os").environ.get("DN","10in_tt_strap_steelx_v8"))
     d0 = d0.model_copy(update=dict(blade=d0.blade.model_copy(update=dict(precone_deg=precone))))
     d = robust.variants(d0, thrust_factors=(1.0,))[0][1]
     ps = pl._eval_point(d)
@@ -174,5 +174,5 @@ if __name__ == "__main__":
     pcs = [float(x) for x in sys.argv[1:]] or [0.0, 1.3]
     with ProcessPoolExecutor(2) as ex:
         res = list(ex.map(case, pcs))
-    (HERE / "results" / "two_per_rev.json").write_text(json.dumps(res, indent=1, default=float))
+    (HERE / "results" / ("two_per_rev_" + __import__("os").environ.get("DN","v8") + ".json")).write_text(json.dumps(res, indent=1, default=float))
     print(json.dumps(res, indent=1, default=float))

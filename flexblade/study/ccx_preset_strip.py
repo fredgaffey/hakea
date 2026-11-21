@@ -24,7 +24,7 @@ from flexblade.beam import assemble, element_end_forces, slot_frames
 from flexblade.schema import Design
 
 HERE = Path(__file__).resolve().parent
-DES = HERE / "designs" / "10in_tt_strap_steelx_v8.json"
+DES = HERE / "designs" / (__import__("os").environ.get("DN","10in_tt_strap_steelx_v8") + ".json")
 G3 = 1 / np.sqrt(3)
 # ccx gauss3d2 order (xi fastest) and C3D20 corner natural coords
 IPS = np.array([(x, y, z) for z in (-G3, G3) for y in (-G3, G3) for x in (-G3, G3)])
