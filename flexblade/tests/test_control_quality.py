@@ -151,3 +151,19 @@ def test_runtime_variants_tags_and_perturbations():
     # without runtime samples the variant set (and so the evaluation cache keys) is unchanged
     assert [t for t, _ in robust.variants(d, (1.0,), None, (2e-6,))] == ["T1:J2e-06"]
     assert robust.variants(d, (1.0,), None, (2e-6,))[0][1] == n
+
+
+def test_continuous_rpm_interpolation_residual():
+    th, extra = robust.cont_points(5)
+    assert len(th) == 5 and th[0] == pytest.approx(0.7) and th[-1] == pytest.approx(1.4)
+    assert len(extra) == 8
+    # quadratic phase in x = ln rpm over 3 nodes (x=0,1,2), test points at 0.5, 1.5: linear-interp error
+    # of f=a x^2 is a/4 at each midpoint; gain constant; noise slope = max |df/dx| between nodes = 3a
+    a = 4.0
+    x = [0, 0.5, 1, 1.5, 2]
+    ph = [a * v * v for v in x]
+    dp, dg = robust.interp_residual(x, ph, [1.0] * 5, [0, 2, 4], noise=0.01)
+    assert dp == pytest.approx(a * 0.25 + 3 * a * 0.01)
+    assert dg == pytest.approx(0.0)
+    dp, dg = robust.interp_residual(x, [0] * 5, [1, 1.1, 1.2, 1.3, 1.4], [0, 2, 4], noise=0.0)
+    assert dp == pytest.approx(0.0) and dg == pytest.approx(0.0)    # linear gain is exact
