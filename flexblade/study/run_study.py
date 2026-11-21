@@ -166,17 +166,24 @@ def capability_frac(d: Design) -> dict:
                 limit=cap.dQ_limit)
 
 
-MOTOR_OVERRIDE = None   # --motor: motor.MOTOR_LIBRARY name replacing the size default
+MOTOR = None            # --motor: motor library name replacing motor_for_diameter (J_hub, duty slew kept)
 MASS_OVERRIDE = None    # --vehicle-mass: hover thrust/g per rotor (kg)
 
 
+def with_motor(d: Design, name: str | None = None) -> Design:
+    """Swap in library motor `name` (default MOTOR), keeping the size's J_hub and duty_slew_max."""
+    name = name or MOTOR
+    if not name:
+        return d
+    m = mot.get_motor(name).model_copy(update=dict(J_hub=d.motor.J_hub, duty_slew_max=d.motor.duty_slew_max))
+    return d.model_copy(update=dict(motor=m))
+
+
 def _override(d: Design) -> Design:
-    upd = {}
-    if MOTOR_OVERRIDE:
-        upd["motor"] = mot.get_motor(MOTOR_OVERRIDE).model_copy(update=dict(duty_slew_max=d.motor.duty_slew_max))
+    d = with_motor(d)
     if MASS_OVERRIDE:
-        upd["op"] = d.op.model_copy(update=dict(vehicle_mass=MASS_OVERRIDE))
-    return d.model_copy(update=upd) if upd else d
+        d = d.model_copy(update=dict(op=d.op.model_copy(update=dict(vehicle_mass=MASS_OVERRIDE))))
+    return d
 
 
 def base_design(D: float, concept: str, coax: bool = False, frac_margin: float = 0.95) -> tuple[Design, dict]:
@@ -683,7 +690,10 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     leads = _lead_for(INIT_DESIGNS, D)
     bo = _lead_for(BASE_DESIGNS, D)
     if bo:   # fields outside the param space (laminae, balance pins, mount, clamp...) fixed from the lead
+        tmf = base.op.torque_mod_frac
         base = bo[0].model_copy(update=dict(name=base.name))
+        if MOTOR:   # lead's motor -> override; pulse re-derived from the override's capability
+            base = set_design(with_motor(base), {"op.torque_mod_frac": tmf})
     if GOODMAN:
         base = _goodman(base)
     V = variables(concept, D)
@@ -876,10 +886,12 @@ def main(argv=None):
         os.environ["FLEXBLADE_ARM_RANGE"] = a.arm_range
         ARM_RANGE = tuple(float(x) for x in a.arm_range.split(","))
     CRITERION = a.criterion
+    global MOTOR
+    MOTOR = a.motor
     global MECH_MARGIN, GOODMAN
     MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
-    global MOTOR_OVERRIDE, MASS_OVERRIDE
-    MOTOR_OVERRIDE, MASS_OVERRIDE = a.motor, a.vehicle_mass
+    global MASS_OVERRIDE
+    MASS_OVERRIDE = a.vehicle_mass
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
     RUNTIME = list(robust.CQ_RUNTIME) if CRITERION == "control_quality_cal" else None
     global INIT_DESIGNS, BASE_DESIGNS, INIT_FRAC, J_HUB_BY_D

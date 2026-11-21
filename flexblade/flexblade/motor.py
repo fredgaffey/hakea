@@ -197,6 +197,27 @@ MOTOR_LIBRARY: dict[str, tuple[Motor, str]] = {
                              thermal_resistance_KW=_Rth(22, 4), J_hub=2.0e-6 * (6 / 5) ** 3, supply_V=11.1,
                              max_current=15.0),
                        "one half of the CRM2204 1400KV coax unit, 3S; R/J/L estimates, measure on bench"),
+    # Hakea's own motor, from the latest motor-ID fit (notes/motorid/report.md, logs 33/34 fit,
+    # 32 hold-out; 'Parameters' table).  Absolute scale fixed by the R = 0.16 +- 0.04 prior
+    # (report 'Identifiability'), so R/J/b/T0/current are only as good as that prior.
+    "2307_1300kv_hakea": (Motor(
+        name="2307_1300kv_hakea",
+        kv=1300.0,                 # nominal Kv; report: Kt = Ke = 0.00735 N m/A (Kv 1300), the
+        voltage_gain=1.032,        # fitted g(rpm) 1.017..1.052 (mean 1.032) gives effective Kv ~1356
+        R=0.1542,                  # report: loop R = 2 R_phase + 2 Rds_on, 25 C (+-0.45 % fit, +-25 % prior)
+        L=3.0e-5,                  # report: FIXED in the fit, not identified (estimate_L gives 36 uH)
+        J_rotor=3.335e-6,          # report: J_m (bell + magnets + shaft), +-0.55 % fit
+        b=7.425e-6,                # report: viscous friction N m s/rad
+        T0=1.322e-6,               # report: Coulomb friction, at lower bound -> not identifiable
+        Rb=0.04339,                # report: battery + wiring resistance
+        supply_V=24.0,             # report: 6S pack, open-circuit 23.4-25.3 V over runs p32-np33
+        max_current=40.0,          # GUESS: T-Motor 2307 class datasheet peak ~40-45 A (Kt*40 = 0.29 N m)
+        torque_bandwidth_hz=2000.0,  # GUESS: library default (not identified; sweeps < 50 Hz)
+        thermal_resistance_KW=1.5,   # GUESS: schema default for the 2307 class (measure)
+        J_hub=2.0e-6,              # GUESS: 5" hub + fasteners (library convention, scale ~D^3)
+        duty_slew_max=160.0),      # report ESC eeprom: ramp high 16/2000 per 20 kHz tick = 160 /s
+                                   # (run_study overrides to 2550/s = AM32 max_ramp 255: reflash!)
+                          "Hakea's T-Motor 2307 1300KV, motor-ID fit notes/motorid/report.md (6S)"),
     "2806.5_1100kv_6s": (Motor(name="2806.5_1100kv_6s", kv=1100, L=estimate_L(1100, 28, 6.5), R=0.10, J_rotor=_J(28, 6.5), thermal_resistance_KW=_Rth(28, 6.5),
                                J_hub=2.0e-6 * (7 / 5) ** 3, supply_V=24.0, max_current=50.0),
                          "7\" long-range 6S class (1050-1300KV sold); datasheet Rm ~0.05 Ω"),
