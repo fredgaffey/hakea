@@ -28,7 +28,7 @@ REMOTE_PY = f"{REMOTE_ROOT}/venv/bin/python"
 PKG_DIR = Path(__file__).resolve().parent          # .../flexblade/flexblade
 REPO_URL = "https://github.com/fredgaffey/hakea.git"
 DEPS = ("numpy scipy matplotlib numba pydantic neuralfoil aerosandbox scikit-fem meshio "
-        "gmsh trimesh pytest")
+        "gmsh trimesh manifold3d pytest")
 
 
 # --------------------------------------------------------------------------- remote setup
@@ -41,8 +41,8 @@ def _ssh(host: str, cmd: str, timeout: float = 900, check: bool = True) -> subpr
 
 def bootstrap(host: str, python: str = "/opt/homebrew/bin/python3", tag: str | None = None) -> None:
     """(Re)create the remote venv + package if the temp dir was wiped."""
-    probe = _ssh(host, f"test -x {REMOTE_PY} && {REMOTE_PY} -c 'import flexblade' && echo ok",
-                 check=False)
+    probe = _ssh(host, f"test -x {REMOTE_PY} && {REMOTE_PY} -c 'import flexblade, manifold3d' && echo ok",
+                 check=False)   # manifold3d: steelx fittings (rotor.fitting_mass); a host without it fails every eval fast and steals the queue
     if "ok" not in probe.stdout:
         _ssh(host, f"set -e; rm -rf {REMOTE_ROOT}; mkdir -p {REMOTE_ROOT}; cd {REMOTE_ROOT}; "
                    f"git clone -q --depth 1 -b flexblade {REPO_URL} hakea; "
