@@ -25,3 +25,9 @@ It doubles the fatigue util (1.10 -> 1.85..2.11) and the LTB util (0.30 -> 0.54.
 Recommendation: keep the free release and accept light compression on one strip. It is small (<=12% of Euler, LTB 0.30), it is not CF-driven,
 and its Goodman mean is the favourable sign. Free side-find: cross_angle 110 deg improves fatigue (1.10 -> 1.02), LTB (0.27) and control ratio (+10%),
 but mech moves 0.846 -> 0.858/rev, toward 1P. Check it on the robust/CAL set before adopting.
+
+## v8 cross_angle robust check (110/120 deg, strip presets re-solved, sa.py default gates)
+- v8 (cr 105): cr_pl 0.0715 -> variants: 110: cr_pl 0.0890, ph 7.1 deg / gain 9.0 %, mech 0.0245, res 1.18/rev, INFEASIBLE (cqc_mech_margin 0.182 viol).
+- 120: cr_pl 0.1240, ph 7.5 deg / gain 7.6 %, mech 0.0135, res 1.19/rev, INFEASIBLE (cqc_mech_margin 0.549 viol).
+- Only violated gate in both is cqc_mech_margin (dropped by SA_GATES=minimal, so likely feasible there; minimal run not done, compute cost ~20 min each).
+- No v10 saved (rule: needs default-gate feasibility). Nominal fatigue/LTB gains do not survive the worst-corner mech-mode margin; scores in scratchpad o110/o120.json.
