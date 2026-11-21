@@ -778,12 +778,14 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     best = dict(J=float("inf"))
     n = [0]
     lock = threading.Lock()
+    gerr = [0.0]
 
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
         designs = _resolve_all([set_design(base, obj.to_values(u)) for u in pop])
         recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, _jhub(D), RUNTIME)
         Js = []
+        gerr[0] = sum(mm is None or "error" in mm for mm, _ in recs) / max(len(recs), 1)
         for u, dsg, (mm, err) in zip(pop, designs, recs):
             vals = obj.to_values(u)
             if mm is None or "error" in mm:
@@ -809,7 +811,7 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
         b = best.get("m", {})
         print(f"[{case}] gen {gen[0]:3d} evals {n[0]:5d} best J {best['J']:+.4f} "
               f"cr {b.get('control_ratio', float('nan')):.4f} feas {b.get('feasible')} "
-              f"viol {_short(b.get('viol', {}))}  {time.time() - t0:.0f}s", flush=True)
+              f"viol {_short(b.get('viol', {}))} err {gerr[0]:.2f}  {time.time() - t0:.0f}s", flush=True)
 
     init = "latinhypercube"
     if leads:

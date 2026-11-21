@@ -133,6 +133,28 @@ def parse_hosts(spec: str) -> list[tuple[str, int]]:
     return out
 
 
+class HostHealth:
+    """Per-host result/error counts; quarantine a host with >= min_n results and >= frac errors."""
+
+    def __init__(self, min_n: int = 20, frac: float = 0.5):
+        self.min_n, self.frac = min_n, frac
+        self.n: dict[str, int] = {}
+        self.err: dict[str, int] = {}
+        self.first: dict[str, str] = {}
+        self.bad: set[str] = set()
+
+    def record(self, host: str, rec: dict) -> bool:
+        """Count one result; True exactly once, when this result quarantines the host."""
+        self.n[host] = self.n.get(host, 0) + 1
+        if "error" in rec:
+            self.err[host] = self.err.get(host, 0) + 1
+            self.first.setdefault(host, str(rec["error"]))
+        if host not in self.bad and self.n[host] >= self.min_n and self.err.get(host, 0) >= self.frac * self.n[host]:
+            self.bad.add(host)
+            return True
+        return False
+
+
 class HostPool:
     """Work-stealing pool across hosts. Use as a context manager.
 
@@ -152,10 +174,11 @@ class HostPool:
         self.procs: dict[str, subprocess.Popen] = {}
         self._sem: dict[str, threading.Semaphore] = {}
         self._dead: dict[str, threading.Event] = {}
-        self._inflight: dict[int, tuple[str, "queue.Queue", int]] = {}   # gid → host, results q, i
+        self._inflight: dict[int, tuple] = {}   # gid → host, results q, i
         self._lock = threading.Lock()
         self._wlock: dict[str, threading.Lock] = {}
         self._gid = 0
+        self.health = HostHealth()
         if setup:
             for name, _ in self.hosts:
                 if name != "local":
@@ -191,7 +214,20 @@ class HostPool:
             self._sem[name].release()
             if ent is None:
                 continue
-            _, q, i = ent
+            _, q, i, jobs, dj = ent
+            if self.health.record(name, rec):
+                print(f"WARNING: host {name} quarantined ({self.health.err[name]}/{self.health.n[name]} "
+                      f"errors); first error: {self.health.first[name]}", flush=True)
+                self._dead[name].set()
+                with self._lock:      # requeue its pending jobs on the other hosts
+                    gs = [g for g, e in self._inflight.items() if e[0] == name]
+                    pend = [self._inflight.pop(g) for g in gs]
+                for e in pend + [ent]:
+                    e[3].put((e[2], e[4]))
+                continue
+            if name in self.health.bad and "error" in rec:   # late error from quarantined host
+                jobs.put((i, dj))
+                continue
             rec["id"] = i
             rec["host"] = name
             q.put((i, rec))
@@ -200,7 +236,7 @@ class HostPool:
             lost = [(g, e) for g, e in self._inflight.items() if e[0] == name]
             for g, _ in lost:
                 self._inflight.pop(g)
-        for _, (_, q, i) in lost:
+        for _, (_, q, i, *_r) in lost:
             q.put((i, {"id": i, "error": f"host {name} died", "host": name}))
 
     def __exit__(self, *exc):
@@ -236,7 +272,7 @@ class HostPool:
                 with self._lock:
                     self._gid += 1
                     gid = self._gid
-                    self._inflight[gid] = (name, results, i)
+                    self._inflight[gid] = (name, results, i, jobs, dj)
                 try:
                     with self._wlock[name]:
                         proc.stdin.write(json.dumps({"id": gid, "design": dj, "what": self.what,
@@ -259,6 +295,8 @@ class HostPool:
                     break
                 except queue.Empty:
                     if all(self._dead[n].is_set() for n, _ in self.hosts):
+                        if self.health.bad >= {n for n, _ in self.hosts}:
+                            raise RuntimeError("all hosts quarantined (see first-error warnings)")
                         raise RuntimeError("all hosts died")
                     # jobs left behind by a host that died while feeding → serve them
                     if not jobs.empty() and not any(t.is_alive() for t in threads):
