@@ -52,3 +52,10 @@ Stiffness pass (<= 11 %, 20 % limit). Preset/hover pass/fail NOT established. To
   (tests/test_strip_stress_recovery.py). Mid-span 207 vs 208 MPa (unchanged); hub clamp 175 vs 143 (T0.7), 270 vs 225 (T1),
   so T1 binding sigma_m moves to the hub clamp, 284 (x Kt) vs 265. rotor static/mean uses it; amplitudes (_lin) still CR.
 - Re-score (sa.py file v8): cr_pl 0.0883 (was 0.0911), feasible, mech margin 0.036, phase 6.2 deg / gain 9.8 % (unchanged).
+- Amplitude recovery now consistent: beam.element_end_forces_lin(e, c, du, st) = central FD (h = 1e-6/max|du|) of the
+  corrected Bt.f7 end-section recovery about the hover state (real/imag parts separately); flag beam.LIN_RECOVERY
+  ("section" default | "legacy" K12.d7) or mode= kwarg. Test: amplitude M2/M3 continuous at nodes (equilibrated tip-moment
+  increment), legacy jumps. Full suite 297 passed.
+- Re-score v8 after: cr_pl 0.0883 -> 0.0715, feas true (res_margin 0.177), mech 0.036, phase 6.19 deg / gain 9.8 % (unchanged).
+  Binding Goodman lamina (T0.7, J3.76e-6, hub-side group): sa 1011 MPa, sm 183 MPa (fat util 2.30 on the unfixed-flexure group; the
+  strip group binding sa=404 MPa, sm=104 MPa, util 0.87); before-values of sa not logged (legacy path not rerun).
