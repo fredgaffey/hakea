@@ -57,6 +57,8 @@ STOCK_SLEW = 160.0
 RES_BAND = 0.15
 BAL_VARS = False       # --one-sided also enables the bal.* balance-pair variables (steelx)
 ONE_SIDED = False
+GATES_MINIMAL = False  # --gates minimal: replaces mech_band/one-sided gates by the mech-mode zeta gate (NOTE: run_study's
+# mech_band is a nominal-only 1P band + rpm drift, not sa.py's per-corner CAL cqc_mech_margin/side; closest equivalent)
 DRIFT_MAX = 0.07
 MECH_MARGIN = 0.075   # --criterion mech_band: nominal hard 1P margin of the mechanism mode
 GOODMAN = False       # --goodman: strip_fatigue_mean="goodman" on every evaluated design
@@ -446,6 +448,7 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
                 rpm_ = (sub.get("summary") or {}).get("rpm") or 1.0
                 out["mech_per_rev"] = float(mm_["freq_hz"] * 60 / rpm_)
                 out["mech_mode"] = f"{mm_['label']} {out['mech_per_rev']:.3f}/rev"
+                out["mech_zeta"] = float(mm_.get("damping_ratio", float("nan")))
                 mech_mgs.append(abs(out["mech_per_rev"] - 1.0))
                 mech_rr.append((float(rpm_), out["mech_per_rev"]))
                 out["res_margin_all"], out["res_which_all"] = mg, wh
@@ -457,6 +460,7 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
                 rpm_ = (sub.get("summary") or {}).get("rpm") or 1.0
                 out["mech_per_rev"] = float(mm_["freq_hz"] * 60 / rpm_)
                 out["mech_mode"] = f"{mm_['label']} {mm_['freq_hz'] * 60 / rpm_:.3f}/rev"
+                out["mech_zeta"] = float(mm_.get("damping_ratio", float("nan")))
                 out["res_margin_all"], out["res_which_all"] = mg, wh
                 mg, wh = resonance_margin(sub, skip_1p=im)
         margins.append(mg)
@@ -477,12 +481,16 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
         viol["resonance"] = 1.0
     elif mg < RES_BAND:
         viol["resonance"] = (RES_BAND - mg) / RES_BAND
-    if mech_mgs:
+    if GATES_MINIMAL:   # --gates minimal (gate_audit.md): no raw 1P band / one-sided drift; mech-mode zeta >= 0.02
+        zm = out.get("mech_zeta", float("nan"))
+        if not math.isfinite(zm) or zm < robust.MECH_ZETA_MIN:
+            viol["cqc_mech_zeta"] = 1.0 if not math.isfinite(zm) else 1.0 - zm / robust.MECH_ZETA_MIN
+    elif mech_mgs:
         mm_min = min(mech_mgs)
         out["mech_margin"] = mm_min
         if mm_min < MECH_MARGIN:
             viol["mech_band"] = (MECH_MARGIN - mm_min) / MECH_MARGIN
-    if ONE_SIDED and len(mech_rr) > 1:
+    if ONE_SIDED and not GATES_MINIMAL and len(mech_rr) > 1:
         sc, dr, pen = one_sided_check([a for a, _ in mech_rr], [b for _, b in mech_rr])
         out["mech_drift"], out["drift_pen"] = dr, pen
         if sc:
@@ -925,6 +933,8 @@ def main(argv=None):
     ap.add_argument("--one-sided", action="store_true",
                     help="mech_band: infeasible if mode/rev crosses 1P over the throttle range; "
                          "penalty 10*max(0,|dln mpr/dln rpm|-0.07); adds the bal.* balance-pair variables")
+    ap.add_argument("--gates", choices=("default", "minimal"), default="default",
+                    help="minimal: drop mech_band / one-sided gates, add zeta_mech >= 0.02; keeps bal.* variables")
     ap.add_argument("--mech-margin", type=float, default=0.075,
                     help="mech_band: nominal hard 1P margin of the mechanism mode (others keep 0.15)")
     ap.add_argument("--motor", default=None, help="motor.MOTOR_LIBRARY name for every case (e.g. crm2204_1400kv)")
@@ -963,7 +973,10 @@ def main(argv=None):
     global MOTOR
     MOTOR = a.motor
     global ONE_SIDED, BAL_VARS
-    ONE_SIDED = BAL_VARS = a.one_sided
+    global GATES_MINIMAL
+    GATES_MINIMAL = a.gates == "minimal"
+    ONE_SIDED = a.one_sided
+    BAL_VARS = a.one_sided or GATES_MINIMAL
     global MECH_MARGIN, GOODMAN
     MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
     global RESOLVE_PRESETS

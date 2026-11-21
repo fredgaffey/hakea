@@ -79,8 +79,7 @@ def main():
         # side flip duplicate the per-build calibration residual + authority (the unit's side is
         # measured at calibration; zeta bounds the 1P amplification). resonance (other modes,
         # damping-aware), Goodman/hard checks, ground resonance and cqc phase/gain/authority stay.
-        c["viol_hard"] = {k: v for k, v in (c["viol_hard"] or {}).items()
-                          if k not in ("cqc_mech_margin", "cqc_mech_side")}
+        c["viol_hard"] = robust.minimal_gates(c)   # also adds cqc_mech_zeta (zeta >= 0.02)
         c["feasible_pl"], c["gates"] = not c["viol_hard"], "minimal"
     print("SUM", outp.split("/")[-1], json.dumps(dict(
         cr_pl=c["cr_pl"], feas=c["feasible_pl"], viol=c["viol_hard"], ph=c["phase_res_deg"], gain=c["gain_res"],

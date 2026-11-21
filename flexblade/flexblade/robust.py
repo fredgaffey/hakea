@@ -244,6 +244,7 @@ def control_quality_cal(tags, ms, rpm_schedule="bin", n_nodes=5, rpm_noise=CQ_RP
         else:
             out["mech_margin_min"] = 0.0
         node["mech_per_rev"] = mpr
+        node["mech_zeta"] = c.get("mech_zeta", nan)
         out["per_node"][f"{T}:{p or 'nom'}:{J}"] = node
         out["phase_res_deg"], out["gain_res"] = max(out["phase_res_deg"], ps), max(out["gain_res"], gs)
         for k, v in dev.items():
@@ -406,3 +407,21 @@ def evaluate_robust(design, thrust_factors=THRUST_FACTORS, perturb=None, metrics
     vs = variants(design, thrust_factors, perturb, j_hub)
     ms = [metrics_fn(d, api.evaluate(d).model_dump(mode="json")) for _, d in vs]
     return combine(ms, [t for t, _ in vs])
+
+
+MECH_ZETA_MIN = 0.02
+
+
+def minimal_gates(c: dict, zmin: float = MECH_ZETA_MIN) -> dict:
+    """Opt-in minimal gate set (study/results/gate_audit.md): drop cqc_mech_margin / cqc_mech_side and
+    add cqc_mech_zeta (worst per-node cyclic-mechanism-mode damping ratio >= zmin; missing = violation)."""
+    v = {k: x for k, x in (c.get("viol_hard") or {}).items() if k not in ("cqc_mech_margin", "cqc_mech_side")}
+    zs = [n.get("mech_zeta", float("nan")) for n in (c.get("per_node") or {}).values()]
+    zs = [z for z in zs if z is not None]
+    z = min((x for x in zs if x == x), default=float("nan"))
+    if not zs or z != z:
+        v["cqc_mech_zeta"] = 1.0
+    elif z < zmin:
+        v["cqc_mech_zeta"] = 1.0 - z / zmin
+    c["mech_zeta_min"] = z
+    return v
