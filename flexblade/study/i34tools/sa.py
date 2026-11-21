@@ -81,6 +81,12 @@ def main():
         # damping-aware), Goodman/hard checks, ground resonance and cqc phase/gain/authority stay.
         c["viol_hard"] = robust.minimal_gates(c)   # also adds cqc_mech_zeta (zeta >= 0.02)
         c["feasible_pl"], c["gates"] = not c["viol_hard"], "minimal"
+    elif os.environ.get("SA_GATES") == "damped":
+        # opt-in (study/results/damped_resonance.md): mech mode judged by its damped 1P response over a
+        # +-SA_DAMPED_DELTA frequency spread (gain/phase spread <= CQC limits, amplification <= 4.1)
+        c["viol_hard"] = robust.damped_gates(c, delta=float(os.environ.get("SA_DAMPED_DELTA",
+                                                                           robust.DAMPED_DELTA)))
+        c["feasible_pl"], c["gates"] = not c["viol_hard"], "damped"
     print("SUM", outp.split("/")[-1], json.dumps(dict(
         cr_pl=c["cr_pl"], feas=c["feasible_pl"], viol=c["viol_hard"], ph=c["phase_res_deg"], gain=c["gain_res"],
         mech=c["mech_margin_min"], flip=c["mech_side_flip"], res_margin=c["res_margin"], res_which=c["res_which"]),

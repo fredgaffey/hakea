@@ -425,3 +425,79 @@ def minimal_gates(c: dict, zmin: float = MECH_ZETA_MIN) -> dict:
         v["cqc_mech_zeta"] = 1.0 - z / zmin
     c["mech_zeta_min"] = z
     return v
+
+
+# ---------------------------------------------------------------- opt-in damped-resonance criterion
+# study/results/damped_resonance.md. Replaces the raw frequency band (cqc_mech_margin / RES_BAND on
+# the mechanism mode) by what the band is a proxy for: SDOF 1P response of the mech mode at p/rev
+# with damping zeta, H = 1/(1 - s^2 + 2i zeta s), s = 1/p. Over a frequency spread p0 (1 +- delta)
+# (build tolerance not calibrated out / drift), gate (a) |A(p)/A(p0) - 1| <= CQC_GAIN_MAX and
+# |phi(p) - phi(p0)| <= CQC_PHASE_MAX_DEG, (b) worst amplification A <= DAMPED_AMP_CAP. The cap is
+# the undamped amplification at the project's RES_BAND (0.15, above 1P) = 4.10, i.e. (b) is the
+# margin_1p_eff >= RES_BAND rule applied over the whole tolerance band. Defaults are NOT changed.
+DAMPED_DELTA = 0.05          # +-10 % stiffness -> +-5 % frequency (brief); CF-dominated modes: less
+DAMPED_RES_BAND = 0.15
+DAMPED_AMP_CAP = 1.0 / (1.0 - 1.0 / (1.0 + DAMPED_RES_BAND) ** 2)
+
+
+def sdof_1p(p: float, zeta: float) -> tuple[float, float]:
+    """(amplification |H|, phase lag deg in [0, 180]) of a mode at p/rev forced at 1P."""
+    s = 1.0 / max(p, 1e-9)
+    return (float(1.0 / math.hypot(1 - s * s, 2 * zeta * s)),
+            float(math.degrees(math.atan2(2 * zeta * s, 1 - s * s))))
+
+
+def damped_resonance(p: float, zeta: float, delta: float = DAMPED_DELTA, gain_max: float = CQC_GAIN_MAX,
+                     phase_max: float = CQC_PHASE_MAX_DEG, amp_cap: float = DAMPED_AMP_CAP, n: int = 81) -> dict:
+    """Gain/phase spread and worst amplification over p (1 +- delta); viol keys damped_gain /
+    damped_phase / damped_amp (normalised excess, run_study style)."""
+    a0, ph0 = sdof_1p(p, zeta)
+    ps = [p * (1 + x) for x in np.linspace(-delta, delta, n)]
+    pk = 1.0 / math.sqrt(max(1 - 2 * zeta * zeta, 1e-9))          # |H| peak (s = sqrt(1 - 2 zeta^2))
+    if p * (1 - delta) <= pk <= p * (1 + delta):
+        ps.append(pk)
+    rs_ = [sdof_1p(x, zeta) for x in ps]
+    gs = max(abs(a / a0 - 1) for a, _ in rs_)
+    phs = max(abs(f - ph0) for _, f in rs_)
+    aw = max(a for a, _ in rs_)
+    v = {}
+    if gs > gain_max:
+        v["damped_gain"] = gs / gain_max - 1
+    if phs > phase_max:
+        v["damped_phase"] = phs / phase_max - 1
+    if aw > amp_cap:
+        v["damped_amp"] = aw / amp_cap - 1
+    return dict(p=p, zeta=zeta, amp=a0, phase_deg=ph0, amp_worst=aw, gain_spread=gs, phase_spread_deg=phs,
+                viol=v)
+
+
+def damped_required_margin(zeta: float, side: int = -1, **kw) -> float:
+    """Smallest |p - 1| (mode below 1P: side -1, above: +1) from which every larger margin passes."""
+    grid = np.arange(0.0, 0.6001, 0.0025)
+    ok = [not damped_resonance(1 + side * m, zeta, **kw)["viol"] for m in grid]
+    for i in range(len(grid) - 1, -1, -1):
+        if not ok[i]:
+            return float(grid[i + 1]) if i + 1 < len(grid) else float("nan")
+    return 0.0
+
+
+def damped_gates(c: dict, **kw) -> dict:
+    """Opt-in damped gate set (cf. minimal_gates): drop cqc_mech_margin / cqc_mech_side and gate every
+    per-node mech mode (mech_per_rev, mech_zeta) with damped_resonance (worst over nodes; a node with
+    missing p or zeta = violation 'damped_missing'). Adds c['damped'] = worst-node summary."""
+    v = {k: x for k, x in (c.get("viol_hard") or {}).items() if k not in ("cqc_mech_margin", "cqc_mech_side")}
+    worst = None
+    for name, n in (c.get("per_node") or {}).items():
+        p, z = n.get("mech_per_rev"), n.get("mech_zeta")
+        if p is None or z is None or not (math.isfinite(p) and math.isfinite(z)):
+            v["damped_missing"] = 1.0
+            continue
+        d = damped_resonance(p, z, **kw)
+        for k, x in d["viol"].items():
+            v[k] = max(v.get(k, 0.0), x)
+        if worst is None or d["amp_worst"] > worst["amp_worst"]:
+            worst = dict(d, node=name)
+    if worst is None:
+        v["damped_missing"] = 1.0
+    c["damped"] = worst
+    return v
