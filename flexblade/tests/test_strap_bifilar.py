@@ -54,6 +54,9 @@ def test_v5_design_bifilar_members():
     from flexblade.schema import Design
     p = Path(__file__).parents[1] / "study" / "designs" / "7in_tt_strap_steelx_v5.json"
     d = Design.model_validate_json(p.read_text())
+    # the I23 bifilar v5 file was overwritten by I25 (killed): re-apply its strap settings
+    d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
+        strap_strands=2, strap_strand_diameter=0.0011, strap_radius=0.003))))
     cab = [m for m in fact.generate_members(d) if m.cable]
     assert len(cab) == 2
     H0, a = fact.hinge_axis(d)
