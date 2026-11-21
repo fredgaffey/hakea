@@ -31,18 +31,24 @@ IPS = np.array([(x, y, z) for z in (-G3, G3) for y in (-G3, G3) for x in (-G3, G
 CN = np.array([(-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)])
 
 
-def beam_hover(d: Design):
+def beam_hover(d: Design, stopped: bool = False):
     if d.flexure.pre_lag_deg == "auto":
         d = R.resolve_pre_lag(d)
-    model = R.build_model(d)
-    ss = R.static_trim(model, R.make_aero(model))
-    fe, st = model.fe, ss.state
-    sa = assemble(fe, st, ss.Omega, want_tangent=False)
+    if stopped:     # bench/stopped self-stressed state (fact.stopped_state: no CF, no aero)
+        from flexblade.fact import stopped_state
+        r = stopped_state(d, n_steps=4)
+        model, st, Om = r["model"], r["state"], 0.0
+    else:
+        model = R.build_model(d)
+        ss = R.static_trim(model, R.make_aero(model))
+        st, Om = ss.state, ss.Omega
+    fe = model.fe
+    sa = assemble(fe, st, Om, want_tangent=False)
     kt = R.strip_kt(d.flexure)
     out = []
     for bi in model.blades:
         for j, m in enumerate(bi.members):
-            ids = bi.member_elems.get(f"b{bi.k}.flex{j}", [])
+            ids = [i for i, e in enumerate(fe.elements) if e.tag == f"b{bi.k}.flex{j}" and e.kind == "flexure"]
             if not ids or getattr(m, "cable", False):
                 continue
             ea, eb = fe.elements[ids[0]], fe.elements[ids[-1]]
@@ -169,6 +175,23 @@ def strip_stage():
                   f"{b['oop'][0 if end == 'hub' else 1][1]/1e6:.1f}  membrane beam {b['memb'][0 if end == 'hub' else 1]/1e6:.1f} ccx {c[end]['memb']/1e6:.1f}")
 
 
+def stopped_stage():
+    """Stopped rotor (slot misfit only), binding strip; mixed BCs as in strip_stage."""
+    d = Design.model_validate_json(DES.read_text())
+    strips = beam_hover(d, stopped=True)
+    mat = M.get_material("steel_1095_shim")
+    kt = R.strip_kt(d.flexure)
+    for b in sorted(strips, key=lambda s: -max(s["sm_hub"], s["sm_blade"]))[:2]:
+        print(f"== stopped {b['tag']} u_mm={np.round(b['u'] * 1e3, 4)} rot_deg={np.round(np.degrees(b['rot']), 3)}")
+        c = ccx_strip(b, mat, Path(tempfile.mkdtemp(prefix="v8stop_", dir="/tmp")))
+        for end in ("hub", "blade"):
+            sb = b[f"sm_{end}"] / kt
+            print(f"   {end}: beam surf {sb / 1e6:.1f} (oop {b['oop'][0 if end == 'hub' else 1][0] / 1e6:.1f}, in-plane "
+                  f"{b['oop'][0 if end == 'hub' else 1][1] / 1e6:.1f})  ccx peak {c[end]['peak'] / 1e6:.1f} median "
+                  f"{c[end]['mid'] / 1e6:.1f}  membrane beam {b['memb'][0 if end == 'hub' else 1] / 1e6:.1f} "
+                  f"ccx {c[end]['memb'] / 1e6:.1f}")
+
+
 def axis_stage():
     """Beam principal pitch-axis offset vs design axis: v8, v8 presets zeroed, v8 at skew 60 (v5)."""
     from flexblade import geometry as G
@@ -197,4 +220,4 @@ def axis_stage():
 
 
 if __name__ == "__main__":
-    {"strip": strip_stage, "axis": axis_stage}[sys.argv[1] if len(sys.argv) > 1 else "strip"]()
+    {"strip": strip_stage, "axis": axis_stage, "stopped": stopped_stage}[sys.argv[1] if len(sys.argv) > 1 else "strip"]()

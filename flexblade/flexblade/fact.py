@@ -432,3 +432,123 @@ def check_layout(design: Design, members: list[FlexureMember] | None = None,
                        axis_offset=float(np.linalg.norm(p_perp)), k_soft=float(lam[0]),
                        stiffness_ratio=ratio, ideal_constraint_dim=int(Wid.shape[1]),
                        ideal_constraints_reciprocal=recip)
+
+
+# --------------------------------------------------------------------------- stopped (assembled) state
+STOPPED_BUCKLING_MIN = 2.0       # buckling multiplier of the slot-misfit stress state
+STOPPED_YIELD_FRAC = 0.6         # max clamp-edge stress / Xt
+
+
+def _hinge_terms(K, a):
+    a = np.asarray(a, float) / np.linalg.norm(a)
+    y = np.array([0.0, 1.0, 0.0])
+    s = np.cross(y, a)
+    s /= np.linalg.norm(s)
+    Cr = np.linalg.inv(K)[3:, 3:]
+    # fixed-axis terms (as ccx.compare_strip_flexure) are contaminated by the ~1e3x softer hinge
+    # compliance once the soft axis tilts (sin^2 tilt * C_hinge); the principal ones are not
+    lam, V = np.linalg.eigh(0.5 * (Cr + Cr.T))
+    tilt = float(np.degrees(np.arccos(min(1.0, abs(V[:, -1] @ a)))))
+    return dict(k_hinge=float(1 / (a @ Cr @ a)), k_cross=float(1 / (s @ Cr @ s)), k_flap=float(1 / (y @ Cr @ y)),
+                k_soft=float(1 / lam[-1]), k_2nd=float(1 / lam[-2]), axis_tilt_deg=tilt)
+
+
+def stopped_state(design: Design, n_steps: int = 10, tol: float = 1e-6, max_it: int = 40,
+                  probe: float = 1e-4, dbg: bool = False) -> dict:
+    """Rotor stopped on the bench (no CF, no aero, no gravity): the pre-angled strip slots
+    (flexure.strip_preset_deg) force the strips + blade fittings into a self-equilibrated state.
+    Full Newton on the flexure-only assembly (all blades; blade chains removed, fittings free),
+    preset ramped 0 -> 100 % in n_steps. Returns per-strip axial force N vs Euler (clamped-clamped
+    4 pi^2 EI_min/L^2), max fibre stress (clamp ends x strip_kt), the buckling multiplier mu of the
+    misfit stress state (Km + mu Kgeo singular), and the stopped tangent k_cross/k_flap/k_hinge per
+    blade at the hinge point (vs the same assembly without presets)."""
+    from . import rotor as R
+    from .beam import assemble, assemble_Kmat, element_end_forces
+    import scipy.linalg as sla
+    m = R.build_model(design)
+    fe = m.fe
+    drop = {i for bi in m.blades for i in bi.blade_elems}
+    fe.elements = [e for i, e in enumerate(fe.elements) if i not in drop]
+    used = {e.n0 for e in fe.elements} | {e.n1 for e in fe.elements}
+    for n in range(fe.nn):
+        if n == m.hub or n not in used:
+            fe.fix(n)
+    fe.prepare()
+    fe._pack = None
+    pre = {i: e.d7_0.copy() for i, e in enumerate(fe.elements) if e.d7_0 is not None and np.any(e.d7_0)}
+    free = fe.free_dofs()
+
+    def tangent(st):
+        sa = assemble(fe, st, 0.0, True)
+        return sa, assemble_Kmat(fe, sa), sa.Kgeo
+
+    def kterms(st):
+        out = {}
+        for k, bi in enumerate(m.blades, 1):
+            fo = R.FlexureOnly(fe, bi.master, [m.hub])
+            out[k] = _hinge_terms(fo.stiffness_at(bi.hinge_point, state=st), bi.hinge_dir)
+        return out
+
+    for i in pre:
+        fe.elements[i].d7_0 = None
+    fe._pack = None
+    st = fe.initial_state()
+    ref = kterms(None)
+    # solve_static normalises its residual by max(|F|, |f_int|) on free DOFs, which is 1 at a
+    # self-equilibrated (F = 0) state; a probe force (PROBE N along z on each blade fitting, ~0.1 % of
+    # the misfit reactions) gives it an absolute scale: converged = |r| < tol * PROBE.
+    from .beam import solve_static
+    fprobe = np.zeros(fe.ndof)
+    for bi in m.blades:
+        fprobe[6 * bi.master + 2] = probe
+    ok, path, iters, msgs = True, [], [], []
+    for i, p in pre.items():
+        fe.elements[i].d7_0 = p
+    fe._pack = None
+    fscale = float(np.abs(assemble(fe, st, 0.0, False).fint[free]).max()) if pre else 1.0  # unrelaxed misfit
+    for s in (np.linspace(1.0 / n_steps, 1.0, n_steps) if pre else []):
+        for i, p in pre.items():
+            fe.elements[i].d7_0 = s * p
+        fe._pack = None
+        st, info = solve_static(fe, 0.0, fprobe, state0=st, tol=tol, max_iter=max_it, verbose=dbg)
+        ok = ok and bool(info.converged or info.residual * probe < 1e-4 * fscale)
+        iters.append(getattr(info, "iterations", None))
+        msgs.append(info.message)
+        path.append(kterms(st)[1]["k_cross"])
+    sa, Km, Kg = tangent(st)
+    lam = sla.eigh(-Kg[np.ix_(free, free)], Km[np.ix_(free, free)], eigvals_only=True)
+    mu = float(1.0 / lam.max()) if lam.max() > 1e-12 else float("inf")
+    kt = R.strip_kt(design.flexure)
+    groups: dict = {}
+    for i, e in enumerate(fe.elements):
+        if e.kind == "flexure":
+            groups.setdefault(e.tag, []).append(i)
+    cab = {f"b{k}.flex{j}" for k, bi in enumerate(m.blades, 1) for j, mm in enumerate(bi.members) if mm.cable}
+    strips, smax = [], 0.0
+    for tag, ids in groups.items():
+        if tag in cab:
+            continue
+        L = sum(fe.elements[i].L0 for i in ids)
+        sec = fe.elements[ids[0]].sections[0]
+        Pcr = 4 * np.pi ** 2 * min(sec.EIy, sec.EIz) / L ** 2
+        Ns, sg = [], 0.0
+        for n_, i in enumerate(ids):
+            e = fe.elements[i]
+            fa, fb = element_end_forces(e, sa.cr[i], st)
+            Ns.append(0.5 * (fa[0] + fb[0]))
+            for end, sf in ((0, fa), (1, fb)):
+                fac = kt if (n_ == 0 and end == 0) or (n_ == len(ids) - 1 and end == 1) else 1.0
+                sg = max(sg, fac * max(abs(x) for x in R._fibre_mean(e.sections[0], sf)))
+        strips.append(dict(tag=tag, N=float(np.mean(Ns)), Pcr=float(Pcr), sigma=float(sg)))
+        smax = max(smax, sg)
+    kk = kterms(st) if pre else ref
+    from .beam import _logm
+    for k, bi in enumerate(m.blades, 1):
+        w = _logm(st.R[bi.master])
+        kk[k]["fitting_rot_deg"] = float(np.degrees(np.linalg.norm(w)))
+        kk[k]["fitting_rot_hinge_deg"] = float(np.degrees(w @ bi.hinge_dir / np.linalg.norm(bi.hinge_dir)))
+    for k in kk:
+        kk[k].update({f"{n}0": v for n, v in ref[k].items()})
+    return dict(converged=ok, strips=strips, sigma_max=float(smax), buckling_multiplier=mu, k=kk,
+                path_kcross=path, iters=iters, messages=msgs, n_steps=n_steps, misfit_scale=fscale,
+                model=m, state=st)
