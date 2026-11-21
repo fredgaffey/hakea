@@ -75,6 +75,8 @@ def main():
     s = cq.cal_summary(cs)
     c = s["control_quality_cal"]
     if os.environ.get("SA_GATES") == "minimal":
+        print("SUM_DEFAULT", json.dumps(dict(cr_pl=c["cr_pl"], feas=c["feasible_pl"], viol=c["viol_hard"],
+              mech=c["mech_margin_min"], res_margin=c["res_margin"]), default=str), flush=True)
         # opt-in gate set (study/results/gate_audit.md): the mechanism mode's raw 1P margin and
         # side flip duplicate the per-build calibration residual + authority (the unit's side is
         # measured at calibration; zeta bounds the 1P amplification). resonance (other modes,
