@@ -97,6 +97,11 @@ class Blade(_M):
         0.25, description="beam reference line position along chord from LE")
     balance_masses: list[BalanceMass] = Field(
         default_factory=list, description="point masses in the blade (CF propeller-moment balance)")
+    precone_deg: float = Field(
+        0.0, description="built-in precone beta0, deg: the blade outboard of the flexure is rotated "
+        "about its chord (lag) axis through the hinge point so the tip rises toward +z (thrust) by "
+        "beta0 on every blade (physical cone, independent of the mirrored even-blade flexure); "
+        "beta0 ~ thrust moment / CF moment unloads the flexure's steady flap moment in hover")
 
     @property
     def radius(self) -> float:

@@ -9,6 +9,9 @@ if mode == "nopre":
 if mode == "nopl":
     u.update(strip_preset_deg=[[[0.0]*6]*3]*2, pre_lag_deg=0.0)
 d0 = d0.model_copy(update=dict(flexure=d0.flexure.model_copy(update=u)))
+import os
+if os.environ.get("PRECONE"):   # blade.precone_deg override
+    d0 = d0.model_copy(update=dict(blade=d0.blade.model_copy(update=dict(precone_deg=float(os.environ["PRECONE"])))))
 d = [dv for t, dv in robust.variants(d0, (Tf,)) if t == f"T{Tf:g}"][0]
 orig = rotor.checks
 
