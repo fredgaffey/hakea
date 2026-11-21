@@ -1,0 +1,472 @@
+{
+ "score": {
+  "7in_v6": {
+   "cr_pl": 0.06499594987059955,
+   "feasible_pl": false,
+   "viol_hard": {
+    "cq_phase": 0.19037265806248538,
+    "cq_gain": 1.1550374429924624
+   },
+   "res_margin_other": 0.3029564407674339,
+   "res_which_other": "pitch sym 1.30/rev vs 1P",
+   "phase_spread_deg": 17.85558987093728,
+   "gain_spread": 0.5387593607481156,
+   "per_throttle": {
+    "T0.7": {
+     "phase_med": 107.63539611032104,
+     "phase_spread": 17.85558987093728,
+     "gain_spread": 0.5387593607481156
+    },
+    "T1": {
+     "phase_med": 113.22333654353912,
+     "phase_spread": 8.273386638992207,
+     "gain_spread": 0.24391045979251325
+    },
+    "T1.4": {
+     "phase_med": 119.86904418052166,
+     "phase_spread": 9.526894071042364,
+     "gain_spread": 0.2511139361798843
+    }
+   },
+   "mild_phase_spread_deg": 11.288127375432111,
+   "mild_gain_spread": 0.23553189253316797,
+   "mech_modes": [
+    "pitch antisym+hub"
+   ],
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "cr_pl": 0.18538480762510381,
+     "cyc_gain": 0.7406224571246542,
+     "cyc_phase_deg": 100.89401054691686,
+     "mech_mode": "pitch antisym+hub 0.883/rev",
+     "res_margin": 0.8269121642595778,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "cr_pl": 0.18536139216042646,
+     "cyc_gain": 0.48175672652678025,
+     "cyc_phase_deg": 107.63539611032107,
+     "mech_mode": "pitch antisym+hub 0.846/rev",
+     "res_margin": 0.8269008633467236,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "cr_pl": 0.16448829912340532,
+     "cyc_gain": 0.2874112698922839,
+     "cyc_phase_deg": 112.58086048068732,
+     "mech_mode": "pitch antisym+hub 0.794/rev",
+     "res_margin": 0.8268882270590387,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "cr_pl": 0.14584511963393826,
+     "cyc_gain": 0.65594490397146,
+     "cyc_phase_deg": 108.28174606148305,
+     "mech_mode": "pitch antisym+hub 0.865/rev",
+     "res_margin": 0.5786126099258062,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "cr_pl": 0.14580943109050362,
+     "cyc_gain": 0.4521215251415749,
+     "cyc_phase_deg": 113.2233365435391,
+     "mech_mode": "pitch antisym+hub 0.830/rev",
+     "res_margin": 0.578793561153744,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "cr_pl": 0.10225880546090602,
+     "cyc_gain": 0.283135518030342,
+     "cyc_phase_deg": 117.2581950849162,
+     "mech_mode": "pitch antisym+hub 0.782/rev",
+     "res_margin": 0.5790182874484981,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "cr_pl": 0.12522236612396767,
+     "cyc_gain": 0.692348679957176,
+     "cyc_phase_deg": 114.40694035871708,
+     "mech_mode": "pitch antisym+hub 0.873/rev",
+     "res_margin": 0.3029564407674339,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "cr_pl": 0.10474768296183493,
+     "cyc_gain": 0.47245244380105794,
+     "cyc_phase_deg": 119.86904418052166,
+     "mech_mode": "pitch antisym+hub 0.838/rev",
+     "res_margin": 0.3044133431711873,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "cr_pl": 0.06499594987059955,
+     "cyc_gain": 0.29315679817685475,
+     "cyc_phase_deg": 124.24339005672283,
+     "mech_mode": "pitch antisym+hub 0.791/rev",
+     "res_margin": 0.30613965635234575,
+     "feasible_pl": true
+    }
+   ]
+  },
+  "7in_v6+ballast": {
+   "cr_pl": 0.0802834649700561,
+   "feasible_pl": false,
+   "viol_hard": {
+    "cq_phase": 6.2696677578116145,
+    "cq_gain": 2.655683600999767
+   },
+   "res_margin_other": 0.24007738745607932,
+   "res_which_other": "flap antisym 1.23/rev vs 1P",
+   "phase_spread_deg": 109.04501636717421,
+   "gain_spread": 0.9139209002499418,
+   "per_throttle": {
+    "T0.7": {
+     "phase_med": 92.96398279099515,
+     "phase_spread": 109.04501636717421,
+     "gain_spread": 0.9139209002499418
+    },
+    "T1": {
+     "phase_med": 105.13435646927394,
+     "phase_spread": 75.2079337715432,
+     "gain_spread": 0.6412533718419462
+    },
+    "T1.4": {
+     "phase_med": 110.2314439808199,
+     "phase_spread": 26.456309171975818,
+     "gain_spread": 0.7497979056684387
+    }
+   },
+   "mild_phase_spread_deg": 90.34943342375219,
+   "mild_gain_spread": 0.49461749377351993,
+   "mech_modes": [
+    "pitch antisym+hub"
+   ],
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "cr_pl": 0.2203049389595088,
+     "cyc_gain": 2.2180485280091,
+     "cyc_phase_deg": 47.093979291977945,
+     "mech_mode": "pitch antisym+hub 0.974/rev",
+     "res_margin": 0.7261621543461123,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "cr_pl": 0.22032840168384268,
+     "cyc_gain": 1.0381267970014076,
+     "cyc_phase_deg": 92.96398279099516,
+     "mech_mode": "pitch antisym+hub 0.929/rev",
+     "res_margin": 0.7262580882249026,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "cr_pl": 0.22023993376650502,
+     "cyc_gain": 0.43935873424768135,
+     "cyc_phase_deg": 108.57208481177709,
+     "mech_mode": "pitch antisym+hub 0.868/rev",
+     "res_margin": 0.7263943398773551,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "cr_pl": 0.17617266661615294,
+     "cyc_gain": 1.5849480128450417,
+     "cyc_phase_deg": 84.57232001762394,
+     "mech_mode": "pitch antisym+hub 0.946/rev",
+     "res_margin": 0.5681286911934385,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "cr_pl": 0.1761518077513,
+     "cyc_gain": 0.8008501461278551,
+     "cyc_phase_deg": 105.13435646927397,
+     "mech_mode": "pitch antisym+hub 0.904/rev",
+     "res_margin": 0.5672349493817843,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "cr_pl": 0.14223205692646196,
+     "cyc_gain": 0.3954503648327924,
+     "cyc_phase_deg": 114.68000741395356,
+     "mech_mode": "pitch antisym+hub 0.847/rev",
+     "res_margin": 0.5658355189230433,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "cr_pl": 0.08030405872751668,
+     "cyc_gain": 0.9933613279990511,
+     "cyc_phase_deg": 97.65153937746011,
+     "mech_mode": "pitch antisym+hub 0.912/rev",
+     "res_margin": 0.26838011070444145,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "cr_pl": 0.0802834649700561,
+     "cyc_gain": 0.6668521272306182,
+     "cyc_phase_deg": 110.23144398081986,
+     "mech_mode": "pitch antisym+hub 0.881/rev",
+     "res_margin": 0.25450938148882596,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "cr_pl": 0.08030782349409386,
+     "cyc_gain": 0.39799734568083217,
+     "cyc_phase_deg": 119.73669003515245,
+     "mech_mode": "pitch antisym+hub 0.834/rev",
+     "res_margin": 0.24007738745607932,
+     "feasible_pl": true
+    }
+   ]
+  },
+  "10in_v4": {
+   "cr_pl": 0.09540850861968855,
+   "feasible_pl": false,
+   "viol_hard": {
+    "cq_phase": 4.977784537598227,
+    "cq_gain": 2.9628877892101038
+   },
+   "res_margin_other": 0.2516996643143359,
+   "res_which_other": "pitch sym 1.25/rev vs 1P",
+   "phase_spread_deg": 89.66676806397341,
+   "gain_spread": 0.9907219473025259,
+   "per_throttle": {
+    "T0.7": {
+     "phase_med": 69.50357737786675,
+     "phase_spread": 89.66676806397341,
+     "gain_spread": 0.8738146647116309
+    },
+    "T1": {
+     "phase_med": 95.07955247043526,
+     "phase_spread": 36.71427157707538,
+     "gain_spread": 0.9907219473025259
+    },
+    "T1.4": {
+     "phase_med": 101.54747951180559,
+     "phase_spread": 10.412210646935648,
+     "gain_spread": 0.42605464702531193
+    }
+   },
+   "mild_phase_spread_deg": 39.77130474728585,
+   "mild_gain_spread": 0.27879918922662195,
+   "mech_modes": [
+    "pitch antisym+hub"
+   ],
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "cr_pl": 0.2899480038567293,
+     "cyc_gain": 1.9012797444006126,
+     "cyc_phase_deg": 55.19271664581354,
+     "mech_mode": "pitch antisym+hub 0.954/rev",
+     "res_margin": 0.7373046411641033,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "cr_pl": 0.28995841151188323,
+     "cyc_gain": 1.6489252020637817,
+     "cyc_phase_deg": 67.43422679874644,
+     "mech_mode": "pitch antisym+hub 0.942/rev",
+     "res_margin": 0.7350193274780366,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "cr_pl": 0.2898785566512701,
+     "cyc_gain": 1.2354647468518578,
+     "cyc_phase_deg": 82.54798672346874,
+     "mech_mode": "pitch antisym+hub 0.922/rev",
+     "res_margin": 0.7312388064229514,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "cr_pl": 0.17144965711979823,
+     "cyc_gain": 1.0020196950391378,
+     "cyc_phase_deg": 90.50778446684039,
+     "mech_mode": "pitch antisym+hub 0.910/rev",
+     "res_margin": 0.39750267611568124,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "cr_pl": 0.17140255233420207,
+     "cyc_gain": 0.8936782865818007,
+     "cyc_phase_deg": 94.70406237879305,
+     "mech_mode": "pitch antisym+hub 0.901/rev",
+     "res_margin": 0.3926574932461022,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "cr_pl": 0.17143628885775603,
+     "cyc_gain": 0.7352786223227059,
+     "cyc_phase_deg": 100.5360426036557,
+     "mech_mode": "pitch antisym+hub 0.885/rev",
+     "res_margin": 0.3847369947688568,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "cr_pl": 0.11883098202846151,
+     "cyc_gain": 0.7794578789557669,
+     "cyc_phase_deg": 98.54805912792523,
+     "mech_mode": "pitch antisym+hub 0.893/rev",
+     "res_margin": 0.2673613874099894,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "cr_pl": 0.10976089610122218,
+     "cyc_gain": 0.7199637149077139,
+     "cyc_phase_deg": 101.53551163776615,
+     "mech_mode": "pitch antisym+hub 0.885/rev",
+     "res_margin": 0.2613889977609076,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "cr_pl": 0.09540850861968855,
+     "cyc_gain": 0.6258209138187855,
+     "cyc_phase_deg": 106.07733962098492,
+     "mech_mode": "pitch antisym+hub 0.872/rev",
+     "res_margin": 0.2516996643143359,
+     "feasible_pl": true
+    }
+   ]
+  },
+  "7in_v5": {
+   "cr_pl": 0.060424164199091836,
+   "feasible_pl": false,
+   "viol_hard": {
+    "cq_phase": 0.3327457036161452,
+    "cq_gain": 0.8861599938196658
+   },
+   "res_margin_other": 0.27445296919556017,
+   "res_which_other": "pitch sym 1.27/rev vs 1P",
+   "phase_spread_deg": 19.99118555424218,
+   "gain_spread": 0.47153999845491645,
+   "per_throttle": {
+    "T0.7": {
+     "phase_med": 102.36730004544927,
+     "phase_spread": 15.010142184548386,
+     "gain_spread": 0.2040851239572148
+    },
+    "T1": {
+     "phase_med": 111.80460716051499,
+     "phase_spread": 19.99118555424218,
+     "gain_spread": 0.4403807572105549
+    },
+    "T1.4": {
+     "phase_med": 120.29341405860885,
+     "phase_spread": 12.626481531825647,
+     "gain_spread": 0.47153999845491645
+    }
+   },
+   "mild_phase_spread_deg": 13.080993967144451,
+   "mild_gain_spread": 0.1846853251294469,
+   "mech_modes": [
+    "pitch antisym+hub"
+   ],
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "cr_pl": 0.25120990013662237,
+     "cyc_gain": 0.9125156520378929,
+     "cyc_phase_deg": 92.14422716608996,
+     "mech_mode": "pitch antisym+hub 0.927/rev",
+     "res_margin": 0.4474268651227027,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "cr_pl": 0.25110297120153463,
+     "cyc_gain": 0.5693873565581842,
+     "cyc_phase_deg": 102.36730004544927,
+     "mech_mode": "pitch antisym+hub 0.894/rev",
+     "res_margin": 0.445796223638685,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "cr_pl": 0.186928289903552,
+     "cyc_gain": 0.3266742145579658,
+     "cyc_phase_deg": 109.27312111442428,
+     "mech_mode": "pitch antisym+hub 0.847/rev",
+     "res_margin": 0.44385108814418683,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "cr_pl": 0.1338135784826556,
+     "cyc_gain": 0.8149430249979425,
+     "cyc_phase_deg": 103.76636174793417,
+     "mech_mode": "pitch antisym+hub 0.912/rev",
+     "res_margin": 0.2921165993665722,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "cr_pl": 0.13383443191316283,
+     "cyc_gain": 0.5185600486886923,
+     "cyc_phase_deg": 111.70904240701176,
+     "mech_mode": "pitch antisym+hub 0.878/rev",
+     "res_margin": 0.2931114445384191,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "cr_pl": 0.10972203932211735,
+     "cyc_gain": 0.3036213491373005,
+     "cyc_phase_deg": 117.2999696227526,
+     "mech_mode": "pitch antisym+hub 0.831/rev",
+     "res_margin": 0.29424949528643385,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "cr_pl": 0.09735088830466966,
+     "cyc_gain": 0.574332285309189,
+     "cyc_phase_deg": 114.90945555353944,
+     "mech_mode": "pitch antisym+hub 0.869/rev",
+     "res_margin": 0.278325223854734,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "cr_pl": 0.09240672672234498,
+     "cyc_gain": 0.41718717603614935,
+     "cyc_phase_deg": 120.2934140586088,
+     "mech_mode": "pitch antisym+hub 0.840/rev",
+     "res_margin": 0.27655686753589115,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "cr_pl": 0.060424164199091836,
+     "cyc_gain": 0.2727960108608424,
+     "cyc_phase_deg": 125.13143197144248,
+     "mech_mode": "pitch antisym+hub 0.800/rev",
+     "res_margin": 0.27445296919556017,
+     "feasible_pl": true
+    }
+   ]
+  }
+ }
+}
