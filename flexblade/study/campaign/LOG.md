@@ -157,3 +157,8 @@ Idea backlog (unscreened):
 - LESSON: realisation (CSG parts → true mass) moved the answer more than any solver refinement this campaign. Every lead must be scored with as-built geometry.
 - Idea I25 (helper running): fitting as its OWN Chinese weight — propeller moment ∝ (I_chord − I_normal) about the pitch axis; shape/orient the fittings tall in z (or ±z balance pins) so the fitting's net moment ≈ 0.
 - COMPUTE: retired steelx_de2 (stale: no fitting mass, no clamp Kt) → done marker; steelx_de3 (10,7; model c26be26 with fitting mass + clamp) now running. Killed pre-fix orphan pool.
+
+## iteration 15 (loop)
+- STATE: full suite green on fitting-mass model (238 pass). steelx_de3 gen 1 (model c26be26): 7" best infeasible (resonance 0.75) — as expected, real fitting inertia pins the pitch modes near 1P/3P. Load ~30/32, 19 GB free, Mac offline. Surrogate helper's samples were taken on the pre-fitting-mass model → its fit is stale; treat its picks as hints, re-verify on c26be26.
+- REVIEW: authority and 1P margin are the same knob (cyclic gain ∝ 1/|1−(f/Ω)²|), so every added root inertia that drags the pitch mode toward 1P "looks" like more cr until the margin check bites — v4's 0.90 cr with real mass was pure resonance. Critique of the objective: report cr at a FIXED margin (e.g. normalise by the quasi-static gain) to stop the DE from farming near-resonant designs; damping-aware margin already helps.
+- Idea I26: put the strip crossing on the PITCH axis and make the fittings radially compact (both jaws within ±6 mm chord) by using a 3-strip "generalised cross-spring" (Wittrick/Haringx: two outer strips one way, one central double-width strip the other) — same pivot, chordwise jaw span ~halved → I_chord ↓ ~4×.
