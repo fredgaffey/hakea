@@ -8,10 +8,12 @@ Tip amplitude and transmitted force vs f_arm 80-400 Hz are in results/arm_vertic
 | precone 0, 1P vertical | 11.0 N | 80-203 Hz (peak ~980 um at 128-150 Hz, ~260 N transmitted at 128 Hz) |
 | precone 1.3, 1P vertical | 1.55 N | 106-165 Hz (peak ~123 um) |
 | 2P vertical (both) | 1.9-2.0 N | none (<= 12 um above 120 Hz) |
-| 3P lateral, precone 1.3 | 3.75 N (2.65 per axis, taken as vector) | none (2 um) |
-| 2P lateral from 1P flap, precone 1.3 | 13.8 N (hubF_1p_fixed key 2, 9.75 per axis) | 196-349 Hz, 58 um at 200 Hz |
+| 3P lateral, precone 1.3 | 2.65 N (circular; per-axis = magnitude) | none (2 um) |
+| 2P lateral from 1P flap/lag, precone 1.3 | 9.75 N (hubF_1p_fixed key 2; circular, per-axis = magnitude) | 205-339 Hz, 41 um at 200 Hz |
 
 Dynamic magnification > 3 spans f_arm 0.87-1.22 x the excitation, so amplitude was used as the forbidden-band criterion.
 Requirement (10 in): f_x, f_y >= 120 Hz (ground resonance) and f_z >= 210 Hz at precone 0; f_z >= 170 Hz with precone 1.3.
 The existing 120 Hz arm sits in the worst place for 1P vertical (861 um at 120 Hz, no precone). Precone 1.3 relaxes it; going below 100 Hz not advised.
-Caveats: F ~ rpm^2 scaling assumed; the 13.8 N 2P lateral with precone (key 2 of the 1P-only dict) was not in the finding note and is unchecked, if real the in-plane arm must avoid 196-349 Hz; series mount compliance and rotor mass on the arm are ignored (it would lower f_z).
+In-plane nP forces are circular in the fixed frame, so the earlier hypot(|Fx|,|Fy|) overstated them by sqrt2 (13.8 -> 9.75 N, 3.75 -> 2.65 N); fixed in arm_vertical.py.
+The 9.75 N 2P lateral (precone 1.3) is real: it equals the global inertial sum (2 Omega^2 sum m u_xy + lag Coriolis) of the mismatched 1P blade motion (mirrored flexures, about 1.4 deg differential lag, about 0.4 mm net CG whirl); precone couples the differential flap into lag/radial CG motion (0.45 N at precone 0). The in-plane arm must avoid f_x, f_y = 205-339 Hz.
+Caveats: F ~ rpm^2 scaling assumed; series mount compliance and rotor mass on the arm are ignored (it would lower f_z).
