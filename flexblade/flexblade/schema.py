@@ -222,6 +222,13 @@ class Flexure(_M):
                       "rigid", "topopt", "ideal"] = "skewed_cross_blade"
     skew_deg: float = Field(45.0, description="hinge axis tilt from rotor axis toward span, "
                                               "blade 1 +, blade 2 mirrored to −")
+    blade2_flexure: Literal["mirror_z", "rot_x", "c2"] = Field(
+        "mirror_z", description="even-blade flexure from blade 1's in its own frame: mirror_z (z → −z), "
+        "rot_x (180° about the pitch axis: opposite pitch-lag, same flap-lag), c2 (identical: same "
+        "pitch-lag sign, no cyclic). Model only; CAD/fittings export still mirror z")
+    pitch_link_stiffness: float = Field(
+        0.0, description="2-blade collective-pitch interlink, N m/rad on θ1 + θ2 (see-saw torsion "
+        "link joining the blade roots through the hub; cyclic θ1 = −θ2 left free). 0 = none")
     hinge_radius: float = Field(0.012, description="radial position of virtual hinge axis, m")
     pre_lag_deg: float | Literal["auto"] = Field(
         0.0, description="built-in rotation of the blade-side geometry (fitting + blade) about "

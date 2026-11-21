@@ -412,7 +412,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     for k in range(1, B + 1):
         psi0 = 2 * np.pi * (k - 1) / B
         Rk = Rz(psi0)
-        mem_local = [fact.mirror_member(m) if k % 2 == 0 else m for m in members1]
+        Tk = fact.blade_flexure_T(design, k)
+        mem_local = [fact.mirror_member(m, Tk) if k % 2 == 0 else m for m in members1]
         mem_H = []
         for m in mem_local:
             mem_H.append(m.model_copy(update=dict(
@@ -529,7 +530,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             if "K6" in kh:
                 # full 6×6 in blade-1 frame H; blade k even: mirror z → −z (translations
                 # diag(1,1,−1), rotations (pseudo-vector) diag(−1,−1,1)); then rotate by Rk
-                D = np.diag([1.0, 1, -1, -1, -1, 1]) if k % 2 == 0 else np.eye(6)
+                D = np.zeros((6, 6))
+                D[:3, :3], D[3:, 3:] = Tk, np.linalg.det(Tk) * Tk
                 Ks = D @ np.asarray(kh["K6"], float) @ D
                 Ks = 0.5 * (Ks + Ks.T)
                 frame = np.column_stack([Rk[:, 0], Rk[:, 1], Rk[:, 2]])
@@ -556,7 +558,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 Mn[3:, 3:] = m_ * ((c @ c) * np.eye(3) - np.outer(c, c))
                 fe.add_lumped_inertia(chain[-1], Mn)
             if kh.get("mass", 0.0) > 0.0 or np.any(np.asarray(kh.get("inertia", 0.0), float)):
-                Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
+                Mt = Tk
                 c = Rk @ (Mt @ np.asarray(kh.get("com", H0), float)) - fe.X0[master]
                 Ic = Rk @ Mt @ np.asarray(kh.get("inertia", np.zeros((3, 3))), float) @ Mt @ Rk.T
                 m_ = float(kh["mass"])
@@ -568,7 +570,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 Mn[3:, 3:] = Ic + m_ * ((c @ c) * np.eye(3) - np.outer(c, c))
                 fe.add_lumped_inertia(master, Mn)
         if fit_mp is not None:
-            Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
+            Mt = Tk
             m_, c1, I1 = fit_mp["hub"]          # hub side: rigid with the hub node (origin)
             Rh = Rk @ Mt
             # spin inertia only: the hub node translates only in the stability hub basis, whose
@@ -583,6 +585,15 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                                 chain_r=r_chain, aero_nodes=chain[n_sh:], aero_r=r_aero,
                                 blade_elems=blade_elems, member_elems=member_elems, members=mem_H,
                                 hinge_point=Rk @ H0, hinge_dir=Rk @ a))
+    k_link = float(getattr(design.flexure, "pitch_link_stiffness", 0.0) or 0.0)
+    if k_link > 0.0 and B == 2:
+        # collective-pitch interlink (see-saw through the hub): rotational spring about the
+        # blade-1 pitch axis between the two blade roots. Blade 2's pitch axis is −x, so the
+        # relative rotation is θ1 + θ2 (collective); cyclic θ1 = −θ2 is a free rigid roll.
+        ex = blades[0].Rk[:, 0]
+        fe.add_element(Element(blades[0].master, blades[1].master, np.zeros(3), [], tag="pitch_link",
+                               kind="spring", blade=0, spring_K=np.diag([0.0, 0, 0, k_link, 0, 0]),
+                               spring_frame=np.column_stack([ex, blades[0].Rk[:, 1], np.zeros(3)])))
     stiff = stiff_section(STIFF_FACTOR * max_EA, STIFF_FACTOR * max_EI, STIFF_FACTOR * max_GJ)
     for k, mnode, m_, cw, Ic in fit_pending:
         _fitting_body(fe, mnode, m_, cw, Ic, stiff, k)
