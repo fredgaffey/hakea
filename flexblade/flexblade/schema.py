@@ -248,6 +248,11 @@ class Flexure(_M):
     cross_gap: float = Field(0.001, ge=0.0, description="axial gap between the two crossed plates "
                              "along the hinge axis, m; must exceed ~2 nozzle widths or the plates "
                              "fuse when printed (FEA: fused cross is ~1.9x stiffer)")
+    strip_clamp: Literal["sharp", "radiused", "compliant"] = Field(
+        "radiused", description="clamp-edge model for steel shim strips (fatigue Kt/fretting): "
+        "sharp square jaw, radiused jaw (strip_clamp_radius), or compliant TPU/soft pad lip")
+    strip_clamp_radius: float = Field(0.0, ge=0.0, description="m, jaw radius for 'radiused'; "
+                                      "0 = auto 10x strip thickness")
     taper: float = 1.0
     twist_deg: float = Field(0.0, description="pre-twist of members about their axis")
     layup: Layup = Layup()

@@ -1561,6 +1561,33 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cabl
     return best_e, best_s, float(np.max([abs(eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]))
 
 
+# --- clamp-edge model for steel shim strips -------------------------------------------------
+# Real shim flexures fail at the clamp edge (stress concentration + fretting), not mid-span.
+# Values (engineering judgement from): Henein, "Flexure pivot design" / Henein et al. cross-spring
+# pivots (clamped-blade fatigue, edge fillets); Smith, "Flexures: Elements of Elastic Mechanisms"
+# (2000), ch. on stress concentration at blade roots (Kt~1.5-2 at square clamp, ~1.1 with radius
+# >~10 t); Cosandier et al., "Fatigue/design of leaf-spring pivots"; Peterson's Stress
+# Concentration Factors (fillet r/t); Shigley fretting Marin-type knock-down ~0.7-0.85.
+KT_SHARP, FRET_SHARP = 1.75, 0.80
+KT_RADIUSED, FRET_RADIUSED = 1.10, 1.0
+KT_COMPLIANT, FRET_COMPLIANT = 1.05, 1.0
+R_FULL_FRAC = 10.0  # jaw radius (in strip thicknesses) at which the radiused Kt is reached
+
+
+def strip_clamp_factor(f) -> tuple[float, float]:
+    """(effective fatigue multiplier Kt/fretting, jaw radius m) for the steel strip clamp."""
+    t = f.thickness
+    R = f.strip_clamp_radius if f.strip_clamp_radius > 0 else R_FULL_FRAC * t
+    if f.strip_clamp == "sharp":
+        return KT_SHARP / FRET_SHARP, 0.0
+    if f.strip_clamp == "compliant":
+        return KT_COMPLIANT / FRET_COMPLIANT, R
+    x = min(1.0, R / (R_FULL_FRAC * t))
+    kt = KT_RADIUSED + (KT_SHARP - KT_RADIUSED) * (1 - x)
+    fr = FRET_RADIUSED + (FRET_SHARP - FRET_RADIUSED) * (1 - x)
+    return kt / fr, R
+
+
 def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -> list[Check]:
     fe = model.fe
     st = ss.state
@@ -1598,6 +1625,13 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                 g["fat_e"] = max(g["fat_e"], ue)
                 g["fat_s"] = max(g["fat_s"], us)
                 g["famp"] = max(g["famp"], amp)
+    ff = model.design.flexure
+    kfac, Rj = strip_clamp_factor(ff)
+    shim_groups = [n for n, ms in used.items() if any(m.startswith("steel_1095_shim") for m in ms)]
+    for n in shim_groups:
+        groups[n]["fat_e"] *= kfac
+        groups[n]["fat_s"] *= kfac
+        groups[n]["famp"] *= kfac
     out: list[Check] = []
     T_part = float(model.design.op.ambient_C)
     for name, mats in used.items():
@@ -1625,6 +1659,19 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                              utilisation=g["fat_e"], note="1/rev strain amplitude (design torque)"))
             out.append(Check(name="fatigue_stress", member=name, value=g["fat_s"], allowable=1.0,
                              utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)"))
+    for n in shim_groups:
+        g = groups[n]
+        mat = get_material([m for m in used[n] if m.startswith("steel_1095_shim")][0])
+        if ff.strip_clamp == "sharp" or Rj <= 0:
+            continue
+        kap = 2 * g["strain"] / ff.thickness           # peak operating curvature (conservative: incl. axial)
+        sw = mat.E1 * ff.thickness / (2 * Rj)
+        # jaw only governs if the strip is forced onto it (operating curvature > 1/R)
+        u = sw / mat.Xt if kap > 1.0 / Rj else 0.0
+        out.append(Check(name="strip_clamp_wrap", member=n, value=sw, allowable=mat.Xt, utilisation=u,
+                         note=f"jaw R={Rj*1e3:.2f} mm, wrap stress E t/2R={sw/1e6:.0f} MPa vs Xt; "
+                              f"active only if kappa_op={kap:.0f}>1/R={1/Rj:.0f} 1/m; "
+                              f"fatigue x{kfac:.2f} ({ff.strip_clamp})"))
     f = model.design.flexure
     if f.strap_strands > 0 and model.blades:
         cable_tags = {f"flex{j}" for j, m in enumerate(model.blades[0].members) if m.cable}
