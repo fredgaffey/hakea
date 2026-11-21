@@ -309,3 +309,43 @@ def test_drive_default_free_spin_unchanged(d5):
     h2 = rotor.harmonic_1p(m, ss, aero, lin=lin, unit_torque=True).result
     rate = h2.hub_speed_amp_rpm * 2 * np.pi / 60
     assert abs(rate * kp - 1) < 0.02
+
+
+def test_rev_avg_filter_zeros_and_state_model():
+    """Rev-synchronous average M(s) = (1 − e^{−sT})/(sT): exact zeros at every nP, DC gain 1; the warped
+    Padé keeps the 1P zero exact; the augmented state model reproduces J s + Z_pade(s) for rev_avg and
+    lowpass."""
+    J, Om = 2e-5, 2 * np.pi * 100
+    dp = dict(_rigid_dp(J), filt="rev_avg", T=2 * np.pi / Om, npade=4, wf=0.0)
+    for n in (1, 2, 3, 5):
+        assert abs(S.rpm_filter_tf(dp, 1j * n * Om)) < 1e-12
+    assert abs(S.rpm_filter_tf(dp, 1e-3j) - 1) < 1e-4
+    assert abs(S.rpm_filter_tf(dp, 1j * Om, pade=True)) < 1e-10
+    assert abs(S.rpm_filter_tf(dp, 1e-3j, pade=True) - 1) < 1e-4
+    # Z(jΩ) with rev_avg = back-EMF term only
+    assert abs(S.drive_impedance(dp, 1j * Om) - dp["c"]) < 1e-12 * dp["kp"]
+    for f in ("rev_avg", "lowpass"):
+        d = dict(dp, filt=f, wf=2 * np.pi * 60)
+        r = S.add_drive(S.RotSys(np.array([[J]]), np.zeros((1, 1)), np.zeros((1, 1)), Om), np.array([1.0]), d)
+        e = np.zeros(len(r.M))
+        e[0] = 1.0
+        for w in (50.0, Om, 3000.0):
+            x = np.linalg.solve(r.K - w * w * r.M + 1j * w * r.G, e)
+            th = 1.0 / (-J * w * w + 1j * w * S.drive_impedance(d, 1j * w, pade=True))
+            assert abs(x[0] / th - 1) < 1e-9
+
+
+def test_rev_avg_harmonic_equals_back_emf_only(d5):
+    """harmonic_1p with a rev-averaged speed loop = the same drive without a speed loop (back-EMF only)."""
+    m = rotor.build_model(d5)
+    aero = rotor.make_aero(m)
+    ss = rotor.static_trim(m, aero)
+    lin = rotor.linearize(m, ss, True)
+    res = []
+    for esc in (Drive(), Drive(bandwidth_hz=80, latency_s=2e-3, rpm_filter="rev_avg"),
+                Drive(bandwidth_hz=80, latency_s=2e-3)):
+        m.design = d5.model_copy(update=dict(motor=d5.motor.model_copy(update=dict(esc=esc))))
+        h = rotor.harmonic_1p(m, ss, aero, lin=lin).result
+        res.append(h.hub_moment_mean * np.exp(1j * np.radians(h.hub_moment_phase_deg)))
+    assert abs(res[1] / res[0] - 1) < 1e-9
+    assert abs(res[2] / res[0] - 1) > 1e-3
