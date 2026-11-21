@@ -1810,7 +1810,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                                          famp_n=0.0, cross_n=""))
         t_hat = unit(st.x[e.n1] - st.x[e.n0])
         is_cable = e.kind == "flexure" and name in cables.get(e.blade, ())
-        fa, fb = element_end_forces(e, c)
+        fa, fb = element_end_forces(e, c, st)
         secs = [e.sections[0], e.sections[-1]]
         used.setdefault(name, set()).update(fb_.material for sec in secs for fb_ in sec.fibres)
         for sec, sf in zip(secs, (fa, fb)):
