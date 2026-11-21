@@ -54,7 +54,28 @@ def _set_path(d: dict, path: str, value: Any) -> None:
         cur[last] = value
 
 
+BAL_KEYS = ("bal.mass", "bal.r_frac", "bal.chord", "bal.normal")
+
+
+def bal_to_masses(mass: float, r_frac: float, chord: float, normal: float) -> list[dict]:
+    """Symmetric balance-mass pair: (+chord, +normal) and (-chord, -normal), kg / m."""
+    return [dict(mass=mass, r_frac=r_frac, chord_offset=sg * chord, normal_offset=sg * normal)
+            for sg in (1.0, -1.0)]
+
+
+def _bal_get(obj: Any, key: str) -> float:
+    bm = get_path(obj, "blade.balance_masses")
+    if not bm:
+        return 0.0
+    b = bm[0]
+    f = {"bal.mass": "mass", "bal.r_frac": "r_frac", "bal.chord": "chord_offset",
+         "bal.normal": "normal_offset"}[key]
+    return abs(float(b[f] if isinstance(b, dict) else getattr(b, f)))
+
+
 def get_path(obj: Any, path: str) -> Any:
+    if path in BAL_KEYS:
+        return _bal_get(obj, path)
     cur = obj
     for k in path.split("."):
         if isinstance(cur, list):
@@ -68,8 +89,16 @@ def get_path(obj: Any, path: str) -> Any:
 
 def set_design(design: Design, values: dict[str, float]) -> Design:
     d = design.model_dump(mode="json")
+    bal = {}
     for p, v in values.items():
-        _set_path(d, p, float(v))
+        if p in BAL_KEYS:
+            bal[p] = float(v)
+        else:
+            _set_path(d, p, float(v))
+    if bal:
+        cur = {k: _bal_get(d, k) for k in BAL_KEYS}
+        cur.update(bal)
+        d["blade"]["balance_masses"] = bal_to_masses(*(cur[k] for k in BAL_KEYS))
     return Design.model_validate(d)
 
 

@@ -55,6 +55,9 @@ from flexblade.schema import Design, Layup, OptimizeRequest, Target, Variable  #
 RAMP_SLEW = 2550.0          # AM32 max_ramp 255 → 255/2000 per 50 µs tick = 2550 /s
 STOCK_SLEW = 160.0
 RES_BAND = 0.15
+BAL_VARS = False       # --one-sided also enables the bal.* balance-pair variables (steelx)
+ONE_SIDED = False
+DRIFT_MAX = 0.07
 MECH_MARGIN = 0.075   # --criterion mech_band: nominal hard 1P margin of the mechanism mode
 GOODMAN = False       # --goodman: strip_fatigue_mean="goodman" on every evaluated design
 # ground resonance (flexblade.ground_resonance): env FLEXBLADE_GROUND_RES=1 (set by --ground-resonance, so
@@ -135,6 +138,13 @@ def variables(concept: str, D: float) -> list[Variable]:
               Variable(path="flexure.cross_angle_deg", lo=50.0, hi=110.0),
               Variable(path="flexure.strap_strand_diameter", lo=0.0004, hi=0.0012 * s, log=True),
               Variable(path="flexure.strap_length", lo=0.002 * s, hi=0.012 * s, log=True)]
+        if BAL_VARS:   # symmetric balance-mass pair per blade (cf_invariant_mode.md recipe)
+            V = [v for v in V if v.path != "flexure.strap_length"]
+            V += [Variable(path="flexure.strap_length", lo=0.006, hi=0.009),
+                  Variable(path="bal.mass", lo=0.0, hi=1.5e-3),
+                  Variable(path="bal.r_frac", lo=0.15, hi=0.35),
+                  Variable(path="bal.chord", lo=0.0, hi=0.012),
+                  Variable(path="bal.normal", lo=0.0, hi=0.010)]
     elif concept in ("tpu_split", "tpu95_split"):
         V += [Variable(path="flexure.thickness", lo=0.0008, hi=0.006 * s, log=True),
               Variable(path="flexure.width", lo=0.004 * s, hi=0.022 * s),
@@ -388,6 +398,18 @@ def geometry_violations(d: Design) -> dict[str, float]:
     return v
 
 
+def one_sided_check(rpms, mprs):
+    """(sign_change, drift, penalty) from per-throttle rpm and mode/rev. drift = max over the
+    consecutive pairs of |d ln mpr / d ln rpm|."""
+    sc = any((1.0 - a) * (1.0 - b) <= 0.0 for a in mprs for b in mprs)
+    dr = 0.0
+    pts = sorted(zip(rpms, mprs))
+    for (r0, m0), (r1, m1) in zip(pts, pts[1:]):
+        if r1 > r0 and m0 > 0 and m1 > 0:
+            dr = max(dr, abs(math.log(m1 / m0) / math.log(r1 / r0)))
+    return sc, dr, 10.0 * max(0.0, dr - DRIFT_MAX)
+
+
 def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
     """Constraint breakdown + headline metrics from a (stripped) Results dict.
     criterion: "margin" (hard 0.15 1P margin on every mode) or "control_quality" (mechanism mode
@@ -412,6 +434,7 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
             viol["check:" + k] = math.log(u)
     splits, margins, which = [], [], []
     mech_mgs = []
+    mech_rr = []
     for tag, sub in _sub_results(r):
         sp = (sub.get("summary") or {}).get("trim_diff_pitch_deg", float("nan"))
         splits.append(sp)
@@ -424,6 +447,7 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
                 out["mech_per_rev"] = float(mm_["freq_hz"] * 60 / rpm_)
                 out["mech_mode"] = f"{mm_['label']} {out['mech_per_rev']:.3f}/rev"
                 mech_mgs.append(abs(out["mech_per_rev"] - 1.0))
+                mech_rr.append((float(rpm_), out["mech_per_rev"]))
                 out["res_margin_all"], out["res_which_all"] = mg, wh
                 mg, wh = resonance_margin(sub, skip_1p=im)
         if criterion in ("control_quality", "control_quality_cal"):
@@ -458,6 +482,13 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
         out["mech_margin"] = mm_min
         if mm_min < MECH_MARGIN:
             viol["mech_band"] = (MECH_MARGIN - mm_min) / MECH_MARGIN
+    if ONE_SIDED and len(mech_rr) > 1:
+        sc, dr, pen = one_sided_check([a for a, _ in mech_rr], [b for _, b in mech_rr])
+        out["mech_drift"], out["drift_pen"] = dr, pen
+        if sc:
+            viol["mech_one_sided"] = 1.0
+        if pen > 0:
+            viol["mech_drift"] = pen
     if GROUND_RES:
         from flexblade import ground_resonance as gr
         af = d.op.airframe
@@ -854,6 +885,9 @@ def main(argv=None):
                          "control_quality_cal: build tolerance calibrated out per airframe, only the "
                          "RUNTIME residual (rpm bin, temperature, creep, J error) about each calibrated "
                          "node is limited; build samples bound calibratability (authority, 1P side)")
+    ap.add_argument("--one-sided", action="store_true",
+                    help="mech_band: infeasible if mode/rev crosses 1P over the throttle range; "
+                         "penalty 10*max(0,|dln mpr/dln rpm|-0.07); adds the bal.* balance-pair variables")
     ap.add_argument("--mech-margin", type=float, default=0.075,
                     help="mech_band: nominal hard 1P margin of the mechanism mode (others keep 0.15)")
     ap.add_argument("--motor", default=None, help="motor.MOTOR_LIBRARY name for every case (e.g. crm2204_1400kv)")
@@ -888,6 +922,8 @@ def main(argv=None):
     CRITERION = a.criterion
     global MOTOR
     MOTOR = a.motor
+    global ONE_SIDED, BAL_VARS
+    ONE_SIDED = BAL_VARS = a.one_sided
     global MECH_MARGIN, GOODMAN
     MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
     global MASS_OVERRIDE
