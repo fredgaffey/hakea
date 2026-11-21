@@ -205,5 +205,5 @@ The forced-response criterion (forced.py) assumes torque harmonics 3 % at 2P, 1 
 - Strap anchor `pin_wrap` replaced by a stopper-knot well; knot strength not modelled. Clearance is a rigid-body sweep; strip S-bending not included.
 - ccx cross-check of the strip pair (study/verify_v5.py ccx): all terms within 6 % of the beam model.
 """
-(OUT / "BUILD.md").write_text(md)
+(OUT / ("BUILD.md" if not (OUT / "BUILD.md").exists() else "BUILD.generated.md")).write_text(md)  # never clobber the hand-edited BUILD.md
 print("BUILD.md written", len(md))
