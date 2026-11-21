@@ -38,3 +38,27 @@ def test_one_sided_flags_sign_change():
     assert not sc and dr < 0.07 and pen == 0.0
     sc, dr, pen = rs.one_sided_check([6500, 9100], [1.10, 1.02])
     assert not sc and pen > 0
+
+
+def test_blade_vars_and_core_fraction():
+    from flexblade.schema import Layup, BladeStation
+    from flexblade.section import section_properties, RectShape
+    rs.BLADE_VARS = True
+    try:
+        p = {v.path for v in rs.variables("tt_strap_steelx", 10.0)}
+    finally:
+        rs.BLADE_VARS = False
+    assert {"blade.chord_scale", "blade.layup.core_fraction", "blade.layup.skin_thickness"} <= p
+    assert "blade.chord_scale" not in {v.path for v in rs.variables("tt_strap_steelx", 10.0)}
+    d = Design()
+    d = d.model_copy(update=dict(blade=d.blade.model_copy(update=dict(
+        stations=[BladeStation(r_frac=0.5, chord=0.04)]))))
+    d2 = set_design(set_design(d, {"blade.chord_scale": 1.3}), {"blade.chord_scale": 1.3})
+    assert abs(d2.blade.stations[0].chord - 0.052) < 1e-12
+
+    def sp(f):
+        return section_properties(RectShape(width=0.04, thickness=0.006), Layup(
+            kind="core_skin", material="pa6_cf", skin_material="pa6_cf", skin_thickness=0.0008,
+            core_fraction=f), None, force_grid=True)
+    a, b, c = sp(1.0), sp(0.0), sp(0.5)
+    assert b.mass_per_len < c.mass_per_len < a.mass_per_len and b.EIy < c.EIy < a.EIy

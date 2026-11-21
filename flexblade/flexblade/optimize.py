@@ -91,7 +91,12 @@ def set_design(design: Design, values: dict[str, float]) -> Design:
     d = design.model_dump(mode="json")
     bal = {}
     for p, v in values.items():
-        if p in BAL_KEYS:
+        if p == "blade.chord_scale":
+            k = float(v) / float(d["blade"].get("chord_scale", 1.0))
+            for st in d["blade"]["stations"]:
+                st["chord"] *= k
+            d["blade"]["chord_scale"] = float(v)
+        elif p in BAL_KEYS:
             bal[p] = float(v)
         else:
             _set_path(d, p, float(v))

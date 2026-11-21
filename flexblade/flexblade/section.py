@@ -24,6 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from functools import lru_cache
 
+import dataclasses
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
@@ -442,6 +443,9 @@ def _closed_form(shape, mc: _MatCell) -> SectionProps:
 
 def _grid_section(shape, layup, orientation, t, e2, e3, base, n_thin, max_cells, h) -> SectionProps:
     Y, Z, mask, dy, dz = _rasterize(shape, h, n_thin, max_cells)
+    if layup.kind == "core_skin" and layup.core_fraction < 1.0:   # hollow / low-infill core
+        f = max(layup.core_fraction, 1e-6)
+        base = dataclasses.replace(base, E=base.E * f, Gy=base.Gy * f, Gz=base.Gz * f, rho=base.rho * f)
     mats = [base]
     matid = np.zeros(mask.shape, int)
     if layup.kind == "core_skin" and layup.skin_material and layup.skin_thickness > 0:

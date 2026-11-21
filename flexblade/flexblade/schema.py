@@ -49,6 +49,9 @@ class Layup(_M):
     insert_material: Optional[str] = None
     insert_diameter: float = 0.0
     insert_positions: list[float] = Field(default_factory=list)
+    core_fraction: float = Field(
+        1.0, ge=0.0, le=1.0, description="core_skin: effective core density; core E, G and rho are "
+        "scaled by this (0 = hollow shell, 1 = full core); skins are always full")
 
 
 # --------------------------------------------------------------------------- blade
@@ -93,6 +96,9 @@ class Blade(_M):
         description="spanwise definition, r_frac ascending; empty = preset law")
     layup: Layup = Layup()
     orientation: PrintOrientation = PrintOrientation()
+    chord_scale: float = Field(
+        1.0, description="cumulative chord multiplier already applied to `stations` (bookkeeping for "
+        "the optimiser variable blade.chord_scale; set_design rescales stations by new/old)")
     elastic_axis_chord_frac: float = Field(
         0.25, description="beam reference line position along chord from LE")
     balance_masses: list[BalanceMass] = Field(
