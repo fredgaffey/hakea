@@ -346,6 +346,16 @@ class Drive(_M):
     ki_zero_frac: float = Field(0.25, description="PI zero / crossover when gains come from bandwidth_hz")
     latency_s: float = Field(1.0e-3, description="speed-loop latency τ (loop period + eRPM filter "
                              "group delay), s; AM32 ~1-2 kHz loop -> 0.5-2 ms")
+    rpm_filter: Literal["none", "lowpass", "rev_avg"] = Field(
+        "none", description="filter on the MEASURED speed fed to the PI (speed loop only; back-EMF and "
+        "current-loop terms act directly). none: raw eRPM; lowpass: 1st order at lowpass_hz; rev_avg: "
+        "rev-synchronous moving average over exactly one rev T = 2π/Ω, M(s) = (1 − e^{−sT})/(sT), zeros at "
+        "every nP -> the governor is blind to the 1P cyclic. harmonic_1p uses the exact M; stability a "
+        "frequency-warped Padé(rev_avg_pade) of e^{−sT} with the 1P zero kept exact")
+    lowpass_hz: Optional[float] = Field(None, description="rpm_filter=lowpass corner, Hz (None: 2 × bandwidth_hz)")
+    rev_avg_pade: int = Field(4, ge=3, le=6, description="Padé order of e^{−sT} in the stability model of "
+                              "rev_avg (≥3 so the all-pass phase can reach −2π at 1P; 4: frequency warp 1.03, i.e. "
+                              "low-frequency group delay 1.03 T/2; 3 overstates it by 23 %)")
 
 
 class Motor(_M):

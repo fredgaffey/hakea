@@ -143,8 +143,9 @@ def spin_inertia(model, ss, lin) -> float:
 # ------------------------------------------------------------------------- ESC / motor drive impedance
 
 
-def drive_params(motor, J_spin: float, d0: float = 0.6) -> dict | None:
-    """motor.esc -> dict(c, kp, ki, tau, tl) or None (free spin).  Torque on the spin DOF
+def drive_params(motor, J_spin: float, d0: float = 0.6, Omega: float | None = None) -> dict | None:
+    """motor.esc -> dict(c, kp, ki, tau, tl, filt, wf, T, npade) or None (free spin).  Omega (rad/s)
+    sets the rev-average period T = 2π/Ω (needed for rpm_filter = rev_avg).  Torque on the spin DOF
     Q = −[c + (kp + ki/s) e^{−sτ}/(1 + s tl)] sθ:  c = back-EMF k_t^2/R0 (voltage mode) + viscous b;
     tl = L/R0 is the R-L lag of the duty->torque path (0 under current control)."""
     esc = getattr(motor, "esc", None)
@@ -163,19 +164,106 @@ def drive_params(motor, J_spin: float, d0: float = 0.6) -> dict | None:
         kp = J_spin * wb
         if ki is None:
             ki = kp * wb * esc.ki_zero_frac
+    filt = getattr(esc, "rpm_filter", "none")
+    wf = T = 0.0
+    if filt == "lowpass":
+        fl = esc.lowpass_hz or 2.0 * (esc.bandwidth_hz or 0.0)
+        if fl <= 0:
+            raise ValueError("rpm_filter=lowpass needs lowpass_hz or bandwidth_hz")
+        wf = 2 * np.pi * fl
+    elif filt == "rev_avg":
+        if not Omega:
+            raise ValueError("rpm_filter=rev_avg needs the rotor speed Omega")
+        T = 2 * np.pi / float(Omega)
     return dict(c=c, kp=float(kp or 0.0), ki=float(ki or 0.0), tau=float(esc.latency_s), tl=tl,
-                J=float(J_spin))
+                J=float(J_spin), filt=filt, wf=wf, T=T, npade=int(getattr(esc, "rev_avg_pade", 4)))
+
+
+def _pade_poly(N: int):
+    """Padé(N,N) of e^{−x} = num(x)/den(x); coefficient arrays highest power first."""
+    from math import factorial
+    c = np.array([factorial(2 * N - k) * factorial(N) / (factorial(2 * N) * factorial(k) * factorial(N - k))
+                  for k in range(N + 1)])
+    return (c * (-1.0) ** np.arange(N + 1))[::-1], c[::-1]
+
+
+def _rev_avg_tf(N: int):
+    """Rational rev-average in σ = s T':  F(σ) = (1 − Padé_N(e^{−σ}))/σ = 2 Σ_odd c_k σ^{k−1} / den(σ),
+    with the warp x* = Ω T' such that the all-pass phase is exactly −2π at 1P (arg den(j x*) = π), so
+    F(jΩ) = 0 EXACTLY (the 2P..nP zeros are only approximate).  Returns (num, den, x*)."""
+    from scipy.optimize import brentq
+    num, den = _pade_poly(N)
+    ph = lambda x: np.unwrap(np.angle(np.polyval(den, 1j * np.linspace(0, x, 400))))[-1] - np.pi
+    xs = brentq(ph, 1e-3, 50.0)
+    fn = np.polysub(den, num)[:-1]          # (den − num)/σ  (constant terms cancel)
+    return fn, den, xs
+
+
+def rpm_filter_tf(dp: dict, s: complex, pade: bool = False) -> complex:
+    """Measured-speed filter F(s) of the governor.  rev_avg exact: (1 − e^{−sT})/(sT), zeros at s = j nΩ;
+    pade=True: the warped Padé rational used by the stability state model."""
+    f = dp.get("filt", "none")
+    if f == "lowpass":
+        return 1.0 / (1.0 + s / dp["wf"])
+    if f == "rev_avg":
+        T = dp["T"]
+        if pade:
+            fn, den, xs = _rev_avg_tf(dp.get("npade", 4))
+            Tw = T * xs / (2 * np.pi)
+            return np.polyval(fn, s * Tw) / np.polyval(den, s * Tw)
+        x = s * T
+        return 1.0 if abs(x) < 1e-12 else (1 - np.exp(-x)) / x
+    return 1.0
 
 
 def drive_impedance(dp: dict, s: complex, emf: bool = True, pade: bool = False) -> complex:
-    """Torque per unit spin RATE, Q = −Z(s) sθ.  pade=True: the Padé(1) delay on τ + tl used by the
-    stability state model; else the exact e^{−sτ}/(1 + s tl)."""
+    """Torque per unit spin RATE, Q = −Z(s) sθ = −[c + (kp + ki/s) F(s) delay(s)] sθ.  pade=True: the
+    Padé(1) delay on τ + tl and the rational F used by the stability state model; else the exact
+    e^{−sτ}/(1 + s tl) and exact F (rev_avg: F(j nΩ) = 0, so Z(jΩ) = c only)."""
     if pade:
         te = dp["tau"] + dp["tl"]
         dl = (1 - s * te / 2) / (1 + s * te / 2)
     else:
         dl = np.exp(-s * dp["tau"]) / (1 + s * dp["tl"])
-    return (dp["c"] if emf else 0.0) + (dp["kp"] + dp["ki"] / s) * dl
+    return (dp["c"] if emf else 0.0) + (dp["kp"] + dp["ki"] / s) * rpm_filter_tf(dp, s, pade) * dl
+
+
+def _ss_series(*blocks):
+    """Series connection of SISO state-space blocks (A, B, C, D), first block first."""
+    A, B, C, D = blocks[0]
+    for A2, B2, C2, D2 in blocks[1:]:
+        n1, n2 = len(A), len(A2)
+        A = np.block([[A, np.zeros((n1, n2))], [np.outer(B2, C), A2]])
+        B = np.concatenate([B, B2 * D])
+        C = np.concatenate([D2 * C, C2])
+        D = D2 * D
+    return A, B, C, D
+
+
+def drive_ss(dp: dict):
+    """State-space (A, B, C, D) of the governor torque y = (kp + ki/s) F(s) Padé1(s; τ + tl) · θ̇
+    (back-EMF c excluded).  Blocks: F (lowpass 1 state / rev_avg N states, companion form in σ = s T'
+    scaled by 1/T'), PI (integrator), Padé(1) delay (−1 + 2/(1 + s te/2))."""
+    blocks = []
+    if dp.get("filt") == "lowpass":
+        blocks.append((np.array([[-dp["wf"]]]), np.array([dp["wf"]]), np.array([1.0]), 0.0))
+    elif dp.get("filt") == "rev_avg":
+        fn, den, xs = _rev_avg_tf(dp.get("npade", 4))
+        Tw = dp["T"] * xs / (2 * np.pi)
+        a = den / den[0]
+        b = np.concatenate([np.zeros(len(a) - 1 - len(fn)), fn / den[0]])
+        N = len(a) - 1
+        A = np.zeros((N, N))
+        A[0, :] = -a[1:]
+        A[1:, :-1] = np.eye(N - 1)
+        Bv = np.zeros(N)
+        Bv[0] = 1.0
+        blocks.append((A / Tw, Bv / Tw, b.copy(), 0.0))
+    blocks.append((np.zeros((1, 1)), np.array([1.0]), np.array([dp["ki"]]), dp["kp"]))
+    te = dp["tau"] + dp["tl"]
+    if te > 0:
+        blocks.append((np.array([[-2 / te]]), np.array([2 / te]), np.array([2.0]), -1.0))
+    return _ss_series(*blocks)
 
 
 def add_drive(rs: RotSys, b: np.ndarray, dp: dict) -> RotSys:
@@ -188,6 +276,8 @@ def add_drive(rs: RotSys, b: np.ndarray, dp: dict) -> RotSys:
     M, G, K = rs.M.copy(), rs.G.copy(), rs.K.copy()
     bb = np.outer(b, b)
     c, kp, ki, te = dp["c"], dp["kp"], dp["ki"], dp["tau"] + dp["tl"]
+    if dp.get("filt", "none") != "none" and (kp != 0 or ki != 0):
+        return _add_drive_ss(rs, b, dp)
     if (kp == 0 and ki == 0) or te <= 0:
         G += (c + kp) * bb
         K += ki * bb
@@ -202,6 +292,26 @@ def add_drive(rs: RotSys, b: np.ndarray, dp: dict) -> RotSys:
     G2[n, :n] = -(4 * mu / te) * kp * b
     K2[n, :n] = -(4 * mu / te) * ki * b
     basis = None if rs.basis is None else np.hstack([rs.basis, np.zeros((rs.basis.shape[0], 1))])
+    return RotSys(M2, G2, K2, rs.Omega, rs.ih, basis, rs.m_rotor, rs.it)
+
+
+def _add_drive_ss(rs: RotSys, b: np.ndarray, dp: dict) -> RotSys:
+    """General drive augmentation with the governor states x (drive_ss) written as velocities of new
+    coordinates ξ (x = ξ̇):  θ rows get (c + D) bbᵀ q̇ + b C ξ̇;  ξ rows  μ(ξ̈ − A ξ̇ − B bᵀq̇) = 0.
+    Each ξ adds an inert s = 0 root.  μ only scales rows (conditioning), not the roots."""
+    A, Bv, Cv, D = drive_ss(dp)
+    M, G, K = rs.M, rs.G, rs.K
+    n, m = len(M), len(A)
+    bb = np.outer(b, b)
+    sc = max(abs(dp["kp"]), abs(dp["ki"]) * (dp["tau"] + dp["tl"] + dp.get("T", 0.0)), dp["c"], 1e-12)
+    mu = dp.get("J", 1.0) / sc ** 2
+    M2, G2, K2 = (np.zeros((n + m, n + m)) for _ in range(3))
+    M2[:n, :n], G2[:n, :n], K2[:n, :n] = M, G + (dp["c"] + D) * bb, K
+    G2[:n, n:] = np.outer(b, Cv)
+    M2[n:, n:] = mu * np.eye(m)
+    G2[n:, n:] = -mu * A
+    G2[n:, :n] = -mu * np.outer(Bv, b)
+    basis = None if rs.basis is None else np.hstack([rs.basis, np.zeros((rs.basis.shape[0], m))])
     return RotSys(M2, G2, K2, rs.Omega, rs.ih, basis, rs.m_rotor, rs.it)
 
 
@@ -258,7 +368,7 @@ def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: boo
     m_rot = float(M[nh - 2, nh - 2]) if hub else 0.0
     rs = RotSys(M, G + C, K, ss.Omega, ih, B, m_rot, it)
     if drive and getattr(model.design.motor, "esc", None) is not None:
-        dp = drive_params(model.design.motor, spin_inertia(model, ss, lin))
+        dp = drive_params(model.design.motor, spin_inertia(model, ss, lin), Omega=ss.Omega)
         rs = add_drive(rs, B[6 * model.hub + 5], dp)
     return rs
 

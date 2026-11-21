@@ -1331,9 +1331,11 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
     else:
         dQ = complex(d.op.torque_mod_frac * Q0)
     if d.motor.esc is not None:
-        # ESC speed loop at 1P: Q = −(kp + ki/jΩ) e^{−jΩτ}/(1 + jΩ tl) · jΩ θ  (back-EMF is in k_hub)
+        # ESC speed loop at 1P: Q = −(kp + ki/jΩ) F(jΩ) e^{−jΩτ}/(1 + jΩ tl) · jΩ θ  (back-EMF is in k_hub);
+        # rpm_filter=rev_avg: F(jΩ) = 0 exactly -> only the direct (back-EMF / current-loop) terms remain
         from . import stability as stb
-        dp = stb.drive_params(d.motor, stb.spin_inertia(model, ss, lin), drive.get("d0", 0.6))
+        dp = stb.drive_params(d.motor, stb.spin_inertia(model, ss, lin), drive.get("d0", 0.6),
+                               Omega=ss.Omega)
         k_hub_in = d.op.drive == "duty" and not unit_torque and not d.motor.esc.current_control
         emf = not d.motor.esc.current_control and not k_hub_in
         Z[hubd, hubd] += 1j * w * stb.drive_impedance(dp, 1j * w, emf=emf)
