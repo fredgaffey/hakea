@@ -166,3 +166,10 @@ Minimum tube sizes (cantilever CF tube, E 70 GPa, rho 1600, tip mass 126 g + 0.2
 | 25 x 23 | 194 OK (21.7) | 166 OK (24.1) | 143 OK (26.5) |
 
 Clamp/joint compliance lowers the real number, so take the tap-test as authoritative; a bonded-in socket shorter than the tube adds a series spring.
+
+### Calibration procedure (per build: continuous cyclic gain/phase vs eRPM, >= 5 nodes)
+1. **Logging setup**: airframe bolted down; accelerometer/IMU on the motor can (fixed frame, x/y moment proxy) or a load cell (Mx, My); log at >= 1 kHz: `t, erpm, azimuth_deg` (or `rev`; else integrated from eRPM / pole pairs), `cmd_amp`, `cmd_phase_deg` (the commanded cyclic pulse, torque pulse = amp cos(azimuth - phase)), `mx, my`. Use the same azimuth zero the FC will use in flight.
+2. **Sweep**: command a pulse of constant amplitude with the command phase **rotating** at 1-3 Hz (needed to separate G from DC/imbalance), while the throttle ramps slowly from T0.5 to T1.5 (model-validated 0.7 to 1.4) in **>= 20 s** (10 s only passes with amp >= 2x the per-sample IMU noise). Pulse amplitude: **>= 2x the per-sample IMU noise** (>= 1x marginal at 20 s; <= 0.5x fails); keep it inside the pulse-schedule limit above. Repeat with the governor on and off.
+3. **Fit**: `python flexblade/study/calib/fit_cyclic.py log.csv --nodes 5 --pole-pairs <pp> --out schedule` (use `--sens` for IMU units per N m). It lock-in demodulates per 1 s rpm window (1P..4P nuisance terms), robustly fits ln|G| and phase at the nodes (piecewise linear in ln eRPM) and writes `schedule.csv/.md` (erpm, gain, phase_deg, gain_ci, phase_ci; 95 % half-widths). Reject a build whose CI exceeds 5 % / 3 deg; re-log with more amplitude or a slower sweep.
+4. **Load** the CSV table into the FC schedule (Lua/param table, linear in ln eRPM, cyclic gain and phase); re-do after a crash or strip replacement.
+Validated on synthetic logs (10in v5 model, 1 % eRPM jitter, nP vibration, IMU noise): study/calib/synth.py.
