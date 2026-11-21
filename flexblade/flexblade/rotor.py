@@ -217,6 +217,27 @@ def resolve_pre_lag(design: Design, passes: int = 3, info: dict | None = None) -
     return design.model_copy(update=dict(flexure=f.model_copy(update=dict(pre_lag_deg=float(psi)))))
 
 
+def flexure_root_loads(model: RotorModel, ss) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Per blade: steady resultant (F, M) the hub passes into the flexure member set, in the
+    blade frame Rk (x radial, y lag/chord, z thrust); M about the blade's hinge point.
+    M[1] is the steady flap moment My that blade.precone_deg unloads."""
+    from .beam import element_cr
+    fe, st = model.fe, ss.state
+    out = []
+    for bi in model.blades:
+        F, M = np.zeros(3), np.zeros(3)
+        for ids in bi.member_elems.values():
+            if not ids:
+                continue
+            e = fe.elements[ids[0]]
+            c = element_cr(e, st, ss.Omega, want_h=False)
+            g = c.B.T @ c.f7
+            F += g[0:3]
+            M += g[3:6] + np.cross(st.x[e.n0] - bi.hinge_point, g[0:3])
+        out.append((bi.Rk.T @ F, bi.Rk.T @ M))
+    return out
+
+
 def strip_end_rotations(model: RotorModel, ss) -> list[list[list[float]]]:
     """Elastic CR end rotations of every flexure member at the static state, deg:
     [blade][member] -> [hub-end θ1..3, blade-end θ1..3] (same layout as strip_preset_deg;
@@ -401,6 +422,11 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
         H0k, ak = fact.hinge_axis(design, k)
         av = ak if design.flexure.pre_lag_axis == "hinge" else np.array([ak[0], 0.0, 0.0])
         Rp = _rot_axis(Rk @ av, pre_lag * float(np.linalg.norm(av)))
+        # precone: about this blade's own chord axis −Rk·ŷ so Rk·x̂ → cosβ Rk·x̂ + sinβ ẑ (tip up)
+        # on every blade — Rk is a z-rotation, so the cone is the same for the mirrored blades
+        beta0 = np.radians(float(getattr(b, "precone_deg", 0.0) or 0.0))
+        if beta0 != 0.0:
+            Rp = Rp @ _rot_axis(Rk @ np.array([0.0, -1.0, 0.0]), beta0)
         pk = Rk @ H0k
         chain = [fe.add_node(pk + Rp @ (Rk @ np.array([r, 0.0, 0.0]) - pk), f"b{k}.r{r*1e3:.1f}")
                  for r in r_chain]
