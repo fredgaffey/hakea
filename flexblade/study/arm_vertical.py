@@ -14,7 +14,9 @@ def resp(F, f, fn):
     x = F/k*h
     return x*1e6, F*h*np.sqrt(1+(2*Z*r)**2), h       # um, transmitted N, mag
 def cases(d):
-    f1 = d['f1p']; z = lambda a: abs(a[2]); xy = lambda a: float(np.hypot(a[0], a[1]))
+    f1 = d['f1p']; z = lambda a: abs(a[2]); # in-plane nP from a rotating-frame vector is circular in the fixed frame (|Fx| = |Fy| = |F|, 90 deg apart):
+    # the per-axis amplitude IS the force magnitude and what a 1-DOF lateral arm sees (hypot would overstate by sqrt2)
+    xy = lambda a: float(max(a[0], a[1]))
     f1p, f2p = d['hubF_1p_fixed'], d['hubF_2p_fixed']
     # (name, harmonic, force at T1.0)
     return [('1P vert', 1, z(f1p['1'])), ('2P vert', 2, z(f2p['2'])), ('2P lat(from 1P-flap)', 2, xy(f1p['2'])),

@@ -108,7 +108,10 @@ def second_order(model, ss, aero, lin, hd, s, torque2=True):
 
 
 def fixed(ph, nrot):
-    """rotating-frame vector phasor (3,) at nrot/rev -> fixed-frame amplitudes {harmonic: (|Fx|,|Fy|,|Fz|)}."""
+    """rotating-frame vector phasor (3,) at nrot/rev -> fixed-frame amplitudes {harmonic: (|Fx|,|Fy|,|Fz|)}.
+    In-plane harmonics nrot+-1 are circular (Fx, Fy equal and 90 deg apart): |Fx| = |Fy| is the vector magnitude,
+    do NOT hypot them. Checked (precone 1.3, key 2 of hubF_1p_fixed = 9.75 N): equals the global inertial sum
+    2 Omega^2 sum(m u_xy) + Coriolis of the mismatched-blade 1P lag/flap, i.e. physical, not a transform artefact."""
     psi = np.linspace(0, 2 * np.pi, 128, endpoint=False)
     v = np.real(np.outer(ph, np.exp(1j * nrot * psi)))
     c, sn = np.cos(psi), np.sin(psi)
