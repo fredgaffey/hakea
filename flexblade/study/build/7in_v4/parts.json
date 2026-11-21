@@ -1,0 +1,67 @@
+{
+ "hub_fitting_assembly": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 0,
+  "volume_mm3": 9408.7,
+  "bbox_mm": [
+   50.1,
+   42.8,
+   25.2
+  ]
+ },
+ "blade1_with_root_fitting": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 0,
+  "volume_mm3": 4874.7,
+  "bbox_mm": [
+   83.6,
+   42.8,
+   20.5
+  ]
+ },
+ "blade2_with_root_fitting": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 0,
+  "volume_mm3": 5091.2,
+  "bbox_mm": [
+   83.6,
+   42.8,
+   18.6
+  ]
+ },
+ "params": {
+  "t": 0.15,
+  "w": 9.0,
+  "L": 18.730000000000004,
+  "land": 12.0,
+  "slot_t": 0.2,
+  "slot_w": 9.2,
+  "jaw_r": 1.5,
+  "wall": 1.2,
+  "strand_d": 1.5,
+  "channel_d": 1.8,
+  "well_d": 3.75
+ },
+ "notes": [
+  "crossing edge gap 1.90 mm < 2 walls: U jaws, slot open on the crossing edge (strip overhangs the jaw by 0.5 mm)"
+ ],
+ "clearance": {
+  "min_gap_mm": 1.5020415939903902,
+  "at_lag_deg": 5.0,
+  "at_pitch_deg": 8.0,
+  "lag_range_deg": 5.0,
+  "pitch_range_deg": 8.0,
+  "note": "negative = interference volume mm^3"
+ },
+ "rest_gap_mm": 2.8999999999999932,
+ "mass_g": {
+  "hub_fitting_per_blade": 3.38,
+  "root_fitting": 3.46,
+  "model_shank": 0.08,
+  "hub_material": "pa6_cf",
+  "blade_material": "pa6_cf"
+ }
+}
