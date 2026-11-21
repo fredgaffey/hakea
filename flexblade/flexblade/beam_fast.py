@@ -542,7 +542,8 @@ def assemble(model, st, Omega=0.0, want_tangent=True, want_mass=False, du_pred=N
     ne = len(model.elements)
     n0, n1 = pk["n0"], pk["n1"]
     XA, XB = np.ascontiguousarray(st.x[n0]), np.ascontiguousarray(st.x[n1])
-    RA, RB = np.ascontiguousarray(st.R[n0]), np.ascontiguousarray(st.R[n1])
+    from .beam import slot_R
+    RA, RB = slot_R(pk, st.R[n0], st.R[n1])
     W2 = float(Omega) ** 2
     FW = np.zeros((ne, 7))
     use_fw = np.zeros(ne, np.bool_)
@@ -617,7 +618,9 @@ def element_point_maps_batch(model, st, elem_idx, xis, yz):
     PTS = np.zeros((len(ei), 4))
     PTS[:, 0] = xis
     PTS[:, 1:3] = np.asarray(yz, float).reshape(-1, 2)
-    r, L, Rr, l = point_maps(XA, XB, np.ascontiguousarray(st.R[n0]), np.ascontiguousarray(st.R[n1]),
+    from .beam import slot_R
+    RAe, RBe = slot_R(pk, st.R[n0], st.R[n1], ei)
+    r, L, Rr, l = point_maps(XA, XB, RAe, RBe,
                              np.ascontiguousarray(pk["E0"][ei]), pk["L0"][ei], pk["k2"][ei], PTS)
     # Nr (local rotation map, as beam.hermite_maps) → global: Rr Nr blockdiag(Rrᵀ)
     xi = xis

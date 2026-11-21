@@ -518,18 +518,44 @@ class ElementCR:
 _NOW = np.zeros(0)
 
 
+# Strip preset (I34) model: "slot" = the end-frame (clamp slot) is rotated by d7_0[1:4] / d7_0[4:7]
+# (straight stress-free member between pre-angled slots, exact CR kinematics); "strain" = legacy
+# initial-strain K7·(d7 − d7_0), which treats the end element as PRE-CURVED (the bow/arc-length term
+# then couples end rotation to axial strain -> spurious arch stiffening; kept for comparison only).
+PRESET_MODE = "slot"
+
+
+def _rotv(w) -> np.ndarray:
+    return _expm(np.asarray(w, float))
+
+
+def slot_frames(e: "Element"):
+    """(Qa, Qb) global-reference 3×3 right-factors: R_eff = R_node @ Q so R_eff E0 = R E0 expm(−p)."""
+    if e.d7_0 is None or not np.any(e.d7_0) or PRESET_MODE != "slot":
+        return None
+    p = np.asarray(e.d7_0, float)
+    return (e.E0 @ _rotv(-p[1:4]) @ e.E0.T, e.E0 @ _rotv(-p[4:7]) @ e.E0.T)
+
+
+def _endR(e: "Element", st) -> tuple:
+    Ra, Rb = st.R[e.n0], st.R[e.n1]
+    q = slot_frames(e)
+    return (Ra, Rb) if q is None else (Ra @ q[0], Rb @ q[1])
+
+
 def element_cr(e: Element, st: State, Omega: float = 0.0, want_h: bool = True, fw=None) -> ElementCR:
-    if e.d7_0 is not None and np.any(e.d7_0):
+    Ra, Rb = _endR(e, st)
+    if PRESET_MODE == "strain" and e.d7_0 is not None and np.any(e.d7_0):
         p = np.asarray(e.d7_0, float)
         fp = e.K7 @ p
         if fw is None and want_h:
             c0 = element_cr(e, st, Omega, False, None)    # elastic f7 at this state (already shifted)
             fw = c0.f7
-        d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
+        d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], Ra, Rb, e.E0,
                                                     e.L0, e.k2, e.K7, e.mpts, float(Omega) ** 2, want_h,
                                                     _NOW if fw is None else np.asarray(fw, float))
         return ElementCR(d7 - p, B, f7 - fp, J, pos, gV, Kr)
-    d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
+    d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], Ra, Rb, e.E0,
                                                 e.L0, e.k2, e.K7, e.mpts, float(Omega) ** 2, want_h,
                                                 _NOW if fw is None else np.asarray(fw, float))
     return ElementCR(d7, B, f7, J, pos, gV, Kr)
@@ -552,7 +578,7 @@ class Assembly:
 def _pack(model: FEModel):
     """Static per-element arrays for the batched kernel (cached on the model)."""
     pk = getattr(model, "_pack", None)
-    if pk is not None and pk[0] == len(model.elements):
+    if pk is not None and pk[0] == len(model.elements) and pk[2] == PRESET_MODE:
         return pk[1]
     els = model.elements
     ne = len(els)
@@ -571,11 +597,31 @@ def _pack(model: FEModel):
     for k, e in enumerate(els):
         if e.d7_0 is not None:
             P[k] = e.d7_0
+    QA = np.repeat(np.eye(3)[None], ne, axis=0)
+    QB = QA.copy()
+    d["hasQ"] = False
+    if PRESET_MODE == "slot":
+        for k, e in enumerate(els):
+            q = slot_frames(e)
+            if q is not None:
+                QA[k], QB[k] = q
+                d["hasQ"] = True
+        P = np.zeros((ne, 7))
+    d["QA"], d["QB"] = QA, QB
     d["D7P"] = P
     d["hasP"] = bool(np.any(P))
     d["F7P"] = np.einsum("eij,ej->ei", d["K7"], P)
-    model._pack = (ne, d)
+    model._pack = (ne, d, PRESET_MODE)
     return d
+
+
+def slot_R(pk, RA, RB, ei=None):
+    """Node rotations gathered per element -> effective end frames (pre-angled slots, I34)."""
+    if not pk.get("hasQ"):
+        return np.ascontiguousarray(RA), np.ascontiguousarray(RB)
+    QA, QB = (pk["QA"], pk["QB"]) if ei is None else (pk["QA"][ei], pk["QB"][ei])
+    return (np.ascontiguousarray(np.einsum("eij,ejk->eik", RA, QA)),
+            np.ascontiguousarray(np.einsum("eij,ejk->eik", RB, QB)))
 
 
 def assemble(model: FEModel, st: State, Omega: float = 0.0, want_tangent: bool = True,
@@ -591,7 +637,7 @@ def assemble(model: FEModel, st: State, Omega: float = 0.0, want_tangent: bool =
     ne = len(model.elements)
     n0, n1 = pk["n0"], pk["n1"]
     XA, XB = np.ascontiguousarray(st.x[n0]), np.ascontiguousarray(st.x[n1])
-    RA, RB = np.ascontiguousarray(st.R[n0]), np.ascontiguousarray(st.R[n1])
+    RA, RB = slot_R(pk, st.R[n0], st.R[n1])
     W2 = float(Omega) ** 2
     FW = np.zeros((ne, 7))
     use_fw = np.zeros(ne, np.bool_)
@@ -669,10 +715,11 @@ def element_point_maps(e: Element, st: State, xi: float, s_local_yz):
     """Position r (3,), offset s_H, translation Jacobian L (3×12) and rotation map Nr (3×12)
     of a material point (xi, local y, z) — same CR kinematics as the mass points."""
     pts = np.array([[float(xi), float(s_local_yz[0]), float(s_local_yz[1]), 0.0]])
-    _, _, _, _, J, pos, _ = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
+    Ra, Rb = _endR(e, st)
+    _, _, _, _, J, pos, _ = _element_derivs(st.x[e.n0], st.x[e.n1], Ra, Rb, e.E0,
                                             e.L0, e.k2, e.K7, pts, 0.0, False, _NOW)
     xa, xb = st.x[e.n0], st.x[e.n1]
-    l, Rr = _cr_frame(xa, xb, st.R[e.n0], st.R[e.n1], e.E0)
+    l, Rr = _cr_frame(xa, xb, Ra, Rb, e.E0)
     Nt, Nr = hermite_maps(float(xi), l)
     T = np.zeros((12, 12))
     for k in range(4):

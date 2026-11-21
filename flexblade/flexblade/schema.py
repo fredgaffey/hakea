@@ -259,8 +259,10 @@ class Flexure(_M):
         default_factory=list, description="zero-stress trim: built-in (stress-free) end rotations "
         "of each flexure member, [blade][member] -> [hub-end θ1, θ2, θ3, blade-end θ1, θ2, θ3] deg "
         "in the member element frame (θ1 torsion about the span, θ2 about the width axis e2, θ3 "
-        "about the thickness axis e3) = pre-angled clamp slots. Implemented as an initial strain "
-        "of the member's end elements (load-equivalent K7·d7_0 subtracted in every solve). "
+        "about the thickness axis e3) = pre-angled clamp slots. Implemented as a rotation of the "
+        "end elements' end frames (straight stress-free strip between pre-angled slots; "
+        "beam.PRESET_MODE 'slot' — the legacy 'strain' initial-strain variant treated the end "
+        "element as pre-curved and over-stiffened via the arc-length term). "
         "Empty / missing entries = 0 (legacy). rotor.resolve_strip_preset sets θ2, θ3 to the "
         "hover trim end rotations so the strips carry no static bending at the reference op")
     strip_laminae: int = Field(1, ge=1, le=8, description="steel shim strips: number of "
