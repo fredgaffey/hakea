@@ -470,7 +470,11 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             Mt = np.diag([1.0, 1, -1]) if k % 2 == 0 else np.eye(3)
             m_, c1, I1 = fit_mp["hub"]          # hub side: rigid with the hub node (origin)
             Rh = Rk @ Mt
-            fe.add_lumped_inertia(hub, _rigid6(m_, Rh @ c1, Rh @ I1 @ Rh.T))
+            # spin inertia only: the hub node translates only in the stability hub basis, whose
+            # Coriolis terms come from the mass points (fe.lumped has no rotating terms)
+            Mhf = np.zeros((6, 6))
+            Mhf[5, 5] = _rigid6(m_, Rh @ c1, Rh @ I1 @ Rh.T)[5, 5]
+            fe.add_lumped_inertia(hub, Mhf)
             m_, c1, I1 = fit_mp["root"]         # blade side: pre-lagged with the blade chain
             Rb = Rp @ Rk @ Mt
             fit_pending.append((k, master, m_, pk + Rp @ (Rk @ Mt @ c1 - pk), Rb @ I1 @ Rb.T))

@@ -11,6 +11,8 @@ D = Path(__file__).resolve().parent.parent / "study" / "designs"
 
 def _trim(name):
     d = Design.model_validate(json.loads((D / name).read_text()))
+    # stored trims predate the steelx fitting-mass model: compare against the legacy model
+    d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(fitting_mass="none"))))
     m = R.build_model(d)
     return d, R.static_trim(m, R.make_aero(m))
 
