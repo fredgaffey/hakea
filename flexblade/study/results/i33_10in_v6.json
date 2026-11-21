@@ -13,5 +13,157 @@
   "other_margin": 0.166791639809603,
   "other_which": "pitch sym+hub 1.16/rev vs 1P",
   "cr_pl_margin_crit": 0.08221596674584668
+ },
+ "L23": {
+  "x": {
+   "flexure.length": 0.023
+  },
+  "cr_pl": 0.09360137484771447,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.0951
+  },
+  "phase": 11.712256521539127,
+  "gain": 0.1691544329516857,
+  "auth": 0.6409753238434558,
+  "mech": 0.027148473548334384,
+  "flip": false,
+  "cq_ratio": 0.9049491182778129,
+  "other_margin": 0.1993067471291039,
+  "other_which": "pitch sym 1.20/rev vs 1P",
+  "cr_pl_margin_crit": 0.09360137484771447
+ },
+ "L21": {
+  "x": {
+   "flexure.length": 0.021
+  },
+  "cr_pl": 0.10841535731278555,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.883,
+   "cqc_mech_side": 1.0
+  },
+  "phase": 14.976867466619138,
+  "gain": 0.20043889759388153,
+  "auth": 0.5388129983630923,
+  "mech": 0.003509991841457949,
+  "flip": true,
+  "cq_ratio": 0,
+  "other_margin": 0.24350213106962304,
+  "other_which": "pitch sym 1.24/rev vs 1P",
+  "cr_pl_margin_crit": 0.10841535731278555
+ },
+ "L22": {
+  "x": {
+   "flexure.length": 0.022
+  },
+  "cr_pl": 0.10033192354416474,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.6712
+  },
+  "phase": 14.532085594757392,
+  "gain": 0.18012563242594162,
+  "auth": 0.5846546377195241,
+  "mech": 0.009865097600418538,
+  "flip": false,
+  "cq_ratio": 0.32883658668061794,
+  "other_margin": 0.21903663838951126,
+  "other_which": "pitch sym 1.22/rev vs 1P",
+  "cr_pl_margin_crit": 0.10033192354416474
+ },
+ "skew57": {
+  "x": {
+   "flexure.skew_deg": 57.0
+  },
+  "cr_pl": 0.10405138661087948,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.1171
+  },
+  "phase": 12.163693188648937,
+  "gain": 0.14832515619732092,
+  "auth": 0.6961728411537668,
+  "mech": 0.0264869645394481,
+  "flip": false,
+  "cq_ratio": 0.8828988179816033,
+  "other_margin": 0.17137302037845714,
+  "other_which": "pitch sym 1.17/rev vs 1P",
+  "cr_pl_margin_crit": 0.10405138661087948
+ },
+ "skew63": {
+  "x": {
+   "flexure.skew_deg": 63.0
+  },
+  "cr_pl": 0.06265344805980916,
+  "feasible": true,
+  "viol": {},
+  "phase": 3.222060610176179,
+  "gain": 0.1217779021205344,
+  "auth": 0.7828361848888722,
+  "mech": 0.1028602068403871,
+  "flip": false,
+  "cq_ratio": 2.052917611871428,
+  "other_margin": 0.1615398022337049,
+  "other_which": "pitch sym+hub 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.06265344805980916
+ },
+ "hr-5": {
+  "x": {
+   "flexure.hinge_radius": 0.020425
+  },
+  "cr_pl": 0.07509266321496197,
+  "feasible": true,
+  "viol": {},
+  "phase": 4.86996149683279,
+  "gain": 0.13880512698328834,
+  "auth": 0.7634391574128536,
+  "mech": 0.08290364461803235,
+  "flip": false,
+  "cq_ratio": 1.801086209373946,
+  "other_margin": 0.157853454493051,
+  "other_which": "pitch sym 1.15/rev vs 1P",
+  "cr_pl_margin_crit": 0.07509266321496197
+ },
+ "v4L22.7": {
+  "x": {
+   "base": "v4",
+   "flexure.length": 0.0227
+  },
+  "cr_pl": 0.08549980437758206,
+  "feasible": false,
+  "viol": {
+   "cqc_mech_margin": 0.3615
+  },
+  "phase": 14.367823923072066,
+  "gain": 0.20068813770214983,
+  "auth": 0.5978875853387641,
+  "mech": 0.01915601548823309,
+  "flip": false,
+  "cq_ratio": 0.6385338496077697,
+  "other_margin": 0.21758919624759931,
+  "other_which": "pitch sym 1.21/rev vs 1P",
+  "cr_pl_margin_crit": 0.08549980437758206
+ },
+ "v4L22.0": {
+  "x": {
+   "base": "v4",
+   "flexure.length": 0.022
+  },
+  "cr_pl": 0.09000528236851517,
+  "feasible": false,
+  "viol": {
+   "cqc_phase": 0.0728,
+   "cqc_mech_margin": 0.7992
+  },
+  "phase": 16.091525131649675,
+  "gain": 0.22616820160430323,
+  "auth": 0.551128086463564,
+  "mech": 0.006022968298341036,
+  "flip": false,
+  "cq_ratio": 0.20076560994470122,
+  "other_margin": 0.2331202837123454,
+  "other_which": "pitch sym 1.23/rev vs 1P",
+  "cr_pl_margin_crit": 0.09000528236851517
  }
 }
