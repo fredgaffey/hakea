@@ -77,3 +77,17 @@ The forced-response criterion (forced.py) assumes torque harmonics 3 % at 2P, 1 
 Parts (make_mount.py, STL in this folder): `mount_tube_clamp.stl` (split clamp for a 10 mm tube, bore 10.1, M3 pinch bolt, 22x24x20 block, vertical post d 7.8 with 18 mm flange, M4 tap), `mount_tpu_washer.stl` (TPU 85A, ri 4 / ro 9 / t 10 mm, print 40 % gyroid or equivalent so that the in-plane shear stiffness is 53 kN/m; measure and trim), `mount_carrier.stl` (30x30x4 plate, motor holes M3 on 16x16 and 19x19, central d 9 hole, collar lip d 23). Stack: clamp flange / TPU washer / carrier, carrier hangs on the washer; M4 screw with a large washer 1 mm above the carrier is a bump stop (do not preload it). Axis of the washer = motor axis, so k_x = k_y by construction (G pi (ro^2-ri^2)/t).
 Model (stability.mount_stiffness / mount_modes, `airframe.mount`): k_m = 53 kN/m, eta 0.15 (TPU tan-delta 0.1-0.2, handbook/DMA range, VERIFY on a printed sample with a tap test), motor + carrier 45 g. Hub mode 123-129 Hz (0.67-0.70 x 185), zeta_af 0.063-0.070 (strain-energy estimate matches the complex eigenvalue), arm mode pushed to 240-320 Hz at zeta 0.025-0.03. Tap test: the motor bell on the carrier should ring at ~125 Hz, x and y equal within 5 %.
 Costs: axial sag under 10 N thrust ~55 um; tilt stiffness is low (~4.4 N m/rad), so the 0.1 N m cyclic moment tilts the disc ~1.3 deg relative to the arm (steady, the moment is still carried to the airframe); 1P hub amplitude ~40 um for 2 g mm unbalance (balance the rotor). Reduce the tilt with a larger washer (tilt ~ ro^4) if the flight controller sees it.
+
+## Minimum-inertia hub build (J_hub itemised, replaces the generic 5.49e-6 guess)
+Direct-to-bell clamp: the printed hub assembly is screwed straight onto the motor bell, no prop nut or adapter. Itemised polar inertia about the rotor axis (the bell stays in J_rotor = 6.99e-6):
+| item | mass | radius | J (kg m^2) |
+|---|---|---|---|
+| printed hub assembly (hub_fitting_assembly.stl, PA6-CF, fittings.py mass properties) | 7.05 g | - | 0.75e-6 (Izz of the STL) |
+| 4x M3x6 socket screws into the bell's tapped holes | 4 x 0.5 g | 8 mm | 0.13e-6 |
+| strip clamp lands, 4 strips 0.15 x 6.97 x 10.6 mm steel | 4 x 0.087 g | ~9 mm | 0.03e-6 |
+| thread-locker / strand knots / tape (allowance) | ~0.1 g | 8 mm | 0.01e-6 |
+| total J_hub | | | ~0.92e-6 (about 6x below the generic guess) |
+
+Consequence (study, not a saved design): at J_hub 0.92e-6 the 1/rev hub swing is so large that, with the v5 strips, fatigue_stress util is 1.84 and the resonance margin falls to 0.097 (< 0.15), although min-cr doubles to 0.103. Best retune found: strips 0.15 x 5.84 x 12.5 mm, hinge radius 14.3 mm, cross angle 88 deg, compliant TPU clamp lip (Kt 1.05), pulse at 0.46 x 0.95 of motor capability: nominal min-cr 0.0573, resonance margin 0.184, but only 7/9 tolerance samples feasible (random03 strip fatigue +3 %, random07 harmonic jitter). Not released as v6.
+
+Bench confirmation of J (bifilar pendulum): hang the motor bell + printed hub (no blades, screws fitted) from two parallel threads of length l, separation 2a (a ~ 30 mm, l ~ 0.5 m); twist about the vertical axis and time 20 oscillations (period T): J = m g a^2 T^2 / (4 pi^2 l), m = bell + hub mass. Repeat with the bell alone (expected J_rotor 6.99e-6): J_hub = J(bell+hub) - J(bell). Use 20+ cycles and slow-mo video or a photogate; accept J_hub within 0.9e-6 +- 0.3e-6.

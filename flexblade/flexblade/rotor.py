@@ -34,6 +34,7 @@ from .beam import (Element, FEModel, State, _edofs, assemble, assemble_internal,
                    assemble_Kmat, element_end_forces, element_end_forces_lin, element_point_maps,
                    skew, solve_static, unit, _logm)
 from .bladegeom import airfoil_coords, resolve_stations
+from .materials import SHIM_STEELS
 from .materials import _get_raw, get_material, part_temperature
 from .schema import (BladeHarmonic, CampbellResult, Check, Design, FlexureMember, HarmonicResult,
                      Layup, Mode, PrintOrientation, Results, TrimResult)
@@ -1696,14 +1697,14 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                     g["famp_n"] = max(g["famp_n"], amp)
     ff = model.design.flexure
     kfac, Rj = strip_clamp_factor(ff)
-    shim_groups = [n for n, ms in used.items() if any(m.startswith("steel_1095_shim") for m in ms)]
+    shim_groups = [n for n, ms in used.items() if any(m.startswith(SHIM_STEELS) for m in ms)]
     for n in shim_groups:
         for k_ in ("fat_e", "fat_s", "famp", "fat_e_n", "fat_s_n", "famp_n"):
             groups[n][k_] *= kfac
     model.np_info = {}
     for n in shim_groups:
         g = groups[n]
-        E = get_material([m for m in used[n] if m.startswith("steel_1095_shim")][0]).E1
+        E = get_material([m for m in used[n] if m.startswith(SHIM_STEELS)][0]).E1
         model.np_info[n] = dict(strain=g["famp_n"], stress=g["famp_n"] * E, util=g["fat_e_n"],
                                 strain_1p=g["famp"], which=g["cross_n"])
     for g in groups.values():
@@ -1743,7 +1744,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                                  if g["fat_s_n"] > 0 else "")))
     for n in shim_groups:
         g = groups[n]
-        mat = get_material([m for m in used[n] if m.startswith("steel_1095_shim")][0])
+        mat = get_material([m for m in used[n] if m.startswith(SHIM_STEELS)][0])
         if ff.strip_clamp == "sharp" or Rj <= 0:
             continue
         kap = 2 * g["strain"] / ff.thickness           # peak operating curvature (conservative: incl. axial)
