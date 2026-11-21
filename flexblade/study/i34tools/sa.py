@@ -48,7 +48,7 @@ def main():
     mode, arg, outp = sys.argv[1:4]
     d = make(mode, arg)
     open(outp, "w").write(d.model_dump_json(indent=1))
-    js = cq.J10
+    js = cq.J10 if abs(d.blade.diameter_in - 10) < 0.5 else cq.JS
     rt = [x for x in robust.CQ_RUNTIME if not x[0].startswith("rpm")]
     v = robust.variants(d, robust.THRUST_FACTORS, list(robust.CQ_PERTURB), js, rt)
     th = sorted(set(sum(robust.cont_points(5), [])) - set(robust.THRUST_FACTORS))
