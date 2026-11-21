@@ -361,6 +361,8 @@ class Element:
     spring_frame: Optional[np.ndarray] = None  # 3×3 columns (axis a, e2, ·) in H
     loss_eta: float = 0.0                    # hysteretic loss factor (no material_fracs)
     extra_mpts: Optional[np.ndarray] = None  # (n,4) extra point masses xi, y, z, mass (local)
+    d7_0: Optional[np.ndarray] = None        # (7,) initial strain: stress-free CR deformation
+                                             # (built-in end rotations); forces = K7·(d7 − d7_0)
     # derived
     L0: float = 0.0
     E0: np.ndarray = None
@@ -517,6 +519,16 @@ _NOW = np.zeros(0)
 
 
 def element_cr(e: Element, st: State, Omega: float = 0.0, want_h: bool = True, fw=None) -> ElementCR:
+    if e.d7_0 is not None and np.any(e.d7_0):
+        p = np.asarray(e.d7_0, float)
+        fp = e.K7 @ p
+        if fw is None and want_h:
+            c0 = element_cr(e, st, Omega, False, None)    # elastic f7 at this state (already shifted)
+            fw = c0.f7
+        d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
+                                                    e.L0, e.k2, e.K7, e.mpts, float(Omega) ** 2, want_h,
+                                                    _NOW if fw is None else np.asarray(fw, float))
+        return ElementCR(d7 - p, B, f7 - fp, J, pos, gV, Kr)
     d7, f7, B, gV, J, pos, Kr = _element_derivs(st.x[e.n0], st.x[e.n1], st.R[e.n0], st.R[e.n1], e.E0,
                                                 e.L0, e.k2, e.K7, e.mpts, float(Omega) ** 2, want_h,
                                                 _NOW if fw is None else np.asarray(fw, float))
@@ -555,6 +567,13 @@ def _pack(model: FEModel):
              E0=np.ascontiguousarray(np.array([e.E0 for e in els])), L0=np.array([e.L0 for e in els]),
              k2=np.array([e.k2 for e in els]), K7=np.ascontiguousarray(np.array([e.K7 for e in els])),
              MP=MP, NP=NP, dofs=np.array([_edofs(e) for e in els]))
+    P = np.zeros((ne, 7))
+    for k, e in enumerate(els):
+        if e.d7_0 is not None:
+            P[k] = e.d7_0
+    d["D7P"] = P
+    d["hasP"] = bool(np.any(P))
+    d["F7P"] = np.einsum("eij,ej->ei", d["K7"], P)
     model._pack = (ne, d)
     return d
 
@@ -576,13 +595,17 @@ def assemble(model: FEModel, st: State, Omega: float = 0.0, want_tangent: bool =
     W2 = float(Omega) ** 2
     FW = np.zeros((ne, 7))
     use_fw = np.zeros(ne, np.bool_)
-    if du_pred is not None and want_tangent:
+    if want_tangent and (du_pred is not None or pk["hasP"]):
         D7, F7, Bs, *_ = _all_derivs(XA, XB, RA, RB, pk["E0"], pk["L0"], pk["k2"], pk["K7"], pk["MP"],
                                      pk["NP"], W2, False, FW, use_fw)
-        FW = F7 + np.einsum("eij,ejk,ek->ei", pk["K7"], Bs, du_pred[pk["dofs"]])
+        FW = F7 - pk["F7P"]
+        if du_pred is not None:
+            FW = FW + np.einsum("eij,ejk,ek->ei", pk["K7"], Bs, du_pred[pk["dofs"]])
         use_fw[:] = True
     D7, F7, Bs, GV, Js, POS, KR = _all_derivs(XA, XB, RA, RB, pk["E0"], pk["L0"], pk["k2"], pk["K7"],
                                               pk["MP"], pk["NP"], W2, want_tangent, FW, use_fw)
+    if pk["hasP"]:
+        D7, F7 = D7 - pk["D7P"], F7 - pk["F7P"]
     dofs = pk["dofs"]
     fint = np.zeros(n)
     Fcf = np.zeros(n)

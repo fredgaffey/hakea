@@ -217,6 +217,65 @@ def resolve_pre_lag(design: Design, passes: int = 3, info: dict | None = None) -
     return design.model_copy(update=dict(flexure=f.model_copy(update=dict(pre_lag_deg=float(psi)))))
 
 
+def strip_end_rotations(model: RotorModel, ss) -> list[list[list[float]]]:
+    """Elastic CR end rotations of every flexure member at the static state, deg:
+    [blade][member] -> [hub-end θ1..3, blade-end θ1..3] (same layout as strip_preset_deg;
+    zero = the member end carries no static bending/torsion)."""
+    from .beam import assemble
+    sa = assemble(model.fe, ss.state, ss.Omega, want_tangent=False)
+    out = []
+    for bi in model.blades:
+        rows = []
+        for j in range(len(bi.members)):
+            ids = bi.member_elems.get(f"b{bi.k}.flex{j}", [])
+            if not ids or getattr(bi.members[j], "cable", False):
+                rows.append([0.0] * 6)
+                continue
+            ta, tb = sa.cr[ids[0]].d7[1:4], sa.cr[ids[-1]].d7[4:7]
+            rows.append([float(v) for v in np.degrees(np.r_[ta, tb])])
+        out.append(rows)
+    return out
+
+
+def resolve_strip_preset(design: Design, iters: int = 10, components=(1, 2, 4, 5),
+                         tol_deg: float = 0.01, info: dict | None = None) -> Design:
+    """Zero-stress trim (I34): fixed point p <- p + ω·(elastic end rotation at hover) on the
+    flexure members' bending components (θ2, θ3 at each end; `components` index the 6-vector),
+    at design.op (pre_lag 'auto' re-resolved each pass). The plain iteration contracts by
+    ρ ≈ k_strip/(k_strip + k_rest) (the strips' share of the stiffness); after two plain
+    passes ω = 1/(1 − ρ̂) (Aitken). Returns the design with numeric strip_preset_deg;
+    info['resid_deg'] = max |residual| per pass."""
+    d = design
+    hist = []
+    w = 1.0
+    for it in range(iters):
+        if it == 2 and hist[0] > 0:
+            w = 1.0 / (1.0 - min(0.85, hist[1] / hist[0]))
+        dd = resolve_pre_lag(d)
+        m = build_model(dd)
+        ss = static_trim(m, make_aero(m))
+        r = strip_end_rotations(m, ss)
+        cur = d.flexure.strip_preset_deg
+        new = []
+        mx = 0.0
+        for kb, rows in enumerate(r):
+            nr = []
+            for j, row in enumerate(rows):
+                p = list(cur[kb][j]) if len(cur) > kb and len(cur[kb]) > j else [0.0] * 6
+                for c in components:
+                    p[c] += w * row[c]
+                    mx = max(mx, abs(row[c]))
+                nr.append([float(v) for v in p])
+            new.append(nr)
+        hist.append(mx)
+        d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_preset_deg=new))))
+        if mx < tol_deg:
+            break
+    if info is not None:
+        info.update(resid_deg=hist, omega=w)
+    return d
+
+
 def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     """Build the rotor FE model.
 
@@ -389,6 +448,14 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 if eta_lam > 0 and not m.cable and m.kind == "blade" and m.layup.material.startswith(SHIM_STEELS):
                     fe.elements[ids[-1]].loss_eta = eta_lam
             member_elems[tag] = ids
+            sp = design.flexure.strip_preset_deg
+            if ids and len(sp) >= k and len(sp[k - 1]) > j and any(sp[k - 1][j]):
+                pv = np.radians(np.asarray(sp[k - 1][j], float))
+                for ie, sl, pr in ((ids[0], slice(1, 4), pv[:3]), (ids[-1], slice(4, 7), pv[3:])):
+                    el_ = fe.elements[ie]
+                    if el_.d7_0 is None:
+                        el_.d7_0 = np.zeros(7)
+                    el_.d7_0[sl] = pr
             # member-end anchorage on the printed fittings (zero-length punch springs)
             n_in, n_out = nodes[0], nodes[-1]
             anc = an.member_anchorage

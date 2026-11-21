@@ -547,11 +547,15 @@ def assemble(model, st, Omega=0.0, want_tangent=True, want_mass=False, du_pred=N
     FW = np.zeros((ne, 7))
     use_fw = np.zeros(ne, np.bool_)
     args = (XA, XB, RA, RB, pk["E0"], pk["L0"], pk["k2"], pk["K7"], pk["MP"], pk["NP"])
-    if du_pred is not None and want_tangent:
+    if want_tangent and (du_pred is not None or pk["hasP"]):
         D7, F7, Bs, *_ = all_derivs(*args, W2, False, FW, use_fw, False)
-        FW = F7 + np.einsum("eij,ejk,ek->ei", pk["K7"], Bs, du_pred[pk["dofs"]])
+        FW = F7 - pk["F7P"]
+        if du_pred is not None:
+            FW = FW + np.einsum("eij,ejk,ek->ei", pk["K7"], Bs, du_pred[pk["dofs"]])
         use_fw[:] = True
     D7, F7, Bs, GV, Js, POS, KR = all_derivs(*args, W2, want_tangent, FW, use_fw, bool(want_mass))
+    if pk["hasP"]:
+        D7, F7 = D7 - pk["D7P"], F7 - pk["F7P"]
     dofs = pk["dofs"]
     fint = np.zeros(n)
     Fcf = np.zeros(n)
