@@ -755,6 +755,9 @@ def compare_strip_flexure(design: Design, workdir, **mesh_kw) -> dict:
     Kc = strip_flexure_K(members, mat, np.asarray(hp) * 1e3, workdir, **mesh_kw)
     d2 = design.model_copy(deep=True)
     d2.flexure.strap_strands = 0          # custom members are re-strapped by fact otherwise
+    d2.flexure.strip_preset_deg = []      # ccx meshes straight strips in stress-free slots; the beam
+    # reference state with pre-angled slots is NOT equilibrated (slot misfit forces -> Kgeo), which
+    # cut beam k_cross 42 % on 10in v10m and gave the 1.80 "ccx/beam" (results/kcross_angle.md)
     d2.flexure.axial_release = False      # (radial slider at the blade end: kx~0 by design)
     d2.analysis.member_anchorage = "none"    # rigid clamps, as in the ccx model
     Kb = R.flexure_only_model(d2, members).stiffness_at(np.asarray(hp, float))
