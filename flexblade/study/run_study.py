@@ -712,6 +712,32 @@ def _goodman(d: Design) -> Design:
     return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_fatigue_mean="goodman"))))
 
 
+RESOLVE_PRESETS = 0       # --resolve-presets N: iterations (0 = off)
+PRESET_ALPHA = 0.55       # v8 convention: strip_preset_deg = alpha * zero-stress slot angles
+
+
+def resolve_candidate(d: Design, iters: int, alpha: float = PRESET_ALPHA, info: dict | None = None) -> Design:
+    """Re-solve zero-stress strip presets at the candidate's nominal op (T1.0), then scale by alpha."""
+    from flexblade import rotor
+    s0 = [[[x / alpha for x in e] for e in m] for m in d.flexure.strip_preset_deg]   # warm start
+    dz = rotor.resolve_strip_preset(d.model_copy(update=dict(flexure=d.flexure.model_copy(
+        update=dict(strip_preset_deg=s0)))), iters=iters, info=info)
+    p = [[[alpha * x for x in e] for e in m] for m in dz.flexure.strip_preset_deg]
+    return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_preset_deg=p))))
+
+
+def _resolve_all(designs: list[Design]) -> list[Design]:
+    if not RESOLVE_PRESETS:
+        return designs
+    def one(d):
+        try:
+            return resolve_candidate(d, RESOLVE_PRESETS)
+        except Exception:  # noqa: BLE001  keep stale presets rather than lose the candidate
+            return d
+    with ThreadPoolExecutor(max_workers=max(1, min(len(designs), os.cpu_count() or 1))) as ex:
+        return list(ex.map(one, designs))
+
+
 def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, popmult: int,
              maxiter: int, seed: int) -> dict:
     from scipy.optimize import differential_evolution
@@ -736,7 +762,7 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
 
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
-        designs = [set_design(base, obj.to_values(u)) for u in pop]
+        designs = _resolve_all([set_design(base, obj.to_values(u)) for u in pop])
         recs = robust.map_metrics(pool, designs, metrics, ROBUST, PERTURB, _jhub(D), RUNTIME)
         Js = []
         for u, dsg, (mm, err) in zip(pop, designs, recs):
@@ -902,6 +928,9 @@ def main(argv=None):
     ap.add_argument("--init-frac", type=float, default=0.3, help="fraction of population seeded (default 0.3)")
     ap.add_argument("--base-design", default=None, help="comma list of design JSONs whose non-DE fields stay fixed "
                     "(matched by diameter; 'init' = use --init-designs)")
+    ap.add_argument("--resolve-presets", nargs="?", const=6, default=0, type=int, metavar="N",
+                    help="re-solve zero-stress strip presets (N iterations, default 6) at T1.0 per "
+                         "candidate, scaled by alpha=0.55 (v8 convention); default off")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
     ap.add_argument("--maxiter", type=int, default=40)
@@ -926,6 +955,8 @@ def main(argv=None):
     ONE_SIDED = BAL_VARS = a.one_sided
     global MECH_MARGIN, GOODMAN
     MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
+    global RESOLVE_PRESETS
+    RESOLVE_PRESETS = a.resolve_presets
     global MASS_OVERRIDE
     MASS_OVERRIDE = a.vehicle_mass
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
