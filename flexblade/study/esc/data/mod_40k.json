@@ -1,0 +1,86 @@
+{
+ "args": {
+  "mode": "mod",
+  "kv": 11000,
+  "R": 0.25,
+  "L": 8e-06,
+  "V": 16.0,
+  "J": 3e-07,
+  "kload": 3.8e-10,
+  "step": 150,
+  "dwell": 1.5,
+  "base": 1050,
+  "depth": 0.2,
+  "freqs": [
+   300,
+   500,
+   750,
+   1000
+  ],
+  "speedup_mod": 0.01,
+  "mod_wall": 4.0,
+  "rate": 200,
+  "port": 58900,
+  "out": "data/mod_40k.json",
+  "min_rpm": 15000,
+  "tries": 6
+ },
+ "rows": [
+  {
+   "f_mod": 300,
+   "mech_rpm": 40027,
+   "duty_mean": 0.51,
+   "duty_rel_amp": 0.189,
+   "setpoint_rel_amp": 0.197,
+   "lag_setpoint_to_duty_deg": -13.2,
+   "ibus_mean": 4.06,
+   "ibus_rel_amp": 0.533,
+   "lag_duty_to_ibus_deg": -2.0,
+   "n": 20076,
+   "zc_events": 1121,
+   "sim_s": 0.0401
+  },
+  {
+   "f_mod": 500,
+   "mech_rpm": 40016,
+   "duty_mean": 0.51,
+   "duty_rel_amp": 0.123,
+   "setpoint_rel_amp": 0.196,
+   "lag_setpoint_to_duty_deg": -52.0,
+   "ibus_mean": 3.98,
+   "ibus_rel_amp": 0.349,
+   "lag_duty_to_ibus_deg": -3.3,
+   "n": 20052,
+   "zc_events": 1142,
+   "sim_s": 0.0401
+  },
+  {
+   "f_mod": 750,
+   "mech_rpm": 40008,
+   "duty_mean": 0.511,
+   "duty_rel_amp": 0.081,
+   "setpoint_rel_amp": 0.194,
+   "lag_setpoint_to_duty_deg": -71.9,
+   "ibus_mean": 3.96,
+   "ibus_rel_amp": 0.235,
+   "lag_duty_to_ibus_deg": -4.8,
+   "n": 20028,
+   "zc_events": 1124,
+   "sim_s": 0.0401
+  },
+  {
+   "f_mod": 1000,
+   "mech_rpm": 40056,
+   "duty_mean": 0.514,
+   "duty_rel_amp": 0.059,
+   "setpoint_rel_amp": 0.192,
+   "lag_setpoint_to_duty_deg": -81.7,
+   "ibus_mean": 4.04,
+   "ibus_rel_amp": 0.171,
+   "lag_duty_to_ibus_deg": -6.7,
+   "n": 20052,
+   "zc_events": 1140,
+   "sim_s": 0.0401
+  }
+ ]
+}
