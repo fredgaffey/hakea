@@ -148,6 +148,9 @@ Procedure: measure J_hub (bifilar), pick the matching J column, program the puls
 
 ## Arm stiffness (ground resonance, tap test)
 The regressing lag mode (omega_lag - Omega) crosses the hub-on-mount / arm mode: **forbidden f_arm band 50-95 (45-100 with margin) Hz** (cantilever frequency of the arm with motor + mount, x and y; unstable or zeta < 0.005 there).  **Spec: f_arm >= 120 Hz on both axes** (set by study/results/mounts_tilt.md I32; arm length 180-220 mm is an assumption).
+**Vertical (z) arm mode, added** (results/arm_vertical.md): mismatched 1P flapping puts 11 N at 1P (108-152 Hz over T0.7-1.4) on the arm vertically; forbidden f_z band, tip > 50 um at zeta 0.02: **80-203 Hz** (precone 0). With blade precone 1.3 deg the force is 1.55 N and the band shrinks to **106-165 Hz**.
+**One arm requirement (10 in): f_x, f_y >= 120 Hz (ground res.) AND f_z >= 210 Hz at precone 0; with precone 1.3 deg f_z >= 170 Hz (or <= 100 Hz, not advised).** A round tube has f_z = f_x, so the round 22 x 20 tube must reach 210 Hz (170 Hz with precone); tap-test z as well as x, y.
+(Caveat: 2P lateral 13.8 N with precone is unverified, see arm_vertical.md; if real, f_x,f_y must also avoid 196-349 Hz.)
 
 **Mount-mass limit: <= 126 g on the mount** (the modelled motor-side mass; the 10in limit was not swept, the 7in one is 55 g); more mass moves the band up and the margin disappears.
 
