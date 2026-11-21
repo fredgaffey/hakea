@@ -20,3 +20,19 @@ The one equalising test: re-resolve the presets on all 6 components, including s
 It DIVERGED: the residual went 1.6 -> 4.0 deg after Aitken and presets reached 20 deg. b2 fatigue u at T0.7 rose from 1.05 to 1.93. Rejected; no v9.
 Next lever (untested, needs per-blade geometry in the schema): build blade 2's flexure as blade 1's rotated 180 deg about the pitch axis.
 That keeps the opposite pitch-lag sign and loads both flexures alike. Per-blade skew or width would also work.
+
+## Precone test (blade.precone_deg; study/asym/precone_my.py, asym_diag.py with PRECONE=)
+Steady flexure-root My (rotor.flexure_root_loads, about the hinge point) at T1.0: b1/b2 = +49/+232 mNm at beta0 0. Both blades drop by ~150 mNm/deg.
+No single beta0 zeros both: b1 is zero at 0.33 deg, b2 at 1.47 deg, and the mean at 0.92 deg (-130/+120). The b2-b1 gap of ~180 mNm is the same for every beta0 (T0.7 too).
+The gap is set by the mirrored flexure. It grows to 400 mNm without presets or pre-lag. Precone moves both blades by the same amount, so it does not close the gap.
+Goodman flex0 sm/sa (MPa), b1 | b2, with worst fatigue u:
+| beta0 | T0.7 | T1.0 | worst u T0.7 |
+|---|---|---|---|
+| 0 | 42/140 \| 217/455 | 74/65 \| 283/361 | 1.28 (b2.flex2 aramid), b2.flex0 1.05 |
+| 0.92 | 138/229 \| 164/351 | 184/160 \| 198/222 | 1.00 (b2.flex2) |
+| 1.25 | 159/290 \| 150/292 | 263/212 \| 179/172 | 0.875 (b2.flex2); flex0 0.64/0.64 |
+| 1.47 | 175/331 \| 143/250 | 301/258 \| 168/141 | 0.92 (b1.flex2) |
+Even though My never balances, beta0 ~1.25-1.3 deg evens the strip STRESSES and removes the b2 fatigue limit (worst u 1.28 -> 0.875).
+sa.py on v8 + precone 1.3 (presets unchanged): cr_pl 0.121, but INFEASIBLE. The violations are cqc_mech_margin 0.72 and mech_side_flip; mech_per_rev is ~0.94 at T0.7, against margin 0.036 on v8.
+MARGIN also shows a resonance violation (pitch antisym+hub 0.94/rev vs 1P). So no v9. The preset re-resolve (zero_stress_trim at alpha 0.55) was not tried (budget).
+Next: precone 1.3 plus a re-tune that moves the pitch mode back off 1/rev (skew/length), or a smaller precone (~0.9) as a compromise.
