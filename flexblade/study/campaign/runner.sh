@@ -3,6 +3,7 @@
 # A job is skipped once done/<name> exists; after a reboot the runner (started by @reboot cron)
 # continues with the first unfinished job (grids resume themselves; DE restarts that case).
 cd "$(dirname "$0")/../.."
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMBA_NUM_THREADS=1
 C=study/campaign; mkdir -p $C/done
 # Expiry (Fred away 2 days): after this time the runner removes its own @reboot crontab line,
 # starts no new jobs and exits (a job already running finishes normally).
