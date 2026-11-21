@@ -19,13 +19,20 @@ THRUST_FACTORS = (0.7, 1.0, 1.4)
 PULSE_MARGIN = 0.95      # each throttle point pulses at 0.95 x motor capability at its own rpm
 
 
-def variants(design, thrust_factors=THRUST_FACTORS, perturb=None):
-    """-> list of (tag, Design)."""
+J_HUB_RANGE = (0.92e-6, 2.5e-6, 5.49e-6)   # itemised min-inertia build .. old generic guess
+
+
+def variants(design, thrust_factors=THRUST_FACTORS, perturb=None, j_hub=None):
+    """-> list of (tag, Design).  j_hub: optional motor.J_hub values (unknown until measured),
+    each evaluated at every thrust factor and perturbation (tag suffix ':J<value>')."""
     out = []
     pert = [("nom", {})] + [(f"p{i}", p) for i, p in enumerate(perturb or [])]
+    js = [None] if not j_hub else list(j_hub)
     for f in thrust_factors:
-        for ptag, p in pert:
+        for (ptag, p), J in ((pp, J) for pp in pert for J in js):
             d = design
+            if J is not None:
+                d = d.model_copy(update=dict(motor=d.motor.model_copy(update=dict(J_hub=float(J)))))
             if p:
                 d = set_design(d, {k: float(get_path(d, k)) * m for k, m in p.items()})
             if d.flexure.pre_lag_deg == "auto" and d.flexure.pre_lag_ref_mass is None:
@@ -35,7 +42,8 @@ def variants(design, thrust_factors=THRUST_FACTORS, perturb=None):
             d = d.model_copy(update=dict(op=d.op.model_copy(
                 update=dict(vehicle_mass=design.op.vehicle_mass * f, rpm=None,
                             pulse_capability_margin=PULSE_MARGIN))))
-            out.append((f"T{f:g}" + ("" if ptag == "nom" else ":" + ptag), d))
+            out.append((f"T{f:g}" + ("" if ptag == "nom" else ":" + ptag)
+                        + ("" if J is None else f":J{J:.3g}"), d))
     return out
 
 
@@ -61,21 +69,33 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
     if mg:
         out["res_margin"], out["res_which"] = min(mg)
     out["feasible"] = not viol
+    if all("cr_pl" in m for m in ms):
+        # pulse-limited: each point has its own pulse scale (FC schedules the gain with throttle);
+        # robust score = min over points, non-scaling (hard) checks required at every point
+        out["cr_pl"] = float(min(m["cr_pl"] for m in ms))
+        vh: dict[str, float] = {}
+        for m in ms:
+            for k, v in m.get("viol_hard", {}).items():
+                vh[k] = max(vh.get(k, 0.0), v)
+        out["viol_hard"], out["feasible_pl"] = vh, not vh
     if all("binding" in m for m in ms):
         out["binding"] = max((m["binding"] for m in ms), key=lambda b: b[1])
     out["points"] = [dict(tag=t, control_ratio=m["control_ratio"], rpm=m.get("rpm"),
                           binding=m.get("binding"), res_margin=m.get("res_margin"),
-                          feasible=m.get("feasible")) for t, m in zip(tags, ms)]
+                          feasible=m.get("feasible"), cr_pl=m.get("cr_pl"),
+                          pulse_scale=m.get("pulse_scale"), pulse_frac_cap=m.get("pulse_frac_cap"),
+                          pulse_binding=m.get("pulse_binding"),
+                          feasible_pl=m.get("feasible_pl")) for t, m in zip(tags, ms)]
     return out
 
 
-def map_metrics(pool, designs, metrics_fn: Callable, factors=None, perturb=None):
+def map_metrics(pool, designs, metrics_fn: Callable, factors=None, perturb=None, j_hub=None):
     """pool.map over designs -> list of (metrics | None, error). factors=None: single point."""
     if not factors:
         recs = pool.map(designs)
         return [(metrics_fn(d, r["results"]), None) if "results" in r
                 else (None, r.get("error", "?")[:200]) for d, r in zip(designs, recs)]
-    vs = [variants(d, factors, perturb) for d in designs]
+    vs = [variants(d, factors, perturb, j_hub) for d in designs]
     flat = [dv for v in vs for _, dv in v]
     recs = pool.map(flat)
     out, k = [], 0
@@ -91,11 +111,11 @@ def map_metrics(pool, designs, metrics_fn: Callable, factors=None, perturb=None)
     return out
 
 
-def evaluate_robust(design, thrust_factors=THRUST_FACTORS, perturb=None, metrics_fn=None) -> dict:
+def evaluate_robust(design, thrust_factors=THRUST_FACTORS, perturb=None, metrics_fn=None, j_hub=None) -> dict:
     """Local (serial) robust evaluation; metrics_fn defaults to study.run_study.metrics-style
     callable (design, results_dict) and must be supplied by the caller from the study modules."""
     from . import api
     assert metrics_fn is not None, "pass metrics_fn(design, results_dict)"
-    vs = variants(design, thrust_factors, perturb)
+    vs = variants(design, thrust_factors, perturb, j_hub)
     ms = [metrics_fn(d, api.evaluate(d).model_dump(mode="json")) for _, d in vs]
     return combine(ms, [t for t, _ in vs])

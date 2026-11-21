@@ -37,6 +37,7 @@ import math
 import os
 import sys
 import threading
+import re
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -396,13 +397,120 @@ def metrics(d: Design, r: dict) -> dict:
     out["slew_util_stock"] = out["slew_util_ramp255"] * RAMP_SLEW / STOCK_SLEW
     out["coning_deg"] = float(s.get("coning_deg", float("nan")))
     out["feasible"] = not viol
+    add_pulse_limited(d, r, out)
     return out
 
 
 def score(m: dict) -> float:
+    if OBJECTIVE == "pulse_limited":
+        return score_pl(m)
     if m["feasible"]:
         return -100.0 * m["control_ratio"]
     return 1.0 + float(sum(m["viol"].values()))
+
+
+# --------------------------------------------------------------------------- pulse-limited scoring
+# The 1/rev pulse amplitude is an in-flight software knob (ESC/FC gain), so a design is scored
+# by the authority it delivers when the pulse is scaled (factor s, s = 1 is the evaluated pulse)
+# until the most-utilised PULSE-SCALING check reaches 1.0.  Classification verified in code:
+#   motor_torque_1p  |dQ|/cap, dQ = G(w)*dd with dd ∝ pulse (motor.duty_drive)       u ∝ s
+#                    -> this check IS the motor-capability cap on s
+#   esc_duty_slew    dd*w / slew_max                                                   u ∝ s
+#   esc_duty_peak    (d0 + dd)/0.95, d0 = steady duty (motor.steady_duty)             u = (d0 + dd s)/0.95
+#   motor_thermal    rise ∝ R(I0² + ½(c dI)²) + b w², dI ∝ pulse (motor.thermal)      u = u0 + (u1-u0) s²
+#   fatigue_strain/  srss(1P amp ∝ s [linear harmonic solve, no mean-stress term],
+#   fatigue_stress   nP forced = motor nP torque (∝ s) ⊕ aero 2P/imbalance (fixed))   ~ s, bounded below
+#   harmonic_jitter  jitter = motor-torque part (∝ s) ⊕ aero/imbalance part (fixed), allowable
+#                    max(0.3°, 0.1 × 1P pitch ∝ s)                                     mixed, bounded below
+#   control_ratio    linear 1/rev harmonic response to dQ                               cr ∝ s
+# For the mixed (fixed ⊕ ∝s) parts the true value lies between x and x·s; we take the conservative
+# side (x·max(s,1)), so cr_pl never over-states authority.
+# Everything else is NON-scaling (static/creep/interlayer/strap/clamp wrap from the static trim
+# state, stability zetas, pitch_cf_ratio, 1P resonance margin, trim split, geometry): hard.
+# One throttle point uses ONE pulse scale for all its checks; across throttle the scale may differ
+# (robust.combine takes min cr_pl over points): the FC schedules the pulse gain with throttle.
+PULSE_EXP = {"motor_torque_1p": 1, "esc_duty_slew": 1, "esc_duty_peak": 1, "motor_thermal": 2,
+             "fatigue_strain": 1, "fatigue_stress": 1, "harmonic_jitter": 1}
+PULSE_S_MAX = 50.0
+_NP_RE = re.compile(r"1P ([0-9.eE+-]+) \+ nP ([0-9.eE+-]+)")
+
+
+def pulse_util_fns(d: Design, r: dict) -> list[tuple[str, object]]:
+    """-> [(check name, u(s))] for every pulse-scaling check instance at this point."""
+    from flexblade import forced as frc
+    s_ = r.get("summary") or {}
+    rpm = s_.get("rpm")
+    Q = (r.get("trim") or {}).get("torque")
+    fns = []
+    for c in r.get("checks", []):
+        nm, u1 = c["name"], float(c["utilisation"])
+        if nm not in PULSE_EXP:
+            continue
+        if not math.isfinite(u1):
+            u1 = 1e3
+        f = None
+        if nm == "motor_thermal" and rpm and Q is not None:
+            u0 = min(mot.thermal(d.motor, rpm, Q, 0.0, d.op.temperature_C)["utilisation"], u1)
+            f = (lambda s, u0=u0, u1=u1: u0 + (u1 - u0) * s * s)
+        elif nm == "esc_duty_peak" and rpm and Q is not None:
+            d0 = mot.steady_duty(d.motor, rpm, Q)
+            dd = max(0.95 * u1 - d0, 0.0)
+            f = (lambda s, d0=d0, dd=dd: (d0 + dd * s) / 0.95)
+        elif nm.startswith("fatigue_"):
+            mm = _NP_RE.search(c.get("note") or "")
+            if mm:
+                a, b = float(mm.group(1)), float(mm.group(2))
+                f = (lambda s, a=a, b=b: frc.combine(a * s, b * max(s, 1.0)))
+        elif nm == "harmonic_jitter":
+            j = float(c["value"])
+            p1 = float(s_.get("pitch_amp_deg", 0.0) or 0.0)
+            f = (lambda s, j=j, p1=p1: j * max(s, 1.0) / max(frc.JITTER_MAX_DEG, frc.JITTER_FRAC_1P * p1 * s))
+        if f is None:
+            p = PULSE_EXP[nm]
+            f = (lambda s, u1=u1, p=p: u1 * s ** p)
+        fns.append((nm, f))
+    return fns
+
+
+def pulse_scale(fns, s_max: float = PULSE_S_MAX) -> tuple[float, str]:
+    """Largest s in [0, s_max] with every u(s) <= 1 (all u monotone non-decreasing in s).
+    -> (s, binding check name); s = 0 if some check exceeds 1 even at vanishing pulse."""
+    if not fns:
+        return s_max, "none"
+    if all(f(s_max) <= 1.0 for _, f in fns):
+        return s_max, "none"
+    if any(f(1e-9) > 1.0 for _, f in fns):
+        return 0.0, max(fns, key=lambda t: t[1](1e-9))[0]
+    lo, hi = 1e-9, s_max
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        if all(f(mid) <= 1.0 for _, f in fns):
+            lo = mid
+        else:
+            hi = mid
+    return lo, max(fns, key=lambda t: t[1](hi))[0]
+
+
+def add_pulse_limited(d: Design, r: dict, out: dict) -> None:
+    """cr_pl = cr × s* (one pulse scale for all checks of this throttle point) + hard viols."""
+    s, bind = pulse_scale(pulse_util_fns(d, r))
+    out["pulse_scale"] = s
+    out["pulse_binding"] = bind
+    pcm = d.op.pulse_capability_margin
+    out["pulse_frac_cap"] = s * pcm if pcm is not None else float("nan")   # of motor 1P capability
+    out["cr_pl"] = out["control_ratio"] * s
+    hard = {k: v for k, v in out["viol"].items()
+            if not (k.startswith("check:") and k[6:] in PULSE_EXP)}
+    if s <= 0.0:
+        hard["pulse_infeasible"] = 1.0
+    out["viol_hard"] = hard
+    out["feasible_pl"] = not hard
+
+
+def score_pl(m: dict) -> float:
+    if m.get("feasible_pl"):
+        return -100.0 * m["cr_pl"]
+    return 1.0 + float(sum(m.get("viol_hard", {}).values()))
 
 
 # --------------------------------------------------------------------------- driver
@@ -426,6 +534,8 @@ def _round(v: dict) -> dict:
 
 
 ROBUST = None   # thrust factors tuple when --robust
+OBJECTIVE = "cr"   # or "pulse_limited" (cr_pl; hard = non-scaling checks only)
+J_HUB = None    # tuple of motor.J_hub values: robust/tolerance dimension
 
 
 def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, popmult: int,
@@ -444,7 +554,7 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     def mapper(_f, pop):
         pop = [np.asarray(u, float) for u in pop]
         designs = [set_design(base, obj.to_values(u)) for u in pop]
-        recs = robust.map_metrics(pool, designs, metrics, ROBUST, None)
+        recs = robust.map_metrics(pool, designs, metrics, ROBUST, None, J_HUB)
         Js = []
         for u, dsg, (mm, err) in zip(pop, designs, recs):
             vals = obj.to_values(u)
@@ -548,6 +658,10 @@ def main(argv=None):
     ap.add_argument("--coax", action="append", default=[], help="D:concept for a coaxial case")
     ap.add_argument("--robust", nargs="?", const="0.7,1.0,1.4", default=None,
                     help="evaluate at several thrust factors (min control_ratio, constraints at every point)")
+    ap.add_argument("--objective", choices=("cr", "pulse_limited"), default="cr",
+                    help="pulse_limited: maximise cr at the pulse that binds the most-utilised "
+                         "pulse-scaling check (per-throttle pulse schedule)")
+    ap.add_argument("--j-hub", default=None, help="comma list of motor.J_hub values (robust dimension)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
     ap.add_argument("--maxiter", type=int, default=40)
@@ -556,7 +670,9 @@ def main(argv=None):
     ap.add_argument("--redo", action="store_true", help="re-run cases already in cases.jsonl")
     ap.add_argument("--salvage", nargs="*", help="rebuild these cases from evals.jsonl.gz and exit")
     a = ap.parse_args(argv)
-    global ROBUST
+    global ROBUST, OBJECTIVE, J_HUB
+    OBJECTIVE = a.objective
+    J_HUB = tuple(float(x) for x in a.j_hub.split(",")) if a.j_hub else None
     ROBUST = tuple(float(x) for x in a.robust.split(",")) if a.robust else None
     if a.salvage:
         salvage(a.salvage)
