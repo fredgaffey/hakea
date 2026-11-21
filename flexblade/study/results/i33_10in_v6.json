@@ -260,5 +260,141 @@
   "other_margin": 0.20589226246379466,
   "other_which": "pitch sym 1.20/rev vs 1P",
   "cr_pl_margin_crit": 0.08207985413344662
+ },
+ "tol:v6": {
+  "n_pass": 7,
+  "n": 9,
+  "cases": {
+   "nominal": {
+    "cr_pl": 0.09602602500890423,
+    "feasible": true,
+    "viol": {},
+    "phase": 9.853557511060126,
+    "gain": 0.15750557649179445,
+    "auth": 0.7213879479655974,
+    "mech": 0.04473757258611244,
+    "flip": false,
+    "cq_ratio": 1.4912524195370813,
+    "other_margin": 0.16915933631071622,
+    "other_which": "pitch sym+hub 1.17/rev vs 1P",
+    "cr_pl_margin_crit": 0.09602602500890423
+   },
+   "random00": {
+    "cr_pl": 0.09630254521596006,
+    "feasible": true,
+    "viol": {},
+    "phase": 7.566594864083298,
+    "gain": 0.14430167668157373,
+    "auth": 0.7627283773094535,
+    "mech": 0.05521992107894358,
+    "flip": false,
+    "cq_ratio": 1.7324816020791474,
+    "other_margin": 0.15546898286238942,
+    "other_which": "pitch sym+hub 1.15/rev vs 1P",
+    "cr_pl_margin_crit": 0.09630254521596006
+   },
+   "random01": {
+    "cr_pl": 0.08828459766431097,
+    "feasible": true,
+    "viol": {},
+    "phase": 9.000819369282768,
+    "gain": 0.15761930004505026,
+    "auth": 0.6987959665886063,
+    "mech": 0.04490539337609245,
+    "flip": false,
+    "cq_ratio": 1.4968464458697484,
+    "other_margin": 0.1814870813846452,
+    "other_which": "pitch sym 1.18/rev vs 1P",
+    "cr_pl_margin_crit": 0.08828459766431097
+   },
+   "random02": {
+    "cr_pl": 0.0886473404435523,
+    "feasible": true,
+    "viol": {},
+    "phase": 10.886003666291444,
+    "gain": 0.165007212764135,
+    "auth": 0.686733637854252,
+    "mech": 0.03711770244494217,
+    "flip": false,
+    "cq_ratio": 1.237256748164739,
+    "other_margin": 0.18211702993533496,
+    "other_which": "pitch sym+hub 1.18/rev vs 1P",
+    "cr_pl_margin_crit": 0.0886473404435523
+   },
+   "random03": {
+    "cr_pl": 0.09639889424695033,
+    "feasible": true,
+    "viol": {},
+    "phase": 10.055487969321756,
+    "gain": 0.15211353885696444,
+    "auth": 0.7167205529475319,
+    "mech": 0.041933722047057476,
+    "flip": false,
+    "cq_ratio": 1.3977907349019159,
+    "other_margin": 0.17163897838838027,
+    "other_which": "pitch sym 1.17/rev vs 1P",
+    "cr_pl_margin_crit": 0.09639889424695033
+   },
+   "random04": {
+    "cr_pl": 0.0897595087390753,
+    "feasible": true,
+    "viol": {},
+    "phase": 11.069626828091714,
+    "gain": 0.1791924576254589,
+    "auth": 0.7040194052869152,
+    "mech": 0.04634715201242878,
+    "flip": false,
+    "cq_ratio": 1.3550592294524386,
+    "other_margin": 0.17108922499549828,
+    "other_which": "pitch sym 1.17/rev vs 1P",
+    "cr_pl_margin_crit": 0.0897595087390753
+   },
+   "random05": {
+    "cr_pl": 0.09074181897712427,
+    "feasible": true,
+    "viol": {},
+    "phase": 7.161336802012801,
+    "gain": 0.1441885949201988,
+    "auth": 0.7431315404952507,
+    "mech": 0.059844915636879215,
+    "flip": false,
+    "cq_ratio": 1.7338403230738362,
+    "other_margin": 0.15952404209077864,
+    "other_which": "pitch sym 1.16/rev vs 1P",
+    "cr_pl_margin_crit": 0.09074181897712427
+   },
+   "random06": {
+    "cr_pl": 0.09238630948317585,
+    "feasible": false,
+    "viol": {
+     "cqc_mech_margin": 0.5908
+    },
+    "phase": 14.288785078688345,
+    "gain": 0.2082636565962805,
+    "auth": 0.5797220657159466,
+    "mech": 0.012275155716021113,
+    "flip": false,
+    "cq_ratio": 0.4091718572007038,
+    "other_margin": 0.20713702421947766,
+    "other_which": "pitch sym 1.20/rev vs 1P",
+    "cr_pl_margin_crit": 0.09238630948317585
+   },
+   "random07": {
+    "cr_pl": 0.07346214972758162,
+    "feasible": false,
+    "viol": {
+     "resonance": 0.0594
+    },
+    "phase": 2.9239602116836227,
+    "gain": 0.10953140253789964,
+    "auth": 0.830559013303547,
+    "mech": 0.1042895244448463,
+    "flip": false,
+    "cq_ratio": 2.2824504590224337,
+    "other_margin": 0.1410895744087437,
+    "other_which": "pitch sym 1.14/rev vs 1P",
+    "cr_pl_margin_crit": 0.07346214972758162
+   }
+  }
  }
 }

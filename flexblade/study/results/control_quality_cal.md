@@ -22,3 +22,30 @@ FC has continuous eRPM: gain/phase calibrated at n nodes equally spaced in rpm o
 | 7in_v6 | 5 | 3.6 | 15.2 | 0.9/3.6 | True |
 | 7in_v5 | 5 | 5.1 | 13.5 | 1.1/3.5 | True |
 | 10in_v5 | 8 | 6.0 | 13.5 | 1.5/4.6 | True |
+
+## 10in v6
+
+I33 directed scan from v5 under control_quality_cal (continuous, 5 nodes, J 10" axis) + all other hard checks (other modes 0.15 1P margin, stability, ground_resonance on, fatigue). Script `study/i33_10in_v6.py` -> `results/i33_10in_v6.json`. CQ ratio = min(15°/phase, 25 %/gain, mech_min/0.03).
+
+| variant (from v5) | cr_pl | feas | phase° | gain % | mech min | CQ ratio | viol |
+|---|---|---|---|---|---|---|---|
+| v5 (L 25.12, skew 60, hinge_r 21.5) | 0.0822 | ✓ | 6.8 | 15.0 | 0.064 | 1.67 | |
+| skew 63 | 0.0627 | ✓ | 3.2 | 12.2 | 0.103 | 2.05 | |
+| hinge_r −5 % | 0.0751 | ✓ | 4.9 | 13.9 | 0.083 | 1.80 | |
+| **skew 58.5 = v6** | **0.0960** | ✓ | 9.9 | 15.8 | 0.045 | 1.49 | |
+| skew 58 | 0.1004 | ✓ | 10.8 | 15.6 | 0.039 | 1.29 | |
+| skew 57 | 0.1041 | ✗ | 12.2 | 14.8 | 0.026 | 0.88 | mech |
+| L 23 | 0.0936 | ✗ | 11.7 | 16.9 | 0.027 | 0.90 | mech |
+| L 22 | 0.1003 | ✗ | 14.5 | 18.0 | 0.010 | 0.33 | mech |
+| L 21 | 0.1084 | ✗ | 15.0 | 20.0 | 0.004 FLIP | 0 | mech, side |
+| skew 56 + hinge_r −5 % | 0.1011 | ✗ | 11.1 | 15.8 | 0.034 | 1.14 | aeroelastic stab, flexure_inside_hub |
+| skew 55 + hinge_r −5 % | 0.1048 | ✗ | 12.2 | 15.1 | 0.023 | 0.77 | + mech |
+| v4 L 22.0 (w 10) | 0.0900 | ✗ | 16.1 | 22.6 | 0.006 | 0.20 | phase, mech |
+| v4 L 22.7 | 0.0855 | ✗ | 14.4 | 20.1 | 0.019 | 0.64 | mech |
+| v4 L 23.3 | 0.0821 | ✓ | 12.7 | 19.8 | 0.031 | 1.03 | |
+
+- Pareto: along every knob cr_pl rises as the worst build corner approaches 1P, and the residual (mostly phase) grows with it. The calibratability margin (mech min ≥ 0.03) binds first, phase second (~12° at the boundary). SKEW is the efficient knob: Δcr_pl/Δmech ≈ −0.58 (skew) vs −0.31 (strip L). The v4 width-10 family is dominated (boundary L ≈ 23.2 mm gives only cr_pl 0.082 at ratio 1.0). hinge_r −5 % moves the mode away from 1P but costs cr_pl; combined with lower skew it trips aeroelastic stability + hub fit.
+- Boundary (mech min = 0.03): skew ≈ 57.4° (cr_pl ≈ 0.102) / v5 L ≈ 23.2 mm (≈ 0.094) / v4 L ≈ 23.2 mm (0.082).
+- **v6 = v5 with skew 58.5°** (designs/10in_tt_strap_steelx_v6.json): cr_pl 0.096 (+17 %), residual 9.9°/15.8 %, mech min 0.045, authority 0.72, ≥1.49× on all three CQ limits; other modes 0.169 (pitch sym+hub 1.17/rev); no hard violation.
+- Tolerance (nominal + 8 random, verify_v5.perturbed seed 11, full CQ-cal continuous each): 7/9 pass, cr_pl 0.088–0.096. random06 fails calibratability (mech 0.012), random07 fails the OTHER-mode 0.15 margin (pitch sym 1.14/rev, 0.141). The random ±5 % / ±1° skew draws push the mode both ways; v6 sits in a narrow skew band (mech needs skew ≳ 57.4°, the pitch-sym margin shrinks as the mode moves the other way). Build note: hold skew to ±0.5° and check the 1P sweep on the bench. v5 was not re-run through this tolerance set, so this is not a like-for-like comparison.
+- System check (study/system_check_10in_v6.py -> results/system_check_10in_v6.json; twin mount, arms 120/150/200 Hz, rev-avg governor 20 Hz τ 0.5/2 ms, I_t ×1/×2, 3 J): min ζ 0.0139/0.0114/0.0115 (T0.7/1.0/1.4) vs v5 0.0140/0.0117/0.0089; no divergence; G = free spin (1.000, 0.0°); tilt ≤ 0.12°, lateral 40–44 µm, imbalance 22–26 µm @ 2 g·mm. Same verdict as v5.
