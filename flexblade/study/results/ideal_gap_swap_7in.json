@@ -1,0 +1,113 @@
+{
+ "ideal": {
+  "cr_pl": 0.22349376429404444,
+  "res_margin": 0.11441692170354623,
+  "res_which": "flap antisym 1.11/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.23722052197635846
+  },
+  "feas": false
+ },
+ "k_hinge": {
+  "cr_pl": 0.22543674172069186,
+  "res_margin": 0.11464030349151089,
+  "res_which": "flap antisym 1.11/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.23573131005659406
+  },
+  "feas": false
+ },
+ "k_cross": {
+  "cr_pl": 0.25631064530059244,
+  "res_margin": 0.09782769879415865,
+  "res_which": "flap antisym 1.09/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.34781534137227565
+  },
+  "feas": false
+ },
+ "k_flap": {
+  "cr_pl": 0.33984211267860337,
+  "res_margin": 0.05355183154169496,
+  "res_which": "flap antisym 1.03/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.6429877897220336
+  },
+  "feas": false
+ },
+ "k_cross+k_flap": {
+  "cr_pl": 0.3811246026214219,
+  "res_margin": 0.049482892252961985,
+  "res_which": "flap antisym 1.02/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.6701140516469201,
+   "split": 0.004303955134375981
+  },
+  "feas": false
+ },
+ "skew": {
+  "cr_pl": 0.15429517315015984,
+  "res_margin": 0.1382573744036415,
+  "res_which": "pitch antisym+hub 0.90/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.07828417064238999
+  },
+  "feas": false
+ },
+ "translations": {
+  "cr_pl": 0.20196276115820438,
+  "res_margin": 0.10469254533875705,
+  "res_which": "flap antisym 1.09/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.30204969774161966
+  },
+  "feas": false
+ },
+ "hinge_radius": {
+  "cr_pl": 0.217074567022031,
+  "res_margin": 0.08421709998120153,
+  "res_which": "flap sym 1.07/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.4385526667919898
+  },
+  "feas": false
+ },
+ "loss": {
+  "cr_pl": 0.22365538707007046,
+  "res_margin": 0.11435007739770042,
+  "res_which": "flap antisym 1.11/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.23766615068199715
+  },
+  "feas": false
+ },
+ "fitting_mass": {
+  "cr_pl": 0.19928852070202316,
+  "res_margin": 0.11514699112313376,
+  "res_which": "flap antisym 1.11/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.23235339251244158
+  },
+  "feas": false
+ },
+ "full_K6(v6)": {
+  "cr_pl": 0.2101530401304706,
+  "res_margin": 0.07597079425829523,
+  "res_which": "flap sym 1.06/rev vs 1P",
+  "viol_hard": {
+   "geom:members": 1.0,
+   "resonance": 0.4935280382780318
+  },
+  "feas": false
+ }
+}
