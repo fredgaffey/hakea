@@ -331,11 +331,14 @@ def coupled_eigs(rs: RotSys, af: Airframe, floquet: bool | None = None, rtol: fl
     return out, Vout
 
 
-def frame_zeta(rs: RotSys, af: Airframe, s, V, hub_frac: float = 0.5):
+def frame_zeta(rs: RotSys, af: Airframe, s, V, hub_frac: float = 0.5, return_div: bool = False):
     """ζ = −Re s/ω with ω in the frame where the mode lives.  Rotor modes: rotating-frame |s|.
     Hub-dominated modes (kinetic fraction of the hub coordinates > hub_frac): the fixed-frame
     frequency, i.e. the member of the family |Im s + Ω + 2Ωj| nearest the support
-    frequencies (a 2/rev-periodic system only defines Im s modulo 2Ω)."""
+    frequencies (a 2/rev-periodic system only defines Im s modulo 2Ω).
+    ζ = −Re s/|s_frame| with |s_frame| >= |Re s|.  Growth is frame-invariant, so a real / near-real root
+    (|Im s| <= |Re s|) or a fixed-frame frequency below |Re s| is a DIVERGENCE (not a flutter/whirl);
+    with return_div=True returns (z, div) where div is a bool array flagging those roots."""
     Mc = coupled_matrices(rs, af, average=True)[0]
     n = len(Mc)
     ih = list(rs.ih)
@@ -347,6 +350,7 @@ def frame_zeta(rs: RotSys, af: Airframe, s, V, hub_frac: float = 0.5):
         w_af = np.append(w_af, np.sqrt(af.kt / It))
     j = np.arange(-3, 4)
     z = np.empty(len(s))
+    div = np.zeros(len(s), bool)
     for k, sk in enumerate(s):
         q = V[:n, k]
         tot = np.real(np.conj(q) @ Mc @ q)
@@ -368,13 +372,17 @@ def frame_zeta(rs: RotSys, af: Airframe, s, V, hub_frac: float = 0.5):
                 wf = abs(sk.imag + rs.Omega) if a[0] > a[1] else abs(sk.imag - rs.Omega)
             else:
                 wf = fam[np.argmin(np.min(np.abs(fam[:, None] - w_af[None, :]), axis=1))]
-            w = max(np.hypot(sk.real, wf), 1e-300)
+            w = np.hypot(sk.real, wf)
+            div[k] = wf < abs(sk.real)
+        w = max(w, abs(sk.real), 1e-300)
+        div[k] |= abs(sk.imag) <= abs(sk.real)
         z[k] = -sk.real / w
-    return z
+    return (z, div) if return_div else z
 
 
 def min_zeta(s, Omega: float, skip_frac: float = 0.05, z=None):
-    """Minimum ζ over the oscillatory/divergent roots (skips |s| < skip_frac Ω: rigid spin)."""
+    """Minimum ζ over the oscillatory/divergent roots (skips |s| < skip_frac Ω: rigid spin).
+    Real roots with Re s > 0 get ζ<0 (divergence) from both zeta_of and frame_zeta(return_div=True)."""
     s = np.asarray(s)
     keep = np.abs(s) > skip_frac * Omega
     if not keep.any():

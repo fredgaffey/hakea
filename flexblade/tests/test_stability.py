@@ -191,3 +191,39 @@ def test_fe_hub_tilt_cf_restoring(d5):
     print("tilt M", np.diag(rs.M)[list(rs.it)], "K/Om2", np.diag(rs.K)[list(rs.it)] / ss.Omega ** 2)
     assert rs.M[ty, ty] > 0 and abs(rs.K[ty, ty] / (ss.Omega ** 2 * rs.M[ty, ty]) - 1) < 0.1
     assert np.allclose(rs.M[np.ix_(rs.ih, rs.ih)], rs.m_rotor * np.eye(2), rtol=1e-6)
+
+
+def _toy_rs_af(k_rot, c_rot=0.0, Omega=100.0):
+    """1-DOF-per-axis toy: rotor hub (x, y) with stiffness k_rot (can be negative: divergence)."""
+    n = 2
+    M = np.eye(n)
+    K = k_rot * np.eye(n)
+    G = c_rot * np.eye(n)
+    rs = S.RotSys(M=M, G=G, K=K, Omega=Omega, ih=(0, 1), m_rotor=1.0)
+    af = S.Airframe(m=1e-9, kx=1e-9, ky=1e-9, cx=0.0, cy=0.0)
+    return rs, af
+
+
+def test_frame_zeta_real_root_is_divergence():
+    rs, af = _toy_rs_af(-49.0)                    # s = +/-7 real
+    s = np.array([7.0 + 0j, -7.0 + 0j])
+    V = np.zeros((4, 2), complex)
+    V[0, :] = 1.0
+    z, div = S.frame_zeta(rs, af, s, V, return_div=True)
+    assert z[0] == pytest.approx(-1.0) or z[0] < 0
+    assert div[0] and div[1]
+    assert z[0] < 0 < z[1]
+    assert S.min_zeta(s, 100.0, z=z)[0] < 0
+
+
+def test_frame_zeta_oscillatory_root_not_divergence():
+    rs, af = _toy_rs_af(400.0)
+    s = np.array([-1.0 + 20j, -1.0 - 20j])
+    V = np.zeros((4, 2), complex)
+    V[0, :] = 1.0
+    z, div = S.frame_zeta(rs, af, s, V, return_div=True)       # hub-dominated => fixed-frame branch
+    assert not div.any() and (z > 0).all() and (z < 1).all()
+    zr, dr = S.frame_zeta(rs, af, s, V, hub_frac=2.0, return_div=True)   # rotating-frame branch
+    assert not dr.any() and zr[0] == pytest.approx(1 / np.hypot(1, 20))
+    zr, dr = S.frame_zeta(rs_div := _toy_rs_af(-49.0)[0], af, np.array([7.0 + 0j]), V[:, :1], hub_frac=2.0, return_div=True)
+    assert dr[0] and zr[0] == pytest.approx(-1.0)
