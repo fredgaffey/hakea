@@ -1,0 +1,1221 @@
+{
+ "score": {
+  "7in_tt_strap_steelx_v5": {
+   "cr_pl": 0.060424164199091836,
+   "feasible_pl": false,
+   "viol_hard": {
+    "resonance": 0.35390674983475423
+   },
+   "cr_min": 0.04901407219742257,
+   "res_margin": 0.09691398752478686,
+   "res_which": "pitch antisym+hub 0.93/rev vs 1P",
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "control_ratio": 0.4490426392576283,
+     "cr_pl": 0.25120990013662237,
+     "pulse_scale": 0.5594344014900916,
+     "pulse_frac_cap": 0.531462681415587,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.09691398752478686,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "control_ratio": 0.28019157893654845,
+     "cr_pl": 0.25110297120153463,
+     "pulse_scale": 0.8961831478111584,
+     "pulse_frac_cap": 0.8513739904206005,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.1595429932093142,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "control_ratio": 0.16075412093471714,
+     "cr_pl": 0.186928289903552,
+     "pulse_scale": 1.1628211383735805,
+     "pulse_frac_cap": 1.1046800814549014,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.28843172222952673,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "control_ratio": 0.24629026486509686,
+     "cr_pl": 0.1338135784826556,
+     "pulse_scale": 0.5433165559992829,
+     "pulse_frac_cap": 0.5161507281993187,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.12423847042276726,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "control_ratio": 0.15671806227228954,
+     "cr_pl": 0.13383443191316283,
+     "pulse_scale": 0.8539821764809241,
+     "pulse_frac_cap": 0.8112830676568779,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.19645177875637,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "control_ratio": 0.09175976749774942,
+     "cr_pl": 0.10972203932211735,
+     "pulse_scale": 1.1957532403818318,
+     "pulse_frac_cap": 1.1359655783627403,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.29424949528686706,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "control_ratio": 0.10319199319895934,
+     "cr_pl": 0.09735088830466966,
+     "pulse_scale": 0.9433957547168632,
+     "pulse_frac_cap": 0.89622596698102,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.22698345448554114,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "control_ratio": 0.07495726312693603,
+     "cr_pl": 0.09240672672234498,
+     "pulse_scale": 1.2327921653950897,
+     "pulse_frac_cap": 1.1711525571253352,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.2765568675410066,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "control_ratio": 0.04901407219742257,
+     "cr_pl": 0.060424164199091836,
+     "pulse_scale": 1.2327921653950897,
+     "pulse_frac_cap": 1.1711525571253352,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.274452969212055,
+     "feasible_pl": true
+    }
+   ]
+  },
+  "7in_tt_strap_steelx_v4m": {
+   "cr_pl": 0.05305152673170305,
+   "feasible_pl": false,
+   "viol_hard": {
+    "resonance": 0.790874294705838
+   },
+   "cr_min": 0.043570568180364914,
+   "res_margin": 0.031368855794124295,
+   "res_which": "pitch antisym+hub 0.97/rev vs 1P",
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "control_ratio": 0.6696764173764815,
+     "cr_pl": 0.19376242266159588,
+     "pulse_scale": 0.28933738389755137,
+     "pulse_frac_cap": 0.27487051470267376,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.031368855794124295,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "control_ratio": 0.3201742211671387,
+     "cr_pl": 0.1938003704938514,
+     "pulse_scale": 0.6052966094127951,
+     "pulse_frac_cap": 0.5750317789421553,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.07374381368253946,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "control_ratio": 0.15138205929878076,
+     "cr_pl": 0.1750175014083063,
+     "pulse_scale": 1.1561310647972927,
+     "pulse_frac_cap": 1.098324511557428,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.1566698442100778,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "control_ratio": 0.32716062614876973,
+     "cr_pl": 0.14578760065734725,
+     "pulse_scale": 0.4456147500801434,
+     "pulse_frac_cap": 0.42333401257613623,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.04651321812397202,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "control_ratio": 0.16448339839367215,
+     "cr_pl": 0.1458127098237011,
+     "pulse_scale": 0.8864889177126258,
+     "pulse_frac_cap": 0.8421644718269945,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.09341692701667714,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "control_ratio": 0.08281080595517437,
+     "cr_pl": 0.09817706959120151,
+     "pulse_scale": 1.185558677503331,
+     "pulse_frac_cap": 1.1262807436281645,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.18526407866639594,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "control_ratio": 0.1462262376450673,
+     "cr_pl": 0.12497912788505756,
+     "pulse_scale": 0.8546970085383547,
+     "pulse_frac_cap": 0.8119621581114369,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.06667559688817248,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "control_ratio": 0.08102923630189972,
+     "cr_pl": 0.09866120354282956,
+     "pulse_scale": 1.217600066909633,
+     "pulse_frac_cap": 1.1567200635641512,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.1185492099723029,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "control_ratio": 0.043570568180364914,
+     "cr_pl": 0.05305152673170305,
+     "pulse_scale": 1.217600066909633,
+     "pulse_frac_cap": 1.1567200635641512,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.22128610201899912,
+     "feasible_pl": true
+    }
+   ]
+  },
+  "10in_tt_strap_steelx_v3": {
+   "cr_pl": 0.0,
+   "feasible_pl": false,
+   "viol_hard": {
+    "check:aeroelastic_stability": 6.907755278982137,
+    "resonance": 0.9105836163934876,
+    "check:pitch_cf_ratio": 6.907755278982137,
+    "pulse_infeasible": 1.0
+   },
+   "cr_min": 0.020151976313699034,
+   "res_margin": 0.013412457540976863,
+   "res_which": "pitch antisym+hub 2.03/rev vs 2P",
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "control_ratio": 0.06716707218683947,
+     "cr_pl": 0.04780380915681728,
+     "pulse_scale": 0.7117149460354746,
+     "pulse_frac_cap": 0.6761291987337008,
+     "pulse_binding": "fatigue_strain",
+     "res_margin": 0.1470853503223224,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "control_ratio": 0.06647211550228549,
+     "cr_pl": 0.04781972901229497,
+     "pulse_scale": 0.7193953231509654,
+     "pulse_frac_cap": 0.6834255569934171,
+     "pulse_binding": "fatigue_strain",
+     "res_margin": 0.14534493354114564,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "control_ratio": 0.06518296866354796,
+     "cr_pl": 0.04782122428456107,
+     "pulse_scale": 0.7336460008656213,
+     "pulse_frac_cap": 0.6969637008223402,
+     "pulse_binding": "fatigue_strain",
+     "res_margin": 0.14219911509230987,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "control_ratio": 0.036969017416972734,
+     "cr_pl": 0.0,
+     "pulse_scale": 0.0,
+     "pulse_frac_cap": 0.0,
+     "pulse_binding": "harmonic_jitter",
+     "res_margin": 0.06454800583292775,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "control_ratio": 0.0367207850903179,
+     "cr_pl": 0.0,
+     "pulse_scale": 0.0,
+     "pulse_frac_cap": 0.0,
+     "pulse_binding": "harmonic_jitter",
+     "res_margin": 0.05364844776956601,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "control_ratio": 0.03625415749824889,
+     "cr_pl": 0.0,
+     "pulse_scale": 0.0,
+     "pulse_frac_cap": 0.0,
+     "pulse_binding": "harmonic_jitter",
+     "res_margin": 0.03503446041691305,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "control_ratio": 0.02023040359412459,
+     "cr_pl": 0.0,
+     "pulse_scale": 0.0,
+     "pulse_frac_cap": 0.0,
+     "pulse_binding": "harmonic_jitter",
+     "res_margin": 0.03821554530689686,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "control_ratio": 0.020206265196028705,
+     "cr_pl": 0.0,
+     "pulse_scale": 0.0,
+     "pulse_frac_cap": 0.0,
+     "pulse_binding": "harmonic_jitter",
+     "res_margin": 0.028972032281358917,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "control_ratio": 0.020151976313699034,
+     "cr_pl": 0.0,
+     "pulse_scale": 0.0,
+     "pulse_frac_cap": 0.0,
+     "pulse_binding": "harmonic_jitter",
+     "res_margin": 0.013412457540976863,
+     "feasible_pl": false
+    }
+   ]
+  },
+  "7in_v6_candidate(BUILD.md)": {
+   "cr_pl": 0.06499594987059955,
+   "feasible_pl": true,
+   "viol_hard": {},
+   "cr_min": 0.052761502206658054,
+   "res_margin": 0.18414679069069417,
+   "res_which": "pitch antisym+hub 0.88/rev vs 1P",
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "control_ratio": 0.3647543090226413,
+     "cr_pl": 0.18538480762510381,
+     "pulse_scale": 0.5082456959092332,
+     "pulse_frac_cap": 0.4828334111137715,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.18414679069069417,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "control_ratio": 0.23726372352183392,
+     "cr_pl": 0.18536139216042646,
+     "pulse_scale": 0.7812462411404785,
+     "pulse_frac_cap": 0.7421839290834545,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.29334362899873057,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "control_ratio": 0.14154917683955018,
+     "cr_pl": 0.16448829912340532,
+     "pulse_scale": 1.1620576169782835,
+     "pulse_frac_cap": 1.1039547361293693,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.5571942911274641,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "control_ratio": 0.1983579160420823,
+     "cr_pl": 0.14584511963393826,
+     "pulse_scale": 0.7352624112213234,
+     "pulse_frac_cap": 0.6984992906602572,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.2332655828819603,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "control_ratio": 0.13672167125907383,
+     "cr_pl": 0.14580943109050362,
+     "pulse_scale": 1.0664690516707436,
+     "pulse_frac_cap": 1.0131455990872063,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.3569119375199037,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "control_ratio": 0.08562025708860092,
+     "cr_pl": 0.10225880546090602,
+     "pulse_scale": 1.1943295773462501,
+     "pulse_frac_cap": 1.1346130984789375,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.579018287454834,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "control_ratio": 0.12460688830180226,
+     "cr_pl": 0.12522236612396767,
+     "pulse_scale": 1.004939356327354,
+     "pulse_frac_cap": 0.9546923885109864,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.21486989504937126,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "control_ratio": 0.0850306075491807,
+     "cr_pl": 0.10474768296183493,
+     "pulse_scale": 1.23188209494152,
+     "pulse_frac_cap": 1.1702879901944439,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.3044133431647029,
+     "feasible_pl": true
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "control_ratio": 0.052761502206658054,
+     "cr_pl": 0.06499594987059955,
+     "pulse_scale": 1.23188209494152,
+     "pulse_frac_cap": 1.1702879901944439,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.3061396563655343,
+     "feasible_pl": true
+    }
+   ]
+  }
+ },
+ "search": {
+  "n_evals": 41,
+  "best": {
+   "cr_pl": 0.055764301483745664,
+   "feasible_pl": false,
+   "viol_hard": {
+    "geom:flexure_inside_hub": 0.021204725173480696
+   },
+   "cr_min": 0.04525543572433331,
+   "res_margin": 0.16707665706473662,
+   "res_which": "pitch antisym+hub 0.89/rev vs 1P",
+   "points": [
+    {
+     "tag": "T0.7:J9.2e-07",
+     "control_ratio": 0.33287543194384867,
+     "cr_pl": 0.25103112850366466,
+     "pulse_scale": 0.7541293361235804,
+     "pulse_frac_cap": 0.7164228693174013,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.16707665706473662,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J2.5e-06",
+     "control_ratio": 0.2232771700936135,
+     "cr_pl": 0.25115542192757423,
+     "pulse_scale": 1.124859392575928,
+     "pulse_frac_cap": 1.0686164229471316,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.25815006909352967,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T0.7:J5.49e-06",
+     "control_ratio": 0.1365089879307905,
+     "cr_pl": 0.15877363876099285,
+     "pulse_scale": 1.1631002556512282,
+     "pulse_frac_cap": 1.1049452428686668,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.4620551614118684,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J9.2e-07",
+     "control_ratio": 0.20777423821556265,
+     "cr_pl": 0.1398414119544685,
+     "pulse_scale": 0.6730449990117886,
+     "pulse_frac_cap": 0.6393927490611991,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.16806745449348415,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J2.5e-06",
+     "control_ratio": 0.13810251221759676,
+     "cr_pl": 0.13989076456198532,
+     "pulse_scale": 1.012948731458056,
+     "pulse_frac_cap": 0.9623012948851533,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.26092072102395303,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1:J5.49e-06",
+     "control_ratio": 0.08393901526714982,
+     "cr_pl": 0.10038316055157341,
+     "pulse_scale": 1.195905863704588,
+     "pulse_frac_cap": 1.1361105705193586,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.3178432522347592,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J9.2e-07",
+     "control_ratio": 0.10023700323677467,
+     "cr_pl": 0.11211743866324868,
+     "pulse_scale": 1.1185234498522532,
+     "pulse_frac_cap": 1.0625972773596404,
+     "pulse_binding": "fatigue_stress",
+     "res_margin": 0.25100292988200756,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J2.5e-06",
+     "control_ratio": 0.07075206759834642,
+     "cr_pl": 0.0871815631648228,
+     "pulse_scale": 1.2322122324360223,
+     "pulse_frac_cap": 1.1706016208142211,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.26100501204215365,
+     "feasible_pl": false
+    },
+    {
+     "tag": "T1.4:J5.49e-06",
+     "control_ratio": 0.04525543572433331,
+     "cr_pl": 0.055764301483745664,
+     "pulse_scale": 1.2322122324360223,
+     "pulse_frac_cap": 1.1706016208142211,
+     "pulse_binding": "motor_torque_1p",
+     "res_margin": 0.26276037686848075,
+     "feasible_pl": false
+    }
+   ]
+  },
+  "x": {
+   "flexure.width": 0.006551179812567746,
+   "flexure.length": 0.01402151209159731,
+   "flexure.hinge_radius": 0.013593892145898274,
+   "flexure.cross_angle_deg": 105.15894896610831,
+   "flexure.skew_deg": 59.9101877007823,
+   "flexure.thickness": 0.00015
+  },
+  "hist": [
+   {
+    "x": {},
+    "fit": -0.35390674983475423,
+    "cr_pl": 0.060424164199091836,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.0073875006397040545
+    },
+    "fit": -0.4191399808892706,
+    "cr_pl": 0.05866969620986581,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.006551179812567746
+    },
+    "fit": -0.2781376941716405,
+    "cr_pl": 0.06215329094446876,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.015811492358609732
+    },
+    "fit": -0.3479576063893018,
+    "cr_pl": 0.060168958094103865,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.01402151209159731
+    },
+    "fit": -0.3007334143553555,
+    "cr_pl": 0.06255822442289147,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.01534032967853104
+    },
+    "fit": -0.47998694375713935,
+    "cr_pl": 0.06461643722046102,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.014160304318644037
+    },
+    "fit": -0.20626602500960028,
+    "cr_pl": 0.05662500563382385,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 110.41689641441373
+    },
+    "fit": -0.4243751116151027,
+    "cr_pl": 0.06123922352715473,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 99.9010015178029
+    },
+    "fit": -0.26959106385441284,
+    "cr_pl": 0.06006162550032798,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 61.70749333180577
+    },
+    "fit": -0.33082447951176636,
+    "cr_pl": 0.06246086350460153,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 58.11288206975883
+    },
+    "fit": -0.3633865431517963,
+    "cr_pl": 0.05845051999762455,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.0073875006397040545
+    },
+    "fit": -0.29190194677381254,
+    "cr_pl": 0.05519656969930843,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.006551179812567746
+    },
+    "fit": -0.12349555121965727,
+    "cr_pl": 0.05805891401840652,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.015811492358609732
+    },
+    "fit": -0.2059326426239922,
+    "cr_pl": 0.056477210453058924,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.01402151209159731
+    },
+    "fit": -0.15098059109622494,
+    "cr_pl": 0.058464862022758454,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.0147267164913898
+    },
+    "fit": -0.34843713002325344,
+    "cr_pl": 0.06026503367210126,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.013593892145898274
+    },
+    "fit": -0.09998847445836909,
+    "cr_pl": 0.05331044160258387,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 110.41689641441373
+    },
+    "fit": -0.2870363972489563,
+    "cr_pl": 0.057300339374772476,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 99.9010015178029
+    },
+    "fit": -0.11786309568637873,
+    "cr_pl": 0.056405661214727995,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 61.70749333180577
+    },
+    "fit": -0.1878344521163324,
+    "cr_pl": 0.05885057697771495,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 58.11288206975883
+    },
+    "fit": -0.21127041577104083,
+    "cr_pl": 0.05450748141774079,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.0073875006397040545
+    },
+    "fit": -0.20210463718859895,
+    "cr_pl": 0.052145175824873984,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.006551179812567746
+    },
+    "fit": -0.4282208223945806,
+    "cr_pl": 0.05456375004746278,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.015811492358609732
+    },
+    "fit": -0.10432305265131266,
+    "cr_pl": 0.05320644423758397,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.01402151209159731
+    },
+    "fit": -0.04274099652817581,
+    "cr_pl": 0.054929418582907195,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.014137647831734206
+    },
+    "fit": -0.20013051067903503,
+    "cr_pl": 0.05648623577731334,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.013050136460062343
+    },
+    "fit": -0.12370375529866479,
+    "cr_pl": 0.05046858313156095,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 110.41689641441373
+    },
+    "fit": -0.17623263513859064,
+    "cr_pl": 0.05388342100703141,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 99.9010015178029
+    },
+    "fit": -0.0749022517195902,
+    "cr_pl": 0.05318189517531786,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 61.70749333180577
+    },
+    "fit": -0.08022126822377507,
+    "cr_pl": 0.05566265197396011,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 58.11288206975883
+    },
+    "fit": -0.10562964723785508,
+    "cr_pl": 0.05110437323304329,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.0073875006397040545
+    },
+    "fit": -0.15574397429061937,
+    "cr_pl": 0.05425192555788899,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.width": 0.006551179812567746
+    },
+    "fit": -0.021204725173480696,
+    "cr_pl": 0.055764301483745664,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.014862802817093148
+    },
+    "fit": -0.09744040069775003,
+    "cr_pl": 0.05336711815936654,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.length": 0.013180221366101471
+    },
+    "fit": -0.027484853841746763,
+    "cr_pl": 0.05740495173241689,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.014137647831734206
+    },
+    "fit": -0.14518239974704122,
+    "cr_pl": 0.05831630473519966,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.hinge_radius": 0.013050136460062343
+    },
+    "fit": -0.1074738162705486,
+    "cr_pl": 0.05189404341674933,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 110.41689641441373
+    },
+    "fit": -0.11799006337686115,
+    "cr_pl": 0.055836887157932384,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.cross_angle_deg": 99.9010015178029
+    },
+    "fit": -0.05771643372167622,
+    "cr_pl": 0.054234825971755996,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 61.70749333180577
+    },
+    "fit": -0.8091671300757833,
+    "cr_pl": 0.057045496312226635,
+    "feas": false
+   },
+   {
+    "x": {
+     "flexure.skew_deg": 58.11288206975883
+    },
+    "fit": -0.04785261747160693,
+    "cr_pl": 0.052774965701286994,
+    "feas": false
+   }
+  ]
+ },
+ "tol": {
+  "J_hub": 2.5e-06,
+  "n_pass": 9,
+  "n": 9,
+  "cases": {
+   "nominal": {
+    "cr_pl": 0.10474768296183493,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.0850306075491807,
+    "res_margin": 0.29334362899873057,
+    "res_which": "pitch antisym+hub 0.85/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.23726372352183392,
+      "cr_pl": 0.18536139216042646,
+      "pulse_scale": 0.7812462411404785,
+      "pulse_frac_cap": 0.7421839290834545,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.29334362899873057,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.13672167125907383,
+      "cr_pl": 0.14580943109050362,
+      "pulse_scale": 1.0664690516707436,
+      "pulse_frac_cap": 1.0131455990872063,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.3569119375199037,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.0850306075491807,
+      "cr_pl": 0.10474768296183493,
+      "pulse_scale": 1.23188209494152,
+      "pulse_frac_cap": 1.1702879901944439,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.3044133431647029,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random00": {
+    "cr_pl": 0.09887597550056072,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.08024511200884953,
+    "res_margin": 0.2918205296180276,
+    "res_which": "pitch sym 1.28/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.22494202119658216,
+      "cr_pl": 0.17618341889018693,
+      "pulse_scale": 0.7832392451751647,
+      "pulse_frac_cap": 0.7440772829164065,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.31229604751225515,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.14046813356031138,
+      "cr_pl": 0.1677744650888153,
+      "pulse_scale": 1.1943952043527344,
+      "pulse_frac_cap": 1.1346754441350977,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.31399805356737565,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.08024511200884953,
+      "cr_pl": 0.09887597550056072,
+      "pulse_scale": 1.232174434371237,
+      "pulse_frac_cap": 1.1705657126526752,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.2918205296180276,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random01": {
+    "cr_pl": 0.09912753156660176,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.08056672785665023,
+    "res_margin": 0.3304108414433711,
+    "res_which": "pitch antisym+hub 0.84/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.22513094171364142,
+      "cr_pl": 0.19493483278377338,
+      "pulse_scale": 0.8658731283224657,
+      "pulse_frac_cap": 0.8225794719063423,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.3304108414433711,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.12135981167088697,
+      "cr_pl": 0.13103335861059434,
+      "pulse_scale": 1.0797096403374524,
+      "pulse_frac_cap": 1.0257241583205798,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.4882056522366638,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.08056672785665023,
+      "cr_pl": 0.09912753156660176,
+      "pulse_scale": 1.2303780258145294,
+      "pulse_frac_cap": 1.168859124523803,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.3448631928200585,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random02": {
+    "cr_pl": 0.10362905630860114,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.08429159379279601,
+    "res_margin": 0.28094549912555355,
+    "res_which": "pitch antisym+hub 0.85/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.24024012294375066,
+      "cr_pl": 0.19985009627110764,
+      "pulse_scale": 0.8318764318893566,
+      "pulse_frac_cap": 0.7902826102948887,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.28094549912555355,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.12529956875980802,
+      "cr_pl": 0.1314581718890348,
+      "pulse_scale": 1.049151032123921,
+      "pulse_frac_cap": 0.9966934805177249,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.4287739859101549,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.08429159379279601,
+      "cr_pl": 0.10362905630860114,
+      "pulse_scale": 1.229411518345947,
+      "pulse_frac_cap": 1.1679409424286498,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.32232587251448863,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random03": {
+    "cr_pl": 0.10497740692597729,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.08520750738504587,
+    "res_margin": 0.29701851970113413,
+    "res_which": "pitch antisym+hub 0.84/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.2387716912177832,
+      "cr_pl": 0.18010395391618594,
+      "pulse_scale": 0.754293580606729,
+      "pulse_frac_cap": 0.7165789015763925,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.29701851970113413,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.13978183961949833,
+      "cr_pl": 0.1498307800413876,
+      "pulse_scale": 1.0718901714932614,
+      "pulse_frac_cap": 1.0182956629185982,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.3499195575352958,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.08520750738504587,
+      "cr_pl": 0.10497740692597729,
+      "pulse_scale": 1.232020629961546,
+      "pulse_frac_cap": 1.1704195984634687,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.30742913982181985,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random04": {
+    "cr_pl": 0.10194403256684981,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.08256068195708251,
+    "res_margin": 0.2843136568714366,
+    "res_which": "pitch antisym+hub 0.85/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.24245922804270112,
+      "cr_pl": 0.2068738884670719,
+      "pulse_scale": 0.8532316552234421,
+      "pulse_frac_cap": 0.81057007246227,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.2843136568714366,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.14260172446981015,
+      "cr_pl": 0.17056888887328303,
+      "pulse_scale": 1.196120800835012,
+      "pulse_frac_cap": 1.1363147607932613,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.3280871987462666,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.08256068195708251,
+      "cr_pl": 0.10194403256684981,
+      "pulse_scale": 1.234777016738347,
+      "pulse_frac_cap": 1.1730381659014295,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.30521491229598796,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random05": {
+    "cr_pl": 0.09764116745380552,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.07902134399676221,
+    "res_margin": 0.2883693320347174,
+    "res_which": "pitch sym 1.28/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.2185864216359962,
+      "cr_pl": 0.19073515448952455,
+      "pulse_scale": 0.8725846420924932,
+      "pulse_frac_cap": 0.8289554099878685,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.3644010945795899,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.13124022508957944,
+      "cr_pl": 0.1566348921128704,
+      "pulse_scale": 1.19349758815148,
+      "pulse_frac_cap": 1.133822708743906,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.41916234851169554,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.07902134399676221,
+      "cr_pl": 0.09764116745380552,
+      "pulse_scale": 1.235630305880475,
+      "pulse_frac_cap": 1.1738487905864512,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.2883693320347174,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random06": {
+    "cr_pl": 0.10112515759546253,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.08209735988685635,
+    "res_margin": 0.25530360644592953,
+    "res_which": "pitch antisym+hub 0.86/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.2574906168518849,
+      "cr_pl": 0.21272279739073346,
+      "pulse_scale": 0.8261380550154066,
+      "pulse_frac_cap": 0.7848311522646363,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.25530360644592953,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.13689293974235275,
+      "cr_pl": 0.16044838347938425,
+      "pulse_scale": 1.172072013219713,
+      "pulse_frac_cap": 1.1134684125587273,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.36520549625148657,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.08209735988685635,
+      "cr_pl": 0.10112515759546253,
+      "pulse_scale": 1.231771128022017,
+      "pulse_frac_cap": 1.170182571620916,
+      "pulse_binding": "motor_torque_1p",
+      "res_margin": 0.37862935145520416,
+      "feasible_pl": true
+     }
+    ]
+   },
+   "random07": {
+    "cr_pl": 0.0859010580705541,
+    "feasible_pl": true,
+    "viol_hard": {},
+    "cr_min": 0.07224278983733601,
+    "res_margin": 0.2962494580291051,
+    "res_which": "pitch sym 1.29/rev vs 1P",
+    "points": [
+     {
+      "tag": "T0.7:J2.5e-06",
+      "control_ratio": 0.21867134497399934,
+      "cr_pl": 0.213312710482254,
+      "pulse_scale": 0.9754945738666285,
+      "pulse_frac_cap": 0.9267198451732971,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.35789997666155227,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1:J2.5e-06",
+      "control_ratio": 0.14003464694997902,
+      "cr_pl": 0.16339698376124753,
+      "pulse_scale": 1.166832546945426,
+      "pulse_frac_cap": 1.1084909195981545,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.3314608163404891,
+      "feasible_pl": true
+     },
+     {
+      "tag": "T1.4:J2.5e-06",
+      "control_ratio": 0.07224278983733601,
+      "cr_pl": 0.0859010580705541,
+      "pulse_scale": 1.1890606420927468,
+      "pulse_frac_cap": 1.1296076099881094,
+      "pulse_binding": "fatigue_stress",
+      "res_margin": 0.2962494580291051,
+      "feasible_pl": true
+     }
+    ]
+   }
+  }
+ }
+}
