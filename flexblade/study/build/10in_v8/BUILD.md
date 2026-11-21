@@ -3,9 +3,9 @@ Files: `hub_fitting_assembly.stl` (1x), `blade1_with_root_fitting.stl`, `blade2_
 Mount (twin TPU washers, carrier, clamp): reuse `../10in_v5/mount_*.stl` (unchanged, see v5 BUILD.md).
 Params: strips crossed 105 deg, skew **62 deg**, hinge radius **21.5 mm**, cross gap 2.71 mm, free span 25.12 mm, land 12.0, slot 0.85 x 9.2, jaw exit R 1.00. Rest gap 6.64 mm, min 6.53 mm over lag +-5 / pitch +-8 deg.
 
-## NOT IN THE STLs (manual, do before printing/assembly)
-1. **Slot preset angles** (v8 = 0.55 x zero-stress presets; fittings.py does not apply them, the slots are cut at the nominal member frame). Either re-angle slots in CAD or shim the strips: hub-end/blade-end th2 (deg): b1 strip1 -2.45/+2.17, strip2 +2.73/-2.67; b2 strip1 +4.38/-3.87, strip2 -3.14/+2.61 (th3 <= 0.24, ignore). Full table: design JSON `notes`. Without them the stopped state is unpreset (stiffer, no misfit stress).
-2. **Datum dowels**: not modelled. Drill/ream a 3.0 mm steel dowel hole across each hub slot exit (axis on the jaw exit radius centre line, parallel to the strip width) so the exit radius is the dowel (hinge_tolerance.md); same for the root exit. The only depth stop is the blind root end; make a seating gauge.
+## Built into the STLs (no manual step)
+1. **Pre-angled slots** (v8 = 0.55 x zero-stress presets, fittings.slot_rotations): every slot is rotated about its exit point (hinge radius unchanged) by the beam model's preset, so the strips are stress-free at the stopped/hover state. Hub-end / blade-end slot rotation about the strip width axis, th2 (deg), th3 in brackets: b1 strip1 -2.45 (-0.17) / +2.17 (-0.04); b1 strip2 +2.73 (+0.01) / -2.67 (-0.02); b2 strip1 +4.38 (-0.24) / -3.87 (-0.01); b2 strip2 -3.14 (-0.11) / +2.61 (+0.05). Blade 2 has its own hub fittings (different angles), so the hub STL is not 2-fold symmetric. Test: slot axis vs beam end tangent < 0.2 deg.
+2. **Datum dowel holes**: 3.0 mm hole at every slot exit, axis parallel to the strip width on the exit radius centre line (tangent to the slot face and the jaw end face, 0.15 mm into the slot, side facing the web). Ream to 3.0 H7 and press a 3.0 mm dowel; the dowel, not the printed edge, is the exit radius. The only depth stop is the blind root end; make a seating gauge.
 
 ## BOM
 | Item | Spec | Qty |
@@ -13,7 +13,7 @@ Params: strips crossed 105 deg, skew **62 deg**, hinge radius **21.5 mm**, cross
 | 1095 spring-steel shim | **0.10 mm (0.004") x 9.00 mm wide x 49.1 mm long** (25.12 free + 2 x 12.0 land); 4 strips x 8 laminae | 32 (cut 40) |
 | Damper | VHB 9469 0.13 mm + 0.05 mm shim, 9.00 x 23.1 mm, 1 mm short of jaw exits | 4 |
 | Aramid strand | 1.5 mm, 40 mm per blade, one strand hub to blade | 2 |
-| Dowel pins | 3.0 mm hardened steel, ~12 mm long (hub exits, root exits) | 4 + 2 spare |
+| Dowel pins | 3.0 mm hardened steel, ~12 mm long (hub exits, root exits) | 8 + 2 spare |
 | Radial slider | PTFE sleeve/film + PTFE grease on the blade-end radial slider; MUST slide freely (stopped_state.md: without it strips reach 198 MPa, buckling multiplier 1.5) | 2 |
 | Epoxy / CA / oil | structural epoxy on lands only; 3-in-1 oil between laminae on free span only | |
 | Balance | no designed masses (fitting_balance_mass 0): pin-balance blades to < 0.05 g tip difference, then whole rotor | |
