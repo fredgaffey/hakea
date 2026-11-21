@@ -460,3 +460,4 @@ Idea backlog (unscreened):
 - DE8: 10" gen 10 cr 0.0756 infeasible (no progress since gen 1 — DE8's one-sided/bal space is not finding feasible >v8); 7" gen 7 cr 0.051. CRM2204 gen 9 plateau 0.1257 since gen 3.
 - REVIEW: DE8 stagnation + hand sweeps agree: strip/bal space around v8 is exhausted; the new axis is blade inertia (DE10). Consider stopping DE8 early at gen 15 to start DE10 sooner.
 - 09:26: DE8 stopped early (gen 10, stagnant since gen 1; done/ marker set, main PID killed) → runner started DE10 (hollow/wide blade vars, 128 pop, CQ_TOL=datumed, RESOLVE_WORKERS=8). DE8 bests recoverable via run_study --salvage if needed.
+- Landed remote worker EOF/orphan watchdog (exits on stdin EOF, BrokenPipe, ppid==1). Raised idle timeout default 30 → 360 min (driver-side preset re-solve at gen 0 took >30 min in DE8 → workers would have quit mid-run). Takes effect at next DE bootstrap.

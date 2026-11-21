@@ -135,7 +135,7 @@ def worker_main(workers: int) -> None:
             die(0)                                # driver gone: nobody to hear results
 
     try:
-        idle_s = float(os.environ.get("FLEXBLADE_WORKER_IDLE_MIN", "30")) * 60
+        idle_s = float(os.environ.get("FLEXBLADE_WORKER_IDLE_MIN", "360")) * 60
     except ValueError:
         idle_s = 1800.0
     def watchdog():
