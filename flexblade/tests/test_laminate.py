@@ -56,3 +56,20 @@ def test_zeta_eq_formula():
     # Coulomb: zeta ~ 1/amplitude; no laminae -> no friction
     assert lam.friction_eta(n, E, w, t, L, 2 * k, mu, N, a) == pytest.approx(eta / 2)
     assert lam.friction_eta(1, E, w, t, L, k) == 0.0
+
+
+def test_goodman_arithmetic():
+    from flexblade import rotor
+    # sm = Su/2 -> g = 2: allowable amplitude halves; sm<=0 not credited; sm>=Su infeasible
+    assert abs(rotor.goodman_factor(0.875e9, 1.75e9) - 2.0) < 1e-12
+    assert rotor.goodman_factor(-1e8, 1.75e9) == 1.0
+    assert rotor.goodman_factor(1.8e9, 1.75e9) >= 1e3
+    assert abs(rotor.swt_util(300e6, 0.0, 560e6) - 300 / 560) < 1e-12
+    se, su, sm = 560e6, 1.75e9, 500e6
+    sa = se * (1 - sm / su)
+    assert abs(sa / se * rotor.goodman_factor(sm, su) - 1.0) < 1e-12
+
+
+def test_strip_fatigue_mean_default_none():
+    from flexblade.schema import Flexure
+    assert Flexure().strip_fatigue_mean == "none"

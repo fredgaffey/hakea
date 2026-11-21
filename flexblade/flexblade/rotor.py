@@ -1627,17 +1627,52 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
     return out_static, out_il, max_strain, det, creep_u
 
 
-def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cable: bool = False):
+# Ultimate tensile strength used for the modified-Goodman / SWT mean-stress check on shim steels.
+# 1095 spring temper (ASTM A684 / SAE J403 strip, hardened+tempered): UTS 1.6-1.9 GPa -> 1.75 GPa
+# used (the library Xt = 1.4 GPa is the conservative static allowable); 301 FH (AMS 5517): 1.28 GPa.
+STRIP_SU = {"steel_1095_shim": 1.75e9, "steel_301_fh": 1.28e9}
+
+
+def goodman_factor(sm: float, su: float) -> float:
+    """Modified Goodman at SF=1: sa/Se + sm/Su <= 1  <=>  (sa/Se) * g <= 1, g = 1/(1 - sm/Su).
+    Compressive mean is not credited (g >= 1); sm >= Su -> 1e3 (infeasible)."""
+    r = max(sm, 0.0) / su
+    return 1e3 if r >= 0.999 else 1.0 / (1.0 - r)
+
+
+def swt_util(sa: float, sm: float, se: float) -> float:
+    """Smith-Watson-Topper: sqrt(smax * sa) / Se, smax = sm + sa (0 if smax <= 0)."""
+    return float(np.sqrt(max(sm + sa, 0.0) * sa)) / se
+
+
+def _fibre_mean(sec: SectionProps, s_force: np.ndarray) -> list[float]:
+    """Static axial stress per fibre (Pa) at this section."""
+    eps = np.linalg.solve(sec.stiffness6(), s_force)
+    return [fb.E * (eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]
+
+
+def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cable: bool = False,
+               mean: list[float] | None = None, kt: float = 1.0, diag: dict | None = None):
     S = sec.stiffness6()
     eps = np.linalg.solve(S.astype(complex), s_amp)
     best_e = best_s = 0.0
-    for fb in sec.fibres:
+    for i, fb in enumerate(sec.fibres):
         ex = abs(eps[0] + fb.z * eps[4] - fb.y * eps[5])
         mat = get_material(fb.material)
         sa = ex * fb.E * mat.storage_scale(freq_hz)
         Xa = mat.Xt if cable else _strength_along(fb, t_hat)
-        best_e = max(best_e, ex / mat.fatigue_strain_amp_allow)
-        best_s = max(best_s, sa / (mat.fatigue_stress_ratio * Xa))
+        ge = 1.0
+        if mean is not None and fb.material.startswith(SHIM_STEELS):
+            su = STRIP_SU.get(fb.material, mat.Xt)
+            ge = goodman_factor(mean[i] * kt, su)
+            if diag is not None:
+                u = sa / (mat.fatigue_stress_ratio * Xa) * ge
+                if u > diag.get("u", -1.0):
+                    se = mat.fatigue_stress_ratio * Xa
+                    diag.update(u=u, sm=mean[i] * kt, sa=sa * kt, su=su, se=se, ge=ge,
+                                swt=swt_util(sa * kt, mean[i] * kt, se))
+        best_e = max(best_e, ex / mat.fatigue_strain_amp_allow * ge)
+        best_s = max(best_s, sa / (mat.fatigue_stress_ratio * Xa) * ge)
     return best_e, best_s, float(np.max([abs(eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]))
 
 
@@ -1652,6 +1687,18 @@ KT_SHARP, FRET_SHARP = 1.75, 0.80
 KT_RADIUSED, FRET_RADIUSED = 1.10, 1.0
 KT_COMPLIANT, FRET_COMPLIANT = 1.05, 1.0
 R_FULL_FRAC = 10.0  # jaw radius (in strip thicknesses) at which the radiused Kt is reached
+
+
+def strip_kt(f) -> float:
+    """Clamp-edge stress concentration Kt alone (no fretting knock-down) -- applied to the mean."""
+    t = f.thickness
+    R = f.strip_clamp_radius if f.strip_clamp_radius > 0 else R_FULL_FRAC * t
+    if f.strip_clamp == "sharp":
+        return KT_SHARP
+    if f.strip_clamp == "compliant":
+        return KT_COMPLIANT
+    x = min(1.0, R / (R_FULL_FRAC * t))
+    return KT_RADIUSED + (KT_SHARP - KT_RADIUSED) * (1 - x)
 
 
 def strip_clamp_factor(f) -> tuple[float, float]:
@@ -1678,6 +1725,11 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
     groups: dict[str, dict] = {}
     used: dict[str, set] = {}
     fz = ss.Omega / (2 * np.pi)
+    ff = model.design.flexure
+    kfac, Rj = strip_clamp_factor(ff)
+    gm = ff.strip_fatigue_mean == "goodman"
+    kt_mean = strip_kt(ff) if gm else 1.0
+    gdiag: dict[str, dict] = {}
     cables = {k + 1: {f"flex{j}" for j, m in enumerate(bi.members) if m.cable}
               for k, bi in enumerate(model.blades)}
     for i, (e, c) in enumerate(zip(fe.elements, sa.cr)):
@@ -1704,22 +1756,22 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
         if hd is not None:
             du = hd.U[_edofs(e)]
             fa_c, fb_c = element_end_forces_lin(e, c, du)
-            for sec, sf in zip(secs, (fa_c, fb_c)):
-                ue, us, amp = _fibre_amp(sec, sf, t_hat, fz, is_cable)
+            means = [_fibre_mean(sec, sf0) if gm else None for sec, sf0 in zip(secs, (fa, fb))]
+            gd = gdiag.setdefault(name, {})
+            for sec, sf, mn in zip(secs, (fa_c, fb_c), means):
+                ue, us, amp = _fibre_amp(sec, sf, t_hat, fz, is_cable, mn, kt_mean, gd)
                 g["fat_e"] = max(g["fat_e"], ue)
                 g["fat_s"] = max(g["fat_s"], us)
                 g["famp"] = max(g["famp"], amp)
             for cr in forced or ():
                 fa_c, fb_c = element_end_forces_lin(e, c, cr.U[_edofs(e)])
-                for sec, sf in zip(secs, (fa_c, fb_c)):
-                    ue, us, amp = _fibre_amp(sec, sf, t_hat, cr.freq_hz, is_cable)
+                for sec, sf, mn in zip(secs, (fa_c, fb_c), means):
+                    ue, us, amp = _fibre_amp(sec, sf, t_hat, cr.freq_hz, is_cable, mn, kt_mean, gd)
                     if ue > g["fat_e_n"]:
                         g["cross_n"] = f"{cr.label} {cr.per_rev:.2f}/rev x {cr.n}P"
                     g["fat_e_n"] = max(g["fat_e_n"], ue)
                     g["fat_s_n"] = max(g["fat_s_n"], us)
                     g["famp_n"] = max(g["famp_n"], amp)
-    ff = model.design.flexure
-    kfac, Rj = strip_clamp_factor(ff)
     shim_groups = [n for n, ms in used.items() if any(m.startswith(SHIM_STEELS) for m in ms)]
     for n in shim_groups:
         for k_ in ("fat_e", "fat_s", "famp", "fat_e_n", "fat_s_n", "famp_n"):
@@ -1761,8 +1813,14 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                              utilisation=g["fat_e"], note="1/rev strain amplitude (design torque)" + (
                                  f" {frc.FATIGUE_COMBINE} nP crossing: util 1P {g['fat_e1']:.3f} + nP "
                                  f"{g['fat_e_n']:.3f} ({g['cross_n']})" if g["fat_e_n"] > 0 else "")))
+            gdn = gdiag.get(name, {})
+            gtxt = ""
+            if gm and "sm" in gdn:
+                gtxt = (f" [Goodman: binding lamina sm={gdn['sm']/1e6:.0f} MPa sa={gdn['sa']/1e6:.0f} MPa "
+                        f"Se={gdn['se']/1e6:.0f} Su={gdn['su']/1e6:.0f} g={gdn['ge']:.2f} "
+                        f"SWT={gdn['swt']:.2f}]")
             out.append(Check(name="fatigue_stress", member=name, value=g["fat_s"], allowable=1.0,
-                             utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)" + (
+                             utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)" + gtxt + (
                                  f" {frc.FATIGUE_COMBINE} nP: 1P {g['fat_s1']:.3f} + nP {g['fat_s_n']:.3f}"
                                  if g["fat_s_n"] > 0 else "")))
     for n in shim_groups:

@@ -251,6 +251,10 @@ class Flexure(_M):
     strip_clamp: Literal["sharp", "radiused", "compliant"] = Field(
         "radiused", description="clamp-edge model for steel shim strips (fatigue Kt/fretting): "
         "sharp square jaw, radiused jaw (strip_clamp_radius), or compliant TPU/soft pad lip")
+    strip_fatigue_mean: Literal["none", "goodman"] = Field(
+        "none", description="steel shim strips: 'goodman' applies a modified-Goodman mean-stress "
+        "correction to the fatigue checks (util = sa/Se / (1 - sm_peak/Su), sm = static CF + trim "
+        "bending at the clamp edge x Kt); 'none' = legacy amplitude-only")
     strip_laminae: int = Field(1, ge=1, le=8, description="steel shim strips: number of "
                                "unbonded laminae per strip (each `thickness` thick, clamped "
                                "together at both ends, free to slide between): bending about "
