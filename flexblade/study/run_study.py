@@ -55,6 +55,10 @@ from flexblade.schema import Design, Layup, OptimizeRequest, Target, Variable  #
 RAMP_SLEW = 2550.0          # AM32 max_ramp 255 → 255/2000 per 50 µs tick = 2550 /s
 STOCK_SLEW = 160.0
 RES_BAND = 0.15
+# ground resonance (flexblade.ground_resonance): env FLEXBLADE_GROUND_RES=1 (set by --ground-resonance, so
+# worker processes inherit it); FLEXBLADE_ARM_RANGE="lo,hi" Hz overrides the per-size default arm range
+GROUND_RES = os.environ.get("FLEXBLADE_GROUND_RES") == "1"
+ARM_RANGE = tuple(float(x) for x in os.environ["FLEXBLADE_ARM_RANGE"].split(",")) if os.environ.get("FLEXBLADE_ARM_RANGE") else None
 SPLIT_MAX = 2.0
 FAIL = 1.0e6
 # reported but never a feasibility violation: root height is already paid for through
@@ -416,6 +420,16 @@ def metrics(d: Design, r: dict, criterion: str | None = None) -> dict:
         viol["resonance"] = 1.0
     elif mg < RES_BAND:
         viol["resonance"] = (RES_BAND - mg) / RES_BAND
+    if GROUND_RES:
+        from flexblade import ground_resonance as gr
+        af = d.op.airframe
+        rng = ARM_RANGE or gr.default_arm_range(d.blade.radius)
+        sm = r.get("summary") or {}
+        gv = gr.violation(gr.lag_per_rev(r.get("modes"), float(sm.get("rpm", float("nan")))), float(sm.get("rpm", float("nan"))),
+                          rng, af, 0.0, d.op.vehicle_mass or 1.0)
+        out["ground_res"] = gv
+        if gv > 0:
+            viol["ground_resonance"] = gv
     nconv = sum(("not converge" in w) or ("failed" in w) for w in r.get("warnings", []))
     if nconv:
         viol["convergence"] = float(nconv)
@@ -750,6 +764,9 @@ def main(argv=None):
                          "RUNTIME residual (rpm bin, temperature, creep, J error) about each calibrated "
                          "node is limited; build samples bound calibratability (authority, 1P side)")
     ap.add_argument("--j-hub", default=None, help="comma list of motor.J_hub values (robust dimension)")
+    ap.add_argument("--ground-resonance", action=argparse.BooleanOptionalAction, default=None,
+                    help="(default on with --objective pulse_limited; ~3 ms/eval) hard check: regressing lag vs the arm/mount mode over the arm-frequency envelope")
+    ap.add_argument("--arm-range", default=None, help="lo,hi Hz arm envelope (default 7in 200-300, 10in 120-250)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
     ap.add_argument("--maxiter", type=int, default=40)
@@ -760,6 +777,13 @@ def main(argv=None):
     a = ap.parse_args(argv)
     global ROBUST, OBJECTIVE, J_HUB, CRITERION, PERTURB, RUNTIME
     OBJECTIVE = a.objective
+    global GROUND_RES, ARM_RANGE
+    if a.ground_resonance or (a.ground_resonance is None and a.objective == "pulse_limited"):
+        os.environ["FLEXBLADE_GROUND_RES"] = "1"
+        GROUND_RES = True
+    if a.arm_range:
+        os.environ["FLEXBLADE_ARM_RANGE"] = a.arm_range
+        ARM_RANGE = tuple(float(x) for x in a.arm_range.split(","))
     CRITERION = a.criterion
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
     RUNTIME = list(robust.CQ_RUNTIME) if CRITERION == "control_quality_cal" else None
