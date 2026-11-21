@@ -876,6 +876,7 @@ def main(argv=None):
     from flexblade import remote
     log = Logger(RESULTS / "evals.jsonl.gz")
     lock = threading.Lock()
+    failed = []
     with remote.HostPool(a.hosts) as pool:
         def one(c):
             try:
@@ -883,6 +884,7 @@ def main(argv=None):
             except Exception as ex:  # noqa: BLE001
                 traceback.print_exc()
                 out = dict(case=c[0], error=f"{type(ex).__name__}: {ex}")
+                failed.append(c[0])
             with lock:
                 with open(cases_path, "a") as fh:
                     fh.write(json.dumps(out, default=float) + "\n")
@@ -892,6 +894,9 @@ def main(argv=None):
         with ThreadPoolExecutor(max_workers=a.threads) as ex:
             list(ex.map(one, cases))
     log.close()
+    if failed:
+        print(f"FAILED {len(failed)}/{len(cases)} cases: {failed}", file=sys.stderr, flush=True)
+        sys.exit(2)
 
 
 if __name__ == "__main__":
