@@ -56,3 +56,16 @@ Tolerance check (study/i34tools/tol.py; nominal + 8 random builds, t/w/L/hinge_r
 ### Skew +5 deg cliff diagnosed (s5 design rescored with sa.py)
 
 pulse_infeasible comes from `harmonic_jitter` (n>=2 resonant-crossing jitter, rotor.py / forced.py). In run_study.pulse_util_fns its u(s) = j*max(s,1) / max(JITTER_MAX_DEG=0.3, 0.10*pitch_1P*s): at vanishing pulse the allowable is the fixed 0.3 deg floor and the jitter does not scale down (max(s,1)), so if nP jitter > 0.3 deg at a point, pulse_scale returns 0. At skew +5 it flips at NOMINAL T1.0, J 2.5e-6 and 3.76e-6 (u0 1.027 / 1.007, i.e. jitter ~0.30-0.31 deg, just over the floor) and on stiff build corner p1 (t,w,h +5 %, L -5 %) at T0.7/T1.0/T1.4 (u0 up to 1.48). At +4 it is just below the floor -> a cliff, not a trend. Note the function is non-monotone (allowable grows with s; for s>=3/pitch_1P u = j/(0.1 pitch_1P), constant), so pulse_scale's "u(1e-9)>1 -> infeasible" shortcut can declare infeasible a point that is feasible at a normal pulse amplitude; the same flip appears on alpha 0.8 at T1.4:p1 (u0 3.7). Fix candidates: treat jitter as a hard check at the operating pulse (s=1) instead of in pulse_scale, or search s over the whole range rather than testing s->0.
+
+## I36 v8 search: skew add + alpha x v5zs presets (sa.py, SA_SKEW_ADD env; CAL continuous + Goodman + ground_res)
+
+Base 10in v5 with skew_deg + add. v7 reference (skew +0, alpha 0.3): margin 0.034, cr_pl 0.0818. Mode /rev was not logged (sa.py prints only the summary); worst-corner margin is the CAL metric.
+
+| skew add deg | alpha | mode /rev | corner margin | resid phase deg / gain | sigma_m T0.7 MPa | cr_pl | feasible |
+|---|---|---|---|---|---|---|---|
+| +2 | 0.5 | n/a | 0.041 | 6.1 / 10.3 % | n/a | 0.0881 | yes |
+| +4 | 0.7 | n/a | 0.056 | 4.3 / 9.2 % | n/a | 0.0778 | no: cqc_mech_side (side flip) |
+| +3 | 0.6 | n/a | 0.047 | 5.0 / 9.7 % | n/a | 0.0833 | no: cqc_mech_side (side flip) |
+| +2 | 0.55 | n/a | 0.036 | 6.2 / 9.8 % | 219 (binding lamina) | 0.0911 | yes |
+
+Best: skew +2, alpha 0.55, cr_pl 0.0911 (+11 % vs v7), saved as designs/10in_tt_strap_steelx_v8.json. Higher alpha flips the mechanism mode across 1P at some corner even with extra skew, so the side flip, not margin, caps alpha near 0.55.

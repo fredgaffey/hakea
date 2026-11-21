@@ -23,7 +23,10 @@ def make(mode, arg):
         d = base.model_copy(update=dict(flexure=base.flexure.model_copy(update=dict(strip_preset_deg=p))))
     else:
         d = Design.model_validate_json(open(arg).read())
-    return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_fatigue_mean="goodman"))))
+    u = dict(strip_fatigue_mean="goodman")
+    if os.environ.get("SA_SKEW_ADD"):  # extra skew (deg) added on top of the design's skew_deg
+        u["skew_deg"] = d.flexure.skew_deg + float(os.environ["SA_SKEW_ADD"])
+    return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=u)))
 
 
 def ev(dv):
