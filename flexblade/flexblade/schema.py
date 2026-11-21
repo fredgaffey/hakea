@@ -367,6 +367,15 @@ class Mount(_M):
     infill: float = Field(0.6, description="stiffness knockdown of printed/infilled TPU vs solid")
     mass_motor_kg: float = Field(0.045, description="motor + carrier mass on the ring, kg "
                                  "(part of Airframe.mass)")
+    tilt: bool = Field(True, description="model the motor+rotor TILT about the mount (2 hub rotation DOFs, "
+                       "gyroscopic whirl, kinematic coupling into blade flap/pitch); False = in-plane "
+                       "translation only (pre-tilt model)")
+    k_tilt: Optional[float] = Field(None, description="mount tilt stiffness about the in-plane axes, N m/rad; "
+                                    "None = single washer in compression, E pi (ro^4 - ri^4)/(4 t) with "
+                                    "E = 3.4 G infill (twin washers: give it explicitly)")
+    I_t_kgm2: Optional[float] = Field(None, description="transverse inertia of motor + carrier + hub about the "
+                                      "tilt centre, kg m^2, EXCLUDING the blades (from the FE model); None = "
+                                      "0.5 (J_rotor + J_hub) + mass_motor_kg (15 mm)^2")
 
 
 class Airframe(_M):

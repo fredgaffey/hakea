@@ -22,6 +22,19 @@ Isotropic support → constant coefficients (exact LTI eigenproblem, any blade n
 Anisotropic support → 2/rev periodic → Floquet: monodromy over P = π/Ω (solve_ivp on the
 reduced system), s = ln μ / P with the 2Ω branch picked from the averaged system.
 
+Hub tilt (soft mount only, ``Mount.tilt``): two more rigid-body DOFs, the rotation of the whole
+rotor about the in-plane hub axes (rotating x, y), u = θ × r on every node + node rotation θ, so
+the FE brings in the blades' tilt inertia, Coriolis, CF restoring (geometric stiffness) and the
+aero of the kinematic flap/pitch change (θx is pitch for a blade on x, θy flap).  The airframe
+adds the non-FE motor + carrier + hub (transverse I_t, spinning polar J_p = J_rotor + J_hub) on the
+mount (k_t, viscous-equivalent c_t = η k_t/ω_t), fixed frame  I_t Θ̈ + (J_pΩ[[0,1],[−1,0]] + c_t) Θ̇
++ k_t Θ = 0, i.e. in rotating axes (Θ = R(ψ)θ, J_pΩ[[0,1],[−1,0]] = −J_pΩJ):
+
+    I_t (θ̈ + 2ΩJθ̇ − Ω²θ) − J_pΩ J (θ̇ + ΩJθ) + c_t (θ̇ + ΩJθ) + k_t θ
+
+Whirl check (no rotor): I_t ω² ∓ J_pΩ ω − k_t = 0 (tests/test_stability.py).  The mount elastic
+centre is taken at the hub origin (no translation-tilt cross stiffness).
+
 Validated against Coleman's isotropic ground-resonance characteristic equation for an
 articulated rotor (``coleman_roots``; see tests/test_stability.py).
 """
@@ -44,6 +57,7 @@ class RotSys:
     ih: tuple | None = None     # indices of rotating-frame hub (x, y) translation, if present
     basis: np.ndarray | None = None   # full-DOF basis (ndof × n)
     m_rotor: float = 0.0
+    it: tuple | None = None     # indices of rotating-frame hub tilt (θx, θy), if present
 
 
 @dataclass
@@ -53,6 +67,10 @@ class Airframe:
     ky: float
     cx: float
     cy: float
+    It: float = 0.0     # non-FE transverse inertia on the mount (motor + carrier + hub), kg m^2
+    Jp: float = 0.0     # non-FE spinning polar inertia (motor bell + hub), kg m^2
+    kt: float = 0.0     # mount tilt stiffness, N m/rad (0 = no tilt DOFs)
+    ct: float = 0.0     # mount tilt viscous-equivalent damping, N m s/rad
 
 
 def state_matrix(M, G, K) -> np.ndarray:
@@ -69,20 +87,39 @@ def zeta_of(s) -> np.ndarray:
 # ------------------------------------------------------------------------- FE reduced system
 
 
-def _basis(model, ss, lin, n_basis: int, hub: bool):
+def _tilt_vectors(model, ss) -> np.ndarray:
+    """(ndof × 2) rigid rotation of every node about the rotating x, y axes through the hub
+    origin: u = θ × r (deformed trim positions) and node rotation θ."""
+    n = model.fe.ndof
+    try:
+        X = np.asarray(ss.state.x, float).reshape(-1, 3)
+    except Exception:
+        X = np.asarray(model.fe.X0, float)
+    T = np.zeros((n, 2))
+    x, y, z = X[:, 0], X[:, 1], X[:, 2]
+    T[1::6, 0], T[2::6, 0], T[3::6, 0] = -z, y, 1.0      # θx: (0, −z, y)
+    T[0::6, 1], T[2::6, 1], T[4::6, 1] = z, -x, 1.0      # θy: (z, 0, −x)
+    return T
+
+
+def _basis(model, ss, lin, n_basis: int, hub: bool, tilt: bool = False):
     from .rotor import modal_basis
     lam, Phi = modal_basis(model, ss, lin, n_basis=max(40, n_basis + 5), n_keep=n_basis)
     Phi = Phi[:, :n_basis]
     n = model.fe.ndof
-    B = np.zeros((n, Phi.shape[1] + (2 if hub else 0)))
-    B[lin.free, :Phi.shape[1]] = Phi
+    nf = Phi.shape[1]
+    B = np.zeros((n, nf + (2 if hub else 0) + (2 if tilt else 0)))
+    B[lin.free, :nf] = Phi
     if hub:
-        B[0::6, -2] = 1.0       # rigid in-plane translation of every node, rotating x
-        B[1::6, -1] = 1.0       # rotating y
-    return lam[:Phi.shape[1]], B
+        B[0::6, nf] = 1.0       # rigid in-plane translation of every node, rotating x
+        B[1::6, nf + 1] = 1.0   # rotating y
+    if tilt:
+        B[:, -2:] = _tilt_vectors(model, ss)
+    return lam[:nf], B
 
 
-def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: bool = False) -> RotSys:
+def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: bool = False,
+                   tilt: bool = False) -> RotSys:
     from .rotor import K_complex, aero_linear
     w = 2 * np.pi * max(freq_hz, 1e-3)
     Kc = B.T @ K_complex(model, lin, max(freq_hz, 1e-3)) @ B
@@ -95,9 +132,11 @@ def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: boo
         K = K - Ka.real
         C = C - Ka.imag / w
     n = B.shape[1]
-    ih = (n - 2, n - 1) if hub else None
-    m_rot = float(M[n - 2, n - 2]) if hub else 0.0
-    return RotSys(M, G + C, K, ss.Omega, ih, B, m_rot)
+    nh = n - (2 if tilt else 0)
+    ih = (nh - 2, nh - 1) if hub else None
+    it = (n - 2, n - 1) if tilt else None
+    m_rot = float(M[nh - 2, nh - 2]) if hub else 0.0
+    return RotSys(M, G + C, K, ss.Omega, ih, B, m_rot, it)
 
 
 def damped_modes(model, ss, lin, aero, targets_hz, n_basis: int = 20, iters: int = 3):
@@ -170,9 +209,38 @@ def mount_modes(m_hub, m_arm, k_arm, zeta_arm, k_m, eta):
     return float(f[0]), float(z[0]), mm, float(z_se), float(f[1]), float(z[1])
 
 
-def make_airframe(af, vehicle_mass: float, m_rotor: float) -> Airframe:
+def mount_tilt_stiffness(mt) -> float:
+    """Tilt stiffness N m/rad of the mount: Mount.k_tilt, else one annular washer in compression,
+    E π (ro⁴ − ri⁴)/(4 t), E = 3.4 G infill (bonded-ish elastomer compression modulus)."""
+    if getattr(mt, "k_tilt", None) is not None:
+        return float(mt.k_tilt)
+    ri, ro, t = mt.r_in_mm * 1e-3, mt.r_out_mm * 1e-3, mt.length_mm * 1e-3
+    return float(3.4 * mt.G_mpa * 1e6 * mt.infill * np.pi * (ro ** 4 - ri ** 4) / (4 * t))
+
+
+def tilt_params(mt, motor, I_rotor_tilt: float = 0.0):
+    """(I_t, J_p, k_t, c_t) of the non-FE motor + hub on the mount.  c_t = η k_t / ω_t at the
+    non-spinning tilt frequency ω_t² = k_t/(I_t + I_rotor_tilt)."""
+    Jp = float(motor.J_rotor + motor.J_hub)
+    It = float(mt.I_t_kgm2) if getattr(mt, "I_t_kgm2", None) is not None else \
+        0.5 * Jp + mt.mass_motor_kg * 0.015 ** 2
+    kt = mount_tilt_stiffness(mt)
+    wt = np.sqrt(kt / (It + I_rotor_tilt))
+    return It, Jp, kt, float(mt.eta * kt / wt)
+
+
+def tilt_on(af) -> bool:
+    mt = getattr(af, "mount", None)
+    return mt is not None and bool(getattr(mt, "tilt", False))
+
+
+def make_airframe(af, vehicle_mass: float, m_rotor: float, motor=None, I_rotor_tilt: float = 0.0) -> Airframe:
     """Schema Airframe -> modal mass/stiffness/damping.  f is the support frequency with the
-    (non-spinning) rotor mass on it: k = (m_af + m_rotor) ω²."""
+    (non-spinning) rotor mass on it: k = (m_af + m_rotor) ω².  With a mount (tilt on) and the
+    motor given, also the hub-tilt parameters (I_t, J_p, k_t, c_t)."""
+    tp = {}
+    if motor is not None and tilt_on(af):
+        tp = dict(zip(("It", "Jp", "kt", "ct"), tilt_params(af.mount, motor, I_rotor_tilt)))
     m = af.mass if af.mass is not None else 0.25 * vehicle_mass
     mt = m + m_rotor
     if getattr(af, "mount", None) is not None:
@@ -188,7 +256,8 @@ def make_airframe(af, vehicle_mass: float, m_rotor: float) -> Airframe:
         (fx, zx, mx), (fy_, zy, my) = out
         m_af = 0.5 * (mx + my) - m_rotor
         return Airframe(m_af, (m_af + m_rotor) * (2 * np.pi * fx) ** 2, (m_af + m_rotor) * (2 * np.pi * fy_) ** 2,
-                        2 * zx * (m_af + m_rotor) * 2 * np.pi * fx, 2 * zy * (m_af + m_rotor) * 2 * np.pi * fy_)
+                        2 * zx * (m_af + m_rotor) * 2 * np.pi * fx, 2 * zy * (m_af + m_rotor) * 2 * np.pi * fy_,
+                        **tp)
     wx = 2 * np.pi * af.f_hz
     wy = 2 * np.pi * (af.f_y_hz if af.f_y_hz is not None else af.f_hz)
     return Airframe(m, mt * wx ** 2, mt * wy ** 2, 2 * af.zeta * mt * wx, 2 * af.zeta * mt * wy)
@@ -214,6 +283,12 @@ def coupled_matrices(rs: RotSys, af: Airframe, psi: float = 0.0, average: bool =
     M[ix] += af.m * np.eye(2)
     G[ix] += 2 * Om * af.m * J2 + Cr
     K[ix] += -Om ** 2 * af.m * np.eye(2) + Om * Cr @ J2 + Kr
+    if rs.it is not None and af.kt > 0:
+        it = np.ix_(list(rs.it), list(rs.it))
+        I2 = np.eye(2)
+        M[it] += af.It * I2
+        G[it] += (2 * Om * af.It - Om * af.Jp) * J2 + af.ct * I2
+        K[it] += (-Om ** 2 * af.It + Om ** 2 * af.Jp + af.kt) * I2 + Om * af.ct * J2
     return M, G, K
 
 
@@ -266,6 +341,10 @@ def frame_zeta(rs: RotSys, af: Airframe, s, V, hub_frac: float = 0.5):
     ih = list(rs.ih)
     mt = af.m + rs.m_rotor
     w_af = np.sqrt(np.array([af.kx, af.ky]) / mt)
+    if rs.it is not None and af.kt > 0:
+        ih += list(rs.it)
+        It = af.It + 0.5 * (Mc[rs.it[0], rs.it[0]] - af.It + Mc[rs.it[1], rs.it[1]] - af.It)
+        w_af = np.append(w_af, np.sqrt(af.kt / It))
     j = np.arange(-3, 4)
     z = np.empty(len(s))
     for k, sk in enumerate(s):
@@ -296,12 +375,14 @@ def min_zeta(s, Omega: float, skip_frac: float = 0.05, z=None):
 def air_resonance(model, ss, lin, aero, af_schema, n_basis: int = 20, f_eval_hz: float | None = None,
                   floquet: bool | None = None):
     """min ζ of the hub-coupled system; returns (zeta_min, s_min, s_all, Airframe)."""
-    lam, B = _basis(model, ss, lin, n_basis, hub=True)
+    tilt = tilt_on(af_schema)
+    lam, B = _basis(model, ss, lin, n_basis, hub=True, tilt=tilt)
     if f_eval_hz is None:
         ok = np.sqrt(np.abs(lam)) > 0.05 * ss.Omega
         f_eval_hz = float(np.sqrt(abs(lam[ok][0])) / (2 * np.pi)) if ok.any() else ss.Omega / (2 * np.pi)
-    rs = reduced_system(model, ss, lin, aero, B, f_eval_hz, hub=True)
-    af = make_airframe(af_schema, model.design.op.vehicle_mass, rs.m_rotor)
+    rs = reduced_system(model, ss, lin, aero, B, f_eval_hz, hub=True, tilt=tilt)
+    I_rt = 0.5 * (rs.M[rs.it[0], rs.it[0]] + rs.M[rs.it[1], rs.it[1]]) if tilt else 0.0
+    af = make_airframe(af_schema, model.design.op.vehicle_mass, rs.m_rotor, model.design.motor, I_rt)
     s, V = coupled_eigs(rs, af, floquet)
     zmin, smin = min_zeta(s, ss.Omega, z=frame_zeta(rs, af, s, V))
     return zmin, smin, s, af

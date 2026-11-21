@@ -124,3 +124,70 @@ def test_evaluate_stability_checks(d5):
     d.analysis.stability = "energy"
     r2 = rotor.evaluate(d)
     assert [c.name for c in r2.checks if c.member == "stability"] == ["aeroelastic_stability"]
+
+
+# ------------------------------------------------------------------ hub tilt (soft mount)
+
+
+def _tilt_only(Om, It, Jp, kt, ct=0.0, mr=0.02):
+    """No rotor: hub translation (mass mr) + tilt DOFs with zero rotor tilt inertia."""
+    M = np.diag([mr, mr, 0.0, 0.0])
+    G = np.zeros((4, 4))
+    K = np.zeros((4, 4))
+    G[:2, :2] = 2 * Om * mr * S.J2
+    K[:2, :2] = -Om ** 2 * mr * np.eye(2)
+    rs = S.RotSys(M, G, K, Om, (0, 1), None, mr, (2, 3))
+    k = 0.1 * (2 * np.pi * 70) ** 2
+    return rs, S.Airframe(0.1 - mr, k, k, 0.0, 0.0, It, Jp, kt, ct)
+
+
+def test_tilt_whirl_split_analytic():
+    """Rotor removed: fixed-frame whirl roots of I_t ω² ∓ J_pΩ ω − k = 0."""
+    Om, It, Jp, kt = 2 * np.pi * 128, 8e-5, 4e-5, 19.4
+    rs, af = _tilt_only(Om, It, Jp, kt)
+    s, V = S.coupled_eigs(rs, af)
+    a = Jp * Om / It
+    wf = 0.5 * (a + np.sqrt(a * a + 4 * kt / It))      # forward
+    wb = 0.5 * (-a + np.sqrt(a * a + 4 * kt / It))     # backward
+    assert wf > wb and abs(wf - wb - a) < 1e-9 * wf
+    fixed = np.concatenate([s + 1j * Om, s - 1j * Om])
+    for w in (wf, wb):
+        assert np.min(np.abs(fixed - 1j * w)) < 1e-6 * w
+        assert np.min(np.abs(fixed + 1j * w)) < 1e-6 * w
+    # mount damping: both whirl modes damped (rotating frame stable)
+    rs, af = _tilt_only(Om, It, Jp, kt, ct=0.15 * kt / np.sqrt(kt / It))
+    assert max(S.coupled_eigs(rs, af)[0].real) < 0
+
+
+def test_tilt_stiff_limit_recovers_translation_model():
+    """k_t -> inf: the tilt DOFs freeze and the rotor + hub roots return to the old model."""
+    rs0 = S.articulated_toy(B, E, RG, MB, NU, OM, 3.0)
+    n = len(rs0.M)
+    M = np.zeros((n + 2, n + 2)); G = M.copy(); K = M.copy()
+    M[:n, :n], G[:n, :n], K[:n, :n] = rs0.M, rs0.G, rs0.K
+    c = np.array([[0.0, 0.05], [-0.05, 0.0]])          # tilt-translation inertia coupling (offset CG)
+    M[np.ix_(rs0.ih, [n, n + 1])] = c
+    M[np.ix_([n, n + 1], rs0.ih)] = c.T
+    M[n, n] = M[n + 1, n + 1] = 0.01
+    rs = S.RotSys(M, G, K, OM, rs0.ih, None, rs0.m_rotor, (n, n + 1))
+    af0 = af_of(30.0, 0.02)
+    s0 = np.sort_complex(S.coupled_eigs(rs0, af0)[0])
+    for kt, tol in ((1e6, 2e-2), (1e9, 2e-5)):
+        af = S.Airframe(af0.m, af0.kx, af0.ky, af0.cx, af0.cy, 1e-3, 5e-4, kt, 0.1 * np.sqrt(kt * 1e-3))
+        s = S.coupled_eigs(rs, af)[0]
+        s = np.sort_complex(s[np.abs(s) < 10 * np.max(np.abs(s0))])
+        assert len(s) == len(s0)
+        assert np.max(np.abs(s - s0)) < tol * np.max(np.abs(s0))
+
+
+def test_fe_hub_tilt_cf_restoring(d5):
+    """Rigid flap tilt (θy, blades on ±x) in rotating axes: CF restoring ≈ Ω² × tilt inertia."""
+    m = rotor.build_model(d5)
+    ss = rotor.static_trim(m, rotor.make_aero(m))
+    lin = rotor.linearize(m, ss, True)
+    _, Bm = S._basis(m, ss, lin, 12, hub=True, tilt=True)
+    rs = S.reduced_system(m, ss, lin, None, Bm, ss.Omega / (2 * np.pi), hub=True, tilt=True)
+    ty = rs.it[1]
+    print("tilt M", np.diag(rs.M)[list(rs.it)], "K/Om2", np.diag(rs.K)[list(rs.it)] / ss.Omega ** 2)
+    assert rs.M[ty, ty] > 0 and abs(rs.K[ty, ty] / (ss.Omega ** 2 * rs.M[ty, ty]) - 1) < 0.1
+    assert np.allclose(rs.M[np.ix_(rs.ih, rs.ih)], rs.m_rotor * np.eye(2), rtol=1e-6)
