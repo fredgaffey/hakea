@@ -177,6 +177,13 @@ MOTOR_LIBRARY: dict[str, tuple[Motor, str]] = {
                              J_hub=2.0e-6 * (4 / 5) ** 3, supply_V=24.0, max_current=28.0),
                        "4\" 6S (e.g. 2004 1700KV class); datasheet Rm ~0.1 Ω"),
     "tmotor_2307_1300kv": (Motor(), "Hakea fitted motor (R, kv, J from motor-ID)"),
+    # Dancing Wings Hobby CRM2204 1400KV contra-rotating unit (Amazon B07D7S2MRG): ONE half.
+    # Listing: 85 g pair, 2x20 A ESC, 8045/8040 props, 734 g thrust (both) @ 11.1 V. Bare-winding
+    # R ~0.24 ohm (generic 2204 1400KV) -> 0.30 effective; 15 A max; 3S. J/L/Rth scaled (estimates).
+    "crm2204_1400kv": (Motor(name="crm2204_1400kv", kv=1400, L=estimate_L(1400, 22, 4), R=0.30, J_rotor=_J(22, 4),
+                             thermal_resistance_KW=_Rth(22, 4), J_hub=2.0e-6 * (6 / 5) ** 3, supply_V=11.1,
+                             max_current=15.0),
+                       "one half of the CRM2204 1400KV coax unit, 3S; R/J/L estimates, measure on bench"),
     "2806.5_1100kv_6s": (Motor(name="2806.5_1100kv_6s", kv=1100, L=estimate_L(1100, 28, 6.5), R=0.10, J_rotor=_J(28, 6.5), thermal_resistance_KW=_Rth(28, 6.5),
                                J_hub=2.0e-6 * (7 / 5) ** 3, supply_V=24.0, max_current=50.0),
                          "7\" long-range 6S class (1050-1300KV sold); datasheet Rm ~0.05 Ω"),

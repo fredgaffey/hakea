@@ -166,6 +166,19 @@ def capability_frac(d: Design) -> dict:
                 limit=cap.dQ_limit)
 
 
+MOTOR_OVERRIDE = None   # --motor: motor.MOTOR_LIBRARY name replacing the size default
+MASS_OVERRIDE = None    # --vehicle-mass: hover thrust/g per rotor (kg)
+
+
+def _override(d: Design) -> Design:
+    upd = {}
+    if MOTOR_OVERRIDE:
+        upd["motor"] = mot.get_motor(MOTOR_OVERRIDE).model_copy(update=dict(duty_slew_max=d.motor.duty_slew_max))
+    if MASS_OVERRIDE:
+        upd["op"] = d.op.model_copy(update=dict(vehicle_mass=MASS_OVERRIDE))
+    return d.model_copy(update=upd) if upd else d
+
+
 def base_design(D: float, concept: str, coax: bool = False, frac_margin: float = 0.95) -> tuple[Design, dict]:
     pc = "cf_flexure" if concept in ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
                                          "skewed_cruciform", "tt_strap", "tt_strap_xplate",
@@ -236,10 +249,10 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
         d = set_design(d, {})
         d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
             topology="skewed_cross_blade_sym"))))
-    d = set_design(d, {"blade.elastic_axis_chord_frac": 0.45, "motor.duty_slew_max": RAMP_SLEW})
+    d = _override(set_design(d, {"blade.elastic_axis_chord_frac": 0.45, "motor.duty_slew_max": RAMP_SLEW}))
     # capability from a stiff reference blade (cf_flexure) so every concept gets the same pulse
     ref = presets.make_coax_preset(D, "cf_flexure") if coax else presets.make_preset(D, "cf_flexure")
-    ref = set_design(ref, {"blade.elastic_axis_chord_frac": 0.45})
+    ref = _override(set_design(ref, {"blade.elastic_axis_chord_frac": 0.45}))
     cap = capability_frac(ref)
     upd: dict = {}
     if coax:
@@ -833,6 +846,8 @@ def main(argv=None):
                          "node is limited; build samples bound calibratability (authority, 1P side)")
     ap.add_argument("--mech-margin", type=float, default=0.075,
                     help="mech_band: nominal hard 1P margin of the mechanism mode (others keep 0.15)")
+    ap.add_argument("--motor", default=None, help="motor.MOTOR_LIBRARY name for every case (e.g. crm2204_1400kv)")
+    ap.add_argument("--vehicle-mass", type=float, default=None, help="kg of hover thrust per rotor (overrides preset)")
     ap.add_argument("--goodman", action="store_true", help='strip_fatigue_mean="goodman" on every design')
     ap.add_argument("--j-hub", default=None, help="comma list of motor.J_hub values (robust dimension)")
     ap.add_argument("--ground-resonance", action=argparse.BooleanOptionalAction, default=None,
@@ -863,6 +878,8 @@ def main(argv=None):
     CRITERION = a.criterion
     global MECH_MARGIN, GOODMAN
     MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
+    global MOTOR_OVERRIDE, MASS_OVERRIDE
+    MOTOR_OVERRIDE, MASS_OVERRIDE = a.motor, a.vehicle_mass
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None
     RUNTIME = list(robust.CQ_RUNTIME) if CRITERION == "control_quality_cal" else None
     global INIT_DESIGNS, BASE_DESIGNS, INIT_FRAC, J_HUB_BY_D
