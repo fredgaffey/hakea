@@ -227,3 +227,21 @@ def test_frame_zeta_oscillatory_root_not_divergence():
     assert not dr.any() and zr[0] == pytest.approx(1 / np.hypot(1, 20))
     zr, dr = S.frame_zeta(rs_div := _toy_rs_af(-49.0)[0], af, np.array([7.0 + 0j]), V[:, :1], hub_frac=2.0, return_div=True)
     assert dr[0] and zr[0] == pytest.approx(-1.0)
+
+
+def test_rigid_spin_has_no_stiffness_with_aero(d5):
+    """Hover is axisymmetric: the azimuth is cyclic, so K r = 0 for the rigid spin r.  The dead trim
+    aero loads (missing follower term in K_geo) used to give r a negative stiffness ~1e-4 Omega^2 J ->
+    spurious real roots s = +O(10) rad/s (fake divergence in air_resonance)."""
+    m = rotor.build_model(d5)
+    aero = rotor.make_aero(m)
+    ss = rotor.static_trim(m, aero)
+    lin = rotor.linearize(m, ss, True)
+    lam, Bm = S._basis(m, ss, lin, 12, hub=False)
+    rs = S.reduced_system(m, ss, lin, aero, Bm, float(np.sqrt(abs(lam[1])) / (2 * np.pi)))
+    P = S._spin_projector(m, ss, lin, Bm, rs.M)
+    assert P is not None
+    r = np.linalg.svd(np.eye(len(P)) - P)[0][:, 0]
+    assert np.linalg.norm(rs.K @ r) < 1e-9 * ss.Omega ** 2 * np.linalg.norm(rs.M @ r)
+    s = np.linalg.eigvals(S.state_matrix(rs.M, rs.G, rs.K))
+    assert not np.any((s.real > 1e-3 * ss.Omega) & (np.abs(s.imag) <= s.real))

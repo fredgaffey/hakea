@@ -118,6 +118,39 @@ def _basis(model, ss, lin, n_basis: int, hub: bool, tilt: bool = False):
     return lam[:nf], B
 
 
+def _spin_projector(model, ss, lin, B: np.ndarray, M: np.ndarray, tol: float = 1e-3):
+    """M-orthogonal projector P = I − r (rᵀMr)⁻¹ rᵀM that removes the rigid spin (rotation of the whole
+    rotor about the rotating z axis: u = ẑ × x, θz = 1) from the reduced coordinates, or None if the
+    basis does not contain it (drive DOF fixed / truncated).
+
+    Hover is axisymmetric, so a rigidly rotated equilibrium is again an equilibrium: the azimuth is
+    cyclic and K r = 0 exactly.  The FE tangent violates this at O(1e-4 Ω² J) because the trim aero
+    loads are applied as dead loads (their follower term ẑ × F is missing from K_geo), and the
+    single-frequency aero Ka leaks a real (stiffness) part into the spin column.  That residual
+    gives the spin mode a spurious negative stiffness -> REAL roots s = +O(10) rad/s (a fake
+    divergence) once the hub couples in.  Generalised torques from deformation (rows) are physical
+    and are kept for aero; the structural part is cleaned symmetrically."""
+    n = model.fe.ndof
+    try:
+        X = np.asarray(ss.state.x, float).reshape(-1, 3)
+    except Exception:
+        X = np.asarray(model.fe.X0, float)
+    R = np.zeros(n)
+    R[0::6], R[1::6], R[5::6] = -X[:, 1], X[:, 0], 1.0
+    if hasattr(lin, "free") and lin.free is not None:
+        Rf = np.zeros(n)
+        Rf[lin.free] = R[lin.free]
+        if np.linalg.norm(R - Rf) > tol * np.linalg.norm(R):
+            return None            # constrained DOF off the axis: spin is not a free rigid motion
+    MR = lin.M @ R
+    r = np.linalg.lstsq(M, B.T @ MR, rcond=None)[0]
+    e = B @ r - R
+    if np.real(e @ lin.M @ e) > tol * np.real(R @ MR):
+        return None
+    Mr = M @ r
+    return np.eye(len(r)) - np.outer(r, Mr) / float(r @ Mr)
+
+
 def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: bool = False,
                    tilt: bool = False) -> RotSys:
     from .rotor import K_complex, aero_linear
@@ -125,10 +158,15 @@ def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: boo
     Kc = B.T @ K_complex(model, lin, max(freq_hz, 1e-3)) @ B
     M = B.T @ lin.M @ B
     G = B.T @ lin.G @ B
+    P = _spin_projector(model, ss, lin, B, M)
+    if P is not None:
+        Kc = P.T @ Kc @ P
     K = Kc.real.copy()
     C = Kc.imag / w
     if aero is not None and ss.trim is not None and model.design.analysis.aero != "none":
         Ka = B.T @ aero_linear(model, ss.state, aero, ss.trim, w, False).Ka @ B
+        if P is not None:   # displacement column only; the spin-RATE damping (imag) is physical
+            Ka = Ka.real @ P + 1j * Ka.imag
         K = K - Ka.real
         C = C - Ka.imag / w
     n = B.shape[1]
