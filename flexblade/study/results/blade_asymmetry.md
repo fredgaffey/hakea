@@ -36,3 +36,12 @@ Even though My never balances, beta0 ~1.25-1.3 deg evens the strip STRESSES and 
 sa.py on v8 + precone 1.3 (presets unchanged): cr_pl 0.121, but INFEASIBLE. The violations are cqc_mech_margin 0.72 and mech_side_flip; mech_per_rev is ~0.94 at T0.7, against margin 0.036 on v8.
 MARGIN also shows a resonance violation (pitch antisym+hub 0.94/rev vs 1P). So no v9. The preset re-resolve (zero_stress_trim at alpha 0.55) was not tried (budget).
 Next: precone 1.3 plus a re-tune that moves the pitch mode back off 1/rev (skew/length), or a smaller precone (~0.9) as a compromise.
+
+## v8 + precone x skew scan (sa.py file, CAL continuous + Goodman + ground_res; skew add on top of v8)
+| precone | skew add | mech margin | flip | CAL resid (phase deg / gain) | fatigue util (first nominal pt, strain/stress; member not labelled by sa.py) | cr_pl | feasible |
+|---|---|---|---|---|---|---|---|
+| 1.3 | +2 | 0.037 | yes | 8.1 / 0.107 | 0.50 / 0.36 | 0.101 | no (resonance 0.055, mech_side) |
+| 0.9 | +1 | 0.024 | yes | 8.6 / 0.103 | 0.54 / 0.40 | 0.104 | no (mech_margin, mech_side) |
+| 0.9 | -1 | 0.004 | yes | 9.2 / 0.120 | 0.66 / 0.48 | 0.128 | no (mech_margin, mech_side) |
+| 0.9 | +3 | 0.056 | yes | 5.6 / 0.102 | 0.42 / 0.31 | 0.086 | no (mech_side flip only; margin-criterion feasible) |
+Result: mech margin rises with +skew, but mech_side_flip stays true in all four, so none is feasible; no v9 saved (v8 stays the lead, cr_pl 0.0715). Next: precone 0.9 with skew add +3..+4 plus a preset re-resolve (zero_stress_trim) targeting the flip, or a precone of 0.5-0.6.
