@@ -259,5 +259,5 @@
   "member_anchorage": "both"
  },
  "print_setup": null,
- "notes": "preset: cf_flexure, mass \u221d D^1.5, hover blade law; flexure dimensions are scaled placeholders (structures to tune); study: 1/rev duty pulse at 0.95\u00d7 motor capability (DC-equivalent), AM32 max_ramp 255 (duty_slew_max 2550/s)"
+ "notes": "preset: cf_flexure, mass \u221d D^1.5, hover blade law; flexure dimensions are scaled placeholders (structures to tune); study: 1/rev duty pulse at 0.95\u00d7 motor capability (DC-equivalent), AM32 max_ramp 255 (duty_slew_max 2550/s) | SCORE (sa.py, T0.7/1.0/1.25, J_hub 0.58/1.57/3.46e-6, goodman+ground-res): cr_pl 0.0123, feasible, phase_res 1.34 deg, gain_res 0.176, mech 0.094, res_margin 0.207 (pitch sym 0.87/rev vs 1P). Binding: T0.7/T1.0 motor_torque_1p (current), T1.25 motor_thermal (util 0.947). Vehicle mass 0.79 kg is a guess; viable up to ~0.79 (1P util 0.98 there)."
 }
