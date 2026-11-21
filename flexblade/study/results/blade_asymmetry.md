@@ -45,3 +45,11 @@ Next: precone 1.3 plus a re-tune that moves the pitch mode back off 1/rev (skew/
 | 0.9 | -1 | 0.004 | yes | 9.2 / 0.120 | 0.66 / 0.48 | 0.128 | no (mech_margin, mech_side) |
 | 0.9 | +3 | 0.056 | yes | 5.6 / 0.102 | 0.42 / 0.31 | 0.086 | no (mech_side flip only; margin-criterion feasible) |
 Result: mech margin rises with +skew, but mech_side_flip stays true in all four, so none is feasible; no v9 saved (v8 stays the lead, cr_pl 0.0715). Next: precone 0.9 with skew add +3..+4 plus a preset re-resolve (zero_stress_trim) targeting the flip, or a precone of 0.5-0.6.
+
+## v9 attempt: presets re-solved (rotor.resolve_strip_preset, 15 its, resid floor ~0.014 deg) on v8 + precone + skew
+| precone | skew add | cr_pl | feasible | violations |
+|---|---|---|---|---|
+| 0.9 | +3 | 0.100 | no | resonance 0.151 (pitch antisym+hub 0.92/rev vs 1P), harmonic_jitter 1.46 |
+| 0.5 | +2 | 0.100 | no | resonance 0.259 (pitch antisym+hub 0.93/rev vs 1P) |
+Re-solving presets removed the mech_side_flip violation (it was the preset mismatch) and lifts cr_pl to 0.100, but the pitch antisym+hub mode now sits at 0.92-0.93/rev, inside the 1P band. v9 deleted; v8 stays the lead.
+Next: re-solve presets plus a pitch-mode retune (skew/length) to move that mode above ~1.0/rev, or below 0.85.
