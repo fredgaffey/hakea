@@ -354,8 +354,20 @@ def frame_zeta(rs: RotSys, af: Airframe, s, V, hub_frac: float = 0.5):
         fh = np.real(np.conj(qh) @ Mc[np.ix_(ih, ih)] @ qh) / max(tot, 1e-300)
         w = abs(sk)
         if fh > hub_frac:
+            # fixed-frame frequency = the DOMINANT 1P harmonic of the hub motion: rotating (ux, uy) e^{st}
+            # -> fixed (ux + i uy) at |w + Omega| and (ux - i uy) at |w - Omega| (tilt likewise).  Picking
+            # the alias nearest a support frequency instead mislabels e.g. a regressing-lag ground-resonance
+            # mode (hub at w - Omega) when the tilt mode happens to sit at w + Omega (ζ ~4x too low).
+            a = np.zeros(2)
+            for idx in ([list(rs.ih)] + ([list(rs.it)] if rs.it is not None and af.kt > 0 else [])):
+                ux, uy = q[idx]
+                mw = Mc[idx[0], idx[0]]
+                a += mw * np.array([abs(ux + 1j * uy) ** 2, abs(ux - 1j * uy) ** 2])
             fam = np.abs(sk.imag + rs.Omega + 2 * rs.Omega * j)
-            wf = fam[np.argmin(np.min(np.abs(fam[:, None] - w_af[None, :]), axis=1))]
+            if a.sum() > 0 and max(a) > 0.75 * a.sum():
+                wf = abs(sk.imag + rs.Omega) if a[0] > a[1] else abs(sk.imag - rs.Omega)
+            else:
+                wf = fam[np.argmin(np.min(np.abs(fam[:, None] - w_af[None, :]), axis=1))]
             w = max(np.hypot(sk.real, wf), 1e-300)
         z[k] = -sk.real / w
     return z
