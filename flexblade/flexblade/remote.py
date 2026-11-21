@@ -72,8 +72,20 @@ def sync(host: str, tag: str | None = None) -> None:
 
 # --------------------------------------------------------------------------- worker side
 
+FORWARD_ENV = ("CQ_TOL",)   # robust-affecting env; SA_GATES is not used anywhere in flexblade
+
+
+def forward_env() -> dict:
+    return {k: os.environ[k] for k in FORWARD_ENV if os.environ.get(k)}
+
+
 def _eval_job(job: dict) -> dict:
     from . import api
+    for k in FORWARD_ENV:                  # call-time: driver's tolerance set wins over worker env
+        if k in job.get("env", {}):
+            os.environ[k] = job["env"][k]
+        elif "env" in job:
+            os.environ.pop(k, None)
     from .uicommon import strip_heavy
     try:
         r = api.evaluate(job["design"], job.get("what")).model_dump(mode="json")
@@ -191,6 +203,7 @@ class HostPool:
             else:
                 slots = min(slots, 10)                    # shared Mac: ≤ 10 slots
                 env = "FLEXBLADE_WORKER=1 NUMBA_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
+                env += "".join(f"{k}={shlex.quote(v)} " for k, v in forward_env().items())
                 env += f"PYTHONPATH={remote_pkg_parent(self.tag)} " if self.tag else ""
                 cmd = ["ssh", "-o", "BatchMode=yes", name,
                        f"cd {REMOTE_ROOT} && {env}{REMOTE_PY} -m flexblade.remote --workers {slots}"]
@@ -276,7 +289,7 @@ class HostPool:
                 try:
                     with self._wlock[name]:
                         proc.stdin.write(json.dumps({"id": gid, "design": dj, "what": self.what,
-                                                     "full": self.full}) + "\n")
+                                                     "full": self.full, "env": forward_env()}) + "\n")
                         proc.stdin.flush()
                 except (BrokenPipeError, OSError):
                     with self._lock:
