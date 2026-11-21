@@ -11,3 +11,14 @@ Build tolerance (nominal + 4 CQ_PERTURB corners) is calibrated out per airframe 
 | 10in_v4 | False / 0.0954 | False, 84.6, 93 % | False | 36.8 (T0.7:p0:J5.49e-06) | 37.9 (T1:p0:J5.49e-06) | rpm 25.6/26 temp 3.7/6 creep 1.3/3 J 6.4/5 | 0.51 | 0.71 | 0.003 FLIP | {'cqc_phase': 1.4538, 'cqc_gain': 0.5158, 'cqc_mech_margin': 0.8968, 'cqc_mech_side': 1.0} |
 
 margin-criterion hard violations: 10in_v5: {}; 7in_v6: {}; 7in_v5: {'resonance': 0.3539}; 7in_v6+ballast: {'resonance': 0.7664}; 10in_v4: {'resonance': 0.4945}
+
+## Continuous eRPM schedule (rpm_schedule="continuous")
+
+FC has continuous eRPM: gain/phase calibrated at n nodes equally spaced in rpm over throttle 0.7-1.4 (rpm ~ sqrt thrust), linearly interpolated in ln rpm. rpm residual = worst interpolation error at 2 test points per interval + |dG/dln rpm| x 0.5 % noise; temp/creep/J groups unchanged. Test points carry tag ':c' and are excluded from cr_pl / hard checks. Limits phase <= 15 deg, gain <= 25 %.
+
+| design | nodes | resid phase deg | resid gain % | rpm group ph/gain% | CAL feas |
+|---|---|---|---|---|---|
+| 10in_v5 | 5 | 6.8 | 15.0 | 2.3/6.2 | True |
+| 7in_v6 | 5 | 3.6 | 15.2 | 0.9/3.6 | True |
+| 7in_v5 | 5 | 5.1 | 13.5 | 1.1/3.5 | True |
+| 10in_v5 | 8 | 6.0 | 13.5 | 1.5/4.6 | True |

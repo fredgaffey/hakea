@@ -166,16 +166,28 @@ def _eval_multi(dv, crits=CRITS):
     return {c: rs.metrics(dv, r, criterion=c) for c in crits}
 
 
-def cal_eval(d, js):
+def cal_eval(d, js, rpm_schedule="bin", n_nodes=5, rpm_noise=robust.CQ_RPM_NOISE):
     """One pass over the control_quality_cal variant set (a superset of the margin / CQ sets);
     every criterion is combined from its own tag subset of the same (cached) evaluations."""
-    v = robust.variants(d, robust.THRUST_FACTORS, list(robust.CQ_PERTURB), js, list(robust.CQ_RUNTIME))
+    rt = list(robust.CQ_RUNTIME)
+    if rpm_schedule == "continuous":
+        rt = [x for x in rt if not x[0].startswith("rpm")]
+    v = robust.variants(d, robust.THRUST_FACTORS, list(robust.CQ_PERTURB), js, rt)
+    if rpm_schedule == "continuous":
+        # nodes + interpolation test points (nominal runtime only), tagged ':c' (excluded from cr_pl / checks)
+        th = sorted(set(sum(robust.cont_points(n_nodes), [])) - set(robust.THRUST_FACTORS))
+        v += [(t.replace(":J", ":c:J") if ":J" in t else t + ":c", dv) for t, dv in
+              robust.variants(d, th, list(robust.CQ_PERTURB), js, None)]
     with ProcessPoolExecutor(WORKERS) as ex:
         ms = list(ex.map(_eval_multi, [dv for _, dv in v], chunksize=1))
     tags = [t for t, _ in v]
     sel = {"margin": lambda t: ":p" not in t and ":r" not in t, "control_quality": lambda t: ":r" not in t,
            "control_quality_cal": lambda t: True}
-    return {c: robust.combine([m[c] for t, m in zip(tags, ms) if sel[c](t)], [t for t in tags if sel[c](t)])
+    kw = dict(rpm_schedule=rpm_schedule, n_nodes=n_nodes, rpm_noise=rpm_noise)
+    sel["margin"] = lambda t: ":p" not in t and ":r" not in t and ":c" not in t
+    sel["control_quality"] = lambda t: ":r" not in t and ":c" not in t
+    return {c: robust.combine([m[c] for t, m in zip(tags, ms) if sel[c](t)], [t for t in tags if sel[c](t)],
+                              **(kw if c == "control_quality_cal" else {}))
             for c in CRITS}
 
 
@@ -227,20 +239,24 @@ def cal_md(res):
     return "\n".join(L) + "\n"
 
 
-def cal(names=None):
+def cal(names=None, rpm_schedule="bin", n_nodes=5, rpm_noise=robust.CQ_RPM_NOISE):
     res = json.loads(RES_CAL.read_text()) if RES_CAL.exists() else {}
     for n, (d, js) in cal_designs().items():
         if names and n not in names:
             continue
-        res[n] = cal_summary(cal_eval(d, js))
+        k = n if rpm_schedule == "bin" else f"{n}|cont{n_nodes}"
+        res[k] = cal_summary(cal_eval(d, js, rpm_schedule, n_nodes, rpm_noise))
         RES_CAL.write_text(json.dumps(res, indent=1, default=float))
-        RES_CAL.with_suffix(".md").write_text(cal_md(res))
-        c = res[n]["control_quality_cal"]
-        print(n, {k: res[n][k]["feasible_pl"] for k in CRITS}, "cr_pl", res[n]["margin"]["cr_pl"],
+        if rpm_schedule == "bin":      # continuous rows are appended to the .md by hand (notes follow the table)
+            RES_CAL.with_suffix(".md").write_text(cal_md({a: b for a, b in res.items() if "|" not in a}))
+        c = res[k]["control_quality_cal"]
+        print(k, {q: res[k][q]["feasible_pl"] for q in CRITS}, "cr_pl", res[k]["margin"]["cr_pl"],
               "res", c["phase_res_deg"], c["gain_res"], "auth", c["authority_min"], "mech", c["mech_margin_min"],
               flush=True)
 
 
 if __name__ == "__main__":
     st = sys.argv[1]
-    {"score": score, "probe": probe, "cal": lambda: cal(sys.argv[2:])}.get(st, lambda: tol(sys.argv[2]))()
+    {"score": score, "probe": probe, "cal": lambda: cal([a for a in sys.argv[2:] if not a.startswith("--")],
+                                                       *(("continuous", int(a[6:])) for a in sys.argv[2:] if a.startswith("--cont")) .__next__()
+                                                       if any(a.startswith("--cont") for a in sys.argv[2:]) else ())}.get(st, lambda: tol(sys.argv[2]))()

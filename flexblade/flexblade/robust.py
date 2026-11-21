@@ -13,6 +13,8 @@ from __future__ import annotations
 import math
 from typing import Callable
 
+import numpy as np
+
 from .optimize import get_path, set_design
 
 THRUST_FACTORS = (0.7, 1.0, 1.4)
@@ -119,13 +121,42 @@ def control_quality_viol(cq: dict) -> dict:
     return v
 
 
+CQ_RPM_RANGE = (0.7, 1.4)   # throttle (thrust factor) range; rpm ~ sqrt(thrust)
+CQ_RPM_NOISE = 0.005        # eRPM measurement noise (relative)
+
+
+def cont_points(n_nodes=5, n_sub=3, trange=CQ_RPM_RANGE):
+    """Continuous-eRPM schedule: n_nodes calibration nodes equally spaced in rpm (~ sqrt thrust) over
+    the throttle range, plus n_sub-1 interior test points per interval (n_sub=3: thirds).
+    -> (node thrust factors, extra test thrust factors), rounded for stable cache keys."""
+    r = np.linspace(math.sqrt(trange[0]), math.sqrt(trange[1]), (n_nodes - 1) * n_sub + 1)
+    th = [round(float(x) ** 2, 4) for x in r]
+    return th[::n_sub], [t for i, t in enumerate(th) if i % n_sub]
+
+
+def interp_residual(x, ph, g, nodes_idx, noise=CQ_RPM_NOISE):
+    """x ln rpm (ascending), ph phase deg, g gain, over nodes + test points; nodes_idx the calibration
+    indices. Linear interpolation of (unwrapped phase, gain) between nodes. -> (phase_deg, gain_rel)
+    = worst interpolation error at the test points + noise * worst |d/dln rpm| of the node curve."""
+    x, g = np.asarray(x, float), np.asarray(g, float)
+    ph = np.degrees(np.unwrap(np.radians(ph)))
+    ni = list(nodes_idx)
+    ip = np.interp(x, x[ni], ph[ni])
+    ig = np.interp(x, x[ni], g[ni])
+    dp = float(np.max(np.abs(ip - ph)))
+    dg = float(np.max(np.abs(ig / g - 1.0)))
+    sp = float(np.max(np.abs(np.diff(ph[ni]) / np.diff(x[ni]))))
+    sg = float(np.max(np.abs(np.diff(g[ni]) / np.diff(x[ni])) / np.min(g[ni])))
+    return dp + sp * noise, dg + sg * noise
+
+
 def _parse_tag(t):
     parts = t.split(":")
     get = lambda c: next((x for x in parts[1:] if x.startswith(c)), "")   # noqa: E731
     return parts[0], get("p"), get("r")[1:], get("J")
 
 
-def control_quality_cal(tags, ms) -> dict:
+def control_quality_cal(tags, ms, rpm_schedule="bin", n_nodes=5, rpm_noise=CQ_RPM_NOISE) -> dict:
     """Post-calibration residual + calibratability over the robust set (control_quality_cal).
 
     tags 'T<f>[:p<i>][:r<name>][:J<J>]', ms per-point metrics (cyc_gain, cyc_phase_deg,
@@ -134,10 +165,30 @@ def control_quality_cal(tags, ms) -> dict:
     is their LINEAR sum (+ temp- = CQ_TEMP_MINUS_FROM_CREEP x creep). Calibratability per build
     sample: |G_b|/|G_nom| at the same (T, J), and the mechanism-mode 1P margin with the same side
     of 1P as the nominal build."""
+    nan = float("nan")
     nodes: dict = {}
     for t, m in zip(tags, ms):
         T, p, r, J = _parse_tag(t)
         nodes.setdefault((T, p, J), {})[r] = m
+    cont = {}
+    if rpm_schedule == "continuous":
+        # rpm group = interpolation error + noise of the n-node rpm schedule, per (build, J)
+        th_nodes, _ = cont_points(n_nodes)
+        curves: dict = {}
+        for (T, p, J), rr in nodes.items():
+            c = rr.get("")
+            if c is not None:
+                curves.setdefault((p, J), []).append((float(T[1:]), c))
+        for k, pts in curves.items():
+            pts.sort(key=lambda a: a[0])
+            ok = all(math.isfinite(c.get("cyc_gain", nan)) and c.get("cyc_gain", 0) > 0
+                     and math.isfinite(c.get("cyc_phase_deg", nan)) for _, c in pts)
+            idx = [i for i, (t, _) in enumerate(pts) if any(abs(t - u) < 1e-9 for u in th_nodes)]
+            if not ok or len(idx) < 2:
+                cont[k] = (float("inf"), float("inf"))
+                continue
+            cont[k] = interp_residual([0.5 * math.log(t) for t, _ in pts], [c["cyc_phase_deg"] for _, c in pts],
+                                      [c["cyc_gain"] for _, c in pts], idx, rpm_noise)
     nan = float("nan")
     out = dict(phase_res_deg=0.0, gain_res=0.0, authority_min=float("inf"), cr_pl_ratio_min=float("inf"),
                mech_margin_min=float("inf"), mech_side_flip=False, groups={}, per_node={})
@@ -148,7 +199,13 @@ def control_quality_cal(tags, ms) -> dict:
         g0, ph0 = c.get("cyc_gain", nan), c.get("cyc_phase_deg", nan)
         ok0 = math.isfinite(g0) and g0 > 0 and math.isfinite(ph0)
         dev = {}
+        if cont:
+            if len(rr) < 2:
+                continue            # interpolation test point: no runtime samples, not a calibration node
+            dev["rpm"] = cont[(p, J)]
         for name, members in CQ_RUNTIME_GROUPS:
+            if rpm_schedule == "continuous" and name == "rpm":
+                continue
             if not any(r in rr for r in members):
                 continue
             dp = dg = 0.0
@@ -250,7 +307,7 @@ def variants(design, thrust_factors=THRUST_FACTORS, perturb=None, j_hub=None, ru
     return out
 
 
-def combine(ms: list[dict], tags: list[str]) -> dict:
+def combine(ms: list[dict], tags: list[str], **cqc_kw) -> dict:
     """Merge per-point metrics dicts: min control_ratio, max util/viol per key, min res_margin."""
     ok = [(t, m) for t, m in zip(tags, ms) if m and "control_ratio" in m]
     if not ok:
@@ -260,8 +317,8 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
     if all(m.get("criterion") == "control_quality_cal" for m in ms):
         # build samples (':p') and runtime samples (':r') only feed the calibration residual /
         # calibratability; cr_pl and the hard checks come from the nominal points
-        cqc = control_quality_cal(tags, ms)
-        nom = [(t, m) for t, m in zip(tags, ms) if ":p" not in t and ":r" not in t]
+        cqc = control_quality_cal(tags, ms, **cqc_kw)
+        nom = [(t, m) for t, m in zip(tags, ms) if ":p" not in t and ":r" not in t and ":c" not in t]
         if nom:
             tags, ms = zip(*nom)
     elif all(m.get("criterion") == "control_quality" for m in ms):
