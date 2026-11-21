@@ -170,6 +170,19 @@ def _Rth(d_mm, h_mm):
 
 
 MOTOR_LIBRARY: dict[str, tuple[Motor, str]] = {
+    # 2-3" (mini_scaling study). The single-rotor mass law (m ∝ D^1.5) needs 50-70 W hover shaft
+    # power at 2-3" and ~40-80k rpm, so the stator is sized for POWER (18xx/14xx), kv for ~55-65 %
+    # hover back-EMF on 4S. R = 2x datasheet; b from datasheet no-load current (Kt·I_nl/ω) instead
+    # of the 2307 default (which would be ~100 W of drag at 40k rpm). ±50 %.
+    "1404_7500kv_4s": (Motor(name="1404_7500kv_4s", kv=7500, L=estimate_L(7500, 14, 4), R=0.12, J_rotor=_J(14, 4), thermal_resistance_KW=_Rth(14, 4),
+                             J_hub=2.0e-6 * (2 / 5) ** 3, supply_V=16.0, max_current=20.0, b=1.3e-7),
+                       "2\" single-rotor (79k rpm hover); 1404 at the top of sold kv; datasheet Rm ~0.06 Ω"),
+    "1804_6000kv_4s": (Motor(name="1804_6000kv_4s", kv=6000, L=estimate_L(6000, 18, 4), R=0.08, J_rotor=_J(18, 4), thermal_resistance_KW=_Rth(18, 4),
+                             J_hub=2.0e-6 * (2.5 / 5) ** 3, supply_V=16.0, max_current=30.0, b=3.0e-7),
+                       "2.5\" single-rotor (52k rpm hover); datasheet Rm ~0.04 Ω"),
+    "1804_4500kv_4s": (Motor(name="1804_4500kv_4s", kv=4500, L=estimate_L(4500, 18, 4), R=0.10, J_rotor=_J(18, 4), thermal_resistance_KW=_Rth(18, 4),
+                             J_hub=2.0e-6 * (3 / 5) ** 3, supply_V=16.0, max_current=30.0, b=4.5e-7),
+                       "3\" single-rotor (40k rpm hover); datasheet Rm ~0.05 Ω"),
     "1804_2450kv_4s": (Motor(name="1804_2450kv_4s", kv=2450, L=estimate_L(2450, 18, 4), R=0.20, J_rotor=_J(18, 4), thermal_resistance_KW=_Rth(18, 4),
                              J_hub=2.0e-6 * (4 / 5) ** 3, supply_V=16.0, max_current=22.0),
                        "typical 3-4\" 4S motor; datasheet Rm ~0.1 Ω"),
@@ -188,7 +201,8 @@ MOTOR_LIBRARY: dict[str, tuple[Motor, str]] = {
                       "12-13\" 6S class (4010 ~370-580KV sold); datasheet Rm ~0.06 Ω"),
 }
 
-SIZE_TO_MOTOR = {4.0: "2004_1700kv_6s", 5.0: "tmotor_2307_1300kv", 7.0: "2806.5_1100kv_6s",
+SIZE_TO_MOTOR = {2.0: "1404_7500kv_4s", 2.5: "1804_6000kv_4s", 3.0: "1804_4500kv_4s",
+                 4.0: "2004_1700kv_6s", 5.0: "tmotor_2307_1300kv", 7.0: "2806.5_1100kv_6s",
                  10.0: "3115_640kv_6s", 12.0: "4010_475kv_6s"}
 
 

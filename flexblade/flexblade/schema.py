@@ -83,7 +83,7 @@ class BalanceMass(_M):
 
 
 class Blade(_M):
-    diameter_in: float = Field(5.0, ge=3.0, le=14.0)
+    diameter_in: float = Field(5.0, ge=2.0, le=14.0)
     n_blades: int = Field(2, ge=1, le=6)
     root_cutout_frac: float = Field(
         0.18, description="r/R where aerodynamic blade starts (end of flexure/hub)")
