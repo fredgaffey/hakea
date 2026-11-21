@@ -166,6 +166,18 @@ def capability_frac(d: Design) -> dict:
                 limit=cap.dQ_limit)
 
 
+MOTOR = None    # --motor: motor library name replacing motor_for_diameter (J_hub, duty slew kept)
+
+
+def with_motor(d: Design, name: str | None = None) -> Design:
+    """Swap in library motor `name` (default MOTOR), keeping the size's J_hub and duty_slew_max."""
+    name = name or MOTOR
+    if not name:
+        return d
+    m = mot.get_motor(name).model_copy(update=dict(J_hub=d.motor.J_hub, duty_slew_max=d.motor.duty_slew_max))
+    return d.model_copy(update=dict(motor=m))
+
+
 def base_design(D: float, concept: str, coax: bool = False, frac_margin: float = 0.95) -> tuple[Design, dict]:
     pc = "cf_flexure" if concept in ("cf_flexure_sym", "tpu_split", "tpu95_split", "torsion_bar",
                                          "skewed_cruciform", "tt_strap", "tt_strap_xplate",
@@ -236,10 +248,10 @@ def base_design(D: float, concept: str, coax: bool = False, frac_margin: float =
         d = set_design(d, {})
         d = d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
             topology="skewed_cross_blade_sym"))))
-    d = set_design(d, {"blade.elastic_axis_chord_frac": 0.45, "motor.duty_slew_max": RAMP_SLEW})
+    d = with_motor(set_design(d, {"blade.elastic_axis_chord_frac": 0.45, "motor.duty_slew_max": RAMP_SLEW}))
     # capability from a stiff reference blade (cf_flexure) so every concept gets the same pulse
     ref = presets.make_coax_preset(D, "cf_flexure") if coax else presets.make_preset(D, "cf_flexure")
-    ref = set_design(ref, {"blade.elastic_axis_chord_frac": 0.45})
+    ref = with_motor(set_design(ref, {"blade.elastic_axis_chord_frac": 0.45}))
     cap = capability_frac(ref)
     upd: dict = {}
     if coax:
@@ -670,7 +682,10 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
     leads = _lead_for(INIT_DESIGNS, D)
     bo = _lead_for(BASE_DESIGNS, D)
     if bo:   # fields outside the param space (laminae, balance pins, mount, clamp...) fixed from the lead
+        tmf = base.op.torque_mod_frac
         base = bo[0].model_copy(update=dict(name=base.name))
+        if MOTOR:   # lead's motor -> override; pulse re-derived from the override's capability
+            base = set_design(with_motor(base), {"op.torque_mod_frac": tmf})
     if GOODMAN:
         base = _goodman(base)
     V = variables(concept, D)
@@ -843,6 +858,7 @@ def main(argv=None):
     ap.add_argument("--init-frac", type=float, default=0.3, help="fraction of population seeded (default 0.3)")
     ap.add_argument("--base-design", default=None, help="comma list of design JSONs whose non-DE fields stay fixed "
                     "(matched by diameter; 'init' = use --init-designs)")
+    ap.add_argument("--motor", default=None, help="motor library name for every size (e.g. 2307_1300kv_hakea)")
     ap.add_argument("--no-single", action="store_true")
     ap.add_argument("--popmult", type=int, default=8)
     ap.add_argument("--maxiter", type=int, default=40)
@@ -861,6 +877,8 @@ def main(argv=None):
         os.environ["FLEXBLADE_ARM_RANGE"] = a.arm_range
         ARM_RANGE = tuple(float(x) for x in a.arm_range.split(","))
     CRITERION = a.criterion
+    global MOTOR
+    MOTOR = a.motor
     global MECH_MARGIN, GOODMAN
     MECH_MARGIN, GOODMAN = a.mech_margin, a.goodman
     PERTURB = list(robust.CQ_PERTURB) if CRITERION.startswith("control_quality") else None

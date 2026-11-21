@@ -41,3 +41,11 @@ def test_seeded_population_shape_and_bounds():
     assert pop.shape == (72, len(obj.variables)) and (pop >= 0).all() and (pop <= 1).all()
     assert np.allclose(pop[0], rs.encode_design(obj, lead))
     assert np.abs(pop[1] - pop[0]).max() < 0.5
+
+
+def test_motor_override_keeps_size_jhub_and_slew():
+    lead = rs.load_design(rs.DESIGNS / "7in_tt_strap_steelx_v6.json")
+    d = rs.with_motor(lead, "2307_1300kv_hakea")
+    assert d.motor.name == "2307_1300kv_hakea" and d.motor.kv == 1300.0 and d.motor.R == 0.1542
+    assert d.motor.J_hub == lead.motor.J_hub and d.motor.duty_slew_max == lead.motor.duty_slew_max
+    assert rs.with_motor(lead) is lead   # MOTOR unset -> unchanged
