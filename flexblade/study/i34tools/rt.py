@@ -1,5 +1,4 @@
 import sys,json
-sys.path.insert(0,'/tmp/claude-1000/s')
 from flexblade import rotor
 from flexblade.schema import Design
 import sc, control_quality as cq

@@ -24,3 +24,16 @@ FC has continuous eRPM: gain/phase calibrated at n nodes equally spaced in rpm o
 | 10in_v5 | 8 | 6.0 | 13.5 | 1.5/4.6 | True |
 | 7in_v6 | 8 | 3.5 | 14.8 | 0.9/2.9 | True |
 | 7in_v5 | 8 | 4.7 | 12.5 | 0.7/2.4 | True |
+
+## steelx_v5zs skew retune scan (v7 attempt; skew_add on 60 deg, presets re-resolved, Goodman, J10)
+
+| skew add | mech margin (worst corner) | phase res deg | gain res | cr_pl | feasible | hard viol |
+|---|---|---|---|---|---|---|
+| +4 | 0.019 | 6.9 | 0.080 | 0.099 | no | cqc_mech_margin (<0.03) |
+| +5 | 0.033 | 6.2 | 0.086 | 0 | no | pulse_infeasible |
+| +5.4 | 0.038 | 5.7 | 0.088 | 0 | no | pulse_infeasible |
+| +5.7 | 0.043 | 5.4 | 0.089 | 0 | no | pulse_infeasible, aeroelastic_stability 0.0002 |
+| +6 | 0.047 | 5.0 | 0.090 | 0 | no | pulse_infeasible, aeroelastic_stability 0.0088 |
+| +8 | 0.076 | 3.2 | 0.091 | 0 | no | pulse_infeasible, aeroelastic_stability 0.060 |
+
+Cliff between +4 and +5: margin reaches 0.03 at about +4.8 but pulse_infeasible appears (pulse scale 0 at some case). No v7 saved.
