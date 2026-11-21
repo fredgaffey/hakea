@@ -1323,9 +1323,21 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
                 d.motor, ss.rpm, Q0, ambient_C=d.op.temperature_C).mod_frac_max
         drive = mot.duty_drive(d.motor, ss.rpm, Q0, frac, d.op.duty_mod_amp)
         dQ = complex(drive["Q_drive"])
-        Z[hubd, hubd] += drive["k_hub"]
+        if d.motor.esc is not None and d.motor.esc.current_control:
+            dQ = complex(drive["Q_dc"])                     # torque loop: command delivered as torque
+            Z[hubd, hubd] += 1j * w * d.motor.b             # no back-EMF damping
+        else:
+            Z[hubd, hubd] += drive["k_hub"]
     else:
         dQ = complex(d.op.torque_mod_frac * Q0)
+    if d.motor.esc is not None:
+        # ESC speed loop at 1P: Q = −(kp + ki/jΩ) e^{−jΩτ}/(1 + jΩ tl) · jΩ θ  (back-EMF is in k_hub)
+        from . import stability as stb
+        dp = stb.drive_params(d.motor, stb.spin_inertia(model, ss, lin), drive.get("d0", 0.6))
+        k_hub_in = d.op.drive == "duty" and not unit_torque and not d.motor.esc.current_control
+        emf = not d.motor.esc.current_control and not k_hub_in
+        Z[hubd, hubd] += 1j * w * stb.drive_impedance(dp, 1j * w, emf=emf)
+        drive = dict(drive, esc=dp)
     use_aero = aero is not None and ss.trim is not None and d.analysis.aero != "none"
     F = np.zeros(n, complex)
     F[hubd] = dQ

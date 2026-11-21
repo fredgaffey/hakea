@@ -324,6 +324,30 @@ class Flexure(_M):
 # --------------------------------------------------------------------------- operating point / motor
 
 
+class Drive(_M):
+    """ESC/motor impedance on the rotor SPIN DOF (hub θz + blades rigidly). None on Motor = free spin
+    (aero only in stability; back-EMF only via the duty model in harmonic_1p) = the historical model.
+
+    Torque on the hub:  Q = −[c_emf + (k_p + k_i/s) e^{−sτ}] · sθ   (θ = hub spin angle deviation).
+    k_p, k_i are referred to TORQUE per mechanical speed error (the AM32 eRPM PID → duty → torque
+    via k_t V g/R at DC). Stability uses Padé(1) for e^{−sτ}; harmonic_1p uses the exact delay."""
+    current_control: bool = Field(False, description="ESC closes a current (torque) loop: back-EMF "
+                                  "damping ~0, the 1P command is delivered as torque (no R-L lag). "
+                                  "False = AM32 voltage (duty) mode: c_emf = k_t^2/(R+Rb) and the R-L lag")
+    emf_damping: bool = Field(True, description="voltage mode: add c_emf = k_t^2/(R+Rb) on the spin "
+                              "DOF in stability (harmonic_1p duty mode already has it via k_hub)")
+    k_p: Optional[float] = Field(None, description="speed-loop proportional gain, N m per rad/s "
+                                 "(None: from bandwidth_hz)")
+    k_i: Optional[float] = Field(None, description="speed-loop integral gain, N m per rad "
+                                 "(None: from bandwidth_hz)")
+    bandwidth_hz: Optional[float] = Field(None, description="if k_p/k_i unset: k_p = J_spin 2π f_bw "
+                                          "(crossover of the J s plant), k_i = k_p 2π f_bw ki_zero_frac; "
+                                          "None and k_p None = no speed loop")
+    ki_zero_frac: float = Field(0.25, description="PI zero / crossover when gains come from bandwidth_hz")
+    latency_s: float = Field(1.0e-3, description="speed-loop latency τ (loop period + eRPM filter "
+                             "group delay), s; AM32 ~1-2 kHz loop -> 0.5-2 ms")
+
+
 class Motor(_M):
     name: str = "tmotor_2307_1300kv"
     kv: float = 1380.0            # rpm/V (fitted effective)
@@ -352,6 +376,8 @@ class Motor(_M):
                                  "(enamel class ~130-155 C, magnets N-grade ~80-150 C; guess)")
     duty_slew_max: float = Field(160.0, description="AM32 max duty change per second (fraction/s); "
                                                     "max_ramp 16 per 50 us tick of 2000 -> 160/s")
+    esc: Optional[Drive] = Field(None, description="ESC/motor spin-DOF impedance (back-EMF + speed "
+                                 "loop); None = free spin (historical model)")
 
 
 class Mount(_M):

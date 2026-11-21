@@ -8,7 +8,7 @@ import pytest
 from flexblade import rotor
 from flexblade import stability as S
 from flexblade.matsweep import _margin
-from flexblade.schema import Airframe, Design
+from flexblade.schema import Airframe, Design, Drive
 
 OM = 2 * np.pi * 50
 B, E, RG, MB, NU = 3, 0.02, 0.4, 1.0, 0.3
@@ -245,3 +245,67 @@ def test_rigid_spin_has_no_stiffness_with_aero(d5):
     assert np.linalg.norm(rs.K @ r) < 1e-9 * ss.Omega ** 2 * np.linalg.norm(rs.M @ r)
     s = np.linalg.eigvals(S.state_matrix(rs.M, rs.G, rs.K))
     assert not np.any((s.real > 1e-3 * ss.Omega) & (np.abs(s.imag) <= s.real))
+
+
+def _rigid_dp(J=2e-5):
+    w = 2 * np.pi * 50
+    return dict(c=1e-4, kp=J * w, ki=J * w * w * 0.25, tau=1e-3, tl=2e-4, J=J)
+
+
+def test_drive_rigid_rotor_pade_roots():
+    """Rigid rotor J on the drive: roots of J s + Z_pade(s) = 0 (cubic) plus the inert ξ root s = 0."""
+    dp = _rigid_dp()
+    J, te = dp["J"], dp["tau"] + dp["tl"]
+    rs = S.RotSys(np.array([[J]]), np.zeros((1, 1)), np.zeros((1, 1)), 500.0)
+    r = S.add_drive(rs, np.array([1.0]), dp)
+    s = np.linalg.eigvals(S.state_matrix(r.M, r.G, r.K))
+    p = np.polyadd(np.polymul([J, dp["c"], 0], [te / 2, 1]), np.polymul([dp["kp"], dp["ki"]], [-te / 2, 1]))
+    assert np.allclose(np.sort_complex(s[np.abs(s) > 1e-6]), np.sort_complex(np.roots(p)), rtol=1e-8)
+    assert np.min(np.abs(s)) < 1e-6
+
+
+def test_drive_rigid_rotor_frequency_response():
+    """Augmented (θ, ξ) system response to a unit hub torque = 1/(−JΩ² + jΩ Z_pade(jΩ))."""
+    dp = _rigid_dp()
+    J = dp["J"]
+    rs = S.RotSys(np.array([[J]]), np.zeros((1, 1)), np.zeros((1, 1)), 500.0)
+    r = S.add_drive(rs, np.array([1.0]), dp)
+    for w in (50.0, 700.0, 3000.0):
+        x = np.linalg.solve(r.K - w * w * r.M + 1j * w * r.G, np.array([1.0, 0.0]))
+        th = 1.0 / (-J * w * w + 1j * w * S.drive_impedance(dp, 1j * w, pade=True))
+        assert abs(x[0] / th - 1) < 1e-10
+    # exact delay reduces to Padé at low frequency
+    assert abs(S.drive_impedance(dp, 10j) / S.drive_impedance(dp, 10j, pade=True) - 1) < 1e-3
+
+
+def test_drive_default_free_spin_unchanged(d5):
+    """motor.esc None (default) = free spin: reduced system and 1P harmonic unchanged; Drive() with no speed
+    loop in duty mode leaves the harmonic unchanged too (back-EMF is already in the duty k_hub)."""
+    assert d5.motor.esc is None
+    m = rotor.build_model(d5)
+    aero = rotor.make_aero(m)
+    ss = rotor.static_trim(m, aero)
+    lin = rotor.linearize(m, ss, True)
+    lam, Bm = S._basis(m, ss, lin, 12, hub=False)
+    f = float(np.sqrt(abs(lam[1])) / (2 * np.pi))
+    a = S.reduced_system(m, ss, lin, aero, Bm, f)
+    b = S.reduced_system(m, ss, lin, aero, Bm, f, drive=False)
+    assert np.array_equal(a.G, b.G) and np.array_equal(a.K, b.K)
+    h0 = rotor.harmonic_1p(m, ss, aero, lin=lin).result
+    m.design = d5.model_copy(update=dict(motor=d5.motor.model_copy(update=dict(esc=Drive()))))
+    h1 = rotor.harmonic_1p(m, ss, aero, lin=lin).result
+    assert d5.op.drive == "duty"
+    assert np.isclose(h1.hub_moment_mean, h0.hub_moment_mean, rtol=1e-12)
+    # with Drive() the stability system gains c_emf on the spin DOF only
+    c = S.reduced_system(m, ss, lin, aero, Bm, f)
+    bh = Bm[6 * m.hub + 5]
+    dp = S.drive_params(m.design.motor, S.spin_inertia(m, ss, lin))
+    assert np.allclose(c.G - a.G, dp["c"] * np.outer(bh, bh))
+    # a stiff, delay-free governor holds the hub: spin rate ≈ unit torque / kp
+    J = S.spin_inertia(m, ss, lin)
+    kp = 200 * J * ss.Omega
+    esc = Drive(current_control=True, k_p=kp, k_i=0.0, latency_s=0.0)
+    m.design = d5.model_copy(update=dict(motor=d5.motor.model_copy(update=dict(esc=esc))))
+    h2 = rotor.harmonic_1p(m, ss, aero, lin=lin, unit_torque=True).result
+    rate = h2.hub_speed_amp_rpm * 2 * np.pi / 60
+    assert abs(rate * kp - 1) < 0.02

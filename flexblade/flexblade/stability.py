@@ -118,6 +118,93 @@ def _basis(model, ss, lin, n_basis: int, hub: bool, tilt: bool = False):
     return lam[:nf], B
 
 
+def spin_vector(model, ss) -> np.ndarray:
+    """Full-DOF rigid spin mode u = ẑ × x, θz = 1 about the rotor axis (at the deformed trim)."""
+    n = model.fe.ndof
+    try:
+        X = np.asarray(ss.state.x, float).reshape(-1, 3)
+    except Exception:
+        X = np.asarray(model.fe.X0, float)
+    R = np.zeros(n)
+    R[0::6], R[1::6], R[5::6] = -X[:, 1], X[:, 0], 1.0
+    return R
+
+
+def spin_inertia(model, ss, lin) -> float:
+    """Polar inertia of the whole rotor (hub + motor bell + blades) about the spin axis, kg m^2."""
+    R = spin_vector(model, ss)
+    if getattr(lin, "free", None) is not None:
+        Rf = np.zeros_like(R)
+        Rf[lin.free] = R[lin.free]
+        R = Rf
+    return float(np.real(R @ (lin.M @ R)))
+
+
+# ------------------------------------------------------------------------- ESC / motor drive impedance
+
+
+def drive_params(motor, J_spin: float, d0: float = 0.6) -> dict | None:
+    """motor.esc -> dict(c, kp, ki, tau, tl) or None (free spin).  Torque on the spin DOF
+    Q = −[c + (kp + ki/s) e^{−sτ}/(1 + s tl)] sθ:  c = back-EMF k_t^2/R0 (voltage mode) + viscous b;
+    tl = L/R0 is the R-L lag of the duty->torque path (0 under current control)."""
+    esc = getattr(motor, "esc", None)
+    if esc is None:
+        return None
+    from .motor import impedance, kt
+    R0 = float(impedance(motor, 0.0, d0).real)
+    if esc.current_control:
+        c, tl = float(motor.b), 0.0
+    else:
+        c = float(motor.b) + (kt(motor) ** 2 / R0 if esc.emf_damping else 0.0)
+        tl = float(motor.L) / R0
+    kp, ki = esc.k_p, esc.k_i
+    if kp is None and esc.bandwidth_hz:
+        wb = 2 * np.pi * esc.bandwidth_hz
+        kp = J_spin * wb
+        if ki is None:
+            ki = kp * wb * esc.ki_zero_frac
+    return dict(c=c, kp=float(kp or 0.0), ki=float(ki or 0.0), tau=float(esc.latency_s), tl=tl,
+                J=float(J_spin))
+
+
+def drive_impedance(dp: dict, s: complex, emf: bool = True, pade: bool = False) -> complex:
+    """Torque per unit spin RATE, Q = −Z(s) sθ.  pade=True: the Padé(1) delay on τ + tl used by the
+    stability state model; else the exact e^{−sτ}/(1 + s tl)."""
+    if pade:
+        te = dp["tau"] + dp["tl"]
+        dl = (1 - s * te / 2) / (1 + s * te / 2)
+    else:
+        dl = np.exp(-s * dp["tau"]) / (1 + s * dp["tl"])
+    return (dp["c"] if emf else 0.0) + (dp["kp"] + dp["ki"] / s) * dl
+
+
+def add_drive(rs: RotSys, b: np.ndarray, dp: dict) -> RotSys:
+    """Append the drive impedance to the spin DOF θ = bᵀq (b = basis row of the hub θz).
+    PI + Padé(1) delay  y = (1 − sτ/2)/(1 + sτ/2) u,  u = kp θ̇ + ki θ,  written y = ξ̇ − u with
+    ξ̈ = (2/τ)(2u − ξ̇): one extra second-order coordinate ξ (its rigid root s = 0 is inert)."""
+    b = np.asarray(b, float)
+    if not np.any(b):
+        return rs
+    M, G, K = rs.M.copy(), rs.G.copy(), rs.K.copy()
+    bb = np.outer(b, b)
+    c, kp, ki, te = dp["c"], dp["kp"], dp["ki"], dp["tau"] + dp["tl"]
+    if (kp == 0 and ki == 0) or te <= 0:
+        G += (c + kp) * bb
+        K += ki * bb
+        return RotSys(M, G, K, rs.Omega, rs.ih, rs.basis, rs.m_rotor, rs.it)
+    n = len(M)
+    mu = dp.get("J", 1.0) / max(kp, ki * te, c, 1e-12) ** 2     # ξ scaling (energy ~ hub spin)
+    M2, G2, K2 = (np.zeros((n + 1, n + 1)) for _ in range(3))
+    M2[:n, :n], G2[:n, :n], K2[:n, :n] = M, G + (c - kp) * bb, K - ki * bb
+    G2[:n, n] = b
+    M2[n, n] = mu
+    G2[n, n] = 2 * mu / te
+    G2[n, :n] = -(4 * mu / te) * kp * b
+    K2[n, :n] = -(4 * mu / te) * ki * b
+    basis = None if rs.basis is None else np.hstack([rs.basis, np.zeros((rs.basis.shape[0], 1))])
+    return RotSys(M2, G2, K2, rs.Omega, rs.ih, basis, rs.m_rotor, rs.it)
+
+
 def _spin_projector(model, ss, lin, B: np.ndarray, M: np.ndarray, tol: float = 1e-3):
     """M-orthogonal projector P = I − r (rᵀMr)⁻¹ rᵀM that removes the rigid spin (rotation of the whole
     rotor about the rotating z axis: u = ẑ × x, θz = 1) from the reduced coordinates, or None if the
@@ -131,12 +218,7 @@ def _spin_projector(model, ss, lin, B: np.ndarray, M: np.ndarray, tol: float = 1
     divergence) once the hub couples in.  Generalised torques from deformation (rows) are physical
     and are kept for aero; the structural part is cleaned symmetrically."""
     n = model.fe.ndof
-    try:
-        X = np.asarray(ss.state.x, float).reshape(-1, 3)
-    except Exception:
-        X = np.asarray(model.fe.X0, float)
-    R = np.zeros(n)
-    R[0::6], R[1::6], R[5::6] = -X[:, 1], X[:, 0], 1.0
+    R = spin_vector(model, ss)
     if hasattr(lin, "free") and lin.free is not None:
         Rf = np.zeros(n)
         Rf[lin.free] = R[lin.free]
@@ -152,7 +234,7 @@ def _spin_projector(model, ss, lin, B: np.ndarray, M: np.ndarray, tol: float = 1
 
 
 def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: bool = False,
-                   tilt: bool = False) -> RotSys:
+                   tilt: bool = False, drive: bool = True) -> RotSys:
     from .rotor import K_complex, aero_linear
     w = 2 * np.pi * max(freq_hz, 1e-3)
     Kc = B.T @ K_complex(model, lin, max(freq_hz, 1e-3)) @ B
@@ -174,7 +256,11 @@ def reduced_system(model, ss, lin, aero, B: np.ndarray, freq_hz: float, hub: boo
     ih = (nh - 2, nh - 1) if hub else None
     it = (n - 2, n - 1) if tilt else None
     m_rot = float(M[nh - 2, nh - 2]) if hub else 0.0
-    return RotSys(M, G + C, K, ss.Omega, ih, B, m_rot, it)
+    rs = RotSys(M, G + C, K, ss.Omega, ih, B, m_rot, it)
+    if drive and getattr(model.design.motor, "esc", None) is not None:
+        dp = drive_params(model.design.motor, spin_inertia(model, ss, lin))
+        rs = add_drive(rs, B[6 * model.hub + 5], dp)
+    return rs
 
 
 def damped_modes(model, ss, lin, aero, targets_hz, n_basis: int = 20, iters: int = 3):
