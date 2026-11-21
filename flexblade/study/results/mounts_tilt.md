@@ -52,3 +52,20 @@ Min k_t vs measured motor I_t:
 | 1.23e-04 (3x est.) | 177 | 222 |
 | 1.64e-04 (4x est.) | 252 | 315 |
 
+
+## Planar pad-ring alternative (study/build/mount_ring.py, study/mounts_tilt_ring.py; raw results/mounts_tilt_ring.json)
+N = 4 round TPU pads (infill 0.4, G 6.5 MPa) on radius R between a motor plate and an arm plate; tilt = pad compression/tension k_t = (N/2) k_c R^2, k_c = E_c A/h, E_c = 3.4 G inf (1+2S^2), S = D/4h; lateral = pad shear N inf G A/h.
+Key finding: k_t/k_lat = (R^2/2)(E_c/G) only; shear needs A/h ~ 3 mm, so pads must be thin columns (D 5, S 0.15-0.2, bulge gain only 1.1x) and R must be large (>= ~50 mm) to meet the rule k_t.  The shape-factor trick does not help because a large S forces h < 0.3 mm at this lateral stiffness.
+
+| | 7in twin | 7in ring (R 52, D5, h6) | 10in twin | 10in ring (R 56, D5, h8) |
+|---|---|---|---|---|
+| k_t (rule need) N m/rad | 177 (166) | 170 | 145 (128) | 143 |
+| k_lat kN/m | 35.6 | 34.0 | 24.0 | 25.5 |
+| hub mode / 1P | 0.67-0.69 | 0.66-0.67 | 0.63-0.64 | 0.65-0.66 |
+| axial sag at 15 / 25 N thrust (assumed) | ~0.12 mm | 0.12 mm | ~0.30 mm | 0.27 mm |
+| min zeta, I_t x1 / x2 / x3 | 0.0043 / 0.0116 / 0.0123 | 0.0046 / 0.0040 / 0.0052 | 0.0089 all | 0.0089 all |
+| height | ~104 mm | ~12 mm + 34 mm clamp | ~102 mm | ~14 mm + 34 mm clamp |
+| footprint | 30 mm | 120 mm dia | 30 mm | 128 mm dia |
+| printed mass (solid-ish PLA, est.) | ~43 g | ~90 g | ~28 g | ~100 g |
+
+Verdict: the ring is much shorter but NOT better: 2-4x the mass (adds to arm tip mass and I_t), a 120-128 mm plate in the downwash, min zeta at 7in worse (0.004 vs 0.012 at 2x I_t, 190 Hz arm; equal at 10in, where the 0.0089 floor is not mount-limited), and the pad columns need T-slot retention for tension (tilt puts half the pads in tension). Twin-washer files kept; ring STLs not shipped (generator `python study/build/mount_ring.py build` writes watertight plates/pad if wanted).
