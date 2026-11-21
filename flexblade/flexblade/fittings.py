@@ -171,11 +171,44 @@ class StripFittings:
     hinge_point: np.ndarray  # mm
     hinge_axis: np.ndarray
     notes: list
+    slot_axes: list = ()     # (strip, end, unit axis exit -> land, dowel cutter) per slot
     hub_plane: tuple = ()     # (normal, offset): hub web is on normal.x >= offset
     blade_plane: tuple = ()
 
 
-def _side(design, strips, wires, P, s, end, prm: StripParams):
+DOWEL_INTRUDE = 0.15    # mm, dowel intrusion into the slot (opens a ~1.1 mm contact slit; 0.05-0.10 gave non-manifold CSG on some parts)
+DOWEL_D = 3.0           # mm, datum dowel hole diameter (hinge_tolerance.md)
+
+
+def slot_rotations(design: Design, blade: int = 1):
+    """Per strip, [hub-end Q, blade-end Q] 3x3 maps (blade-1 frame) rotating the nominal slot frame
+    to the pre-angled one: Q = E0 expm(-p) E0^T in the blade-`blade` member frame (as
+    beam.slot_frames, p = flexure.strip_preset_deg[blade-1][member] radians), mapped back by the
+    z-mirror for even blades. None where no preset."""
+    from .geometry import get_members
+    from .beam import _rotv
+    ms, _, _ = get_members(design)
+    sp = design.flexure.strip_preset_deg
+    T = np.eye(3) if blade % 2 else np.diag([1.0, 1.0, -1.0])
+    out = []
+    for j, m in enumerate(ms):
+        if not (m.kind == "blade" and m.shape == "rect"):
+            continue
+        row = sp[blade - 1][j] if len(sp) >= blade and len(sp[blade - 1]) > j else []
+        if len(row) < 6 or not any(row):
+            out.append([None, None])
+            continue
+        p0, p1 = T @ np.asarray(m.p0, float), T @ np.asarray(m.p1, float)
+        e1 = (p1 - p0) / np.linalg.norm(p1 - p0)
+        e2 = T @ np.asarray(m.width_dir, float)
+        e2 = e2 - e1 * (e1 @ e2); e2 /= np.linalg.norm(e2)
+        E0 = np.column_stack([e1, e2, np.cross(e1, e2)])
+        pv = np.radians(np.asarray(row, float))
+        out.append([T.T @ (E0 @ _rotv(-pv[k:k + 3]) @ E0.T) @ T for k in (0, 3)])
+    return out
+
+
+def _side(design, strips, wires, P, s, end, prm: StripParams, Qs=None, axes=None):
     """Jaws, web, post and cutters of the fitting owning strip end `end` (0 hub, 1 blade)."""
     mf = _mf()
     H = prm.slot_t / 2
@@ -188,12 +221,20 @@ def _side(design, strips, wires, P, s, end, prm: StripParams):
     sg = 1.0 if lv.mean() > 0 else -1.0
     e = sg * s
     h_exit = float(np.abs(lv).max())
-    jaws, cuts, notes = [], [], []
+    jaws, cuts, notes, dowels = [], [], [], []
     for i, (p0, p1, L, t, w, n) in enumerate(fr):
         o = p0 if end == 0 else p1
         d = -t if end == 0 else t                       # exit -> into the land
         nn = np.cross(d, w)
         Rm = np.c_[d, w, nn]
+        Q = Qs[i][end] if Qs else None
+        if axes is not None:
+            axes.append((i, end, None))
+        if Q is not None:                               # pre-angled slot, rotated about its exit point
+            Rm = Q @ Rm
+            d, w, nn = Rm[:, 0], Rm[:, 1], Rm[:, 2]
+        if axes is not None:
+            axes[-1] = (i, end, d.copy())               # slot axis, exit -> into the land
         lo_w, hi_w = -(prm.w / 2 + SIDE + prm.wall), prm.w / 2 + SIDE + prm.wall
         cl_w, ch_w = -prm.slot_w / 2, prm.slot_w / 2
         others = [c for j, c in enumerate(centres) if j != i]
@@ -224,6 +265,11 @@ def _side(design, strips, wires, P, s, end, prm: StripParams):
         cyls = [_cyl(o + d * R + nn * k * (H + R) + w * (cl_w - 1.0), w, R, ch_w - cl_w + 2.0)
                 for k in (1, -1)]
         cuts.append(_sub(fl, cyls))
+        # datum dowel hole: tangent to the slot face and the jaw end face (DOWEL_INTRUDE into the
+        # slot so the dowel touches the strip), on the side facing the web
+        kd = 1.0 if nn @ e > 0 else -1.0
+        rd = DOWEL_D / 2 - DOWEL_INTRUDE
+        dowels.append(_cyl(o + d * rd + nn * kd * (H + rd) + w * (cl_w - 1.0), w, DOWEL_D / 2, ch_w - cl_w + 2.0))
     env = _hull_of_part(design, "blade1_hub_fitting" if end == 0 else "blade1_root_fitting")
     zc = h_exit + min(2.0, 0.6 * hn)
     web_t = WEB_T_SLIM if prm.slim else WEB_T
@@ -254,6 +300,9 @@ def _side(design, strips, wires, P, s, end, prm: StripParams):
         wc = o + away * CH_LEN
         cuts.append(_cyl(wc - np.array([0, 0, prm.channel_d / 2]), [0, 0, 1.0], prm.well_d / 2, 60.0))
     part = _union(jaws + [web] + posts)
+    cuts.extend(dowels)
+    if axes is not None:
+        axes[-len(dowels):] = [a + (dw,) for a, dw in zip(axes[-len(dowels):], dowels)]
     return part, cuts, notes, (e, float(e @ P + zc))
 
 
@@ -361,7 +410,7 @@ def _keepout(strips, prm: StripParams):
     return _union(ks)
 
 
-def build_strip_fittings(design: Design) -> StripFittings:
+def build_strip_fittings(design: Design, blade: int = 1) -> StripFittings:
     """Blade-1 hub and root fittings (frame H, mm) as manifold3d solids, with their cutters."""
     from .geometry import _hinge_frame
     strips, wires, hinge = strip_members(design)
@@ -370,12 +419,14 @@ def build_strip_fittings(design: Design) -> StripFittings:
     prm = strip_params(design)
     P, s, t_, a = _hinge_frame(*hinge)
     P = P * 1e3
-    hub, hc, notes, hpl = _side(design, strips, wires, P, s, 0, prm)
-    bl, bc, _, bpl = _side(design, strips, wires, P, s, 1, prm)
+    Qs = slot_rotations(design, blade)
+    ax = []
+    hub, hc, notes, hpl = _side(design, strips, wires, P, s, 0, prm, Qs, ax)
+    bl, bc, _, bpl = _side(design, strips, wires, P, s, 1, prm, Qs, ax)
     ko = _keepout(strips, prm)
     hub = _sub(hub, hc + [ko])
     bl = _sub(bl, bc + [ko])
-    return StripFittings(prm, hub, bl, hc, bc, ko, P, np.asarray(a, float), notes, hpl, bpl)
+    return StripFittings(prm, hub, bl, hc, bc, ko, P, np.asarray(a, float), notes, ax, hpl, bpl)
 
 
 # --------------------------------------------------------------------------- motion sweep
@@ -482,12 +533,15 @@ def strip_print_parts(design: Design) -> dict:
     'blade<k>' (blade k airfoil + shank + root fitting), with all cutters applied."""
     fits = build_strip_fittings(design)
     n = design.blade.n_blades
+    fits_k = {1: fits, 0: build_strip_fittings(design, 2) if n > 1 else fits}   # odd / even blades
     sp = loft_manifold(design, "blade1_spoke", hull=True)
     sp = _mf().Manifold.batch_hull([sp, sp.translate((-1.0, 0.0, 0.0))])  # overlap, not touch, at the centre
     hub_core = _union([loft_manifold(design, "hub", hull=True), sp])
-    hub_core = _sub(hub_core, fits.hub_cuts + [fits.keepout])
-    hub1 = _union([fits.hub, hub_core])
-    hub = _union([_mirror_rot(hub1, k, n) for k in range(1, n + 1)])
+    hubs = []
+    for par, f_ in fits_k.items():
+        core = _sub(hub_core, f_.hub_cuts + [f_.keepout])
+        hubs.append((par, _union([f_.hub, core])))
+    hub = _union([_mirror_rot(dict(hubs)[k % 2], k, n) for k in range(1, n + 1)])
     out = {"hub": hub}
     mf = _mf()
     env = loft_manifold(design, "blade1_root_fitting", hull=True)
@@ -495,8 +549,9 @@ def strip_print_parts(design: Design) -> dict:
     e, off = fits.blade_plane
     body = loft_manifold(design, "blade1")      # airfoils are not mirrored between blades
     for k in range(1, n + 1):
-        fb = _sub(fits.blade, fits.blade_cuts)
-        cuts = list(fits.blade_cuts) + [fits.keepout]
+        fk = fits_k[k % 2]
+        fb = _sub(fk.blade, fk.blade_cuts)
+        cuts = list(fk.blade_cuts) + [fk.keepout]
         env_k = env
         if k % 2 == 0:      # blade k flexure/fitting is mirrored in z (geometry.members_for_blade)
             fb = fb.mirror((0.0, 0.0, 1.0))
