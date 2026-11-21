@@ -57,7 +57,14 @@ def robust_eval(ds, js=JS, perturb=robust.CQ_PERTURB, criterion=CRIT):
         ms = list(ex.map(functools.partial(_eval_point, criterion=criterion), flat, chunksize=1))
     out, k = [], 0
     for v in vs:
-        out.append(robust.combine(ms[k:k + len(v)], [t for t, _ in v]))
+        tg, mm = [t for t, _ in v], ms[k:k + len(v)]
+        c = robust.combine(mm, tg)
+        # sensitivity: spread over the two MILD samples only (p2/p3: strip k about +-5 %, vs the
+        # aligned stiff/soft corners p0/p1: k about +-28 %)
+        sel = [i for i, t in enumerate(tg) if ":p0" not in t and ":p1" not in t]
+        c["cq_mild"] = robust.control_quality([tg[i] for i in sel], [mm[i].get("cyc_gain") for i in sel],
+                                              [mm[i].get("cyc_phase_deg") for i in sel])
+        out.append(c)
         k += len(v)
     return out
 
@@ -68,6 +75,8 @@ def summary(c):
                 res_margin_other=c.get("res_margin"), res_which_other=c.get("res_which"),
                 phase_spread_deg=cq.get("phase_spread_deg"), gain_spread=cq.get("gain_spread"),
                 per_throttle=cq.get("per_throttle"),
+                mild_phase_spread_deg=(c.get("cq_mild") or {}).get("phase_spread_deg"),
+                mild_gain_spread=(c.get("cq_mild") or {}).get("gain_spread"),
                 mech_modes=sorted({str(p.get("mech_mode")).split(" ")[0] + " " + " ".join(
                     str(p.get("mech_mode")).split(" ")[1:-1]) for p in c.get("points", [])}),
                 points=[{k: p.get(k) for k in ("tag", "cr_pl", "cyc_gain", "cyc_phase_deg", "mech_mode",
@@ -84,7 +93,8 @@ def _line(n, s):
     return (f"{n}: cr_pl {s['cr_pl']:.4f} feas {s['feasible_pl']} phase±{s['phase_spread_deg']:.1f}° "
             f"gain±{100 * s['gain_spread']:.1f}% other-margin {s['res_margin_other']:.3f} "
             f"({s['res_which_other']}) hard {({k: round(v, 3) for k, v in (s['viol_hard'] or {}).items()})} "
-            f"mech {s['mech_modes']}")
+            f"mech {s['mech_modes']} | mild-tol phase±{s['mild_phase_spread_deg']:.1f}° "
+            f"gain±{100 * s['mild_gain_spread']:.1f}%")
 
 
 def score():

@@ -119,6 +119,15 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
     if not ok:
         return dict(error="no point evaluated")
     tags, ms = zip(*ok)
+    cq = None
+    if all(m.get("criterion") == "control_quality" for m in ms):
+        # the CQ tolerance samples (':p<i>' tags) only measure the G spread; cr_pl, checks and
+        # the remaining hard margins come from the nominal points (tolerance is verified separately)
+        cq = control_quality(tags, [m.get("cyc_gain", float("nan")) for m in ms],
+                             [m.get("cyc_phase_deg", float("nan")) for m in ms])
+        nom = [(t, m) for t, m in zip(tags, ms) if ":p" not in t]
+        if nom:
+            tags, ms = zip(*nom)
     i = min(range(len(ms)), key=lambda j: ms[j]["control_ratio"])
     out = dict(ms[i])
     out["control_ratio"] = float(min(m["control_ratio"] for m in ms))
@@ -135,9 +144,7 @@ def combine(ms: list[dict], tags: list[str]) -> dict:
     if mg:
         out["res_margin"], out["res_which"] = min(mg)
     cqv = {}
-    if all(m.get("criterion") == "control_quality" for m in ms):
-        cq = control_quality(tags, [m.get("cyc_gain", float("nan")) for m in ms],
-                             [m.get("cyc_phase_deg", float("nan")) for m in ms])
+    if cq is not None:
         out["cq"] = cq
         cqv = control_quality_viol(cq)
         viol.update(cqv)

@@ -43,6 +43,7 @@ def test_combine_adds_cq_violation_to_hard():
     out = robust.combine(ms, ["T1", "T1:p0", "T1:p1"])
     assert out["cq"]["phase_spread_deg"] == pytest.approx(40.0)
     assert "cq_phase" in out["viol_hard"] and out["feasible_pl"] is False
+    assert [p["tag"] for p in out["points"]] == ["T1"]          # tolerance samples: spread only
 
 
 def _modes_result():
