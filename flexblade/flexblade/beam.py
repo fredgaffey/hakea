@@ -913,10 +913,44 @@ def element_end_forces(e: Element, c: ElementCR, st: Optional[State] = None) -> 
     return -f12[:6], f12[6:]
 
 
-def element_end_forces_lin(e: Element, c: ElementCR, du_e: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Linearised (possibly complex) section force increments for element DOF increment du_e."""
-    dd7 = c.B @ du_e
-    d12 = np.zeros(12, dtype=dd7.dtype)
-    d12[IDX7] = dd7
-    f12 = e.K12 @ d12
-    return -f12[:6], f12[6:]
+LIN_RECOVERY = "section"     # "section": FD-linearised Bt f7 recovery (consistent with the mean); "legacy": K12.d7
+
+
+def element_end_forces_lin(e: Element, c: ElementCR, du_e: np.ndarray, st: Optional[State] = None,
+                           Omega: float = 0.0, mode: Optional[str] = None) -> tuple[np.ndarray, np.ndarray]:
+    """Linearised (possibly complex) section force increments for element DOF increment du_e.
+    With st given (and mode 'section'), central finite difference of the corrected element_end_forces
+    about st (same Bt f7 end-section recovery as the mean); else the legacy element-frame K12.d7."""
+    mode = mode or LIN_RECOVERY
+    if st is None or mode == "legacy" or e.L0 <= 0.0:
+        dd7 = c.B @ du_e
+        d12 = np.zeros(12, dtype=dd7.dtype)
+        d12[IDX7] = dd7
+        f12 = e.K12 @ d12
+        return -f12[:6], f12[6:]
+    du_e = np.asarray(du_e)
+    dofs = _edofs(e)
+    nmax = float(np.abs(du_e).max())
+    if nmax == 0.0:
+        z = np.zeros(6)
+        return z, z.copy()
+    h = 1e-6 / nmax
+    n = st.x.shape[0]
+
+    def _F(d):
+        full = np.zeros(6 * n)
+        full[dofs] = d
+        s2 = update_state(st, full)
+        fa, fb = element_end_forces(e, element_cr(e, s2, Omega, False), s2)
+        return fa, fb
+
+    def _dir(d):
+        pa, pb = _F(h * d)
+        ma, mb = _F(-h * d)
+        return (pa - ma) / (2 * h), (pb - mb) / (2 * h)
+
+    ra, rb = _dir(np.real(du_e))
+    if np.iscomplexobj(du_e):
+        ia, ib = _dir(np.imag(du_e))
+        return ra + 1j * ia, rb + 1j * ib
+    return ra, rb

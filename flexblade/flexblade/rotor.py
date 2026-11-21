@@ -1862,7 +1862,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
             g["strain"] = max(g["strain"], strain)
         if hd is not None:
             du = hd.U[_edofs(e)]
-            fa_c, fb_c = element_end_forces_lin(e, c, du)
+            fa_c, fb_c = element_end_forces_lin(e, c, du, st)
             means = [_fibre_mean(sec, sf0) if gm else None for sec, sf0 in zip(secs, (fa, fb))]
             gd = gdiag.setdefault(name, {})
             for sec, sf, mn in zip(secs, (fa_c, fb_c), means):
@@ -1871,7 +1871,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                 g["fat_s"] = max(g["fat_s"], us)
                 g["famp"] = max(g["famp"], amp)
             for cr in forced or ():
-                fa_c, fb_c = element_end_forces_lin(e, c, cr.U[_edofs(e)])
+                fa_c, fb_c = element_end_forces_lin(e, c, cr.U[_edofs(e)], st)
                 for sec, sf, mn in zip(secs, (fa_c, fb_c), means):
                     ue, us, amp = _fibre_amp(sec, sf, t_hat, cr.freq_hz, is_cable, mn, kt_mean, gd)
                     if ue > g["fat_e_n"]:

@@ -42,3 +42,23 @@ def test_strip_moment_recovery_continuous_and_spatial():
     assert jo > 10 * jn                              # legacy recovery jumps at nodes
     # clamp: section moment equals the applied tip moment resolved in the (fixed) root frame
     assert np.allclose(new[0][0][3:], Mtip, rtol=0, atol=2e-3 * np.linalg.norm(Mtip))
+
+
+def test_strip_amplitude_moment_continuous():
+    from flexblade.beam import element_end_forces_lin, _edofs
+    Mtip = np.array([0.004, 0.008, 0.05])
+    m, st, sa = _strip_tip_moment(Mtip)
+    from scipy.spatial.transform import Rotation as Rot
+    dM = 1e-4 * Mtip
+    _, st2, _ = _strip_tip_moment(Mtip + dM)
+    du = np.zeros(6 * st.x.shape[0])
+    for k in range(st.x.shape[0]):
+        du[6 * k:6 * k + 3] = st2.x[k] - st.x[k]
+        du[6 * k + 3:6 * k + 6] = Rot.from_matrix(st2.R[k] @ st.R[k].T).as_rotvec()
+    lin = [element_end_forces_lin(e, c, du[_edofs(e)], st) for e, c in zip(m.elements, sa.cr)]
+    leg = [element_end_forces_lin(e, c, du[_edofs(e)], st, mode="legacy") for e, c in zip(m.elements, sa.cr)]
+    jn = max(np.abs(lin[k][1][3:] - lin[k + 1][0][3:]).max() for k in range(len(m.elements) - 1))
+    sc = max(np.abs(l[1][3:]).max() for l in lin)
+    assert jn < 5e-3 * np.linalg.norm(dM)
+    jl = max(np.abs(leg[k][1][3:] - leg[k + 1][0][3:]).max() for k in range(len(m.elements) - 1))
+    assert jl > jn
