@@ -6,7 +6,11 @@ harmonic.control_ratio at the motor-capability 1/rev torque pulse, subject to
 
   * every check utilisation ≤ 1 (static, interlayer, creep, fatigue, ESC duty peak,
     ESC duty slew with AM32 max_ramp 255 → duty_slew_max 2550/s, motor 1/rev torque),
-  * no elastic mode within ±15 % of 1P, 2P, 3P (rotating frame, at hover rpm),
+  * no elastic mode within ±15 % of 1P, nor hub/airframe-dominated modes within ±15 % of 2P
+    (rotating frame, at hover rpm, damping-aware).  nP crossings (n >= 2) of blade modes are
+    unavoidable over a sqrt(2) rpm range; they are checked by forced response instead
+    (flexblade.forced: fatigue_* include the resonant nP amplitude, harmonic_jitter check)
+    and reported here as info (res_np_info),
   * static blade-1 vs blade-2 pitch split |Δθ0.75| ≤ 2°,
   * converged trim (no convergence warnings), and a few printability/geometry rules.
 
@@ -256,6 +260,21 @@ def _sub_results(r: dict) -> list[tuple[str, dict]]:
 from flexblade.stability import margin_1p_eff  # noqa: E402
 
 
+HUB_MODE_FRAC = 0.15   # kinetic-energy share of hub motion that makes a mode "hub/airframe" (2P air resonance)
+
+
+def np_crossings_info(r1: dict, kmax: int = 6, band: float = 0.10) -> list[str]:
+    """Info only: elastic modes within ±band of nP (n = 2..kmax) at this point."""
+    rpm = (r1.get("summary") or {}).get("rpm")
+    out = []
+    for m in r1.get("modes") or []:
+        p = m["freq_hz"] / (rpm / 60.0) if rpm else 0.0
+        for k in range(2, kmax + 1):
+            if p > 1.5 and abs(p / k - 1) <= band:
+                out.append(f"{m['label']} {p:.2f}/rev ~ {k}P (zeta {m.get('damping_ratio', float('nan')):.4f})")
+    return out
+
+
 def resonance_margin(r1: dict) -> tuple[float, str]:
     rpm = (r1.get("summary") or {}).get("rpm") or (r1.get("trim") or {}).get("rpm")
     if not rpm or not r1.get("modes"):
@@ -267,7 +286,8 @@ def resonance_margin(r1: dict) -> tuple[float, str]:
         if f < 0.05 * f1:          # rigid spin
             continue
         z = m.get("damping_ratio")
-        for k in (1, 2, 3):
+        hub = (m.get("participation") or {}).get("hub", 0.0) > HUB_MODE_FRAC
+        for k in ((1, 2) if hub else (1,)):
             mg = abs(f / (k * f1) - 1.0)
             # damping-aware (stability.margin_1p_eff): a well-damped mode near kP counts as the
             # undamped margin with the same amplification, so it is not rejected outright
@@ -330,6 +350,10 @@ def metrics(d: Design, r: dict) -> dict:
         which.append(wh)
     sp = max((abs(x) for x in splits if math.isfinite(x)), default=float("nan"))
     mg = min((x for x in margins if math.isfinite(x)), default=float("nan"))
+    out["res_np_info"] = [x for _, sub in _sub_results(r) for x in np_crossings_info(sub)]
+    s_ = r.get("summary") or {}
+    out.update({k: float(s_[k]) for k in ("np_jitter_deg", "np_strip_stress_MPa", "np_strip_strain_amp",
+                                         "np_strip_fat_util", "strip_strain_amp_1p") if k in s_})
     out.update(split_deg=sp, res_margin=mg, res_which=which[int(np.nanargmin(margins))] if
                any(math.isfinite(x) for x in margins) else "")
     if not math.isfinite(sp):

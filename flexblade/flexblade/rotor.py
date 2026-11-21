@@ -1644,7 +1644,10 @@ def strip_clamp_factor(f) -> tuple[float, float]:
     return kt / fr, R
 
 
-def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -> list[Check]:
+def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
+           forced: list | None = None) -> list[Check]:
+    """forced: forced.Crossing list (nP resonant responses), added to the fatigue checks."""
+    from . import forced as frc
     fe = model.fe
     st = ss.state
     sa = assemble_internal(fe, st, False)
@@ -1660,7 +1663,8 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
         if e.kind == "blade":
             name = "blade"
         g = groups.setdefault(name, dict(static=0.0, il=0.0, creep=0.0, fat_e=0.0, fat_s=0.0,
-                                         strain=0.0, famp=0.0, det=None))
+                                         strain=0.0, famp=0.0, det=None, fat_e_n=0.0, fat_s_n=0.0,
+                                         famp_n=0.0, cross_n=""))
         t_hat = unit(st.x[e.n1] - st.x[e.n0])
         is_cable = e.kind == "flexure" and name in cables.get(e.blade, ())
         fa, fb = element_end_forces(e, c)
@@ -1681,13 +1685,31 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
                 g["fat_e"] = max(g["fat_e"], ue)
                 g["fat_s"] = max(g["fat_s"], us)
                 g["famp"] = max(g["famp"], amp)
+            for cr in forced or ():
+                fa_c, fb_c = element_end_forces_lin(e, c, cr.U[_edofs(e)])
+                for sec, sf in zip(secs, (fa_c, fb_c)):
+                    ue, us, amp = _fibre_amp(sec, sf, t_hat, cr.freq_hz, is_cable)
+                    if ue > g["fat_e_n"]:
+                        g["cross_n"] = f"{cr.label} {cr.per_rev:.2f}/rev x {cr.n}P"
+                    g["fat_e_n"] = max(g["fat_e_n"], ue)
+                    g["fat_s_n"] = max(g["fat_s_n"], us)
+                    g["famp_n"] = max(g["famp_n"], amp)
     ff = model.design.flexure
     kfac, Rj = strip_clamp_factor(ff)
     shim_groups = [n for n, ms in used.items() if any(m.startswith("steel_1095_shim") for m in ms)]
     for n in shim_groups:
-        groups[n]["fat_e"] *= kfac
-        groups[n]["fat_s"] *= kfac
-        groups[n]["famp"] *= kfac
+        for k_ in ("fat_e", "fat_s", "famp", "fat_e_n", "fat_s_n", "famp_n"):
+            groups[n][k_] *= kfac
+    model.np_info = {}
+    for n in shim_groups:
+        g = groups[n]
+        E = get_material([m for m in used[n] if m.startswith("steel_1095_shim")][0]).E1
+        model.np_info[n] = dict(strain=g["famp_n"], stress=g["famp_n"] * E, util=g["fat_e_n"],
+                                strain_1p=g["famp"], which=g["cross_n"])
+    for g in groups.values():
+        g["fat_e1"], g["fat_s1"] = g["fat_e"], g["fat_s"]
+        g["fat_e"] = frc.combine(g["fat_e"], g["fat_e_n"])
+        g["fat_s"] = frc.combine(g["fat_s"], g["fat_s_n"])
     out: list[Check] = []
     T_part = float(model.design.op.ambient_C)
     for name, mats in used.items():
@@ -1712,9 +1734,13 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None) -
         if hd is not None:
             out.append(Check(name="fatigue_strain", member=name, value=g["famp"],
                              allowable=g["famp"] / g["fat_e"] if g["fat_e"] > 0 else 0.0,
-                             utilisation=g["fat_e"], note="1/rev strain amplitude (design torque)"))
+                             utilisation=g["fat_e"], note="1/rev strain amplitude (design torque)" + (
+                                 f" {frc.FATIGUE_COMBINE} nP crossing: util 1P {g['fat_e1']:.3f} + nP "
+                                 f"{g['fat_e_n']:.3f} ({g['cross_n']})" if g["fat_e_n"] > 0 else "")))
             out.append(Check(name="fatigue_stress", member=name, value=g["fat_s"], allowable=1.0,
-                             utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)"))
+                             utilisation=g["fat_s"], note="1/rev stress amp / (ratio × strength)" + (
+                                 f" {frc.FATIGUE_COMBINE} nP: 1P {g['fat_s1']:.3f} + nP {g['fat_s_n']:.3f}"
+                                 if g["fat_s_n"] > 0 else "")))
     for n in shim_groups:
         g = groups[n]
         mat = get_material([m for m in used[n] if m.startswith("steel_1095_shim")][0])
@@ -1890,6 +1916,34 @@ def _stability(model: RotorModel, ss: StaticState, lin: Linear, aero, md: ModeDa
     return out
 
 
+def _forced_np(model: RotorModel, ss: StaticState, lin: Linear, md: ModeData, res, hd: HarmonicData,
+               summary: dict):
+    """nP (n >= 2) resonant crossing responses (forced.py) + the harmonic_jitter check."""
+    from . import forced as frc
+    fr = np.array([m.freq_hz for m in res.modes], float) if res.modes else md.freqs_hz
+    zt = np.array([m.damping_ratio for m in res.modes], float) if res.modes else md.damping
+    xs = frc.crossings(model, ss, lin, md, zt, fr, hd.dQ, model.design.op.vehicle_mass)
+    for c in xs:
+        c.jitter_deg = frc.pitch_jitter_deg(model, c.U)
+    p1 = float(hd.result.blades[0].pitch_amp_deg) if hd.result.blades else 0.0
+    allow = max(frc.JITTER_MAX_DEG, frc.JITTER_FRAC_1P * p1)
+    summary["np_crossings"] = float(len(xs))
+    out = []
+    if xs:
+        w = max(xs, key=lambda c: c.jitter_deg)
+        summary.update(np_jitter_deg=w.jitter_deg, np_jitter_per_rev=w.per_rev, np_jitter_n=float(w.n),
+                       np_jitter_zeta=w.zeta)
+        out.append(Check(name="harmonic_jitter", member="blade", value=w.jitter_deg, allowable=allow,
+                         utilisation=w.jitter_deg / allow,
+                         note=f"worst nP crossing '{w.label}' {w.per_rev:.2f}/rev x {w.n}P, zeta {w.zeta:.4f}, "
+                              f"Q={1 / (2 * w.zeta):.0f}; modal parts " +
+                              ", ".join(f"{k} {v:.3g}" for k, v in w.q_parts.items()) +
+                              f"; limit max({frc.JITTER_MAX_DEG} deg, {frc.JITTER_FRAC_1P:g} x 1P {p1:.2f} deg)"))
+    else:
+        summary["np_jitter_deg"] = 0.0
+    return xs, out
+
+
 HDT_MARGIN_C = 10.0   # part temperature must stay below HDT - margin
 
 
@@ -2012,9 +2066,23 @@ def _evaluate(design: Design, what: list[str] | None = None) -> Results:
             if dr["duty_peak"] > 0.95:
                 res.warnings.append(f"duty peak {dr['duty_peak']:.2f} > 0.95: ESC saturates")
         t["harmonic"] = time.perf_counter() - t1
+    forced_x = None
+    if md is not None and hd is not None and "checks" in what:
+        t1 = time.perf_counter()
+        try:
+            forced_x, fchecks = _forced_np(model, ss, lin, md, res, hd, summary)
+            stab_checks = stab_checks + fchecks
+        except Exception as ex:   # pragma: no cover
+            res.warnings.append(f"nP forced response failed: {ex}")
+        t["forced_np"] = time.perf_counter() - t1
     if "checks" in what:
         t1 = time.perf_counter()
-        res.checks = checks(model, ss, hd) + stab_checks
+        res.checks = checks(model, ss, hd, forced_x) + stab_checks
+        _ni = getattr(model, "np_info", {})
+        if _ni:
+            _w = max(_ni.values(), key=lambda v: v["stress"])
+            summary.update(np_strip_strain_amp=float(_w["strain"]), np_strip_stress_MPa=float(_w["stress"] / 1e6),
+                           np_strip_fat_util=float(_w["util"]), strip_strain_amp_1p=float(_w["strain_1p"]))
         _pr = res.summary.get("pitch_cf_ratio")
         if _pr is not None:
             _pr = float(_pr) if np.isfinite(_pr) else 1e3
