@@ -1283,6 +1283,7 @@ class HarmonicData:
     hub_moment_H: np.ndarray      # complex (3,) rotating-frame moment on vehicle
     aero_moment_mean: tuple[float, float]
     blade_angles: list[dict]
+    hub_force_H: Optional[np.ndarray] = None   # complex (3,) rotating-frame force on vehicle
 
 
 def _fixed_frame(Mh: np.ndarray, n: int = 64):
@@ -1369,6 +1370,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
     if al is not None:
         Rhub -= al.b[hub6] * X
     M_H = -Rhub[3:6]
+    F_H = -Rhub[0:3]
     mean, amp2 = _fixed_frame(M_H)
     Mmag = float(np.hypot(*mean))
     # aero-only moment (diagnostic) and thrust
@@ -1421,7 +1423,7 @@ def harmonic_1p(model: RotorModel, ss: StaticState, aero=None, lin: Linear | Non
         nodes=[tuple(map(float, x)) for x in fe.Xref],
         displacement_re=np.real(U).reshape(-1, 6).tolist(),
         displacement_im=np.imag(U).reshape(-1, 6).tolist())
-    return HarmonicData(hr, U, X, dQ, drive, M_H, aero_mean, angles)
+    return HarmonicData(hr, U, X, dQ, drive, M_H, aero_mean, angles, F_H)
 
 
 def blade_local_motion_c(model: RotorModel, U: np.ndarray, bi: BladeInfo):

@@ -3,6 +3,21 @@
 Files (this folder): `hub_fitting_assembly.stl` (print 1x), `blade1_with_root_fitting.stl` and `blade2_with_root_fitting.stl` (print 1x each; blade 2's flexure and root fitting are MIRRORED in z, its airfoil is not, so it is a different part), `drawing.png`, `parts.json`; generator `../build_7in_v6.py` (parts from `flexblade/fittings.py`). All STLs watertight, one shell each (parts.json).
 Coordinates mm, hub frame, z up = build direction = rotor axis. Strips crossed at **88.00 deg**, skew 59.91 deg.
 
+## System requirements (single checklist; all items verified together in study/results/system_check.md)
+1. **Flexure stack**: the crossed 1095 strip flexure in the Cut list above (88.00 deg crossing, aramid strand, damper per the cut list), strip width/lamina count within 15 % of nominal (pluck table).
+2. **Mount (required)**: twin TPU 85A washers ri 4 / ro 8 / t 22 mm, centres **76 mm apart**, both preloaded, mass on the mount <= 55 g. k_lat 35.6 kN/m (hub mode 0.67-0.69 x lowest 1P), **k_t 177 N m/rad**. Rule k_t >= 2.5 x Omega_max^2 (I_t - J_p), Omega_max = 1636 rad/s: allowed measured I_t <= 3.4e-5 kg m^2 (estimate 1.6e-5, J_p 7.6e-6). If I_t is higher, lengthen the spacing. A single washer is UNSTABLE (tilt divergence). Balance to < 1 g mm (the hub mode amplifies imbalance: 40-65 um per 2 g mm).
+3. **Arm**: f_x and f_y (mount locked, motor fitted, no blades) **>= 180 Hz** without a governor, **>= 200 Hz with the ESC governor** (system check: at 180 Hz, T1.4, min zeta falls to 0.0025-0.0041 with the governor; at 200 Hz 0.007-0.009). Forbidden band 75-175 Hz. Tap test as in "Arm stiffness" below.
+5. **ESC governor**: PI on **rev-averaged eRPM** (one full mechanical rev, sliding; raw or low-passed eRPM is forbidden), **bandwidth <= 27 Hz** (40 Hz at 0.5 ms latency), **latency <= 2 ms** (use 0.5 ms with bw 27 if possible: zeta is higher at T0.7/T1.0 with 2 ms but lower at T1.4), or NO ESC governor. 1P cyclic gain/phase then equal free spin.
+4. **FC cyclic schedule**: cyclic gain and phase are a CONTINUOUS function of measured eRPM (bidirectional DShot), stored at >= 5 calibration nodes spanning the flight rpm range
+   (T0.5 to T1.5), interpolated linearly in ln(rpm); not +-5 % bins. Calibrate EVERY build (the strip-k build tolerance moves the 1P phase and gain; it is fixed per airframe).
+   Procedure: bolt the airframe down, accelerometer/IMU on the motor can, step the throttle through >= 5 rpm plateaus (hold 3 s each, plus 2 in-between),
+   at each log the fixed-frame hub tilt response to a known commanded cyclic pulse and store gain and phase per plateau; repeat with the governor on and off
+   (identical with rev_avg; a difference means the governor is not 1P-blind). Re-check after a crash or strip replacement (creep/fatigue drift, about 1 deg per 2 % k).
+   Mechanism mode must never cross 1P on any build corner (margin >= 0.05); the model says the continuous schedule leaves about 7 deg / 15 % residual (10 in) and 9 deg / 20 % (7 in).
+6. **Bench measurements** (each has its own section below): J_p of the motor+hub (bifilar; the J_hub column of the FC pulse schedule), motor transverse inertia I_t (bifilar about a diameter; compare with k_t rule),
+   TPU washer G and eta (dynamic, about 200 Hz: a shear sample or the mount hub-mode tap test vs the predicted frequency), arm tap tests (x and y, mount locked, spec above), pluck test of the flexure modes,
+   and the cyclic gain/phase sweep of item 4. Integrated model check: `study/results/system_check.md`.
+
 ## Cut list (bought parts)
 | Item | Spec | Qty |
 |---|---|---|
