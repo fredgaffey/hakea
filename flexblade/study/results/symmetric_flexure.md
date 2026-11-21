@@ -25,3 +25,11 @@ Other balance-mass settings (z ±10 mm at 0.5 g: 9.4 N; chordwise ±10 mm at 1�
 (c1) The collective-pitch link equalises pitch exactly (0.04° collective). Its reaction moment is a common fx, though, so by reciprocity the lag splits (2.3 vs 0.9°), the 2P in-plane force rises to 24–33 N, and cyclic falls by 40 %. Rejected.
 Best lever found: (c2) null the common 1P feathering moment at the hinge (blade chordwise mass/AC and Ω-dependent propeller-moment balance), keeping mirror_z. With the z balance masses removed: vertical 11 → 2.8 N and cyclic authority +56 %. In-plane 2P is 1.8 N at precone 0, but it does not survive precone 1.3. Not yet checked: stability, ground resonance, fatigue.
 Next: add the 1P fx at each hinge (rotor.flexure_root_loads on hd.U) as an sa.py objective/constraint to drive it to zero, rather than hand-scanning masses.
+
+## v8 without balance masses (v9 attempt, full CAL + Goodman + ground_res)
+- Variants of 10in_tt_strap_steelx_v8 (presets NOT re-solved), all INFEASIBLE; no v9b saved:
+- no masses: cr_pl 0.142, mech margin 0.0026, side flip, viol cqc_mech_margin 0.91, resonance 0.48 (pitch sym+hub 1.87/rev vs 2P), harmonic_jitter 0.64.
+- half masses (0.0005 kg each): cr_pl 0.087, mech 0.0088, flip, harmonic_jitter 1.41, resonance 0.49.
+- no masses, skew -2: cr_pl 0.145, mech 0.0013, flip, resonance 0.94 (pitch 1.99/rev, on 2P).
+- no masses, skew +2: cr_pl 0.153, mech 0.0012, flip, resonance 0.87, aeroelastic_stability 0.38 (pitch 2.04/rev).
+- Binding: cqc_mech_margin / mech_side_flip (mech margin ~0 vs required) plus pitch mode near 2P; higher cr_pl is not reachable feasibly without re-solving presets/pitch mode. two_per_rev not run.
