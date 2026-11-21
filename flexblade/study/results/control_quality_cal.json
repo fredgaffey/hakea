@@ -3682,5 +3682,821 @@
    "worst_phase_node": "T0.7:p0:J2.5e-06",
    "worst_gain_node": "T0.7:p0:J5.49e-06"
   }
+ },
+ "7in_v6|cont8": {
+  "margin": {
+   "cr_pl": 0.06499594987059955,
+   "feasible_pl": true,
+   "viol_hard": {},
+   "res_margin": 0.18414898136956803,
+   "res_which": "pitch antisym+hub 0.88/rev vs 1P"
+  },
+  "control_quality": {
+   "cr_pl": 0.06499594987059955,
+   "feasible_pl": false,
+   "viol_hard": {
+    "cq_phase": 0.1904,
+    "cq_gain": 1.155
+   },
+   "res_margin": 0.30294522722447126,
+   "res_which": "pitch sym 1.30/rev vs 1P",
+   "phase_spread_deg": 17.85558987093728,
+   "gain_spread": 0.5387593607481156
+  },
+  "control_quality_cal": {
+   "cr_pl": 0.06499594987059955,
+   "feasible_pl": true,
+   "viol_hard": {},
+   "res_margin": 0.30294522722447126,
+   "res_which": "pitch sym 1.30/rev vs 1P",
+   "phase_res_deg": 3.5495978059045017,
+   "gain_res": 0.14847787982855526,
+   "groups": {
+    "rpm": [
+     0.9193014414712011,
+     0.02880510809355302
+    ],
+    "temp": [
+     1.2735531581721147,
+     0.04777296169809753
+    ],
+    "creep": [
+     1.6162486215078502,
+     0.05447433550647651
+    ],
+    "J": [
+     1.417776686816353,
+     0.09397997147046389
+    ]
+   },
+   "authority_min": 0.7444338406369125,
+   "cr_pl_ratio_min": 0.0,
+   "mech_margin_min": 0.074430232003039,
+   "mech_side_flip": false,
+   "per_node": {
+    "T0.7:nom:J2.5e-06": {
+     "phase_res": 1.4901,
+     "gain_res": 0.0751,
+     "gain": 0.4818,
+     "phase": 107.6354,
+     "mech_per_rev": 0.8457
+    },
+    "T0.7:nom:J5.49e-06": {
+     "phase_res": 1.3533,
+     "gain_res": 0.0922,
+     "gain": 0.2874,
+     "phase": 112.5809,
+     "mech_per_rev": 0.7944
+    },
+    "T0.7:nom:J9.2e-07": {
+     "phase_res": 1.3529,
+     "gain_res": 0.053,
+     "gain": 0.7406,
+     "phase": 100.894,
+     "mech_per_rev": 0.8833
+    },
+    "T0.7:p0:J2.5e-06": {
+     "phase_res": 2.0277,
+     "gain_res": 0.0959,
+     "gain": 0.6466,
+     "phase": 103.1442,
+     "authority": 1.3423,
+     "mech_per_rev": 0.8864
+    },
+    "T0.7:p0:J5.49e-06": {
+     "phase_res": 1.4196,
+     "gain_res": 0.1069,
+     "gain": 0.3469,
+     "phase": 110.7948,
+     "authority": 1.2068,
+     "mech_per_rev": 0.8329
+    },
+    "T0.7:p0:J9.2e-07": {
+     "phase_res": 2.6084,
+     "gain_res": 0.0729,
+     "gain": 1.1396,
+     "phase": 89.7798,
+     "authority": 1.5388,
+     "mech_per_rev": 0.9256
+    },
+    "T0.7:p1:J2.5e-06": {
+     "phase_res": 1.7224,
+     "gain_res": 0.0708,
+     "gain": 0.4115,
+     "phase": 109.3358,
+     "authority": 0.8541,
+     "mech_per_rev": 0.8168
+    },
+    "T0.7:p1:J5.49e-06": {
+     "phase_res": 1.7211,
+     "gain_res": 0.0873,
+     "gain": 0.2604,
+     "phase": 113.2936,
+     "authority": 0.9062,
+     "mech_per_rev": 0.7681
+    },
+    "T0.7:p1:J9.2e-07": {
+     "phase_res": 1.6399,
+     "gain_res": 0.0518,
+     "gain": 0.5895,
+     "phase": 104.6001,
+     "authority": 0.796,
+     "mech_per_rev": 0.8527
+    },
+    "T0.7:p2:J2.5e-06": {
+     "phase_res": 1.646,
+     "gain_res": 0.0875,
+     "gain": 0.5602,
+     "phase": 105.8202,
+     "authority": 1.1628,
+     "mech_per_rev": 0.8661
+    },
+    "T0.7:p2:J5.49e-06": {
+     "phase_res": 1.4126,
+     "gain_res": 0.1021,
+     "gain": 0.3183,
+     "phase": 112.0394,
+     "authority": 1.1074,
+     "mech_per_rev": 0.8136
+    },
+    "T0.7:p2:J9.2e-07": {
+     "phase_res": 1.7064,
+     "gain_res": 0.0644,
+     "gain": 0.9151,
+     "phase": 96.3473,
+     "authority": 1.2355,
+     "mech_per_rev": 0.9046
+    },
+    "T0.7:p3:J2.5e-06": {
+     "phase_res": 1.8512,
+     "gain_res": 0.0748,
+     "gain": 0.4279,
+     "phase": 108.7202,
+     "authority": 0.8883,
+     "mech_per_rev": 0.8277
+    },
+    "T0.7:p3:J5.49e-06": {
+     "phase_res": 1.9913,
+     "gain_res": 0.0887,
+     "gain": 0.2648,
+     "phase": 113.1851,
+     "authority": 0.9214,
+     "mech_per_rev": 0.7767
+    },
+    "T0.7:p3:J9.2e-07": {
+     "phase_res": 2.118,
+     "gain_res": 0.0609,
+     "gain": 0.63,
+     "phase": 103.5252,
+     "authority": 0.8507,
+     "mech_per_rev": 0.8644
+    },
+    "T1:nom:J2.5e-06": {
+     "phase_res": 1.8658,
+     "gain_res": 0.0869,
+     "gain": 0.4521,
+     "phase": 113.2233,
+     "mech_per_rev": 0.8299
+    },
+    "T1:nom:J5.49e-06": {
+     "phase_res": 1.6001,
+     "gain_res": 0.099,
+     "gain": 0.2831,
+     "phase": 117.2582,
+     "mech_per_rev": 0.7817
+    },
+    "T1:nom:J9.2e-07": {
+     "phase_res": 2.0607,
+     "gain_res": 0.0725,
+     "gain": 0.6559,
+     "phase": 108.2817,
+     "mech_per_rev": 0.8652
+    },
+    "T1:p0:J2.5e-06": {
+     "phase_res": 1.624,
+     "gain_res": 0.08,
+     "gain": 0.5212,
+     "phase": 111.8053,
+     "authority": 1.1529,
+     "mech_per_rev": 0.8547
+    },
+    "T1:p0:J5.49e-06": {
+     "phase_res": 1.3434,
+     "gain_res": 0.0939,
+     "gain": 0.3069,
+     "phase": 116.6794,
+     "authority": 1.084,
+     "mech_per_rev": 0.8038
+    },
+    "T1:p0:J9.2e-07": {
+     "phase_res": 1.8695,
+     "gain_res": 0.062,
+     "gain": 0.8159,
+     "phase": 104.9499,
+     "authority": 1.2439,
+     "mech_per_rev": 0.8919
+    },
+    "T1:p1:J2.5e-06": {
+     "phase_res": 1.4501,
+     "gain_res": 0.0631,
+     "gain": 0.4368,
+     "phase": 115.8978,
+     "authority": 0.966,
+     "mech_per_rev": 0.8266
+    },
+    "T1:p1:J5.49e-06": {
+     "phase_res": 1.5304,
+     "gain_res": 0.0911,
+     "gain": 0.2736,
+     "phase": 119.9236,
+     "authority": 0.9662,
+     "mech_per_rev": 0.7782
+    },
+    "T1:p1:J9.2e-07": {
+     "phase_res": 1.4395,
+     "gain_res": 0.0533,
+     "gain": 0.6335,
+     "phase": 110.9696,
+     "authority": 0.9658,
+     "mech_per_rev": 0.8623
+    },
+    "T1:p2:J2.5e-06": {
+     "phase_res": 1.7142,
+     "gain_res": 0.0733,
+     "gain": 0.4772,
+     "phase": 112.7744,
+     "authority": 1.0555,
+     "mech_per_rev": 0.8359
+    },
+    "T1:p2:J5.49e-06": {
+     "phase_res": 1.5773,
+     "gain_res": 0.0883,
+     "gain": 0.2935,
+     "phase": 117.2193,
+     "authority": 1.0367,
+     "mech_per_rev": 0.7867
+    },
+    "T1:p2:J9.2e-07": {
+     "phase_res": 1.8117,
+     "gain_res": 0.0552,
+     "gain": 0.7068,
+     "phase": 107.1151,
+     "authority": 1.0775,
+     "mech_per_rev": 0.8718
+    },
+    "T1:p3:J2.5e-06": {
+     "phase_res": 2.0767,
+     "gain_res": 0.0895,
+     "gain": 0.4369,
+     "phase": 113.975,
+     "authority": 0.9662,
+     "mech_per_rev": 0.8281
+    },
+    "T1:p3:J5.49e-06": {
+     "phase_res": 1.5753,
+     "gain_res": 0.0935,
+     "gain": 0.2749,
+     "phase": 117.7279,
+     "authority": 0.9709,
+     "mech_per_rev": 0.7802
+    },
+    "T1:p3:J9.2e-07": {
+     "phase_res": 3.3677,
+     "gain_res": 0.123,
+     "gain": 0.6165,
+     "phase": 110.1245,
+     "authority": 0.9399,
+     "mech_per_rev": 0.8579
+    },
+    "T1.4:nom:J2.5e-06": {
+     "phase_res": 1.2366,
+     "gain_res": 0.0687,
+     "gain": 0.4725,
+     "phase": 119.869,
+     "mech_per_rev": 0.8379
+    },
+    "T1.4:nom:J5.49e-06": {
+     "phase_res": 1.1876,
+     "gain_res": 0.1017,
+     "gain": 0.2932,
+     "phase": 124.2434,
+     "mech_per_rev": 0.7907
+    },
+    "T1.4:nom:J9.2e-07": {
+     "phase_res": 1.2583,
+     "gain_res": 0.0622,
+     "gain": 0.6923,
+     "phase": 114.4069,
+     "mech_per_rev": 0.8725
+    },
+    "T1.4:p0:J2.5e-06": {
+     "phase_res": 1.9697,
+     "gain_res": 0.1117,
+     "gain": 0.502,
+     "phase": 116.4967,
+     "authority": 1.0626,
+     "mech_per_rev": 0.8453
+    },
+    "T1.4:p0:J5.49e-06": {
+     "phase_res": 1.4916,
+     "gain_res": 0.1101,
+     "gain": 0.3104,
+     "phase": 120.9072,
+     "authority": 1.0587,
+     "mech_per_rev": 0.798
+    },
+    "T1.4:p0:J9.2e-07": {
+     "phase_res": 2.7185,
+     "gain_res": 0.1145,
+     "gain": 0.7388,
+     "phase": 110.9455,
+     "authority": 1.0672,
+     "mech_per_rev": 0.8797
+    },
+    "T1.4:p1:J2.5e-06": {
+     "phase_res": 1.1925,
+     "gain_res": 0.0641,
+     "gain": 0.3973,
+     "phase": 124.3779,
+     "authority": 0.8409,
+     "mech_per_rev": 0.7872
+    },
+    "T1.4:p1:J5.49e-06": {
+     "phase_res": 3.5496,
+     "gain_res": 0.1485,
+     "gain": 0.2734,
+     "phase": 129.3959,
+     "authority": 0.9325,
+     "mech_per_rev": 0.7461
+    },
+    "T1.4:p1:J9.2e-07": {
+     "phase_res": 0.9338,
+     "gain_res": 0.0502,
+     "gain": 0.5154,
+     "phase": 119.2773,
+     "authority": 0.7444,
+     "mech_per_rev": 0.8101
+    },
+    "T1.4:p2:J2.5e-06": {
+     "phase_res": 1.5864,
+     "gain_res": 0.0856,
+     "gain": 0.5359,
+     "phase": 117.6053,
+     "authority": 1.1344,
+     "mech_per_rev": 0.8538
+    },
+    "T1.4:p2:J5.49e-06": {
+     "phase_res": 1.3682,
+     "gain_res": 0.0945,
+     "gain": 0.326,
+     "phase": 122.8046,
+     "authority": 1.1119,
+     "mech_per_rev": 0.8065
+    },
+    "T1.4:p2:J9.2e-07": {
+     "phase_res": 2.0368,
+     "gain_res": 0.0867,
+     "gain": 0.8025,
+     "phase": 110.835,
+     "authority": 1.1591,
+     "mech_per_rev": 0.8884
+    },
+    "T1.4:p3:J2.5e-06": {
+     "phase_res": 1.3514,
+     "gain_res": 0.0734,
+     "gain": 0.4114,
+     "phase": 121.9141,
+     "authority": 0.8709,
+     "mech_per_rev": 0.8154
+    },
+    "T1.4:p3:J5.49e-06": {
+     "phase_res": 2.1451,
+     "gain_res": 0.1011,
+     "gain": 0.2659,
+     "phase": 125.9413,
+     "authority": 0.9071,
+     "mech_per_rev": 0.7667
+    },
+    "T1.4:p3:J9.2e-07": {
+     "phase_res": 2.1785,
+     "gain_res": 0.0702,
+     "gain": 0.5831,
+     "phase": 117.6671,
+     "authority": 0.8422,
+     "mech_per_rev": 0.8495
+    }
+   },
+   "worst_phase_node": "T1.4:p1:J5.49e-06",
+   "worst_gain_node": "T1.4:p1:J5.49e-06"
+  }
+ },
+ "7in_v5|cont8": {
+  "margin": {
+   "cr_pl": 0.060424164199091836,
+   "feasible_pl": false,
+   "viol_hard": {
+    "resonance": 0.3539
+   },
+   "res_margin": 0.0969167158906783,
+   "res_which": "pitch antisym+hub 0.93/rev vs 1P"
+  },
+  "control_quality": {
+   "cr_pl": 0.060424164199091836,
+   "feasible_pl": false,
+   "viol_hard": {
+    "cq_phase": 0.3327,
+    "cq_gain": 0.8862
+   },
+   "res_margin": 0.2744609557192321,
+   "res_which": "pitch sym 1.27/rev vs 1P",
+   "phase_spread_deg": 19.99118555424218,
+   "gain_spread": 0.47153999845491645
+  },
+  "control_quality_cal": {
+   "cr_pl": 0.060424164199091836,
+   "feasible_pl": true,
+   "viol_hard": {},
+   "res_margin": 0.2744609557192321,
+   "res_which": "pitch sym 1.27/rev vs 1P",
+   "phase_res_deg": 4.749185418725506,
+   "gain_res": 0.1252601512098877,
+   "groups": {
+    "rpm": [
+     0.7410618525331583,
+     0.023922368874241297
+    ],
+    "temp": [
+     2.0043880876106868,
+     0.046434470275897755
+    ],
+    "creep": [
+     0.9433153734868256,
+     0.022190905505419467
+    ],
+    "J": [
+     1.4047056649503986,
+     0.09288189717935968
+    ]
+   },
+   "authority_min": 0.6961759275583779,
+   "cr_pl_ratio_min": 0.0,
+   "mech_margin_min": 0.0553135633347972,
+   "mech_side_flip": false,
+   "per_node": {
+    "T0.7:nom:J2.5e-06": {
+     "phase_res": 2.5787,
+     "gain_res": 0.1098,
+     "gain": 0.5694,
+     "phase": 102.3673,
+     "mech_per_rev": 0.8937
+    },
+    "T0.7:nom:J5.49e-06": {
+     "phase_res": 1.778,
+     "gain_res": 0.1115,
+     "gain": 0.3267,
+     "phase": 109.2731,
+     "mech_per_rev": 0.8467
+    },
+    "T0.7:nom:J9.2e-07": {
+     "phase_res": 3.6463,
+     "gain_res": 0.1041,
+     "gain": 0.9125,
+     "phase": 92.1442,
+     "mech_per_rev": 0.9275
+    },
+    "T0.7:p0:J2.5e-06": {
+     "phase_res": 3.1422,
+     "gain_res": 0.1239,
+     "gain": 0.6375,
+     "phase": 100.0761,
+     "authority": 1.1197,
+     "mech_per_rev": 0.9034
+    },
+    "T0.7:p0:J5.49e-06": {
+     "phase_res": 2.0741,
+     "gain_res": 0.1233,
+     "gain": 0.3531,
+     "phase": 108.009,
+     "authority": 1.0809,
+     "mech_per_rev": 0.8562
+    },
+    "T0.7:p0:J9.2e-07": {
+     "phase_res": 4.7161,
+     "gain_res": 0.1157,
+     "gain": 1.0659,
+     "phase": 87.3572,
+     "authority": 1.1681,
+     "mech_per_rev": 0.9371
+    },
+    "T0.7:p1:J2.5e-06": {
+     "phase_res": 1.7299,
+     "gain_res": 0.078,
+     "gain": 0.4745,
+     "phase": 107.1851,
+     "authority": 0.8334,
+     "mech_per_rev": 0.8684
+    },
+    "T0.7:p1:J5.49e-06": {
+     "phase_res": 1.4846,
+     "gain_res": 0.0912,
+     "gain": 0.2835,
+     "phase": 112.6573,
+     "authority": 0.8678,
+     "mech_per_rev": 0.8207
+    },
+    "T0.7:p1:J9.2e-07": {
+     "phase_res": 1.9682,
+     "gain_res": 0.0621,
+     "gain": 0.7263,
+     "phase": 99.7676,
+     "authority": 0.7959,
+     "mech_per_rev": 0.9031
+    },
+    "T0.7:p2:J2.5e-06": {
+     "phase_res": 2.9756,
+     "gain_res": 0.1253,
+     "gain": 0.601,
+     "phase": 101.0999,
+     "authority": 1.0555,
+     "mech_per_rev": 0.8977
+    },
+    "T0.7:p2:J5.49e-06": {
+     "phase_res": 1.968,
+     "gain_res": 0.1215,
+     "gain": 0.3427,
+     "phase": 108.6454,
+     "authority": 1.0492,
+     "mech_per_rev": 0.8511
+    },
+    "T0.7:p2:J9.2e-07": {
+     "phase_res": 4.5057,
+     "gain_res": 0.1242,
+     "gain": 0.9663,
+     "phase": 89.8182,
+     "authority": 1.0589,
+     "mech_per_rev": 0.931
+    },
+    "T0.7:p3:J2.5e-06": {
+     "phase_res": 2.07,
+     "gain_res": 0.0935,
+     "gain": 0.519,
+     "phase": 104.2085,
+     "authority": 0.9116,
+     "mech_per_rev": 0.8837
+    },
+    "T0.7:p3:J5.49e-06": {
+     "phase_res": 1.532,
+     "gain_res": 0.1005,
+     "gain": 0.3035,
+     "phase": 110.1844,
+     "authority": 0.929,
+     "mech_per_rev": 0.8364
+    },
+    "T0.7:p3:J9.2e-07": {
+     "phase_res": 2.6544,
+     "gain_res": 0.0821,
+     "gain": 0.8154,
+     "phase": 95.7077,
+     "authority": 0.8936,
+     "mech_per_rev": 0.9179
+    },
+    "T1:nom:J2.5e-06": {
+     "phase_res": 1.9739,
+     "gain_res": 0.0917,
+     "gain": 0.5186,
+     "phase": 111.709,
+     "mech_per_rev": 0.8781
+    },
+    "T1:nom:J5.49e-06": {
+     "phase_res": 1.5917,
+     "gain_res": 0.0979,
+     "gain": 0.3036,
+     "phase": 117.3,
+     "mech_per_rev": 0.8313
+    },
+    "T1:nom:J9.2e-07": {
+     "phase_res": 2.3546,
+     "gain_res": 0.083,
+     "gain": 0.8149,
+     "phase": 103.7664,
+     "mech_per_rev": 0.9121
+    },
+    "T1:p0:J2.5e-06": {
+     "phase_res": 2.9299,
+     "gain_res": 0.1225,
+     "gain": 0.6792,
+     "phase": 105.3483,
+     "authority": 1.3099,
+     "mech_per_rev": 0.9109
+    },
+    "T1:p0:J5.49e-06": {
+     "phase_res": 1.853,
+     "gain_res": 0.1165,
+     "gain": 0.368,
+     "phase": 113.33,
+     "authority": 1.2121,
+     "mech_per_rev": 0.8638
+    },
+    "T1:p0:J9.2e-07": {
+     "phase_res": 4.7492,
+     "gain_res": 0.121,
+     "gain": 1.1738,
+     "phase": 91.8134,
+     "authority": 1.4404,
+     "mech_per_rev": 0.9447
+    },
+    "T1:p1:J2.5e-06": {
+     "phase_res": 1.4295,
+     "gain_res": 0.0745,
+     "gain": 0.3996,
+     "phase": 116.7582,
+     "authority": 0.7705,
+     "mech_per_rev": 0.8357
+    },
+    "T1:p1:J5.49e-06": {
+     "phase_res": 1.5214,
+     "gain_res": 0.0881,
+     "gain": 0.2547,
+     "phase": 120.965,
+     "authority": 0.8388,
+     "mech_per_rev": 0.7915
+    },
+    "T1:p1:J9.2e-07": {
+     "phase_res": 1.3408,
+     "gain_res": 0.068,
+     "gain": 0.5673,
+     "phase": 111.8046,
+     "authority": 0.6962,
+     "mech_per_rev": 0.8676
+    },
+    "T1:p2:J2.5e-06": {
+     "phase_res": 2.2066,
+     "gain_res": 0.1044,
+     "gain": 0.5928,
+     "phase": 109.1825,
+     "authority": 1.1431,
+     "mech_per_rev": 0.8928
+    },
+    "T1:p2:J5.49e-06": {
+     "phase_res": 1.6601,
+     "gain_res": 0.1056,
+     "gain": 0.3362,
+     "phase": 116.1163,
+     "authority": 1.1074,
+     "mech_per_rev": 0.8461
+    },
+    "T1:p2:J9.2e-07": {
+     "phase_res": 2.9475,
+     "gain_res": 0.0991,
+     "gain": 0.9655,
+     "phase": 98.628,
+     "authority": 1.1847,
+     "mech_per_rev": 0.9266
+    },
+    "T1:p3:J2.5e-06": {
+     "phase_res": 1.6997,
+     "gain_res": 0.0798,
+     "gain": 0.4538,
+     "phase": 113.7846,
+     "authority": 0.8751,
+     "mech_per_rev": 0.8612
+    },
+    "T1:p3:J5.49e-06": {
+     "phase_res": 1.4566,
+     "gain_res": 0.0895,
+     "gain": 0.2744,
+     "phase": 118.2898,
+     "authority": 0.9038,
+     "mech_per_rev": 0.8146
+    },
+    "T1:p3:J9.2e-07": {
+     "phase_res": 1.8854,
+     "gain_res": 0.0676,
+     "gain": 0.6868,
+     "phase": 107.8219,
+     "authority": 0.8427,
+     "mech_per_rev": 0.8952
+    },
+    "T1.4:nom:J2.5e-06": {
+     "phase_res": 1.4789,
+     "gain_res": 0.0764,
+     "gain": 0.4172,
+     "phase": 120.2934,
+     "mech_per_rev": 0.8403
+    },
+    "T1.4:nom:J5.49e-06": {
+     "phase_res": 1.6989,
+     "gain_res": 0.1,
+     "gain": 0.2728,
+     "phase": 125.1314,
+     "mech_per_rev": 0.7996
+    },
+    "T1.4:nom:J9.2e-07": {
+     "phase_res": 1.4611,
+     "gain_res": 0.0791,
+     "gain": 0.5743,
+     "phase": 114.9095,
+     "mech_per_rev": 0.8689
+    },
+    "T1.4:p0:J2.5e-06": {
+     "phase_res": 1.9155,
+     "gain_res": 0.1042,
+     "gain": 0.5413,
+     "phase": 115.7579,
+     "authority": 1.2974,
+     "mech_per_rev": 0.8824
+    },
+    "T1.4:p0:J5.49e-06": {
+     "phase_res": 1.6243,
+     "gain_res": 0.102,
+     "gain": 0.3182,
+     "phase": 121.5132,
+     "authority": 1.1664,
+     "mech_per_rev": 0.8379
+    },
+    "T1.4:p0:J9.2e-07": {
+     "phase_res": 2.5669,
+     "gain_res": 0.1053,
+     "gain": 0.8452,
+     "phase": 107.6669,
+     "authority": 1.4715,
+     "mech_per_rev": 0.9143
+    },
+    "T1.4:p1:J2.5e-06": {
+     "phase_res": 1.6452,
+     "gain_res": 0.0839,
+     "gain": 0.3798,
+     "phase": 123.9681,
+     "authority": 0.9104,
+     "mech_per_rev": 0.8103
+    },
+    "T1.4:p1:J5.49e-06": {
+     "phase_res": 2.4508,
+     "gain_res": 0.1082,
+     "gain": 0.2662,
+     "phase": 129.6666,
+     "authority": 0.9759,
+     "mech_per_rev": 0.7715
+    },
+    "T1.4:p1:J9.2e-07": {
+     "phase_res": 0.9173,
+     "gain_res": 0.0623,
+     "gain": 0.4858,
+     "phase": 118.4743,
+     "authority": 0.8458,
+     "mech_per_rev": 0.8367
+    },
+    "T1.4:p2:J2.5e-06": {
+     "phase_res": 1.4914,
+     "gain_res": 0.0871,
+     "gain": 0.466,
+     "phase": 118.0293,
+     "authority": 1.117,
+     "mech_per_rev": 0.856
+    },
+    "T1.4:p2:J5.49e-06": {
+     "phase_res": 1.6486,
+     "gain_res": 0.1039,
+     "gain": 0.2998,
+     "phase": 123.9338,
+     "authority": 1.099,
+     "mech_per_rev": 0.8156
+    },
+    "T1.4:p2:J9.2e-07": {
+     "phase_res": 1.7478,
+     "gain_res": 0.095,
+     "gain": 0.6505,
+     "phase": 111.2558,
+     "authority": 1.1326,
+     "mech_per_rev": 0.884
+    },
+    "T1.4:p3:J2.5e-06": {
+     "phase_res": 1.438,
+     "gain_res": 0.0693,
+     "gain": 0.3751,
+     "phase": 122.0975,
+     "authority": 0.8992,
+     "mech_per_rev": 0.8232
+    },
+    "T1.4:p3:J5.49e-06": {
+     "phase_res": 1.6694,
+     "gain_res": 0.0952,
+     "gain": 0.2491,
+     "phase": 126.0476,
+     "authority": 0.9131,
+     "mech_per_rev": 0.7823
+    },
+    "T1.4:p3:J9.2e-07": {
+     "phase_res": 1.1616,
+     "gain_res": 0.0658,
+     "gain": 0.5094,
+     "phase": 117.8284,
+     "authority": 0.8869,
+     "mech_per_rev": 0.8522
+    }
+   },
+   "worst_phase_node": "T1:p0:J9.2e-07",
+   "worst_gain_node": "T0.7:p2:J2.5e-06"
+  }
  }
 }
