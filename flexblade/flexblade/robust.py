@@ -32,6 +32,27 @@ CQ_PERTURB = (
     {"flexure.thickness": 1.05, "flexure.width": 0.95, "flexure.length": 1.05, "flexure.hinge_radius": 1.05},
     {"flexure.thickness": 0.95, "flexure.width": 1.05, "flexure.length": 0.95, "flexure.hinge_radius": 0.95},
 )
+# opt-in CQ_TOL=datumed: thickness +-5 % (commercial shim), width/length +-2 %, hinge_radius +-1.5 %
+# (datumed build, study/results/hinge_tolerance.md); same sign pattern as the default set.
+TOL_DATUMED = {"thickness": 0.05, "width": 0.02, "length": 0.02, "hinge_radius": 0.015}
+
+
+def tol_ranges():
+    """fractional half-widths per flexure dim for the active CQ_TOL set"""
+    import os
+    if os.environ.get("CQ_TOL") == "datumed":
+        return dict(TOL_DATUMED)
+    return {k: 0.05 for k in TOL_DATUMED}
+
+
+def _perturb_set():
+    r = tol_ranges()
+    return tuple({f"flexure.{k}": 1 + sg * r[k] for k, sg in zip(r, pat)} for pat in
+                 ((1, 1, -1, 1), (-1, -1, 1, -1), (1, -1, 1, 1), (-1, 1, -1, -1)))
+
+
+if __import__("os").environ.get("CQ_TOL") == "datumed":
+    CQ_PERTURB = _perturb_set()
 CQ_PHASE_MAX_DEG = 15.0   # +- about the per-throttle median (the FC trims a fixed per-throttle offset)
 CQ_GAIN_MAX = 0.25        # +- about the median gain at each (throttle, J) (the FC gain schedule)
 

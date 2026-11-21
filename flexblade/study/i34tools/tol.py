@@ -22,7 +22,8 @@ def main():
     rng = random.Random(int(sys.argv[3]) if len(sys.argv) > 3 else 0)
     builds = [("nom", d)]
     for i in range(n):
-        f = {k: rng.uniform(0.95, 1.05) for k in KEYS}
+        R = robust.tol_ranges()
+        f = {k: rng.uniform(1 - R[k], 1 + R[k]) for k in KEYS}
         fx = d.flexure.model_copy(update={k: getattr(d.flexure, k) * v for k, v in f.items()})
         builds.append((" ".join(f"{k[0]}{v:.3f}" for k, v in f.items()), d.model_copy(update=dict(flexure=fx))))
     jobs = [(b, t, dv) for b, bd in builds for t, dv in robust.variants(bd, robust.THRUST_FACTORS, None, [3.76e-6], None)]
