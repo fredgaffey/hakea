@@ -894,8 +894,19 @@ def solve_static(model: FEModel, Omega: float, fext: Callable[[State], np.ndarra
 # --------------------------------------------------------------------------- element recovery
 
 
-def element_end_forces(e: Element, c: ElementCR) -> tuple[np.ndarray, np.ndarray]:
-    """Section forces [N, V2, V3, T, M2, M3] at end a and end b (element frame, CR)."""
+def element_end_forces(e: Element, c: ElementCR, st: Optional[State] = None) -> tuple[np.ndarray, np.ndarray]:
+    """Section forces [N, V2, V3, T, M2, M3] at end a and end b.
+
+    st=None: K12·d7 in the element CR frame (legacy). Its rotational components are conjugate to the
+    LOG end rotations, not spatial moments: off by ~½θ×M (θ = end rotation vs CR frame), which with
+    a large in-plane M3 leaks several mN·m into the soft out-of-plane M2 and makes M2 jump at nodes.
+    st given: the nodal action Bᵀf7 (spatial force/moment, global) resolved in the actual end-section
+    frame R_node·Q_slot·E0 — continuous across nodes, consistent with nodal equilibrium."""
+    if st is not None and e.L0 > 0.0:
+        g = c.B.T @ c.f7
+        Ra, Rb = _endR(e, st)
+        Fa, Fb = Ra @ e.E0, Rb @ e.E0
+        return (-np.r_[Fa.T @ g[0:3], Fa.T @ g[3:6]], np.r_[Fb.T @ g[6:9], Fb.T @ g[9:12]])
     d12 = np.zeros(12)
     d12[IDX7] = c.d7
     f12 = e.K12 @ d12

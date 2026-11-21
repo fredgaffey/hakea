@@ -46,12 +46,12 @@ def beam_hover(d: Design):
             if not ids or getattr(m, "cable", False):
                 continue
             ea, eb = fe.elements[ids[0]], fe.elements[ids[-1]]
-            fa, _ = element_end_forces(ea, sa.cr[ids[0]])
-            _, fb = element_end_forces(eb, sa.cr[ids[-1]])
+            fa, _ = element_end_forces(ea, sa.cr[ids[0]], st)
+            _, fb = element_end_forces(eb, sa.cr[ids[-1]], st)
             sec = ea.sections[0]
             sm_all = max(max(R._fibre_mean(s_, f_)) for i in ids for s_, f_ in
                          zip((fe.elements[i].sections[0], fe.elements[i].sections[-1]),
-                             element_end_forces(fe.elements[i], sa.cr[i]))) * kt
+                             element_end_forces(fe.elements[i], sa.cr[i], st))) * kt
             oop = []
             for s_, f_ in ((ea.sections[0], fa), (eb.sections[-1], fb)):
                 ep = np.linalg.solve(s_.stiffness6(), f_)

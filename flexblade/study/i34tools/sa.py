@@ -10,7 +10,7 @@ import run_study as rs
 from flexblade import robust, api
 from flexblade.schema import Design
 from concurrent.futures import ProcessPoolExecutor
-cq.WORKERS = 3
+cq.WORKERS = int(os.environ.get("SA_WORKERS", 3))
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
 
