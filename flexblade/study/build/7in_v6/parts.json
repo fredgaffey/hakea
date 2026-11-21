@@ -1,0 +1,312 @@
+{
+ "hub_fitting_assembly": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 0,
+  "volume_mm3": 5179.7,
+  "bbox_mm": [
+   40.0,
+   24.4,
+   29.8
+  ]
+ },
+ "blade1_with_root_fitting": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 0,
+  "volume_mm3": 3045.9,
+  "bbox_mm": [
+   80.3,
+   25.5,
+   23.5
+  ]
+ },
+ "blade2_with_root_fitting": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 0,
+  "volume_mm3": 3117.4,
+  "bbox_mm": [
+   80.3,
+   25.5,
+   19.9
+  ]
+ },
+ "params": {
+  "t": 0.15,
+  "w": 5.84,
+  "L": 12.5,
+  "land": 9.666436778875658,
+  "slot_t": 0.2,
+  "slot_w": 6.04,
+  "jaw_r": 1.5,
+  "wall": 1.2,
+  "strand_d": 1.5,
+  "channel_d": 1.8,
+  "well_d": 3.75,
+  "slim": true
+ },
+ "notes": [
+  "crossing edge gap 1.90 mm < 2 walls: U jaws, slot open on the crossing edge (strip overhangs the jaw by 0.5 mm)"
+ ],
+ "clearance": {
+  "min_gap_mm": 4.1030456933530886,
+  "at_lag_deg": 5.0,
+  "at_pitch_deg": 8.0,
+  "lag_range_deg": 5.0,
+  "pitch_range_deg": 8.0,
+  "note": "negative = interference volume mm^3"
+ },
+ "rest_gap_mm": 4.175457854985414,
+ "mass_g": {
+  "hub_fitting_per_blade": 1.11,
+  "root_fitting": 1.18,
+  "model_shank": 0.08,
+  "hub_material": "pa6_cf",
+  "blade_material": "pa6_cf"
+ },
+ "mass_check": {
+  "hub": {
+   "mass_g_fittings": 1.108,
+   "mass_g_trimesh": 1.108,
+   "Ixx_Iyy_Izz_fittings": [
+    5.510970707673417e-08,
+    3.1794363539698735e-08,
+    6.419502114113488e-08
+   ],
+   "Ixx_Iyy_Izz_trimesh": [
+    5.510970707673409e-08,
+    3.179436353969872e-08,
+    6.419502114113489e-08
+   ],
+   "com_mm_fittings": [
+    10.094548474975838,
+    -0.00010106847537087815,
+    -5.805619944587521
+   ],
+   "com_mm_trimesh": [
+    10.094548474975841,
+    -0.0001010684753722498,
+    -5.805619944587524
+   ]
+  },
+  "root": {
+   "mass_g_fittings": 1.179,
+   "mass_g_trimesh": 1.179,
+   "Ixx_Iyy_Izz_fittings": [
+    5.8270178723885403e-08,
+    4.6577673612387695e-08,
+    7.597987889468777e-08
+   ],
+   "Ixx_Iyy_Izz_trimesh": [
+    5.827017872388546e-08,
+    4.657767361238581e-08,
+    7.597987889468582e-08
+   ],
+   "com_mm_fittings": [
+    19.326454002227507,
+    -0.0026218099730614544,
+    5.3880166143068
+   ],
+   "com_mm_trimesh": [
+    19.326454002227532,
+    -0.0026218099730621006,
+    5.388016614306795
+   ]
+  }
+ },
+ "modes": {
+  "T0.7": {
+   "rpm": 10957.39988181725,
+   "pre_lag": 1.5897673838387205,
+   "hover": [
+    [
+     104.20449468842871,
+     "pitch sym"
+    ],
+    [
+     151.27305164211967,
+     "pitch antisym+hub"
+    ],
+    [
+     327.8331775796442,
+     "flap antisym"
+    ],
+    [
+     337.9409542778471,
+     "flap sym"
+    ],
+    [
+     883.4632949612856,
+     "pitch sym"
+    ],
+    [
+     942.7797528505739,
+     "pitch antisym"
+    ],
+    [
+     1086.9946577530836,
+     "flap antisym"
+    ]
+   ],
+   "rest": [
+    [
+     35.1127163869473,
+     "pitch sym"
+    ],
+    [
+     50.742598180991195,
+     "pitch antisym+hub"
+    ],
+    [
+     247.22852501348353,
+     "flap sym"
+    ],
+    [
+     249.69822033939656,
+     "flap antisym"
+    ],
+    [
+     921.1565568768101,
+     "pitch sym"
+    ],
+    [
+     987.594257068279,
+     "pitch antisym"
+    ],
+    [
+     1058.1214809940486,
+     "pitch sym"
+    ]
+   ]
+  },
+  "T1": {
+   "rpm": 13044.179739275669,
+   "pre_lag": 1.5897673838387205,
+   "hover": [
+    [
+     122.16655551950187,
+     "pitch sym"
+    ],
+    [
+     175.55083957680748,
+     "pitch antisym+hub"
+    ],
+    [
+     338.07454117438965,
+     "flap antisym"
+    ],
+    [
+     354.20773984004984,
+     "flap sym"
+    ],
+    [
+     692.2745035546262,
+     "pitch sym"
+    ],
+    [
+     881.9268372257266,
+     "pitch antisym"
+    ],
+    [
+     1105.6801006408195,
+     "pitch sym"
+    ]
+   ],
+   "rest": [
+    [
+     35.112714746068484,
+     "pitch sym"
+    ],
+    [
+     50.742598057890135,
+     "pitch antisym+hub"
+    ],
+    [
+     247.22852512014404,
+     "flap sym"
+    ],
+    [
+     249.69822068607212,
+     "flap antisym"
+    ],
+    [
+     921.1565569491673,
+     "pitch sym"
+    ],
+    [
+     987.5942570836605,
+     "pitch antisym"
+    ],
+    [
+     1058.12148092556,
+     "pitch sym"
+    ]
+   ]
+  },
+  "T1.4": {
+   "rpm": 15622.4107539575,
+   "pre_lag": 1.5897673838387205,
+   "hover": [
+    [
+     149.33081912981768,
+     "pitch sym"
+    ],
+    [
+     213.8351679855815,
+     "pitch antisym+hub"
+    ],
+    [
+     317.24410220187656,
+     "pitch sym"
+    ],
+    [
+     376.67070306915684,
+     "flap sym"
+    ],
+    [
+     628.5374652744204,
+     "pitch sym"
+    ],
+    [
+     709.1235974527387,
+     "pitch antisym"
+    ],
+    [
+     1130.5574219890339,
+     "pitch sym"
+    ]
+   ],
+   "rest": [
+    [
+     35.1127144930428,
+     "pitch sym"
+    ],
+    [
+     50.74259797322507,
+     "pitch antisym+hub"
+    ],
+    [
+     247.22852498215633,
+     "flap sym"
+    ],
+    [
+     249.6982202449969,
+     "flap antisym"
+    ],
+    [
+     921.1565570196101,
+     "pitch sym"
+    ],
+    [
+     987.5942571427248,
+     "pitch antisym"
+    ],
+    [
+     1058.1214811428533,
+     "pitch sym"
+    ]
+   ]
+  }
+ }
+}
