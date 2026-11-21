@@ -176,3 +176,10 @@ Clamp/joint compliance lowers the real number, so take the tap-test as authorita
 3. **Fit**: `python flexblade/study/calib/fit_cyclic.py log.csv --nodes 5 --pole-pairs <pp> --out schedule` (use `--sens` for IMU units per N m). It lock-in demodulates per 1 s rpm window (1P..4P nuisance terms), robustly fits ln|G| and phase at the nodes (piecewise linear in ln eRPM) and writes `schedule.csv/.md` (erpm, gain, phase_deg, gain_ci, phase_ci; 95 % half-widths). Reject a build whose CI exceeds 5 % / 3 deg; re-log with more amplitude or a slower sweep.
 4. **Load** the CSV table into the FC schedule (Lua/param table, linear in ln eRPM, cyclic gain and phase); re-do after a crash or strip replacement.
 Validated on synthetic logs (10in v5 model, 1 % eRPM jitter, nP vibration, IMU noise): study/calib/synth.py.
+
+## Critical dimensions (hinge radius)
+1. Hinge radius r_h (crossing point, 21.5 mm in v8) is THE build dimension: dln(p)/dln(r_h) = 0.43, +0.1 mm moves mech mode/rev by +0.001 (study/results/hinge_tolerance.md).
+2. Hold r_h to +-0.15 mm: datum hub and root slot exits on steel dowels, not printed edges; check with a gauge pin before gluing.
+3. Seat each strip hard against the blind root end before the epoxy; mis-seating adds up to 0.05 mm.
+4. Keep the cross-gap shim at 2.7 +-0.05 mm and layers <= 0.12 (z error couples into r_h via the 62 deg skew).
+5. After assembly pluck-test the pitch-sym line; trim with a 0.1 mm shim under the root fitting if the line is off by more than 2 %.
