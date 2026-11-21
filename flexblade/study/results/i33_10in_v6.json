@@ -165,5 +165,100 @@
   "other_margin": 0.2331202837123454,
   "other_which": "pitch sym 1.23/rev vs 1P",
   "cr_pl_margin_crit": 0.09000528236851517
+ },
+ "skew58": {
+  "x": {
+   "flexure.skew_deg": 58.0
+  },
+  "cr_pl": 0.10037662601663876,
+  "feasible": true,
+  "viol": {},
+  "phase": 10.813964497759653,
+  "gain": 0.15636131076772242,
+  "auth": 0.7129761469707139,
+  "mech": 0.038571019009580154,
+  "flip": false,
+  "cq_ratio": 1.285700633652672,
+  "other_margin": 0.1699134954350776,
+  "other_which": "pitch sym 1.17/rev vs 1P",
+  "cr_pl_margin_crit": 0.10037662601663876
+ },
+ "skew56hr-5": {
+  "x": {
+   "flexure.skew_deg": 56.0,
+   "flexure.hinge_radius": 0.020425
+  },
+  "cr_pl": 0.10105977530314378,
+  "feasible": false,
+  "viol": {
+   "check:aeroelastic_stability": 0.4238,
+   "geom:flexure_inside_hub": 0.0089
+  },
+  "phase": 11.136266969933075,
+  "gain": 0.15816467040384308,
+  "auth": 0.7056782774957885,
+  "mech": 0.034149114949374004,
+  "flip": false,
+  "cq_ratio": 1.1383038316458003,
+  "other_margin": 0.16341838445433843,
+  "other_which": "pitch sym 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.10105977530314378
+ },
+ "skew58.5": {
+  "x": {
+   "flexure.skew_deg": 58.5
+  },
+  "cr_pl": 0.09602602500890423,
+  "feasible": true,
+  "viol": {},
+  "phase": 9.853557511060126,
+  "gain": 0.15750557649179445,
+  "auth": 0.7213879479655974,
+  "mech": 0.044737572737889364,
+  "flip": false,
+  "cq_ratio": 1.4912524245963121,
+  "other_margin": 0.16915933625601354,
+  "other_which": "pitch sym+hub 1.17/rev vs 1P",
+  "cr_pl_margin_crit": 0.09602602500890423
+ },
+ "skew55hr-5": {
+  "x": {
+   "flexure.skew_deg": 55.0,
+   "flexure.hinge_radius": 0.020425
+  },
+  "cr_pl": 0.10479734934360399,
+  "feasible": false,
+  "viol": {
+   "check:aeroelastic_stability": 0.836,
+   "geom:flexure_inside_hub": 0.0132,
+   "cqc_mech_margin": 0.2338
+  },
+  "phase": 12.21684720184923,
+  "gain": 0.15133179789932324,
+  "auth": 0.6898472621985281,
+  "mech": 0.022985806873013104,
+  "flip": false,
+  "cq_ratio": 0.7661935624337701,
+  "other_margin": 0.1647036719159798,
+  "other_which": "flap sym 1.16/rev vs 1P",
+  "cr_pl_margin_crit": 0.10479734934360399
+ },
+ "v4L23.3": {
+  "x": {
+   "base": "v4",
+   "flexure.length": 0.0233
+  },
+  "cr_pl": 0.08207985413344662,
+  "feasible": true,
+  "viol": {},
+  "phase": 12.714922309977839,
+  "gain": 0.19765677876483803,
+  "auth": 0.6386512324032527,
+  "mech": 0.031004238931334638,
+  "flip": false,
+  "cq_ratio": 1.033474631044488,
+  "other_margin": 0.20589226246379466,
+  "other_which": "pitch sym 1.20/rev vs 1P",
+  "cr_pl_margin_crit": 0.08207985413344662
  }
 }
