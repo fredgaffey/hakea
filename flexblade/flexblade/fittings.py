@@ -280,6 +280,8 @@ def _geom_key(design: Design) -> str:
     d = design.model_dump(mode="json")
     for k in ("name", "notes", "op", "motor", "analysis"):
         d.pop(k, None)
+    for k in ("fitting_balance_mass", "fitting_balance_z"):     # point pins, added after the CSG
+        d["flexure"].pop(k, None)
     return hashlib.sha256(json.dumps(d, sort_keys=True).encode()).hexdigest()[:16]
 
 
@@ -304,7 +306,48 @@ def fitting_mass_props(design: Design) -> dict:
         rho = get_material(mat).rho * 1e-9          # kg/mm^3
         Cs = rho * C * 1e-6                          # kg m^2
         out[key] = (rho * vol, com * 1e-3, np.trace(Cs) * np.eye(3) - Cs)
+    f = design.flexure
+    mb = balance_pin_mass(design, out["root"]) if f.fitting_balance_mass == "auto" else float(f.fitting_balance_mass)
+    if mb > 0:
+        m, c, I = out["root"]
+        z = f.fitting_balance_z
+        out["root"] = add_point_masses(m, c, I, [(mb, np.array([c[0], 0.0, z])), (mb, np.array([c[0], 0.0, -z]))])
     return out
+
+
+def add_point_masses(m, c, I, pts):
+    """rigid body (m, com c, inertia I about c) + point masses [(mi, xi)] -> (m, com, I about com)"""
+    ms = [m] + [p[0] for p in pts]
+    xs = [np.asarray(c, float)] + [np.asarray(p[1], float) for p in pts]
+    M = float(sum(ms))
+    C = sum(mi * xi for mi, xi in zip(ms, xs)) / M
+    J = np.array(I, float).copy()
+    for mi, xi in zip(ms, xs):
+        r = xi - C
+        J += mi * ((r @ r) * np.eye(3) - np.outer(r, r))
+    return M, C, J
+
+
+def pitch_axis_moments(m, c, I) -> tuple[float, float, float]:
+    """(Syy, Szz, Syz) = sum m (y^2, z^2, y z) of a rigid body (m, com c, inertia I about c; frame H)
+    about the pitch axis (the radial x line through the hinge point, y = z = 0), kg m^2.
+    Centrifugal propeller moment of the body for a pitch rotation th about x (Omega about z):
+    M = -Omega^2 [(Syy - Szz) sin th cos th + Syz cos 2th]  ->  pitch stiffness
+    K_prop = Omega^2 (Syy - Szz) (+ = restoring / pitch-flattening, chordwise spread; - = normal
+    spread, destabilising: "Chinese weight") and a static moment -Omega^2 Syz."""
+    S = 0.5 * np.trace(I) * np.eye(3) - np.asarray(I, float)      # second moments about com
+    return (float(S[1, 1] + m * c[1] ** 2), float(S[2, 2] + m * c[2] ** 2),
+            float(S[1, 2] + m * c[1] * c[2]))
+
+
+def balance_pin_mass(design: Design, root=None) -> float:
+    """kg per pin of the +-fitting_balance_z pin pair (at y = 0) that zeroes the root fitting's
+    Syy - Szz about the pitch axis: the pair adds Szz = 2 m z^2 and no Syy / Syz."""
+    if root is None:
+        root = fitting_mass_props(design.model_copy(update=dict(
+            flexure=design.flexure.model_copy(update=dict(fitting_balance_mass=0.0)))))["root"]
+    syy, szz, _ = pitch_axis_moments(*root)
+    return max(syy - szz, 0.0) / (2.0 * design.flexure.fitting_balance_z ** 2)
 
 
 def _keepout(strips, prm: StripParams):
