@@ -45,7 +45,8 @@ class RotorSlot {
     g.setAttribute('position', new THREE.BufferAttribute(pos.slice(), 3));
     g.setIndex(part.faces.flat());
     g.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ color: part.color || '#a070dc', metalness: 0.05, roughness: 0.6, side: THREE.DoubleSide });
+    const metal = /steel|brass|bronze|becu|ti6/.test(part.material || '');
+    const mat = new THREE.MeshStandardMaterial({ color: part.color || '#a070dc', metalness: metal ? 0.85 : 0.05, roughness: metal ? 0.3 : 0.6, side: THREE.DoubleSide });
     mat.userData.baseOpacity = part.role === 'skin' || part.role === 'member_skin' ? 0.5 : 1;
     const mesh = new THREE.Mesh(g, mat);
     mesh.userData.part = part;

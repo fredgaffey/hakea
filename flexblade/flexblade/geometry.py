@@ -982,9 +982,23 @@ _ROLE_SHADE = {"hub": -0.30, "spoke": -0.15, "fitting": 0.20, "fairing": 0.35, "
                "member_skin": 0.1, "blade": 0.0, "skin": 0.1, "core": -0.1, "rod": 0.0}
 
 
+# Opt-in photo-real palette (FLEXBLADE_REAL_COLORS=1): what the parts look like on the bench.
+REAL_COLORS = {
+    "pa6_cf": (48, 48, 52), "petg_cf": (58, 60, 64), "pla": (215, 215, 210),
+    "tpu_95a": (235, 232, 220), "tpu_64d": (230, 226, 210),
+    "cf_rod_pultruded": (28, 28, 30), "cf_tow": (28, 28, 30),
+    "steel_301_fh": (196, 202, 210), "steel_302_spring": (196, 202, 210), "steel_1095_shim": (52, 62, 98),
+    "fr4_g10": (196, 200, 140), "aramid_yarn": (232, 188, 52), "uhmwpe_braid": (244, 244, 238),
+}
+
+
 def color_hex(material: str, role: str = "") -> str:
     """Material hue with a small role-based lightness shift (hub darker, fittings lighter)."""
-    c = np.array(MATERIAL_COLORS.get(material, (160, 110, 220)), float)
+    import os
+    pal = REAL_COLORS if os.environ.get("FLEXBLADE_REAL_COLORS") else MATERIAL_COLORS
+    c = np.array(pal.get(material, MATERIAL_COLORS.get(material, (160, 110, 220))), float)
+    if pal is REAL_COLORS:
+        role = "" if role in ("hub", "spoke", "fitting") else role     # real parts: one colour per material
     sh = _ROLE_SHADE.get(role, 0.0)
     c = c * (1 + sh) if sh < 0 else c + (255 - c) * sh
     return "#%02x%02x%02x" % tuple(int(round(min(255, max(0, v)))) for v in c)

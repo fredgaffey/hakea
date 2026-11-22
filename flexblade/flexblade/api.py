@@ -55,7 +55,16 @@ def export_geometry(design: Design | dict, fmt: str, path: str) -> str:
 
 def presets() -> dict[str, Design]:
     from . import presets as p
-    return p.all_presets()
+    out = p.all_presets()
+    import glob, json, os
+    pat = os.environ.get("FLEXBLADE_EXTRA_PRESETS")      # opt-in: also list design JSON files (GUI viewing)
+    if pat:
+        for f in sorted(glob.glob(pat)):
+            try:
+                out[os.path.basename(f)[:-5]] = Design.model_validate(json.load(open(f)))
+            except Exception:
+                pass
+    return out
 
 
 def schema() -> dict[str, Any]:
