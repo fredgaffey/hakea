@@ -157,6 +157,9 @@ def variables(concept: str, D: float) -> list[Variable]:
             if MATERIAL == "fr4_g10":   # G10 sheet: idx into optimize.G10_STOCK (0.1-0.8 mm), n = 1 reachable
                 V += [Variable(path="flexure.strip_laminae", lo=0.5, hi=6.5),
                       Variable(path="flexure.lamina_idx", lo=-0.5, hi=5.5)]
+            elif MATERIAL == "steel_304_hta":   # SMT stencil foil: idx into optimize.STENCIL_STOCK (0.08-0.20 mm), n 1-3
+                V += [Variable(path="flexure.strip_laminae", lo=0.5, hi=3.5),
+                      Variable(path="flexure.lamina_idx", lo=-0.5, hi=6.5)]
             else:
                 V += [Variable(path="flexure.strip_laminae", lo=1.5, hi=24.5 if _ext else 12.5),
                       Variable(path="flexure.lamina_idx", lo=-0.5, hi=6.5 if _ext else 4.5)]

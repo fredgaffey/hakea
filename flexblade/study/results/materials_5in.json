@@ -2327,5 +2327,544 @@
     "pitch_pr": 0.7622252673288464
    }
   ]
+ },
+ "smt304_1x100": {
+  "name": "smt304_1x100",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.16376286250115515,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.384
+     ],
+     [
+      "fatigue_stress",
+      1.968
+     ],
+     [
+      "fatigue_stress",
+      1.831
+     ],
+     [
+      "fatigue_strain",
+      1.79
+     ]
+    ],
+    "pitch_pr": 0.6410528588901803
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.1374601887194994,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.384
+     ],
+     [
+      "fatigue_stress",
+      1.83
+     ],
+     [
+      "fatigue_stress",
+      1.781
+     ],
+     [
+      "fatigue_strain",
+      1.669
+     ]
+    ],
+    "pitch_pr": 0.6273569730507592
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.08883302956826668,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.384
+     ],
+     [
+      "fatigue_stress",
+      2.139
+     ],
+     [
+      "fatigue_stress",
+      1.952
+     ],
+     [
+      "fatigue_strain",
+      1.909
+     ]
+    ],
+    "pitch_pr": 0.6150733048477469
+   }
+  ]
+ },
+ "smt304_1x100_L125": {
+  "name": "smt304_1x100_L125",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.13703908000590342,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "split"
+    ],
+    "top": [
+     [
+      "fatigue_stress",
+      3.776
+     ],
+     [
+      "fatigue_strain",
+      3.516
+     ],
+     [
+      "root_envelope",
+      2.755
+     ],
+     [
+      "fatigue_stress",
+      2.085
+     ]
+    ],
+    "pitch_pr": 0.6941737403642341
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.10272402315971996,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "split"
+    ],
+    "top": [
+     [
+      "fatigue_stress",
+      2.995
+     ],
+     [
+      "fatigue_strain",
+      2.796
+     ],
+     [
+      "root_envelope",
+      2.755
+     ],
+     [
+      "fatigue_stress",
+      1.586
+     ]
+    ],
+    "pitch_pr": 0.6834557714836946
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.08912410685405509,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.755
+     ],
+     [
+      "fatigue_stress",
+      2.461
+     ],
+     [
+      "fatigue_strain",
+      2.301
+     ],
+     [
+      "fatigue_stress",
+      1.446
+     ]
+    ],
+    "pitch_pr": 0.6746586307906905
+   }
+  ]
+ },
+ "smt304_1x120": {
+  "name": "smt304_1x120",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.1582125923084826,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "fatigue_stress",
+      2.408
+     ],
+     [
+      "root_envelope",
+      2.349
+     ],
+     [
+      "fatigue_stress",
+      2.211
+     ],
+     [
+      "fatigue_strain",
+      2.145
+     ]
+    ],
+    "pitch_pr": 0.6364874560564491
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.1279346749635495,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.349
+     ],
+     [
+      "fatigue_stress",
+      1.952
+     ],
+     [
+      "fatigue_strain",
+      1.738
+     ],
+     [
+      "fatigue_stress",
+      1.673
+     ]
+    ],
+    "pitch_pr": 0.6260755435016322
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.10944789188301143,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.349
+     ],
+     [
+      "fatigue_stress",
+      1.751
+     ],
+     [
+      "fatigue_strain",
+      1.559
+     ],
+     [
+      "fatigue_stress",
+      1.483
+     ]
+    ],
+    "pitch_pr": 0.6202043198815139
+   }
+  ]
+ },
+ "smt304_1x120_L125": {
+  "name": "smt304_1x120_L125",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.2024107327935913,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.739
+     ],
+     [
+      "fatigue_stress",
+      1.893
+     ],
+     [
+      "fatigue_stress",
+      1.734
+     ],
+     [
+      "fatigue_strain",
+      1.684
+     ]
+    ],
+    "pitch_pr": 0.6413737862740443
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.16198992656245798,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.739
+     ],
+     [
+      "fatigue_stress",
+      1.52
+     ],
+     [
+      "fatigue_stress",
+      1.354
+     ],
+     [
+      "fatigue_strain",
+      1.352
+     ]
+    ],
+    "pitch_pr": 0.6303594913428421
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.12766133005082933,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.739
+     ],
+     [
+      "fatigue_stress",
+      1.48
+     ],
+     [
+      "fatigue_strain",
+      1.324
+     ],
+     [
+      "fatigue_stress",
+      1.253
+     ]
+    ],
+    "pitch_pr": 0.6238508403935753
+   }
+  ]
+ },
+ "smt304_1x80": {
+  "name": "smt304_1x80",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.20109108514005186,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub",
+     "split"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.895
+     ],
+     [
+      "fatigue_stress",
+      2.161
+     ],
+     [
+      "fatigue_strain",
+      2.027
+     ],
+     [
+      "fatigue_stress",
+      1.964
+     ]
+    ],
+    "pitch_pr": 0.7234607388006096
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.15401074962367228,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "geom:flexure_inside_hub",
+     "split"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.895
+     ],
+     [
+      "fatigue_stress",
+      1.591
+     ],
+     [
+      "fatigue_stress",
+      1.503
+     ],
+     [
+      "fatigue_strain",
+      1.495
+     ]
+    ],
+    "pitch_pr": 0.7059987829716253
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:harmonic_jitter",
+     "geom:flexure_inside_hub",
+     "pulse_infeasible",
+     "split"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.895
+     ],
+     [
+      "aeroelastic_stability",
+      2.137
+     ],
+     [
+      "fatigue_stress",
+      2.111
+     ],
+     [
+      "fatigue_strain",
+      1.861
+     ]
+    ],
+    "pitch_pr": 0.6947568011407098
+   }
+  ]
+ },
+ "smt304_1x80_L125": {
+  "name": "smt304_1x80_L125",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.20917510235753975,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "geom:flexure_inside_hub",
+     "split"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.326
+     ],
+     [
+      "aeroelastic_stability",
+      1.987
+     ],
+     [
+      "creep_strain",
+      1.288
+     ],
+     [
+      "fatigue_stress",
+      1.028
+     ]
+    ],
+    "pitch_pr": 0.692448977194962
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.09136784234294487,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:harmonic_jitter",
+     "check:interlayer",
+     "check:static_stress",
+     "geom:flexure_inside_hub",
+     "resonance",
+     "split"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      3.554
+     ],
+     [
+      "root_envelope",
+      3.326
+     ],
+     [
+      "creep_strain",
+      1.52
+     ],
+     [
+      "fatigue_stress",
+      1.173
+     ]
+    ],
+    "pitch_pr": 0.6723944890668282
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.09507919412844075,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:interlayer",
+     "check:static_stress",
+     "geom:flexure_inside_hub",
+     "split"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      6.497
+     ],
+     [
+      "root_envelope",
+      3.326
+     ],
+     [
+      "creep_strain",
+      1.692
+     ],
+     [
+      "interlayer",
+      1.313
+     ]
+    ],
+    "pitch_pr": 0.6609715231647891
+   }
+  ]
  }
 }

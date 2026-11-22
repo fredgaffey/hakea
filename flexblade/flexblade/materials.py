@@ -296,6 +296,18 @@ LIBRARY: dict[str, Material] = {
                          fatigue_stress_ratio=0.38,
                          source="301 SS full-hard strip (AMS 5517 FH): E 193 GPa, UTS 1.28 GPa, "
                                 "fatigue ~0.38 UTS at 1e8 (eps_a 0.25 %)"),
+    # 304 stainless, hard-tempered ("HTA") laser-cut SMT-stencil foil (JLCPCB/PCBWay stencils).
+    # ASSUMPTIONS (handbook-typical, verify by coupon; NOT 301 FH): E 193 GPa, rho 7900 (same as 301);
+    # UTS 1.2 GPa (cold-rolled 304 full-hard 1.1-1.3), yield ~0.95 GPa (S 0.70 GPa shear used);
+    # polished-foil fatigue at 1e7-1e8 ~ 0.30 x UTS = 360 MPa (lower than 301 FH's 0.38 since 304 is
+    # a less stable austenite with weaker work-hardened temper); laser-cut edges (HAZ, recast,
+    # burr) take Kt ~1.15 -> allowable 360/1.15 = 313 MPa = 0.26 x UTS = eps_a 0.162 % at E 193 GPa.
+    "steel_304_hta": _iso("steel_304_hta", 7900, 193e9, 0.29, loss_factor=0.001,
+                          Xt=1200e6, Yt=1200e6, Zt=1200e6, S=700e6,
+                          creep_strain_allow=0.0049, fatigue_strain_amp_allow=0.00162,
+                          fatigue_stress_ratio=0.26,
+                          source="304 SS HTA stencil foil (assumed): E 193 GPa, UTS 1.2 GPa, "
+                                 "fatigue 0.30 UTS / Kt 1.15 laser edge = 0.26 UTS (eps_a 0.162 %)"),
     # FR4 / G10 glass-epoxy sheet (NEMA LI-1; e.g. Isola/Rogers G10 datasheets): in-plane
     # E 17-24 GPa (20 used), through-thickness ~10 GPa, ρ 1850, flexural strength ~400 MPa,
     # tensile ~300 MPa; flexural fatigue at 1e7-1e8 ~ 25-30 % static → ε_a ~0.4 %. Sheets
@@ -415,20 +427,21 @@ LIBRARY: dict[str, Material] = {
 }
 STRAP_MATERIALS = ("aramid_yarn", "uhmwpe_braid", "cf_tow")
 # sheet stock cut into strips and clamped (embedded) in the printed fittings, not printed
-SHEET_MATERIALS = ("steel_1095_shim", "steel_301_fh", "fr4_g10", "brass_c260_h", "phosbronze_c510",
+SHEET_MATERIALS = ("steel_1095_shim", "steel_301_fh", "steel_304_hta", "fr4_g10", "brass_c260_h", "phosbronze_c510",
                    "becu_c17200", "ti6al4v", "cf_ud_pultruded_strip", "cf_woven_sheet", "pom_acetal",
                    "pet_film", "pp_sheet")
-SHIM_STEELS = ("steel_1095_shim", "steel_301_fh")
+SHIM_STEELS = ("steel_1095_shim", "steel_301_fh", "steel_304_hta")
 # FR4/G10 sheet thicknesses sold as thin laminate (m); optimize maps flexure.lamina_idx into it
 G10_STOCK = (0.1e-3, 0.2e-3, 0.3e-3, 0.4e-3, 0.5e-3, 0.8e-3)
 # unbonded (dry) stacks of any sheet stock: k = n*k1 (laminate.py); dry stacks never bond
 LAMINABLE_SHEETS = SHEET_MATERIALS
 # metal sheets: modified-Goodman mean-stress check (Su = rotor.STRIP_SU or Xt). Composites and
 # polymers get none (their mean strain is covered by the creep and static-strength checks).
-SHEET_METALS = ("steel_1095_shim", "steel_301_fh", "brass_c260_h", "phosbronze_c510", "becu_c17200",
+SHEET_METALS = ("steel_1095_shim", "steel_301_fh", "steel_304_hta", "brass_c260_h", "phosbronze_c510", "becu_c17200",
                 "ti6al4v")
 SHIM_THICKNESSES = {"steel_1095_shim": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
                     "steel_301_fh": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
+                    "steel_304_hta": (0.8e-4, 1.0e-4, 1.2e-4, 1.3e-4, 1.5e-4, 1.8e-4, 2.0e-4),  # SMT stencil foils
                     "fr4_g10": G10_STOCK,
                     "brass_c260_h": (2.5e-5, 5e-5, 7.5e-5, 1.0e-4, 1.3e-4, 2.5e-4),
                     "phosbronze_c510": (5e-5, 1.0e-4, 1.3e-4, 2.0e-4),
@@ -456,7 +469,7 @@ CLASS_HDT_C = {"pla": 55, "pla_plus": 55, "pla_tough": 55, "pla_ht": 100, "pla_c
                "pa_gf": 160, "ppa_cf": 200, "onyx": 145, "pp": 60, "pp_cf": 70, "pp_gf": 90,
                "peek": 150, "peek_cf": 200, "pekk": 160, "pps_cf": 250, "tpu": 90, "tpe": 80}
 FORMING_TEMP_C = {"tpu_95a": 100.0, "tpu_64d": 105.0, "petg_cf": 90.0, "pla": 65.0, "pa6_cf": 160.0}
-TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0, "steel_1095_shim": 400.0, "steel_301_fh": 400.0}
+TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0, "steel_1095_shim": 400.0, "steel_301_fh": 400.0, "steel_304_hta": 400.0}
 # FR4 Tg ~130-140 C: HDT-type derating applies
 HDT_C_SHEET = {"fr4_g10": 130.0, "pom_acetal": 110.0, "pet_film": 75.0, "pp_sheet": 100.0,
                "cf_ud_pultruded_strip": 110.0, "cf_woven_sheet": 110.0}
@@ -512,7 +525,7 @@ _register_filaments()
 # generic entries: class/group for grouping in the GUI and class filters
 _GENERIC_CLASS = {"tpu_95a": "tpu", "tpu_64d": "tpu", "pa6_cf": "pa_cf", "petg_cf": "petg_cf",
                   "pla": "pla", "cf_rod_pultruded": "cf_rod", "steel_302_spring": "steel_wire",
-                  "steel_1095_shim": "steel_shim", "steel_301_fh": "steel_shim", "fr4_g10": "fr4",
+                  "steel_1095_shim": "steel_shim", "steel_301_fh": "steel_shim", "steel_304_hta": "steel_shim", "fr4_g10": "fr4",
                   "brass_c260_h": "metal_shim", "phosbronze_c510": "metal_shim", "becu_c17200": "metal_shim",
                   "ti6al4v": "metal_shim", "cf_ud_pultruded_strip": "cf_strip", "cf_woven_sheet": "cf_sheet",
                   "pom_acetal": "polymer_sheet", "pet_film": "polymer_sheet", "pp_sheet": "polymer_sheet"}

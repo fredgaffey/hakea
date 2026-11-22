@@ -1752,7 +1752,7 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
 # Ultimate tensile strength used for the modified-Goodman / SWT mean-stress check on shim steels.
 # 1095 spring temper (ASTM A684 / SAE J403 strip, hardened+tempered): UTS 1.6-1.9 GPa -> 1.75 GPa
 # used (the library Xt = 1.4 GPa is the conservative static allowable); 301 FH (AMS 5517): 1.28 GPa.
-STRIP_SU = {"steel_1095_shim": 1.75e9, "steel_301_fh": 1.28e9}
+STRIP_SU = {"steel_1095_shim": 1.75e9, "steel_301_fh": 1.28e9, "steel_304_hta": 1.2e9}
 
 
 def goodman_factor(sm: float, su: float) -> float:
