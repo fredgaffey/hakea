@@ -1,0 +1,2331 @@
+{
+ "lead301_9x4": {
+  "name": "lead301_9x4",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.4415896816514475,
+    "bind": "motor_torque_1p",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.354
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ],
+     [
+      "fatigue_strain",
+      0.923
+     ],
+     [
+      "fatigue_stress",
+      0.686
+     ]
+    ],
+    "pitch_pr": 0.6392509397694575
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.284727257128571,
+    "bind": "motor_torque_1p",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.354
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ],
+     [
+      "fatigue_stress",
+      0.743
+     ],
+     [
+      "esc_duty_peak",
+      0.734
+     ]
+    ],
+    "pitch_pr": 0.6307927447310175
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.20313185401480982,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.354
+     ],
+     [
+      "fatigue_stress",
+      0.993
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ],
+     [
+      "fatigue_strain",
+      0.885
+     ]
+    ],
+    "pitch_pr": 0.6310384119957779
+   }
+  ]
+ },
+ "dental_7x5x050": {
+  "name": "dental_7x5x050",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.40268081859532434,
+    "bind": "fatigue_strain",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.412
+     ],
+     [
+      "aeroelastic_stability",
+      1.22
+     ],
+     [
+      "fatigue_strain",
+      1.038
+     ],
+     [
+      "motor_torque_1p",
+      0.925
+     ]
+    ],
+    "pitch_pr": 0.6441029314125472
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.13285721126143715,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter"
+    ],
+    "top": [
+     [
+      "harmonic_jitter",
+      2.431
+     ],
+     [
+      "root_envelope",
+      2.412
+     ],
+     [
+      "fatigue_stress",
+      1.379
+     ],
+     [
+      "fatigue_strain",
+      1.227
+     ]
+    ],
+    "pitch_pr": 0.6335233972763278
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.10600542362492564,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter"
+    ],
+    "top": [
+     [
+      "harmonic_jitter",
+      2.422
+     ],
+     [
+      "root_envelope",
+      2.412
+     ],
+     [
+      "fatigue_stress",
+      1.604
+     ],
+     [
+      "fatigue_strain",
+      1.426
+     ]
+    ],
+    "pitch_pr": 0.6338899419025086
+   }
+  ]
+ },
+ "dental_6x6x050": {
+  "name": "dental_6x6x050",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.3485026251036217,
+    "bind": "fatigue_strain",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.466
+     ],
+     [
+      "fatigue_strain",
+      1.392
+     ],
+     [
+      "fatigue_stress",
+      1.236
+     ],
+     [
+      "fatigue_strain",
+      1.153
+     ]
+    ],
+    "pitch_pr": 0.6762851080410555
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.27898480072040077,
+    "bind": "fatigue_strain",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.466
+     ],
+     [
+      "aeroelastic_stability",
+      1.615
+     ],
+     [
+      "fatigue_strain",
+      1.03
+     ],
+     [
+      "fatigue_stress",
+      0.971
+     ]
+    ],
+    "pitch_pr": 0.6622291482856739
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:harmonic_jitter",
+     "check:pitch_cf_ratio",
+     "pulse_infeasible"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "harmonic_jitter",
+      9.379
+     ],
+     [
+      "fatigue_stress",
+      4.702
+     ],
+     [
+      "fatigue_strain",
+      4.181
+     ]
+    ],
+    "pitch_pr": 0.6507405783911394
+   }
+  ]
+ },
+ "dental_16x5x038": {
+  "name": "dental_16x5x038",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.40481396590276814,
+    "bind": "fatigue_strain",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.41
+     ],
+     [
+      "fatigue_strain",
+      1.008
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ],
+     [
+      "aeroelastic_stability",
+      0.774
+     ]
+    ],
+    "pitch_pr": 0.6499509799539713
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.264664111159736,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.41
+     ],
+     [
+      "harmonic_jitter",
+      1.654
+     ],
+     [
+      "fatigue_stress",
+      0.969
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.6464850076706732
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.17100971766650513,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.41
+     ],
+     [
+      "harmonic_jitter",
+      1.802
+     ],
+     [
+      "fatigue_stress",
+      1.15
+     ],
+     [
+      "fatigue_strain",
+      1.021
+     ]
+    ],
+    "pitch_pr": 0.6477912173407349
+   }
+  ]
+ },
+ "dental_14x6x038": {
+  "name": "dental_14x6x038",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.3396063062548982,
+    "bind": "fatigue_strain",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      3.742
+     ],
+     [
+      "root_envelope",
+      2.464
+     ],
+     [
+      "fatigue_strain",
+      1.332
+     ],
+     [
+      "motor_torque_1p",
+      0.925
+     ]
+    ],
+    "pitch_pr": 0.6704033737428312
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:harmonic_jitter",
+     "pulse_infeasible"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "harmonic_jitter",
+      6.277
+     ],
+     [
+      "root_envelope",
+      2.464
+     ],
+     [
+      "fatigue_stress",
+      2.242
+     ]
+    ],
+    "pitch_pr": 0.6576151536546887
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.1842447830904281,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:pitch_cf_ratio"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "root_envelope",
+      2.464
+     ],
+     [
+      "pitch_cf_ratio",
+      1.103
+     ],
+     [
+      "fatigue_stress",
+      1.053
+     ]
+    ],
+    "pitch_pr": 0.6525984619139727
+   }
+  ]
+ },
+ "clock_2x075": {
+  "name": "clock_2x075",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.35087535615675536,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.418
+     ],
+     [
+      "fatigue_stress",
+      1.251
+     ],
+     [
+      "fatigue_strain",
+      1.14
+     ],
+     [
+      "fatigue_strain",
+      1.038
+     ]
+    ],
+    "pitch_pr": 0.6502026204903641
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.23652657364376034,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.418
+     ],
+     [
+      "fatigue_stress",
+      1.152
+     ],
+     [
+      "aeroelastic_stability",
+      1.118
+     ],
+     [
+      "fatigue_strain",
+      1.052
+     ]
+    ],
+    "pitch_pr": 0.6368585608784506
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.16137006394969733,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.418
+     ],
+     [
+      "aeroelastic_stability",
+      1.476
+     ],
+     [
+      "fatigue_stress",
+      1.221
+     ],
+     [
+      "fatigue_strain",
+      1.073
+     ]
+    ],
+    "pitch_pr": 0.6236455658505629
+   }
+  ]
+ },
+ "clock_3x075_L15": {
+  "name": "clock_3x075_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.17919529879116664,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:pitch_cf_ratio"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "pitch_cf_ratio",
+      1000.0
+     ],
+     [
+      "root_envelope",
+      3.12
+     ],
+     [
+      "fatigue_stress",
+      1.859
+     ]
+    ],
+    "pitch_pr": 0.6288143486038777
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.048953414299594336,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:pitch_cf_ratio",
+     "resonance"
+    ],
+    "top": [
+     [
+      "pitch_cf_ratio",
+      1000.0
+     ],
+     [
+      "fatigue_stress",
+      3.587
+     ],
+     [
+      "fatigue_strain",
+      3.13
+     ],
+     [
+      "root_envelope",
+      3.12
+     ]
+    ],
+    "pitch_pr": 0.6197880657871251
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.0174430481834692,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:pitch_cf_ratio",
+     "resonance"
+    ],
+    "top": [
+     [
+      "pitch_cf_ratio",
+      1000.0
+     ],
+     [
+      "fatigue_stress",
+      7.243
+     ],
+     [
+      "fatigue_strain",
+      6.316
+     ],
+     [
+      "fatigue_strain",
+      3.843
+     ]
+    ],
+    "pitch_pr": 0.6266643347195596
+   }
+  ]
+ },
+ "smt_1x100": {
+  "name": "smt_1x100",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.30845391099820824,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.384
+     ],
+     [
+      "fatigue_stress",
+      1.262
+     ],
+     [
+      "fatigue_stress",
+      1.181
+     ],
+     [
+      "fatigue_strain",
+      1.154
+     ]
+    ],
+    "pitch_pr": 0.6410528580120113
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.2215071077074698,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.384
+     ],
+     [
+      "fatigue_stress",
+      1.166
+     ],
+     [
+      "fatigue_stress",
+      1.137
+     ],
+     [
+      "fatigue_strain",
+      1.069
+     ]
+    ],
+    "pitch_pr": 0.6273569734174925
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.1421694543108175,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      2.384
+     ],
+     [
+      "fatigue_stress",
+      1.361
+     ],
+     [
+      "fatigue_stress",
+      1.236
+     ],
+     [
+      "fatigue_strain",
+      1.22
+     ]
+    ],
+    "pitch_pr": 0.6150733049551026
+   }
+  ]
+ },
+ "smt_1x100_L15": {
+  "name": "smt_1x100_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.1992990174416461,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "geom:flexure_inside_hub",
+     "resonance"
+    ],
+    "top": [
+     [
+      "fatigue_stress",
+      3.213
+     ],
+     [
+      "root_envelope",
+      3.137
+     ],
+     [
+      "fatigue_strain",
+      3.059
+     ],
+     [
+      "fatigue_strain",
+      3.046
+     ]
+    ],
+    "pitch_pr": 0.7428063380536554
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.15929687136933787,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:creep_strain",
+     "geom:flexure_inside_hub",
+     "resonance",
+     "split"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.137
+     ],
+     [
+      "fatigue_stress",
+      2.127
+     ],
+     [
+      "fatigue_strain",
+      2.031
+     ],
+     [
+      "fatigue_strain",
+      1.852
+     ]
+    ],
+    "pitch_pr": 0.7252033793839878
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.1127392369545101,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:creep_strain",
+     "check:pitch_cf_ratio",
+     "geom:flexure_inside_hub",
+     "split"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.137
+     ],
+     [
+      "fatigue_stress",
+      1.927
+     ],
+     [
+      "fatigue_strain",
+      1.709
+     ],
+     [
+      "fatigue_stress",
+      1.489
+     ]
+    ],
+    "pitch_pr": 0.706322489615838
+   }
+  ]
+ },
+ "smt_2x100_L15": {
+  "name": "smt_2x100_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.30400340788294783,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      1.187
+     ],
+     [
+      "fatigue_strain",
+      1.064
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ]
+    ],
+    "pitch_pr": 0.6293712609614439
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.13990806020392846,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      1.68
+     ],
+     [
+      "fatigue_strain",
+      1.498
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.6227863230539733
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.06426548463594045,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      2.724
+     ],
+     [
+      "fatigue_strain",
+      2.428
+     ],
+     [
+      "harmonic_jitter",
+      1.542
+     ]
+    ],
+    "pitch_pr": 0.6263766046475665
+   }
+  ]
+ },
+ "smt_1x120_L15": {
+  "name": "smt_1x120_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.21273365543745015,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      3.129
+     ],
+     [
+      "fatigue_stress",
+      1.651
+     ],
+     [
+      "fatigue_strain",
+      1.478
+     ],
+     [
+      "fatigue_stress",
+      1.133
+     ]
+    ],
+    "pitch_pr": 0.6271762954385748
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter",
+     "pulse_infeasible"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.129
+     ],
+     [
+      "fatigue_stress",
+      2.861
+     ],
+     [
+      "fatigue_strain",
+      2.551
+     ],
+     [
+      "harmonic_jitter",
+      2.158
+     ]
+    ],
+    "pitch_pr": 0.61141738822557
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.02671662889060533,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter"
+    ],
+    "top": [
+     [
+      "fatigue_stress",
+      4.852
+     ],
+     [
+      "fatigue_strain",
+      4.322
+     ],
+     [
+      "root_envelope",
+      3.129
+     ],
+     [
+      "harmonic_jitter",
+      1.858
+     ]
+    ],
+    "pitch_pr": 0.6155842030238878
+   }
+  ]
+ },
+ "brass_2x075": {
+  "name": "brass_2x075",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.1982098057524875,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.945
+     ],
+     [
+      "fatigue_stress",
+      1.839
+     ],
+     [
+      "fatigue_strain",
+      1.62
+     ],
+     [
+      "fatigue_stress",
+      1.404
+     ]
+    ],
+    "pitch_pr": 0.6161509851024759
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.1358664722081338,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.945
+     ],
+     [
+      "fatigue_stress",
+      1.668
+     ],
+     [
+      "fatigue_strain",
+      1.469
+     ],
+     [
+      "fatigue_stress",
+      1.042
+     ]
+    ],
+    "pitch_pr": 0.6031190442578765
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.10242446592908715,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.945
+     ],
+     [
+      "fatigue_stress",
+      1.641
+     ],
+     [
+      "fatigue_strain",
+      1.445
+     ],
+     [
+      "motor_torque_1p",
+      0.913
+     ]
+    ],
+    "pitch_pr": 0.5956781100148595
+   }
+  ]
+ },
+ "brass_3x075_L15": {
+  "name": "brass_3x075_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.17157735061288826,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.259
+     ],
+     [
+      "fatigue_stress",
+      2.097
+     ],
+     [
+      "fatigue_strain",
+      1.867
+     ],
+     [
+      "aeroelastic_stability",
+      1.049
+     ]
+    ],
+    "pitch_pr": 0.6180556612963913
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.11961681280487041,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.259
+     ],
+     [
+      "fatigue_stress",
+      1.859
+     ],
+     [
+      "fatigue_strain",
+      1.657
+     ],
+     [
+      "motor_torque_1p",
+      0.916
+     ]
+    ],
+    "pitch_pr": 0.6039845719093907
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.09463632328494519,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.259
+     ],
+     [
+      "fatigue_stress",
+      1.743
+     ],
+     [
+      "fatigue_strain",
+      1.554
+     ],
+     [
+      "motor_torque_1p",
+      0.911
+     ]
+    ],
+    "pitch_pr": 0.5958871069579053
+   }
+  ]
+ },
+ "pb_1x127_L15": {
+  "name": "pb_1x127_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.2490535712177811,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.131
+     ],
+     [
+      "fatigue_stress",
+      1.494
+     ],
+     [
+      "fatigue_strain",
+      1.335
+     ],
+     [
+      "fatigue_stress",
+      1.191
+     ]
+    ],
+    "pitch_pr": 0.6199444821125675
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.18124312162421816,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.131
+     ],
+     [
+      "fatigue_stress",
+      1.31
+     ],
+     [
+      "fatigue_strain",
+      1.18
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.6078269977212878
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.14737772802269866,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.131
+     ],
+     [
+      "fatigue_stress",
+      1.264
+     ],
+     [
+      "fatigue_strain",
+      1.139
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ]
+    ],
+    "pitch_pr": 0.6013155975091499
+   }
+  ]
+ },
+ "pb_2x100_L15": {
+  "name": "pb_2x100_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.28039967643556024,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      1.339
+     ],
+     [
+      "fatigue_strain",
+      1.206
+     ],
+     [
+      "fatigue_strain",
+      0.982
+     ]
+    ],
+    "pitch_pr": 0.6210042907926301
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.19939405704173974,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      1.221
+     ],
+     [
+      "fatigue_strain",
+      1.102
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.6086056534840223
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.15466950063073714,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      1.195
+     ],
+     [
+      "fatigue_strain",
+      1.079
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ]
+    ],
+    "pitch_pr": 0.601842603871529
+   }
+  ]
+ },
+ "becu_2x100_L15": {
+  "name": "becu_2x100_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.369137091798106,
+    "bind": "fatigue_stress",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_stress",
+      1.027
+     ],
+     [
+      "fatigue_strain",
+      0.966
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ]
+    ],
+    "pitch_pr": 0.6197282644600364
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.26612878714272503,
+    "bind": "motor_torque_1p",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ],
+     [
+      "fatigue_stress",
+      0.882
+     ],
+     [
+      "fatigue_strain",
+      0.797
+     ]
+    ],
+    "pitch_pr": 0.6079484906344267
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.2044890448241821,
+    "bind": "motor_torque_1p",
+    "feas": true,
+    "hard": [],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ],
+     [
+      "fatigue_stress",
+      0.862
+     ],
+     [
+      "esc_duty_peak",
+      0.788
+     ]
+    ],
+    "pitch_pr": 0.6016208326691397
+   }
+  ]
+ },
+ "ti_2x100_L15": {
+  "name": "ti_2x100_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.40217796047651655,
+    "bind": "fatigue_strain",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "fatigue_strain",
+      0.961
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ],
+     [
+      "esc_duty_peak",
+      0.672
+     ]
+    ],
+    "pitch_pr": 0.619320661529824
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.2700896789223067,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ],
+     [
+      "esc_duty_peak",
+      0.736
+     ],
+     [
+      "fatigue_strain",
+      0.719
+     ]
+    ],
+    "pitch_pr": 0.6070780239668502
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.2069909180179738,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.125
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ],
+     [
+      "esc_duty_peak",
+      0.783
+     ],
+     [
+      "motor_thermal",
+      0.673
+     ]
+    ],
+    "pitch_pr": 0.600439426852127
+   }
+  ]
+ },
+ "pom_3x250_L15": {
+  "name": "pom_3x250_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.39678472325370073,
+    "bind": "fatigue_strain",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.27
+     ],
+     [
+      "fatigue_strain",
+      0.938
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ],
+     [
+      "fatigue_stress",
+      0.803
+     ]
+    ],
+    "pitch_pr": 0.6238531804582519
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.2559695563799959,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.27
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ],
+     [
+      "esc_duty_peak",
+      0.741
+     ],
+     [
+      "fatigue_strain",
+      0.721
+     ]
+    ],
+    "pitch_pr": 0.6098825504735049
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.19344757867052523,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.27
+     ],
+     [
+      "motor_torque_1p",
+      0.911
+     ],
+     [
+      "esc_duty_peak",
+      0.789
+     ],
+     [
+      "creep_strain",
+      0.706
+     ]
+    ],
+    "pitch_pr": 0.6019222781051005
+   }
+  ]
+ },
+ "pom_1x500_L15": {
+  "name": "pom_1x500_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "esc_duty_peak",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:harmonic_jitter",
+     "convergence",
+     "trim_failed"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "root_envelope",
+      3.206
+     ],
+     [
+      "harmonic_jitter",
+      3.047
+     ],
+     [
+      "creep_strain",
+      2.329
+     ]
+    ],
+    "pitch_pr": 0.7742076282437158
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "esc_duty_peak",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:harmonic_jitter",
+     "convergence",
+     "trim_failed"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "root_envelope",
+      3.206
+     ],
+     [
+      "harmonic_jitter",
+      2.978
+     ],
+     [
+      "creep_strain",
+      2.13
+     ]
+    ],
+    "pitch_pr": 0.77773338773357
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "esc_duty_peak",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:harmonic_jitter",
+     "convergence",
+     "trim_failed"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "root_envelope",
+      3.206
+     ],
+     [
+      "harmonic_jitter",
+      3.032
+     ],
+     [
+      "creep_strain",
+      2.287
+     ]
+    ],
+    "pitch_pr": 0.7749291643407054
+   }
+  ]
+ },
+ "pet_3x190": {
+  "name": "pet_3x190",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.32956530952302576,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.961
+     ],
+     [
+      "fatigue_stress",
+      1.132
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ],
+     [
+      "fatigue_stress",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.6169791027102985
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.25842211686892225,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.961
+     ],
+     [
+      "fatigue_stress",
+      0.926
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ],
+     [
+      "esc_duty_peak",
+      0.735
+     ]
+    ],
+    "pitch_pr": 0.6039722852607434
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.1992140632327866,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      2.961
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ],
+     [
+      "fatigue_stress",
+      0.845
+     ],
+     [
+      "esc_duty_peak",
+      0.781
+     ]
+    ],
+    "pitch_pr": 0.5969951503712769
+   }
+  ]
+ },
+ "pet_2x250_L15": {
+  "name": "pet_2x250_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.28372543714987425,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.283
+     ],
+     [
+      "fatigue_stress",
+      1.336
+     ],
+     [
+      "motor_torque_1p",
+      0.924
+     ],
+     [
+      "fatigue_strain",
+      0.909
+     ]
+    ],
+    "pitch_pr": 0.622521333919842
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.22596879207358314,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.283
+     ],
+     [
+      "fatigue_stress",
+      1.07
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ],
+     [
+      "esc_duty_peak",
+      0.738
+     ]
+    ],
+    "pitch_pr": 0.6091839512795083
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.19258212268828306,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.283
+     ],
+     [
+      "fatigue_stress",
+      0.948
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ],
+     [
+      "esc_duty_peak",
+      0.785
+     ]
+    ],
+    "pitch_pr": 0.6017397377603511
+   }
+  ]
+ },
+ "pp_1x500_L15": {
+  "name": "pp_1x500_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.30421135014733747,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.216
+     ],
+     [
+      "fatigue_stress",
+      1.047
+     ],
+     [
+      "fatigue_strain",
+      0.957
+     ],
+     [
+      "fatigue_strain",
+      0.923
+     ]
+    ],
+    "pitch_pr": 0.613294744353881
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.2310732232830118,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.216
+     ],
+     [
+      "motor_torque_1p",
+      0.914
+     ],
+     [
+      "fatigue_stress",
+      0.813
+     ],
+     [
+      "esc_duty_peak",
+      0.767
+     ]
+    ],
+    "pitch_pr": 0.6009147474098587
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.1804701065619763,
+    "bind": "motor_torque_1p",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.216
+     ],
+     [
+      "creep_strain",
+      0.947
+     ],
+     [
+      "motor_torque_1p",
+      0.908
+     ],
+     [
+      "esc_duty_peak",
+      0.82
+     ]
+    ],
+    "pitch_pr": 0.5941163158875987
+   }
+  ]
+ },
+ "fr4_1x200_L15": {
+  "name": "fr4_1x200_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.11562461184186813,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.211
+     ],
+     [
+      "fatigue_stress",
+      2.761
+     ],
+     [
+      "fatigue_stress",
+      1.819
+     ],
+     [
+      "fatigue_strain",
+      1.045
+     ]
+    ],
+    "pitch_pr": 0.6062565213906527
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.09750121098984796,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.211
+     ],
+     [
+      "fatigue_stress",
+      2.368
+     ],
+     [
+      "fatigue_stress",
+      1.362
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.5969945136544077
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.07968576314165392,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.211
+     ],
+     [
+      "fatigue_stress",
+      2.226
+     ],
+     [
+      "fatigue_stress",
+      1.212
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ]
+    ],
+    "pitch_pr": 0.59192104624294
+   }
+  ]
+ },
+ "fr4_1x170_L15": {
+  "name": "fr4_1x170_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.08856980158725442,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "fatigue_stress",
+      3.795
+     ],
+     [
+      "root_envelope",
+      3.206
+     ],
+     [
+      "fatigue_stress",
+      1.609
+     ],
+     [
+      "fatigue_strain",
+      1.478
+     ]
+    ],
+    "pitch_pr": 0.5977255267908569
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.06866275588043821,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "fatigue_stress",
+      3.221
+     ],
+     [
+      "root_envelope",
+      3.206
+     ],
+     [
+      "fatigue_stress",
+      1.396
+     ],
+     [
+      "fatigue_strain",
+      1.236
+     ]
+    ],
+    "pitch_pr": 0.5895410786621438
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.06089279854603521,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.206
+     ],
+     [
+      "fatigue_stress",
+      2.792
+     ],
+     [
+      "fatigue_stress",
+      1.266
+     ],
+     [
+      "fatigue_strain",
+      1.04
+     ]
+    ],
+    "pitch_pr": 0.5844704798149524
+   }
+  ]
+ },
+ "fr4_1x230_L15": {
+  "name": "fr4_1x230_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.1407825448713668,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.216
+     ],
+     [
+      "fatigue_stress",
+      2.498
+     ],
+     [
+      "fatigue_stress",
+      2.051
+     ],
+     [
+      "fatigue_strain",
+      0.96
+     ]
+    ],
+    "pitch_pr": 0.6182032745017105
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.11592991615822677,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.216
+     ],
+     [
+      "fatigue_stress",
+      1.938
+     ],
+     [
+      "fatigue_stress",
+      1.532
+     ],
+     [
+      "motor_torque_1p",
+      0.917
+     ]
+    ],
+    "pitch_pr": 0.6053978906764241
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.11072133555167803,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "geom:flexure_inside_hub"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.216
+     ],
+     [
+      "fatigue_stress",
+      1.643
+     ],
+     [
+      "fatigue_stress",
+      1.228
+     ],
+     [
+      "motor_torque_1p",
+      0.912
+     ]
+    ],
+    "pitch_pr": 0.5984243575293973
+   }
+  ]
+ },
+ "cfw_1x250x3_L15": {
+  "name": "cfw_1x250x3_L15",
+  "pts": [
+   {
+    "tag": "T0.7:J9.1e-07",
+    "cr_pl": 0.1151173300545233,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:harmonic_jitter",
+     "check:interlayer",
+     "check:static_stress"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.156
+     ],
+     [
+      "fatigue_stress",
+      2.79
+     ],
+     [
+      "fatigue_stress",
+      1.918
+     ],
+     [
+      "fatigue_strain",
+      1.758
+     ]
+    ],
+    "pitch_pr": 0.7763852700797856
+   },
+   {
+    "tag": "T1:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:aeroelastic_stability",
+     "check:creep_strain",
+     "check:interlayer",
+     "check:pitch_cf_ratio",
+     "check:static_stress",
+     "convergence",
+     "trim_failed"
+    ],
+    "top": [
+     [
+      "aeroelastic_stability",
+      1000.0
+     ],
+     [
+      "root_envelope",
+      3.156
+     ],
+     [
+      "interlayer",
+      2.186
+     ],
+     [
+      "static_stress",
+      1.969
+     ]
+    ],
+    "pitch_pr": 0.7604740776476181
+   },
+   {
+    "tag": "T1.25:J9.1e-07",
+    "cr_pl": 0.0,
+    "bind": "fatigue_stress",
+    "feas": false,
+    "hard": [
+     "check:creep_strain",
+     "check:interlayer",
+     "check:pitch_cf_ratio",
+     "check:static_stress",
+     "convergence",
+     "trim_failed"
+    ],
+    "top": [
+     [
+      "root_envelope",
+      3.156
+     ],
+     [
+      "interlayer",
+      2.086
+     ],
+     [
+      "fatigue_stress",
+      1.96
+     ],
+     [
+      "static_stress",
+      1.86
+     ]
+    ],
+    "pitch_pr": 0.7622252673288464
+   }
+  ]
+ }
+}
