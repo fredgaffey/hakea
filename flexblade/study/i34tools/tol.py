@@ -1,6 +1,6 @@
 """Tolerance check: nominal + N random builds (strip t/w/L, hinge_radius each U(0.95,1.05)), printed
 slot presets (strip_preset_deg) kept FIXED. T0.7/1.0/1.4 at J 3.76e-6, Goodman + ground_resonance.
-env: CQ_TOL_MAG (default 0.05), TOL_TF=0.7,1.0,1.25, TOL_J=3.4e-7,...
+env: TOL_PRESET_DEG=x (perturb presets +-x deg, no re-solve), CQ_TOL_MAG (default 0.05), TOL_TF=0.7,1.0,1.25, TOL_J=3.4e-7,...
 usage: tol.py <design.json> [N=8] [seed=0]"""
 import sys, os, random
 os.environ.setdefault("FLEXBLADE_GROUND_RES", "1")
@@ -11,6 +11,7 @@ from flexblade.schema import Design
 from concurrent.futures import ProcessPoolExecutor
 TF = [float(x) for x in os.environ["TOL_TF"].split(",")] if os.environ.get("TOL_TF") else robust.THRUST_FACTORS
 JS = [float(x) for x in os.environ["TOL_J"].split(",")] if os.environ.get("TOL_J") else [3.76e-6]
+PRE = float(os.environ.get("TOL_PRESET_DEG", 0))   # opt-in preset angle tolerance, deg
 KEYS = ("thickness", "width", "length", "hinge_radius")
 
 
@@ -28,6 +29,10 @@ def main():
         R = robust.tol_ranges()
         f = {k: rng.uniform(1 - R[k], 1 + R[k]) for k in KEYS}
         fx = d.flexure.model_copy(update={k: getattr(d.flexure, k) * v for k, v in f.items()})
+        if PRE:   # opt-in: printed slot-angle error, uniform +-PRE deg per strip end on theta2/theta3, no re-solve
+            sp = [[[x + (rng.uniform(-PRE, PRE) if j % 3 else 0.0) for j, x in enumerate(e)] for e in m]
+                  for m in d.flexure.strip_preset_deg]
+            fx = fx.model_copy(update=dict(strip_preset_deg=sp))
         builds.append((" ".join(f"{k[0]}{v:.3f}" for k, v in f.items()), d.model_copy(update=dict(flexure=fx))))
     jobs = [(b, t, dv) for b, bd in builds for t, dv in robust.variants(bd, TF, None, JS, None)]
     with ProcessPoolExecutor(int(os.environ.get("TOL_WORKERS", 3))) as ex:
