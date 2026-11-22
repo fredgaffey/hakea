@@ -32,6 +32,7 @@ from typing import Any, Callable, Optional
 import numpy as np
 
 from .schema import Design, OptimizeRequest, OptimizeResult, Results
+from .materials import G10_STOCK as _G10_STOCK
 
 WHAT = ["trim", "modes", "harmonic", "checks"]
 FAIL = 1.0e6
@@ -77,8 +78,8 @@ def get_path(obj: Any, path: str) -> Any:
     if path in BAL_KEYS:
         return _bal_get(obj, path)
     if path == "flexure.lamina_idx":   # virtual DE var: index of the nearest stock lamina thickness
-        t = float(get_path(obj, "flexure.thickness"))
-        return float(min(range(len(LAMINA_STOCK)), key=lambda i: abs(LAMINA_STOCK[i] - t)))
+        t, st = float(get_path(obj, "flexure.thickness")), lamina_stock(get_path(obj, "flexure.layup.material"))
+        return float(min(range(len(st)), key=lambda i: abs(st[i] - t)))
     if path == "flexure.width_idx":   # virtual DE var: index of the nearest stock strip width
         w = float(get_path(obj, "flexure.width"))
         return float(min(range(len(WIDTH_STOCK)), key=lambda i: abs(WIDTH_STOCK[i] - w)))
@@ -97,6 +98,19 @@ LAMINA_STOCK = (0.05e-3, 0.075e-3, 0.10e-3, 0.127e-3, 0.15e-3)   # shim stock, m
 if os.environ.get("LAMINA_STOCK_EXT") == "1":   # opt-in thin 301 foil, appended -> indices 5,6
     LAMINA_STOCK += (0.038e-3, 0.025e-3)
 
+G10_STOCK = _G10_STOCK   # FR4/G10 sheet (materials.SHIM_THICKNESSES["fr4_g10"]), separate index space
+
+
+def lamina_stock(material: str) -> tuple:
+    """Stock lamina thicknesses that flexure.lamina_idx indexes for this strip material."""
+    return G10_STOCK if str(material).split("@")[0] == "fr4_g10" else LAMINA_STOCK
+
+
+def _min_laminae(material: str) -> int:
+    """n-clamp floor: one G10 strip is a real design; steel keeps its >= 2 laminae floor."""
+    return 1 if str(material).split("@")[0] == "fr4_g10" else 2
+
+
 WIDTH_STOCK = (3.0e-3, 4.0e-3, 5.0e-3, 6.0e-3, 8.0e-3, 10.0e-3, 12.7e-3)   # strip widths, m
 
 
@@ -110,13 +124,15 @@ def set_design(design: Design, values: dict[str, float]) -> Design:
                 st["chord"] *= k
             d["blade"]["chord_scale"] = float(v)
         elif p == "flexure.lamina_idx":   # continuous index -> nearest stock lamina thickness
-            i = min(max(int(round(float(v))), 0), len(LAMINA_STOCK) - 1)
-            d["flexure"]["thickness"] = LAMINA_STOCK[i]
+            st = lamina_stock(d["flexure"]["layup"]["material"])
+            i = min(max(int(round(float(v))), 0), len(st) - 1)
+            d["flexure"]["thickness"] = st[i]
         elif p == "flexure.width_idx":   # continuous index -> nearest stock width
             i = min(max(int(round(float(v))), 0), len(WIDTH_STOCK) - 1)
             d["flexure"]["width"] = WIDTH_STOCK[i]
         elif p == "flexure.strip_laminae":
-            d["flexure"]["strip_laminae"] = min(max(int(round(float(v))), 2), 24 if len(LAMINA_STOCK) > 5 else 12)
+            d["flexure"]["strip_laminae"] = min(max(int(round(float(v))), _min_laminae(d["flexure"]["layup"]["material"])),
+                                                24 if len(LAMINA_STOCK) > 5 else 12)
         elif p in BAL_KEYS:
             bal[p] = float(v)
         else:
