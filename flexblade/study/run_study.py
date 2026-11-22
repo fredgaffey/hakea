@@ -55,6 +55,7 @@ from flexblade.schema import Design, Layup, OptimizeRequest, Target, Variable  #
 RAMP_SLEW = 2550.0          # AM32 max_ramp 255 → 255/2000 per 50 µs tick = 2550 /s
 STOCK_SLEW = 160.0
 RES_BAND = 0.15
+LAMINAE_VARS = False   # --laminae-vars: strip_laminae count + stock lamina thickness (steelx)
 BLADE_VARS = False     # --blade-vars: blade.chord_scale + hollow-skin layup (steelx)
 BAL_VARS = False       # --one-sided also enables the bal.* balance-pair variables (steelx)
 ONE_SIDED = False
@@ -148,6 +149,10 @@ def variables(concept: str, D: float) -> list[Variable]:
                   Variable(path="bal.r_frac", lo=0.15, hi=0.35),
                   Variable(path="bal.chord", lo=0.0, hi=0.012),
                   Variable(path="bal.normal", lo=0.0, hi=0.010)]
+        if LAMINAE_VARS:   # (n, t) fatigue lever: strip stress ~ t, stiffness ~ n*w*t^3
+            V = [v for v in V if v.path != "flexure.thickness"]
+            V += [Variable(path="flexure.strip_laminae", lo=1.5, hi=12.5),
+                  Variable(path="flexure.lamina_idx", lo=-0.5, hi=4.5)]
         if BLADE_VARS:   # light wide hollow CF-skin blade: mass/EI/GJ follow from the layup
             V += [Variable(path="blade.chord_scale", lo=0.9, hi=1.6),
                   Variable(path="blade.layup.skin_thickness", lo=0.0004, hi=0.0012, log=True),
@@ -943,6 +948,9 @@ def main(argv=None):
     ap.add_argument("--blade-vars", action="store_true",
                     help="steelx: add blade.chord_scale, blade.layup.skin_thickness/core_fraction variables "
                          "(blade must be a core_skin layup; see study/results/de10_prep.md)")
+    ap.add_argument("--laminae-vars", action="store_true",
+                    help="steelx: vary flexure.strip_laminae (int 2-12) and lamina thickness "
+                         "(index snapped to stock 0.05/0.075/0.10/0.127/0.15 mm)")
     ap.add_argument("--gates", choices=("default", "minimal"), default="default",
                     help="minimal: drop mech_band / one-sided gates, add zeta_mech >= 0.02; keeps bal.* variables")
     ap.add_argument("--mech-margin", type=float, default=0.075,
@@ -982,8 +990,9 @@ def main(argv=None):
     CRITERION = a.criterion
     global MOTOR
     MOTOR = a.motor
-    global ONE_SIDED, BAL_VARS, BLADE_VARS
+    global ONE_SIDED, BAL_VARS, BLADE_VARS, LAMINAE_VARS
     BLADE_VARS = a.blade_vars
+    LAMINAE_VARS = a.laminae_vars
     global GATES_MINIMAL
     GATES_MINIMAL = a.gates == "minimal"
     ONE_SIDED = a.one_sided

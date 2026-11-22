@@ -87,6 +87,9 @@ def get_path(obj: Any, path: str) -> Any:
     return cur
 
 
+LAMINA_STOCK = (0.05e-3, 0.075e-3, 0.10e-3, 0.127e-3, 0.15e-3)   # shim stock, m
+
+
 def set_design(design: Design, values: dict[str, float]) -> Design:
     d = design.model_dump(mode="json")
     bal = {}
@@ -96,6 +99,11 @@ def set_design(design: Design, values: dict[str, float]) -> Design:
             for st in d["blade"]["stations"]:
                 st["chord"] *= k
             d["blade"]["chord_scale"] = float(v)
+        elif p == "flexure.lamina_idx":   # continuous index -> nearest stock lamina thickness
+            i = min(max(int(round(float(v))), 0), len(LAMINA_STOCK) - 1)
+            d["flexure"]["thickness"] = LAMINA_STOCK[i]
+        elif p == "flexure.strip_laminae":
+            d["flexure"]["strip_laminae"] = min(max(int(round(float(v))), 2), 12)
         elif p in BAL_KEYS:
             bal[p] = float(v)
         else:
