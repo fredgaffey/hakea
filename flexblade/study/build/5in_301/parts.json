@@ -1,0 +1,126 @@
+{
+ "rotor_jig": {
+  "watertight": true,
+  "components": 1,
+  "fragments_dropped": 5,
+  "volume_mm3": 4309.4,
+  "bbox_mm": [
+   127.0,
+   23.3,
+   22.7
+  ],
+  "bridge_volume_mm3": 55.81,
+  "bridges": [
+   [
+    {
+     "a": 0.0,
+     "b": 8.5,
+     "length_mm": 8.58
+    },
+    {
+     "a": 0.0,
+     "b": -8.0,
+     "length_mm": 8.58
+    }
+   ],
+   [
+    {
+     "a": 0.0,
+     "b": 8.5,
+     "length_mm": 8.58
+    },
+    {
+     "a": 0.0,
+     "b": -8.0,
+     "length_mm": 8.58
+    }
+   ]
+  ]
+ },
+ "params": {
+  "t": 0.45,
+  "w": 4.0,
+  "L": 10.048000000000004,
+  "land": 8.0,
+  "slot_t": 0.7,
+  "slot_w": 4.2,
+  "jaw_r": 0.5,
+  "wall": 1.2,
+  "strand_d": 1.3,
+  "channel_d": 1.6,
+  "well_d": 3.5,
+  "stop": false,
+  "stop_depth": 8.15,
+  "slim": true,
+  "blade_extra": 3.0
+ },
+ "notes": [
+  "crossing edge gap 1.36 mm < 2 walls: U jaws, slot open on the crossing edge (strip overhangs the jaw by 0.5 mm)"
+ ],
+ "clearance": {
+  "min_gap_mm": 2.698655276360686,
+  "at_lag_deg": 5.0,
+  "at_pitch_deg": 8.0,
+  "lag_range_deg": 5.0,
+  "pitch_range_deg": 8.0,
+  "note": "negative = interference volume mm^3"
+ },
+ "rest_gap_mm": 3.474506913191697,
+ "mass_g": {
+  "hub_fitting_per_blade": 0.54,
+  "root_fitting": 0.62,
+  "model_shank": 0.03,
+  "hub_material": "pa6_cf",
+  "blade_material": "pa6_cf"
+ },
+ "mass_check": {
+  "hub": {
+   "mass_g_fittings": 0.543,
+   "mass_g_trimesh": 0.543,
+   "Ixx_Iyy_Izz_fittings": [
+    2.2783154904258853e-08,
+    1.1812622113040319e-08,
+    2.705078120163614e-08
+   ],
+   "Ixx_Iyy_Izz_trimesh": [
+    2.27831165304548e-08,
+    1.1812579504977842e-08,
+    2.7050709175016093e-08
+   ],
+   "com_mm_fittings": [
+    7.135348366132972,
+    0.04635619982126303,
+    -4.046332719479835
+   ],
+   "com_mm_trimesh": [
+    7.1353356180118315,
+    0.04634418033649214,
+    -4.046328351841798
+   ]
+  },
+  "root": {
+   "mass_g_fittings": 0.625,
+   "mass_g_trimesh": 0.625,
+   "Ixx_Iyy_Izz_fittings": [
+    2.501481358517917e-08,
+    2.341619409676304e-08,
+    3.847439183354026e-08
+   ],
+   "Ixx_Iyy_Izz_trimesh": [
+    2.501479708412835e-08,
+    2.3416191814789994e-08,
+    3.84743760423445e-08
+   ],
+   "com_mm_fittings": [
+    15.813931993401955,
+    0.0325689175889124,
+    3.4013757087459706
+   ],
+   "com_mm_trimesh": [
+    15.813931330994972,
+    0.0325732543081931,
+    3.4013770671774983
+   ]
+  }
+ }
+}

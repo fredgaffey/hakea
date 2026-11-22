@@ -581,7 +581,7 @@ def _mirror_rot(m, k: int, n: int):
     return m.rotate((0.0, 0.0, 360.0 * (k - 1) / n))
 
 
-def breakaway_bridges(hub, blade, e, P, ko, n_bridges: int = 4):
+def breakaway_bridges(hub, blade, e, P, ko, n_bridges: int = 4, step: float = 2.0):
     """2-4 thin breakaway sprues (SPRUE square, necked to SPRUE_NECK for SPRUE_NECK_LEN at both
     joints) between the hub fitting and the root fitting in the assembled pose (blade-1 frame).
     Each runs along the web-plane normal (62 deg from horizontal for 10in_easy: prints unsupported),
@@ -598,8 +598,8 @@ def breakaway_bridges(hub, blade, e, P, ko, n_bridges: int = 4):
         return _box([t0, -sz / 2, -sz / 2], [t1, sz / 2, sz / 2], R, P + a * u + b * v)
 
     cand = []
-    for a in np.arange(-30.0, 60.0, 2.0):
-        for b in np.arange(-20.0, 20.1, 2.0):
+    for a in np.arange(-30.0, 60.0, step):
+        for b in np.arange(-20.0, 20.1, step):
             line = seg(-80.0, 80.0, a, b, 0.4)
             hp, bp = line ^ hub, line ^ blade
             if hp.is_empty() or bp.is_empty():
@@ -620,6 +620,8 @@ def breakaway_bridges(hub, blade, e, P, ko, n_bridges: int = 4):
                 continue
             cand.append((a, b, th, tb))
     if len(cand) < 2:
+        if step > 0.5:      # small rotors (5 in): the 2 mm search grid misses the narrow clear sites
+            return breakaway_bridges(hub, blade, e, P, ko, n_bridges, step / 2)
         raise ValueError("no clear breakaway bridge sites between the fittings")
     gmin = min(c[3] - c[2] for c in cand)
     cand = [c for c in cand if c[3] - c[2] < gmin + 3.0] if sum(c[3] - c[2] < gmin + 3.0 for c in cand) >= 3 else cand

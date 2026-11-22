@@ -79,6 +79,9 @@ def get_path(obj: Any, path: str) -> Any:
     if path == "flexure.lamina_idx":   # virtual DE var: index of the nearest stock lamina thickness
         t = float(get_path(obj, "flexure.thickness"))
         return float(min(range(len(LAMINA_STOCK)), key=lambda i: abs(LAMINA_STOCK[i] - t)))
+    if path == "flexure.width_idx":   # virtual DE var: index of the nearest stock strip width
+        w = float(get_path(obj, "flexure.width"))
+        return float(min(range(len(WIDTH_STOCK)), key=lambda i: abs(WIDTH_STOCK[i] - w)))
     cur = obj
     for k in path.split("."):
         if isinstance(cur, list):
@@ -91,6 +94,8 @@ def get_path(obj: Any, path: str) -> Any:
 
 
 LAMINA_STOCK = (0.05e-3, 0.075e-3, 0.10e-3, 0.127e-3, 0.15e-3)   # shim stock, m
+
+WIDTH_STOCK = (3.0e-3, 4.0e-3, 5.0e-3, 6.0e-3, 8.0e-3, 10.0e-3, 12.7e-3)   # strip widths, m
 
 
 def set_design(design: Design, values: dict[str, float]) -> Design:
@@ -105,6 +110,9 @@ def set_design(design: Design, values: dict[str, float]) -> Design:
         elif p == "flexure.lamina_idx":   # continuous index -> nearest stock lamina thickness
             i = min(max(int(round(float(v))), 0), len(LAMINA_STOCK) - 1)
             d["flexure"]["thickness"] = LAMINA_STOCK[i]
+        elif p == "flexure.width_idx":   # continuous index -> nearest stock width
+            i = min(max(int(round(float(v))), 0), len(WIDTH_STOCK) - 1)
+            d["flexure"]["width"] = WIDTH_STOCK[i]
         elif p == "flexure.strip_laminae":
             d["flexure"]["strip_laminae"] = min(max(int(round(float(v))), 2), 12)
         elif p in BAL_KEYS:

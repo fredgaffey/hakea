@@ -11,7 +11,8 @@ The print itself fixes the jaw-exit spacing: each blade (with its root fitting) 
 | PA-CF (pa6_cf) filament | the whole rotor (about 31 g incl. sprues; design material for hub and blades) | 1 spool |
 | Aramid strand 2.6 mm | about 40 mm per blade | 2 |
 | Dowels | 3 mm, one per slot (datum), cut flush | 8 |
-| Glue | thin CA to wick, 5 min epoxy to seal | |
+| Glue | slow (30 min+) gel/thick epoxy for the lands ONLY; NO thin CA anywhere near the strips | |
+| Dry lube | PTFE dry-film spray or a drop of light oil for the free span | |
 | Flush-cut pliers, small file | to remove the sprues | |
 
 ## Print settings
@@ -23,13 +24,14 @@ The print itself fixes the jaw-exit spacing: each blade (with its root fitting) 
 ## Assembly (hand work +-1 mm is fine)
 1. Print the rotor; do NOT cut the sprues yet. Check a dry 8-lamina stack drops into every slot.
 2. Snip laminae from the roll to 50.6 mm +-1, grain along the strip, 12.7 mm width as bought; deburr, IPA wipe.
-3. Stack 8 laminae per strip with thin CA between. Insert each stack from the hub back through the hub jaw and across the free span into the blade slot until it touches the slot bottom, then withdraw it 3 mm (use a 3 mm drill shank as a spacer) so both lands are fully engaged.
-4. Press a 3 mm dowel into each dowel hole, wick CA then epoxy into the lands.
+3. Stack 8 laminae per strip DRY (no glue between them: the laminae must slide over each other in the free span, or the hinge becomes up to ~60x stiffer and the rotor is out of tune). Mist the free-span region with PTFE dry film first. Insert each stack from the hub back through the hub jaw and across the free span into the blade slot until it touches the slot bottom, then withdraw it 3 mm (use a 3 mm drill shank as a spacer) so both lands are fully engaged.
+4. Press a 3 mm dowel into each dowel hole. Butter thick epoxy into the slot mouths at the LANDS only (from the hub back and the blade slot end), never at the jaw exits facing the free span; wipe any that creeps toward the free span.
 5. Thread the aramid strand through the channel, knot in the well, strand just taut, seal.
 6. Let everything cure fully (epoxy 24 h). Then snip the sprues (flush-cut pliers, one at a time, alternating sides) and file the stubs flush with the web faces.
 7. Pin-balance the blade pair, then the rotor.
 
 ## Critical dimensions
 - The print fixes the free length (22.11 mm), so a +-1 mm strip cut length only changes how deep the ends sit in the over-deep slots (>= land - 1 mm engaged); it does not change the free length.
+- Free span must stay glue-free: k_pitch was verified (CalculiX, verify_5in_v8s.md) only for freely sliding laminae. Check after cure: each strip's free span should flex easily and the laminae should fan slightly when bent.
 - Do not remove the sprues before the epoxy has cured: the sprues are what holds the free length.
 - Hinge radius +-0.2 mm printed is inside the allowance. Gates pass in the model only; no bench data.
