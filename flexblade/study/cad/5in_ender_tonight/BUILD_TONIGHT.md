@@ -20,3 +20,11 @@ Generator `../build_5in_ender_tonight.py [t_lam_mm] [n_lam]` (re-run with the me
 5. Order: blade_a's 2 stacks, then blade_b's 2 stacks, both with the hub in the same jig pose. Then the spacer, hub, M5 washer, locking nut.
 6. Static check before spinning: hang 10 g at 50 mm radius on each blade (hub clamped). The expected deflection is about 2.9 deg (the main session's estimate, not computed in this CAD). Much stiffer means glue got into the free span. Much softer, or uneven between the two stacks, means a lamina slipped: redo that stack.
 7. Pin-balance the blade pair, then spin up behind a shield, slowly, with nobody in the plane of the rotor.
+
+## Spin-test safety and procedure (main session)
+- **Rig:** motor bolted to something heavy or clamped in a vice, behind a shield (a plywood or polycarbonate box open on top). Wear **eye protection**. Stand and keep your hands **out of the rotor plane**, and stay behind the shield, not beside it. A thrown PETG blade at 10k rpm carries enough energy to injure.
+- **Power:** plain ESC (no cyclic; the AM32 cyclic_apply is a stub), throttle from a servo tester or RC, bench supply or a fused LiPo. Have a kill switch in reach before plugging in.
+- **Ramp:** 10 % throttle → hold 5 s → step up ~10 % at a time. **Back off at once** if the blades buzz, blur double or oscillate at one particular speed. The scoring shows that a PETG body pulls the pitch mode to ~1.10/rev, close to the once-per-rev forcing, so expect a resonant band. Note the rpm (phone tachometer app or audio) and don't dwell there.
+- **What you're testing:** glue lands hold; strips don't slip or kink; no contact between the blade jaws and the hub (the min swing gap is 1.1 mm); the hub doesn't hit the bell (spacer); and the blade "coning" (lift-up) and lag look even between the two blades.
+- **Aluminium strips will fatigue-crack within minutes.** Inspect the strips at the clamp mouths after every run; any crease or crack means stop.
+- The 2.9° static check is a rough estimate (design hinge stiffness, rigid fittings); fitting compliance in PETG will make it somewhat softer. The check is about the two blades matching each other, not hitting the exact number.
