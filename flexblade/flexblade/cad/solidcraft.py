@@ -134,9 +134,29 @@ def _blade_map(k: int, n: int) -> np.ndarray:
     return R @ np.diag([1, 1, -1.0]) if k % 2 == 0 else R
 
 
-def rotor_layout(design: dict | Design) -> dict:
-    """Blade-1 frame geometry (mm) shared by the script and the checks."""
+OVERRIDE_KEYS = {"n_lam": "laminae per stack", "t_lam": "lamina thickness, mm", "width": "strip width, mm",
+                 "slot_clear": "slot thickness clearance over the stack, mm", "blade_extra": "blade slot depth past the land, mm",
+                 "mouth_chamfer": "45 deg slot-mouth chamfer, mm", "boss_h": "boss height, mm", "boss_od": "boss OD, mm",
+                 "bore": "bore, mm"}
+
+
+def rotor_layout(design: dict | Design, overrides: dict | None = None) -> dict:
+    """Blade-1 frame geometry (mm) shared by the script and the checks. `overrides` (OVERRIDE_KEYS)
+    change the strip stack / slots / boss only; free length, skew, cross angle and hinge radius stay."""
     d = design.model_dump() if isinstance(design, Design) else copy.deepcopy(design)
+    ov = dict(overrides or {})
+    bad = set(ov) - set(OVERRIDE_KEYS)
+    if bad:
+        raise KeyError(f"unknown overrides {sorted(bad)}; known {sorted(OVERRIDE_KEYS)}")
+    fx = d["flexure"]
+    if "n_lam" in ov:
+        fx["strip_laminae"] = int(ov["n_lam"])
+    if "t_lam" in ov:
+        fx["thickness"] = float(ov["t_lam"]) * 1e-3
+    if "width" in ov:
+        fx["width"] = float(ov["width"]) * 1e-3
+    if "slot_clear" in ov:
+        fx["strip_slot_clear"] = float(ov["slot_clear"])
     if float(d["flexure"].get("strip_slot_clear", -1.0)) < 0:
         d["flexure"]["strip_slot_clear"] = SLOT_CLEAR
     D = Design.model_validate(d)
@@ -157,10 +177,13 @@ def rotor_layout(design: dict | Design) -> dict:
     r_aero = x_bw + prm.well_d / 2 + prm.wall     # aero loft starts outboard of the blade well
     return dict(D=D, prm=prm, strips=fr, hinge=np.asarray(hinge[0]) * 1e3, hinge_axis=np.asarray(hinge[1]),
                 x_hub_end=xw[0], x_blade_start=xw[1], hw=hw, x_hw=x_hw, x_bw=x_bw, r_aero=r_aero,
-                ch_h=prm.channel_d / 2 + prm.wall, n=D.blade.n_blades, R=D.blade.diameter_in * 25.4 / 2)
+                ch_h=prm.channel_d / 2 + prm.wall, n=D.blade.n_blades, R=D.blade.diameter_in * 25.4 / 2,
+                boss_h=float(ov.get("boss_h", BOSS_H)), boss_od=float(ov.get("boss_od", BOSS_OD)),
+                bore=float(ov.get("bore", BORE_D)), blade_extra=float(ov.get("blade_extra", OVERDEEP)),
+                chamfer=float(ov.get("mouth_chamfer", 0.0)), overrides=ov)
 
 
-def _jaw_ranges(f, prm, side):
+def _jaw_ranges(f, prm, side, extra=OVERDEEP):
     """(t, u, v) ranges about p0 of the jaw block and the slot cutter, hub (side 0) or blade (side 1)."""
     sc, L = f["sc"], f["L"]
     u_jaw = tuple(sorted((sc * (prm.w / 2 - OPEN_LIP), -sc * (prm.slot_w / 2 + prm.wall))))
@@ -169,7 +192,7 @@ def _jaw_ranges(f, prm, side):
     v_slot = (-prm.slot_t / 2, prm.slot_t / 2)
     if side == 0:      # hub: slot open through the back (stacks go in from the hub side)
         return ((-prm.land, 0.0), u_jaw, v_jaw), ((-prm.land - 2.0, 0.5), u_slot, v_slot)
-    deep = prm.land + OVERDEEP
+    deep = prm.land + extra
     return ((L, L + deep + prm.wall), u_jaw, v_jaw), ((L - 0.5, L + deep), u_slot, v_slot)
 
 
@@ -209,14 +232,31 @@ def blade_loft_commands(S: _Script, lay: dict, k: int, name: str, n_sec: int = 5
     S.add("solid.loft", sections=secs, body_name=name)
 
 
-def rotor_commands(design: dict, fillet: bool = True, n_sec: int = 5) -> dict:
-    """SolidCraft script for the whole rotor (see module doc). Pure modelling commands only."""
-    lay = rotor_layout(design)
+def _mouth(S: _Script, name, L, f, t0, sgn, prm, c):
+    """45 deg slot-mouth chamfer cutter: frustum lofted from the exit plane (slot + 2c, started 0.2 mm
+    outside it) to depth c into the jaw (slot size). sgn: +1 into the blade jaw, -1 into the hub jaw."""
+    secs = []
+    for j, (dt, grow) in enumerate(((-0.2 * sgn, c + 0.2), (c * sgn, 0.0))):
+        o = L @ (f["p0"] + (t0 + dt) * f["t"])
+        sk = f"{name}_s{j}"
+        S.add("sketch.create", plane={"origin": _r(o), "x_dir": _r(L @ f["w"], 9), "y_dir": _r(L @ f["n"], 9)}, name=sk)
+        S.add("sketch.rectangle.center", center=[0, 0], corner=[round(prm.slot_w / 2 + grow, 5), round(prm.slot_t / 2 + grow, 5)])
+        S.add("sketch.finish")
+        secs.append({"sketch": sk})
+    S.add("solid.loft", sections=secs, body_name=name)
+
+
+def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = True, n_sec: int = 5) -> dict:
+    """SolidCraft script for the whole rotor (see module doc). Pure modelling commands only.
+    overrides: see OVERRIDE_KEYS (e.g. the Ender/PETG spin-test variant in study/cad/build_5in_ender_tonight.py)."""
+    lay = rotor_layout(design, overrides)
     prm, fr, n, hw = lay["prm"], lay["strips"], lay["n"], lay["hw"]
+    boss_h, BOSS_OD, BORE_D, ex_d, cham = lay["boss_h"], lay["boss_od"], lay["bore"], lay["blade_extra"], lay["chamfer"]
     zb = BOSS_H / 2 - ARM_T                            # arm plates: hub z in [-6, -4], blade z in [4, 6]
     ex, ey, ez = np.eye(3)
     S = _Script()
-    S.add("solid.cylinder", diameter=BOSS_OD, height=BOSS_H, base=[0, 0, -BOSS_H / 2], body_name="hub")
+    # boss bottom stays on the lead's flat face (z = -BOSS_H/2); arms / spines keep the lead's z (boss_h only shortens the boss)
+    S.add("solid.cylinder", diameter=BOSS_OD, height=boss_h, base=[0, 0, -BOSS_H / 2], body_name="hub")
     r_in = BOSS_OD / 2 - prm.wall / 2         # arm outline from inside the boss: no tangent contact
     circ = [(r_in * math.cos(q), r_in * math.sin(q)) for q in np.linspace(0, 2 * math.pi, 36, endpoint=False)]
     x_be = lay["r_aero"] + 1.0                          # shank runs 1 mm into the aero loft
@@ -236,7 +276,7 @@ def rotor_commands(design: dict, fillet: bool = True, n_sec: int = 5) -> dict:
             hub_parts += [f"hub_jaw{k}{i}", f"hub_arm{k}{i}"]
             yc = float(np.mean([p[1] for p in _box_corners_xy(f, jr)]))
             s = math.copysign(1.0, yc)
-            q = math.asin(min(0.95, (hw + 0.5) / (BOSS_OD / 2)))
+            q = 0.5 * (math.asin(min(0.95, (hw + 0.3) / (BOSS_OD / 2))) + math.radians(75))   # mid-arc, clear of spine + arm edges
             fil.append(L @ np.array([BOSS_OD / 2 * math.cos(q), s * BOSS_OD / 2 * math.sin(q), -zb]))
         S.join("hub", hub_parts)
         # ---- blade root fitting k
@@ -244,28 +284,37 @@ def rotor_commands(design: dict, fillet: bool = True, n_sec: int = 5) -> dict:
                (-lay["ch_h"], BOSS_H / 2 - ARM_T / 2))
         bl_parts = []
         for i, f in enumerate(fr, 1):
-            jr, _ = _jaw_ranges(f, prm, 1)
+            jr, _ = _jaw_ranges(f, prm, 1, ex_d)
             S.obox(f"blade_jaw{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *jr)
-            sh = [(x, y) for x in (lay["x_blade_start"], x_be) for y in (-hw, hw)]
+            sh = [(x, y) for x in (lay["x_blade_start"], lay["r_aero"]) for y in (-hw, hw)]   # plate stops at the loft root
             poly = _hull2([(L @ [x, y, 0])[:2] for x, y in sh + _box_corners_xy(f, jr)])
             S.plate(f"blade_arm{k}{i}", poly, zb if mz > 0 else -BOSS_H / 2, ARM_T)
             bl_parts += [f"blade_jaw{k}{i}", f"blade_arm{k}{i}"]
         S.join(f"blade{k}", bl_parts)
-    if fillet:          # arm roots: arm plate face meeting the boss cylinder
-        S.add("solid.fillet", body="hub", edges=[_r(p) for p in fil], radius=prm.wall)
+    fil = [p for p in fil if -BOSS_H / 2 < p[2] < -BOSS_H / 2 + boss_h]     # arms that meet the boss
+    if fillet and fil:  # arm roots: arm plate face meeting the boss cylinder
+        S.add("solid.fillet", body="hub", edges=[_r(p) for p in fil],
+              radius=round(min(prm.wall, 0.25 * (boss_h - ARM_T)), 4))   # short boss: band above the arm limits R
     S.cyl("bore", np.eye(3), [0, 0, -BOSS_H], [0, 0, BOSS_H], BORE_D)
     S.cut("hub", ["bore"])
+    if boss_h < BOSS_H:  # short boss: keep the washer / nut seat on its top face clear of the upper arms
+        S.cyl("seat_clear", np.eye(3), [0, 0, -BOSS_H / 2 + boss_h], [0, 0, BOSS_H + 10], BOSS_OD + 1.0)
+        S.cut("hub", ["seat_clear"])
     for k in range(1, n + 1):
         L = _blade_map(k, n)
         ko, hs, bs = [], [], []
         for i, f in enumerate(fr, 1):
             _, hr = _jaw_ranges(f, prm, 0)
-            _, br = _jaw_ranges(f, prm, 1)
+            _, br = _jaw_ranges(f, prm, 1, ex_d)
             S.obox(f"hub_slot{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *hr)
             S.obox(f"blade_slot{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *br)
             S.obox(f"keepout{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], (0.0, f["L"]),
                    (-prm.w / 2 - STRIP_CLEAR, prm.w / 2 + STRIP_CLEAR), (-prm.t / 2 - STRIP_CLEAR, prm.t / 2 + STRIP_CLEAR))
             ko.append(f"keepout{k}{i}"); hs.append(f"hub_slot{k}{i}"); bs.append(f"blade_slot{k}{i}")
+            if cham > 0:
+                _mouth(S, f"hub_mouth{k}{i}", L, f, 0.0, -1, prm, cham)
+                _mouth(S, f"blade_mouth{k}{i}", L, f, f["L"], 1, prm, cham)
+                hs.append(f"hub_mouth{k}{i}"); bs.append(f"blade_mouth{k}{i}")
         # strap channel + knot wells (wells open through the arm side for knotting)
         zt = BOSS_H / 2 + 1
         S.cyl(f"hub_well{k}", L, [lay["x_hw"], 0, -zt], [lay["x_hw"], 0, lay["ch_h"] + 1], prm.well_d)

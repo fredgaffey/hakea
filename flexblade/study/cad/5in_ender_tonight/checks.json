@@ -1,0 +1,107 @@
+{
+ "overrides": {
+  "n_lam": 3,
+  "t_lam": 0.1,
+  "width": 4.0,
+  "slot_clear": 0.25,
+  "blade_extra": 0.0,
+  "mouth_chamfer": 0.5,
+  "boss_h": 6.5
+ },
+ "slot_t": 0.55,
+ "slot_w": 4.2,
+ "land": 8.0,
+ "free": 10.048000000000002,
+ "rows": [
+  {
+   "check": "one_body hub",
+   "ok": true,
+   "detail": "shells 1, 1402.9 mm3, bbox z -10.8..10.8"
+  },
+  {
+   "check": "one_body blade1",
+   "ok": true,
+   "detail": "shells 1, 1583.9 mm3, bbox z -5.4..11.5"
+  },
+  {
+   "check": "one_body blade2",
+   "ok": true,
+   "detail": "shells 1, 1584.0 mm3, bbox z -11.5..2.1"
+  },
+  {
+   "check": "one_body strip_b1_1",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -9.3..6.8"
+  },
+  {
+   "check": "one_body strip_b1_2",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -6.8..9.3"
+  },
+  {
+   "check": "one_body strip_b2_1",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -6.8..9.3"
+  },
+  {
+   "check": "one_body strip_b2_2",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -9.3..6.8"
+  },
+  {
+   "check": "one_body strap_b1",
+   "ok": true,
+   "detail": "shells 1, 18.1 mm3, bbox z -0.7..0.7"
+  },
+  {
+   "check": "one_body strap_b2",
+   "ok": true,
+   "detail": "shells 1, 18.1 mm3, bbox z -0.7..0.7"
+  },
+  {
+   "check": "no stray bodies",
+   "ok": true,
+   "detail": "9 bodies"
+  },
+  {
+   "check": "strip_b1_1",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "strip_b1_2",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "strip_b2_1",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "strip_b2_2",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "interference (fittings)",
+   "ok": true,
+   "detail": "none between printed parts and strips"
+  },
+  {
+   "check": "strap vs strips (design)",
+   "ok": false,
+   "detail": "[('strip_b1_1', 'strap_b1', 0.268), ('strip_b1_2', 'strap_b1', 0.268), ('strip_b2_1', 'strap_b2', 0.268), ('strip_b2_2', 'strap_b2', 0.268)]"
+  },
+  {
+   "check": "swing blade1",
+   "ok": true,
+   "detail": "min hub gap 1.09 mm at flap +15 deg (rest 2.00); lag (z) -15 1.59, lag (z) +15 2.00, flap -15 1.09, flap +15 1.09, hinge axis -15 2.06, hinge axis +15 1.35"
+  },
+  {
+   "check": "swing blade2",
+   "ok": true,
+   "detail": "min hub gap 1.09 mm at flap +15 deg (rest 2.00); lag (z) -15 1.35, lag (z) +15 2.00, flap -15 1.09, flap +15 1.09, hinge axis -15 1.35, hinge axis +15 2.06"
+  }
+ ]
+}

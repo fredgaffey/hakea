@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="46.048mm" height="34.0mm" viewBox="0 0 46.048 34.0">
+<rect x="10" y="8" width="26.048" height="4.000" fill="none" stroke="black" stroke-width="0.1"/>
+<line x1="18.000" y1="6" x2="18.000" y2="14.000" stroke="red" stroke-width="0.1"/>
+<line x1="28.048" y1="6" x2="28.048" y2="14.000" stroke="red" stroke-width="0.1"/>
+<text x="10" y="18.0" font-size="2.2">strip 26.05 x 4.0 mm: land 8.0 | free 10.05 | land 8.0 (red = slot exits). 12 needed (4 stacks of 3) + spares, grain along.</text>
+<rect x="10" y="22.0" width="10" height="1.5" fill="black"/>
+<text x="22" y="23.5" font-size="2.2">10 mm scale check: print at 100 %, measure this bar</text>
+</svg>
