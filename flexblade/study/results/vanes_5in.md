@@ -36,10 +36,7 @@ Model inputs: cyclic M 12.3 mN m; motor 1P torque 176 mN m; thrust_1p 0.36 N (15
 | 1P side force: 0 by symmetry (B=2, N even); with 3 % blade mismatch | 3 mN, 0.7 % | 4 mN, 0.6 % |
 | DC side force from the cyclic swirl pattern (dQ/Q = 1.5 dT/T), cross-axis | 0.11 N, 24 % (14 deg) | 0.12 N, 19 % (11 deg) |
 | 2P side force (potential decay exp(-2z/r): 0.62 vs 0.18) | 19 mN, 4 % | 13 mN, 2 % |
-- **Not an attitude problem.**
-  - The vane 1P yaw ripple is 1.2 % of the motor's own 1P reaction, which already puts 1.0 rad/s of 1P on gyro z, so a yaw RPM notch is needed anyway.
-  - The DC side force scales with M: it acts as a fixed ~11-14 deg phase plus a 5 % W lateral force, which the phase calibration and position loop absorb.
-  - The rotor's own 2P hub moment (32.5 mN m = 2.6 M) dwarfs the vane 2P.
+- **Not an attitude problem.** The vane 1P yaw ripple is 1.2 % of the motor's own 1P reaction, which already puts 1.0 rad/s of 1P on gyro z (a yaw RPM notch is needed anyway). The DC side force scales with M: a fixed ~11-14 deg phase plus a 5 % W lateral force, absorbed by the phase calibration and position loop. The rotor's own 2P hub moment (32.5 mN m = 2.6 M) dwarfs the vane 2P.
 - Spacing ≥ 0.5R does **not** reduce the 1P terms (vortical, they convect; ~2.7 ms delay). It cuts 2P vane loading ~3x, moves the ring nearer the CG and avoids a ring around the spinning bell. Use LE ≥ 0.5R.
 
 ## 5. Printable design and structure
@@ -48,7 +45,5 @@ Model inputs: cyclic M 12.3 mN m; motor 1P torque 176 mN m; thrust_1p 0.36 N (15
 - Servo vanes: separate prints, 3.4 mm boss at 25 % chord glued to 2 mm steel rods in reamed 2.1 mm holes in the hub tube and the ring. They sit opposite each other (side forces cancel).
   One micro servo inside the hub tube (ID 30 mm, below the encoder) drives both through a double horn and 1 mm Z-bend links to 6 mm cranks.
 - Mass: printed 17.9 g (hub 3.2, vanes 9.8, bosses 0.6, ring 4.3; with 0.8 mm vanes 15.9 g). Rods 2.5 + links 1.5 bring it to **21.9 g (19.9 g)**, plus a ~4.3 g servo: +4-6 g (~2 % AUW) over the budget's 15+5 g.
-- Modes (E 2.0 GPa, beam formulas; 1P band 190-240 Hz, 2P band 380-480 Hz):
-  - Cantilever vanes without the ring: 263 Hz, too close to 1P.
-  - Ring torsion on 4 radial vanes: **213 Hz, inside 1P**, and driven by the 176 mN m 1P reaction. **Lean the vanes 15 deg tangentially** (spoke style) to raise it to 1.1 kHz.
-  - Vane bending 1.7 kHz; ring wall segment 600 Hz (keep the wall ≥ 1.6 mm).
+- Modes (E 2.0 GPa, beam formulas; 1P 190-240 Hz, 2P 380-480 Hz): cantilever vanes without the ring 263 Hz (too close to 1P). Ring torsion on 4 radial vanes **213 Hz, inside 1P**, driven by the 176 mN m 1P reaction.
+  **Lean the vanes 15 deg tangentially** (spoke style) to raise it to 1.1 kHz. Vane bending 1.7 kHz; ring wall segment 600 Hz (keep the wall ≥ 1.6 mm).
