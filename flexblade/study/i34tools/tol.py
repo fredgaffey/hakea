@@ -34,11 +34,12 @@ def main():
                   for m in d.flexure.strip_preset_deg]
             fx = fx.model_copy(update=dict(strip_preset_deg=sp))
         builds.append((" ".join(f"{k[0]}{v:.3f}" for k, v in f.items()), d.model_copy(update=dict(flexure=fx))))
-    jobs = [(b, t, dv) for b, bd in builds for t, dv in robust.variants(bd, TF, None, JS, None)]
+    # keyed by build index: labels collide when CQ_TOL_MAG=0 (presets-only builds all read t1.000 ...)
+    jobs = [(i, t, dv) for i, (_, bd) in enumerate(builds) for t, dv in robust.variants(bd, TF, None, JS, None)]
     with ProcessPoolExecutor(int(os.environ.get("TOL_WORKERS", 3))) as ex:
         ms = list(ex.map(ev, [j[2] for j in jobs], chunksize=1))
-    for b, _ in builds:
-        sel = [(t, m) for (bb, t, _), m in zip(jobs, ms) if bb == b]
+    for i, (b, _) in enumerate(builds):
+        sel = [(t, m) for (ii, t, _), m in zip(jobs, ms) if ii == i]
         c = robust.combine([m for _, m in sel], [t for t, _ in sel])
         vh = {k: round(v, 3) for k, v in (c.get("viol_hard") or {}).items()}
         print(f"{b:40s} cr_pl {c.get('cr_pl', 0):.4f} res {c.get('res_margin', 0):.3f} ({c.get('res_which')}) "
