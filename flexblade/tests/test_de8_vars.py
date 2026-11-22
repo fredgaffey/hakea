@@ -62,3 +62,19 @@ def test_blade_vars_and_core_fraction():
             core_fraction=f), None, force_grid=True)
     a, b, c = sp(1.0), sp(0.0), sp(0.5)
     assert b.mass_per_len < c.mass_per_len < a.mass_per_len and b.EIy < c.EIy < a.EIy
+
+
+def test_laminae_vars_and_snap():
+    from flexblade.optimize import LAMINA_STOCK
+    rs.LAMINAE_VARS = True
+    try:
+        p = {v.path for v in rs.variables("tt_strap_steelx", 10.0)}
+    finally:
+        rs.LAMINAE_VARS = False
+    assert {"flexure.strip_laminae", "flexure.lamina_idx"} <= p and "flexure.thickness" not in p
+    assert "flexure.strip_laminae" not in {v.path for v in rs.variables("tt_strap_steelx", 10.0)}
+    d = rs.base_design(10.0, "tt_strap_steelx", False)[0]
+    d2 = set_design(d, {"flexure.strip_laminae": 6.4, "flexure.lamina_idx": 2.6})
+    assert isinstance(d2.flexure.strip_laminae, int) and d2.flexure.strip_laminae == 6
+    assert d2.flexure.thickness == LAMINA_STOCK[3]
+    assert set_design(d, {"flexure.strip_laminae": 1.5}).flexure.strip_laminae == 2
