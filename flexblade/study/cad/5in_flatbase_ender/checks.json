@@ -1,0 +1,145 @@
+{
+ "overrides": {
+  "n_lam": 3,
+  "t_lam": 0.1,
+  "width": 4.0,
+  "slot_clear": 0.25,
+  "blade_extra": 0.0,
+  "mouth_chamfer": 0.5,
+  "boss_h": 6.5,
+  "flat_base": true
+ },
+ "z_base": -12.5,
+ "printability": {
+  "hub": {
+   "z_min": -12.5,
+   "overhang_mm2": 95.82491234446233,
+   "plate_mm2": 254.84773976944254,
+   "z_min_in_bell": -12.5
+  },
+  "blade_a": {
+   "z_min": -5.367303371429443,
+   "overhang_mm2": 750.6285034441713,
+   "plate_mm2": 0.0,
+   "z_min_in_bell": -2.0
+  },
+  "blade_b": {
+   "z_min": -11.485454559326172,
+   "overhang_mm2": 750.5936889929743,
+   "plate_mm2": 0.0,
+   "z_min_in_bell": -11.485454559326172
+  }
+ },
+ "rows": [
+  {
+   "check": "one_body hub",
+   "ok": true,
+   "detail": "shells 1, 3070.7 mm3, bbox z -12.50..10.84"
+  },
+  {
+   "check": "one_body blade1",
+   "ok": true,
+   "detail": "shells 1, 1583.9 mm3, bbox z -5.37..11.49"
+  },
+  {
+   "check": "one_body blade2",
+   "ok": true,
+   "detail": "shells 1, 1584.0 mm3, bbox z -11.49..2.12"
+  },
+  {
+   "check": "one_body strip_b1_1",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -9.30..6.79"
+  },
+  {
+   "check": "one_body strip_b1_2",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -6.79..9.30"
+  },
+  {
+   "check": "one_body strip_b2_1",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -6.79..9.30"
+  },
+  {
+   "check": "one_body strip_b2_2",
+   "ok": true,
+   "detail": "shells 1, 31.3 mm3, bbox z -9.30..6.79"
+  },
+  {
+   "check": "one_body strap_b1",
+   "ok": true,
+   "detail": "shells 1, 18.1 mm3, bbox z -0.65..0.65"
+  },
+  {
+   "check": "one_body strap_b2",
+   "ok": true,
+   "detail": "shells 1, 18.1 mm3, bbox z -0.65..0.65"
+  },
+  {
+   "check": "no stray bodies",
+   "ok": true,
+   "detail": "9 bodies"
+  },
+  {
+   "check": "strip_b1_1",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "strip_b1_2",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "strip_b2_1",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "strip_b2_2",
+   "ok": true,
+   "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+  },
+  {
+   "check": "interference (fittings)",
+   "ok": true,
+   "detail": "none between printed parts and strips"
+  },
+  {
+   "check": "swing blade1",
+   "ok": true,
+   "detail": "min hub gap 1.09 mm at flap +15 deg (rest 2.00); lag (z) -15 1.59, lag (z) +15 2.00, flap -15 1.09, flap +15 1.09, hinge axis -15 2.06, hinge axis +15 1.35"
+  },
+  {
+   "check": "swing blade2",
+   "ok": true,
+   "detail": "min hub gap 1.09 mm at flap +15 deg (rest 2.00); lag (z) -15 1.35, lag (z) +15 2.00, flap -15 1.09, flap +15 1.09, hinge axis -15 1.35, hinge axis +15 2.06"
+  },
+  {
+   "check": "hub flat motor face",
+   "ok": true,
+   "detail": "hub min z -12.50 vs boss face -12.50, on-plate area 254.8 mm2"
+  },
+  {
+   "check": "overhang>50 hub",
+   "ok": false,
+   "detail": "95.8 mm2 off-plate (z up, plate at its min z -12.50)"
+  },
+  {
+   "check": "overhang>50 blade_a",
+   "ok": true,
+   "detail": "750.6 mm2 off-plate (z up, plate at its min z -5.37)"
+  },
+  {
+   "check": "overhang>50 blade_b",
+   "ok": true,
+   "detail": "750.6 mm2 off-plate (z up, plate at its min z -11.49)"
+  },
+  {
+   "check": "bell r<14.5",
+   "ok": true,
+   "detail": "blade fittings within r 14.5 reach z -11.49 (motor face -12.50)"
+  }
+ ]
+}

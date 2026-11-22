@@ -1,0 +1,47 @@
+{
+ "overrides": {
+  "n_lam": 3,
+  "t_lam": 0.1,
+  "width": 4.0,
+  "slot_clear": 0.25,
+  "blade_extra": 0.0,
+  "mouth_chamfer": 0.5,
+  "boss_h": 6.5,
+  "supports": true
+ },
+ "parts": {
+  "hub": {
+   "flipped": true,
+   "part_shells": 1,
+   "sup_shells": 10,
+   "sup_mm3": 789.5243142697557,
+   "sup_height": 14.6404,
+   "part_sup_gap_mm": 0.021641890760881466,
+   "overhang_mm2": 309.32715559092014,
+   "unsupported_mm2": 27.777147683978196,
+   "hidden_mm2": 30.377470616123816
+  },
+  "blade_a": {
+   "flipped": false,
+   "part_shells": 1,
+   "sup_shells": 7,
+   "sup_mm3": 1211.5101780681869,
+   "sup_height": 9.167300000000001,
+   "part_sup_gap_mm": 0.025611251461373594,
+   "overhang_mm2": 750.6285034441713,
+   "unsupported_mm2": 18.334527636047948,
+   "hidden_mm2": 23.834233656726845
+  },
+  "blade_b": {
+   "flipped": false,
+   "part_shells": 1,
+   "sup_shells": 6,
+   "sup_mm3": 2557.507430167207,
+   "sup_height": 12.29,
+   "part_sup_gap_mm": 0.023368190798827328,
+   "overhang_mm2": 750.5936889929743,
+   "unsupported_mm2": 6.581704802576667,
+   "hidden_mm2": 23.809244517628905
+  }
+ }
+}

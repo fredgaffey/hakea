@@ -118,6 +118,69 @@ def swing_checks(base, lay):
     return rows
 
 
+OVERHANG_DEG, R_BELL = 50.0, 14.5          # printability: facets steeper than this from vertical; 2307 bell radius, mm
+
+
+def stl_tris(path):
+    """(n, 3, 3) triangle array from a binary or ASCII STL."""
+    b = Path(path).read_bytes()
+    if b[:5] == b"solid" and b"facet" in b[:400]:
+        v = [list(map(float, ln.split()[1:4])) for ln in b.decode().splitlines() if ln.strip().startswith("vertex")]
+        return np.asarray(v, float).reshape(-1, 3, 3)
+    n = int(np.frombuffer(b[80:84], "<u4")[0])
+    rec = np.frombuffer(b[84:84 + 50 * n], dtype=np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")]))
+    return rec["v"].astype(float)
+
+
+def printability(path, z_plate=None):
+    """Print-frame (z up) metrics of one part: min z, and the area (mm2) of downward facets steeper than
+    OVERHANG_DEG from vertical that are not on the build plate (z_plate, default the part's min z)."""
+    T = stl_tris(path)
+    N = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    A = np.linalg.norm(N, axis=1) / 2
+    nz = N[:, 2] / np.maximum(2 * A, 1e-30)
+    zmin = float(T[:, :, 2].min())
+    zp = zmin if z_plate is None else z_plate
+    on_plate = (np.abs(T[:, :, 2] - zp) < 0.05).all(axis=1)
+    bad = (nz < -math.sin(math.radians(OVERHANG_DEG))) & ~on_plate
+    r = np.hypot(T[:, :, 0], T[:, :, 1])
+    return dict(z_min=zmin, overhang_mm2=float(A[bad].sum()), plate_mm2=float(A[on_plate & (nz < -0.99)].sum()),
+                z_min_in_bell=float(T[:, :, 2][r < R_BELL].min()) if (r < R_BELL).any() else None)
+
+
+def support_coverage(Tp, cols, reach=2.0):
+    """Print-frame part mesh Tp (plate z = 0) + support columns (x, y, top): >50 deg overhang area (mm2) off the
+    plate, the exposed part of it with no support column within `reach` mm (xy) ending within reach below it,
+    and the part over other part material (roofs of channels etc.: bridged, not plate-supportable)."""
+    from flexblade.cad.solidcraft import ray_first_hit, _facet_nz
+    A = np.linalg.norm(np.cross(Tp[:, 1] - Tp[:, 0], Tp[:, 2] - Tp[:, 0]), axis=1) / 2
+    ov = (_facet_nz(Tp) < -math.sin(math.radians(OVERHANG_DEG))) & ~(Tp[:, :, 2] < 0.05).all(axis=1)
+    c, a = Tp[ov].mean(axis=1), A[ov]
+    zf, _ = ray_first_hit(Tp, c[:, :2])
+    exposed = zf >= c[:, 2] - 0.3
+    sup = np.zeros(len(c), bool)
+    for i in range(0, len(c), 500):
+        if len(cols):
+            q = c[i:i + 500]
+            d = np.hypot(q[:, None, 0] - cols[None, :, 0], q[:, None, 1] - cols[None, :, 1])
+            sup[i:i + 500] = ((d <= reach) & (cols[None, :, 2] <= q[:, None, 2]) & (cols[None, :, 2] >= q[:, None, 2] - reach - 0.25)).any(axis=1)
+    return dict(overhang_mm2=float(a.sum()), unsupported_mm2=float(a[exposed & ~sup].sum()), hidden_mm2=float(a[~exposed].sum()))
+
+
+def print_rows(stls, z_base):
+    """Rows: hub motor face = its lowest point (within 0.05 mm of z_base), overhang areas, bell clearance."""
+    m = {k: printability(v) for k, v in stls.items()}
+    h = m["hub"]
+    rows = [("hub flat motor face", abs(h["z_min"] - z_base) <= 0.05 and h["plate_mm2"] > 1.0,
+             f"hub min z {h['z_min']:.2f} vs boss face {z_base:.2f}, on-plate area {h['plate_mm2']:.1f} mm2")]
+    for k, x in m.items():
+        rows.append((f"overhang>{OVERHANG_DEG:.0f} {k}", k != "hub" or x["overhang_mm2"] < 1.0,
+                     f"{x['overhang_mm2']:.1f} mm2 off-plate (z up, plate at its min z {x['z_min']:.2f})"))
+    lo = min(x["z_min_in_bell"] for k, x in m.items() if k != "hub" and x["z_min_in_bell"] is not None)
+    rows.append((f"bell r<{R_BELL}", lo >= z_base, f"blade fittings within r {R_BELL} reach z {lo:.2f} (motor face {z_base:.2f})"))
+    return rows, m
+
+
 def body_args(names):
     a = []
     for nm in names:

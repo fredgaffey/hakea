@@ -137,7 +137,26 @@ def _blade_map(k: int, n: int) -> np.ndarray:
 OVERRIDE_KEYS = {"n_lam": "laminae per stack", "t_lam": "lamina thickness, mm", "width": "strip width, mm",
                  "slot_clear": "slot thickness clearance over the stack, mm", "blade_extra": "blade slot depth past the land, mm",
                  "mouth_chamfer": "45 deg slot-mouth chamfer, mm", "boss_h": "boss height, mm", "boss_od": "boss OD, mm",
-                 "bore": "bore, mm"}
+                 "bore": "bore, mm",
+                 "flat_base": "support-free flat motor face (bool, default off): see _flat_base_doc",
+                 "supports": "designed breakaway supports (bool, default off; needs meshes=, see support_commands)"}
+FB_GAP = 2.0                    # flat_base: min xy gap from an upper hub jaw's shadow to its blade fitting, mm
+FB_SLOT_EXT = 8.0               # flat_base: hub slot cutter run-out past the jaw back, so it exits the pedestal
+
+
+def _flat_base_doc():
+    """flat_base=True (CAD only; the beam model is unchanged). With the skewed crossed strips the hub jaws of
+    blade 1 hang ~4.9 mm below the lead's boss face, so: (1) the boss bottom (motor face) moves down to the lowest
+    hub-jaw point, or FB_BELL_GAP below the mirrored blade's lower jaw where it passes over the bell (z_base,
+    -12.55 for the lead): the whole rotor sits that much higher on the shaft, a rigid translation the analysis
+    frame does not see; (2) every hub jaw whose vertical shadow is clear of its own blade fitting becomes
+    a pedestal = the jaw extended straight down to z_base (jaw box cut by its upward face planes, over its xy
+    hull), so its jaw faces (all <= 44.4 deg from vertical at skew 62 / cross 105) and slot / keep-out cuts
+    (strip-aligned) print without supports; the hub-down blade's spine and arm plates become prisms from z_base;
+    (3) hub slots run out through the pedestal (stack still loads from the hub back); knot wells open at z_base.
+    The upper (mirrored, even-blade) hub jaw whose shadow falls on its own blade fitting cannot be propped
+    without entering the blade's swing envelope; it keeps the lead's arm plate (reported by the overhang check)."""
+    return _flat_base_doc.__doc__
 
 
 def rotor_layout(design: dict | Design, overrides: dict | None = None) -> dict:
@@ -180,7 +199,29 @@ def rotor_layout(design: dict | Design, overrides: dict | None = None) -> dict:
                 ch_h=prm.channel_d / 2 + prm.wall, n=D.blade.n_blades, R=D.blade.diameter_in * 25.4 / 2,
                 boss_h=float(ov.get("boss_h", BOSS_H)), boss_od=float(ov.get("boss_od", BOSS_OD)),
                 bore=float(ov.get("bore", BORE_D)), blade_extra=float(ov.get("blade_extra", OVERDEEP)),
-                chamfer=float(ov.get("mouth_chamfer", 0.0)), overrides=ov)
+                chamfer=float(ov.get("mouth_chamfer", 0.0)), flat_base=bool(ov.get("flat_base", False)),
+                z_base=_z_base(fr, prm, D.blade.n_blades, float(ov.get("blade_extra", OVERDEEP))), overrides=ov)
+
+
+FB_BELL_R, FB_BELL_GAP = 14.5, 1.0   # flat_base: 2307 bell radius; blade-fitting clearance above the motor face there, mm
+
+
+def _z_base(fr, prm, n, extra=OVERDEEP):
+    """flat_base motor face (mm, 0.05 grid): the lowest hub-jaw point over all blades, and at least FB_BELL_GAP
+    below any blade-jaw point inside the bell radius (the mirrored blade's lower jaw passes over the bell)."""
+    z = min(float((_blade_map(k, n) @ np.asarray(p))[2]) for k in range(1, n + 1) for f in fr
+            for p in _box_corners(f, _jaw_ranges(f, prm, 0)[0]))
+    g = np.linspace(0, 1, 13)
+    for k in range(1, n + 1):
+        L = _blade_map(k, n)
+        for f in fr:
+            rr = _jaw_ranges(f, prm, 1, extra)[0]
+            P = np.array([L @ (f["p0"] + a * f["t"] + b * f["w"] + c * f["n"]) for a in np.interp(g, [0, 1], rr[0])
+                          for b in np.interp(g, [0, 1], rr[1]) for c in np.interp(g, [0, 1], rr[2])])
+            P = P[np.hypot(P[:, 0], P[:, 1]) < FB_BELL_R]
+            if len(P):
+                z = min(z, float(P[:, 2].min()) - FB_BELL_GAP)
+    return round(math.floor(z / 0.05) * 0.05, 4)
 
 
 def _jaw_ranges(f, prm, side, extra=OVERDEEP):
@@ -194,6 +235,56 @@ def _jaw_ranges(f, prm, side, extra=OVERDEEP):
         return ((-prm.land, 0.0), u_jaw, v_jaw), ((-prm.land - 2.0, 0.5), u_slot, v_slot)
     deep = prm.land + extra
     return ((L, L + deep + prm.wall), u_jaw, v_jaw), ((L - 0.5, L + deep), u_slot, v_slot)
+
+
+def _box_corners(f, rr):
+    return [f["p0"] + a * f["t"] + b * f["w"] + c * f["n"] for a in rr[0] for b in rr[1] for c in rr[2]]
+
+
+def _poly_gap(P, Q):
+    """Min distance between two convex CCW polygons (0 if they overlap; separating-axis test)."""
+    P, Q = np.asarray(P, float), np.asarray(Q, float)
+    for A, B in ((P, Q), (Q, P)):
+        for i in range(len(A)):
+            e = A[(i + 1) % len(A)] - A[i]
+            nrm = np.array([e[1], -e[0]]) / np.linalg.norm(e)          # outward for CCW
+            if ((B - A[i]) @ nrm).min() > 0:
+                break
+        else:
+            continue
+        break
+    else:
+        return 0.0
+
+    def seg(p, a, b):
+        ab = b - a
+        u = np.clip((p - a) @ ab / (ab @ ab), 0, 1)
+        return float(np.linalg.norm(p - a - u * ab))
+    return min(seg(p, A[i], A[(i + 1) % len(A)]) for A, B in ((P, Q), (Q, P)) for p in B for i in range(len(A)))
+
+
+def _pedestal(S: "_Script", name, L, f, rr, z_base):
+    """Jaw box (ranges rr about p0 in the strip frame, blade-1 frame, placed by L) extended straight down to
+    z = z_base: prism over the xy hull of the placed corners, cut by the box's upward-facing face planes."""
+    P = [L @ p for p in _box_corners(f, rr)]
+    poly = _hull2([p[:2] for p in P])
+    z_hi = max(p[2] for p in P) + 1.0
+    S.plate(name, poly, z_base, z_hi - z_base)
+    big, cut = 60.0, []
+    axes = (f["t"], f["w"], f["n"])
+    for j, e in enumerate(axes):
+        up = float((L @ e)[2])
+        if abs(up) < 1e-9:
+            continue
+        lo, hi = rr[j]
+        r = [(-big, big)] * 3
+        r[j] = (hi, hi + big) if up > 0 else (lo - big, lo)
+        S.obox(f"{name}_c{j}", L, f["p0"], *axes, *r)
+        cut.append(f"{name}_c{j}")
+    if float((L @ f["t"])[2]) < 0:      # upper jaw: nothing past the mouth plane (free span stays free; 32.5 deg face)
+        S.obox(f"{name}_cm", L, f["p0"], *axes, (rr[0][1], rr[0][1] + big), (-big, big), (-big, big))
+        cut.append(f"{name}_cm")
+    S.cut(name, cut)
 
 
 def _box_corners_xy(f, rr):
@@ -246,17 +337,21 @@ def _mouth(S: _Script, name, L, f, t0, sgn, prm, c):
     S.add("solid.loft", sections=secs, body_name=name)
 
 
-def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = True, n_sec: int = 5) -> dict:
+def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = True, n_sec: int = 5,
+                   meshes: dict | None = None) -> dict:
     """SolidCraft script for the whole rotor (see module doc). Pure modelling commands only.
     overrides: see OVERRIDE_KEYS (e.g. the Ender/PETG spin-test variant in study/cad/build_5in_ender_tonight.py)."""
     lay = rotor_layout(design, overrides)
     prm, fr, n, hw = lay["prm"], lay["strips"], lay["n"], lay["hw"]
     boss_h, BOSS_OD, BORE_D, ex_d, cham = lay["boss_h"], lay["boss_od"], lay["bore"], lay["blade_extra"], lay["chamfer"]
     zb = BOSS_H / 2 - ARM_T                            # arm plates: hub z in [-6, -4], blade z in [4, 6]
+    fb, zB = lay["flat_base"], lay["z_base"]
+    z_boss0 = zB if fb else -BOSS_H / 2                 # flat_base: motor face at the lowest hub-jaw point
     ex, ey, ez = np.eye(3)
     S = _Script()
     # boss bottom stays on the lead's flat face (z = -BOSS_H/2); arms / spines keep the lead's z (boss_h only shortens the boss)
-    S.add("solid.cylinder", diameter=BOSS_OD, height=boss_h, base=[0, 0, -BOSS_H / 2], body_name="hub")
+    S.add("solid.cylinder", diameter=BOSS_OD, height=round(-BOSS_H / 2 + boss_h - z_boss0, 5), base=[0, 0, z_boss0],
+          body_name="hub")
     r_in = BOSS_OD / 2 - prm.wall / 2         # arm outline from inside the boss: no tangent contact
     circ = [(r_in * math.cos(q), r_in * math.sin(q)) for q in np.linspace(0, 2 * math.pi, 36, endpoint=False)]
     x_be = lay["r_aero"] + 1.0                          # shank runs 1 mm into the aero loft
@@ -266,18 +361,31 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
         mz = np.sign(np.linalg.det(L))                  # z sign of this blade's fitting side
         # ---- hub side of blade k
         hub_parts = [f"hub_spine{k}"]
+        down = fb and mz > 0                            # flat_base, hub side hanging down: everything on pedestals
         S.obox(f"hub_spine{k}", L, [0, 0, 0], ex, ey, ez, (0.0, lay["x_hub_end"]), (-hw, hw),
-               (-(BOSS_H / 2 - ARM_T / 2), lay["ch_h"]))
+               (zB if down else -(BOSS_H / 2 - ARM_T / 2), lay["ch_h"]))
+        if fb and not down:                             # blade k fitting footprint (it lies under the upper hub jaws)
+            bfp = _hull2([(L @ [x, y, 0])[:2] for x in (lay["x_blade_start"], x_be) for y in (-hw, hw)]
+                         + [(L @ p)[:2] for f in fr for p in _box_corners(f, _jaw_ranges(f, prm, 1, ex_d)[0])])
         for i, f in enumerate(fr, 1):
             jr, _ = _jaw_ranges(f, prm, 0)
-            S.obox(f"hub_jaw{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *jr)
             poly = _hull2([(L @ [x, y, 0])[:2] for x, y in circ + _box_corners_xy(f, jr)])
-            S.plate(f"hub_arm{k}{i}", poly, -BOSS_H / 2 if mz > 0 else zb, ARM_T)
-            hub_parts += [f"hub_jaw{k}{i}", f"hub_arm{k}{i}"]
+            ped = down or (fb and _poly_gap(_hull2([(L @ p)[:2] for p in _box_corners(f, jr)]), bfp) >= FB_GAP)
+            if ped:
+                _pedestal(S, f"hub_jaw{k}{i}", L, f, jr, zB)
+                hub_parts.append(f"hub_jaw{k}{i}")
+                if not down:                            # upper jaw on its own pedestal (meets the boss): no arm plate
+                    continue
+                S.plate(f"hub_arm{k}{i}", poly, zB, -BOSS_H / 2 + ARM_T - zB)
+            else:
+                S.obox(f"hub_jaw{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *jr)
+                S.plate(f"hub_arm{k}{i}", poly, -BOSS_H / 2 if mz > 0 else zb, ARM_T)
+            hub_parts += [f"hub_jaw{k}{i}", f"hub_arm{k}{i}"] if not ped else [f"hub_arm{k}{i}"]
             yc = float(np.mean([p[1] for p in _box_corners_xy(f, jr)]))
             s = math.copysign(1.0, yc)
             q = 0.5 * (math.asin(min(0.95, (hw + 0.3) / (BOSS_OD / 2))) + math.radians(75))   # mid-arc, clear of spine + arm edges
-            fil.append(L @ np.array([BOSS_OD / 2 * math.cos(q), s * BOSS_OD / 2 * math.sin(q), -zb]))
+            if not down:                                # flat_base pedestal arms are solid to the face: no root fillet
+                fil.append(L @ np.array([BOSS_OD / 2 * math.cos(q), s * BOSS_OD / 2 * math.sin(q), -zb]))
         S.join("hub", hub_parts)
         # ---- blade root fitting k
         S.obox(f"blade{k}", L, [0, 0, 0], ex, ey, ez, (lay["x_blade_start"], x_be), (-hw, hw),
@@ -291,7 +399,7 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
             S.plate(f"blade_arm{k}{i}", poly, zb if mz > 0 else -BOSS_H / 2, ARM_T)
             bl_parts += [f"blade_jaw{k}{i}", f"blade_arm{k}{i}"]
         S.join(f"blade{k}", bl_parts)
-    fil = [p for p in fil if -BOSS_H / 2 < p[2] < -BOSS_H / 2 + boss_h]     # arms that meet the boss
+    fil = [p for p in fil if z_boss0 < p[2] < -BOSS_H / 2 + boss_h]     # arms that meet the boss
     if fillet and fil:  # arm roots: arm plate face meeting the boss cylinder
         S.add("solid.fillet", body="hub", edges=[_r(p) for p in fil],
               radius=round(min(prm.wall, 0.25 * (boss_h - ARM_T)), 4))   # short boss: band above the arm limits R
@@ -306,6 +414,8 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
         for i, f in enumerate(fr, 1):
             _, hr = _jaw_ranges(f, prm, 0)
             _, br = _jaw_ranges(f, prm, 1, ex_d)
+            if fb:                                      # run the hub slot out through the pedestal
+                hr = ((hr[0][0] - FB_SLOT_EXT, hr[0][1]),) + tuple(hr[1:])
             S.obox(f"hub_slot{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *hr)
             S.obox(f"blade_slot{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *br)
             S.obox(f"keepout{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], (0.0, f["L"]),
@@ -317,7 +427,8 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
                 hs.append(f"hub_mouth{k}{i}"); bs.append(f"blade_mouth{k}{i}")
         # strap channel + knot wells (wells open through the arm side for knotting)
         zt = BOSS_H / 2 + 1
-        S.cyl(f"hub_well{k}", L, [lay["x_hw"], 0, -zt], [lay["x_hw"], 0, lay["ch_h"] + 1], prm.well_d)
+        z_w0 = zB - 1 if (fb and mz > 0) else -zt       # flat_base: the hub well opens through the motor face
+        S.cyl(f"hub_well{k}", L, [lay["x_hw"], 0, z_w0], [lay["x_hw"], 0, lay["ch_h"] + 1], prm.well_d)
         S.cyl(f"hub_chan{k}", L, [lay["x_hw"], 0, 0], [lay["x_hub_end"] + 1, 0, 0], prm.channel_d)
         S.cyl(f"blade_well{k}", L, [lay["x_bw"], 0, -lay["ch_h"] - 1], [lay["x_bw"], 0, zt], prm.well_d)
         S.cyl(f"blade_chan{k}", L, [lay["x_blade_start"] - 1, 0, 0], [lay["x_bw"], 0, 0], prm.channel_d)
@@ -330,7 +441,146 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
             S.obox(f"strip_b{k}_{i}", L, f["p0"], f["t"], f["w"], f["n"], (-prm.land, f["L"] + prm.land),
                    (-prm.w / 2, prm.w / 2), (-prm.t / 2, prm.t / 2))
         S.cyl(f"strap_b{k}", L, [lay["x_hw"], 0, 0], [lay["x_bw"], 0, 0], prm.strand_d)
+    if lay["overrides"].get("supports") and meshes:     # print-frame parts + breakaway supports (second pass)
+        for part, T in meshes.items():
+            R, dz = print_frame(T)
+            S.add("solid.move", bodies=[part], matrix=[list(map(float, R[0])) + [0.0], list(map(float, R[1])) + [0.0],
+                                                        list(map(float, R[2])) + [float(dz)]], tolerance=1e-9)
+            Tp = T @ R.T + [0, 0, dz]
+            ex = [(R @ o + [0, 0, dz], R @ E, rr) for o, E, rr in slot_boxes(lay, part)]
+            S.cmds += support_commands(Tp, f"{part}_sup", ex)[0]
     return {"commands": S.cmds}
+
+
+# ------------------------------------------------------------------ designed breakaway supports
+SUP_WALL, SUP_PITCH, SUP_ZGAP, SUP_ANG, SUP_CLEAR, SUP_STEP = 0.8, 3.5, 0.2, 40.0, 1.0, 0.25
+
+
+def slot_boxes(lay: dict, part: str):
+    """Strip slot cutters (slot + glue land + mouth chamfer) of one printed part, rotor frame:
+    [(origin, axes 3x3 columns t/w/n, ranges)], for the support keep-out."""
+    prm, out = lay["prm"], []
+    ks = range(1, lay["n"] + 1) if part == "hub" else [int(part[5:])]
+    for k in ks:
+        L = _blade_map(k, lay["n"])
+        for f in lay["strips"]:
+            _, rr = _jaw_ranges(f, prm, 0 if part == "hub" else 1, lay["blade_extra"])
+            c = lay["chamfer"]
+            rr = (rr[0], (rr[1][0] - c, rr[1][1] + c), (rr[2][0] - c, rr[2][1] + c))
+            out.append((L @ f["p0"], L @ np.column_stack([f["t"], f["w"], f["n"]]), rr))
+    return out
+
+
+def _facet_nz(T):
+    N = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    return N[:, 2] / np.maximum(np.linalg.norm(N, axis=1), 1e-30)
+
+
+def ray_first_hit(T, Q):
+    """Lowest surface z of the mesh T (n,3,3) on vertical lines through Q (m,2), and that facet's normal z
+    (inf / 0 where the line misses)."""
+    nz = _facet_nz(T)
+    lo, hi = T[:, :, :2].min(1), T[:, :, :2].max(1)
+    zq, nq = np.full(len(Q), np.inf), np.zeros(len(Q))
+    for s0 in range(0, len(Q), 128):
+        q = Q[s0:s0 + 128]
+        ii, jj = np.nonzero((q[:, None, 0] >= lo[None, :, 0]) & (q[:, None, 0] <= hi[None, :, 0])
+                            & (q[:, None, 1] >= lo[None, :, 1]) & (q[:, None, 1] <= hi[None, :, 1]))
+        if not len(ii):
+            continue
+        a, b, c, p = T[jj, 0], T[jj, 1], T[jj, 2], q[ii]
+        d = (b[:, 0] - a[:, 0]) * (c[:, 1] - a[:, 1]) - (b[:, 1] - a[:, 1]) * (c[:, 0] - a[:, 0])
+        ok = np.abs(d) > 1e-12
+        dd = np.where(ok, d, 1.0)
+        w1 = ((p[:, 0] - a[:, 0]) * (c[:, 1] - a[:, 1]) - (p[:, 1] - a[:, 1]) * (c[:, 0] - a[:, 0])) / dd
+        w2 = ((b[:, 0] - a[:, 0]) * (p[:, 1] - a[:, 1]) - (b[:, 1] - a[:, 1]) * (p[:, 0] - a[:, 0])) / dd
+        w0 = 1 - w1 - w2
+        z = np.where(ok & (w0 >= -1e-9) & (w1 >= -1e-9) & (w2 >= -1e-9), w0 * a[:, 2] + w1 * b[:, 2] + w2 * c[:, 2], np.inf)
+        zm = np.full(len(q), np.inf)
+        np.minimum.at(zm, ii, z)
+        sel = np.isfinite(z) & (z <= zm[ii] + 1e-9)
+        nm = np.zeros(len(q))
+        nm[ii[sel]] = nz[jj[sel]]
+        zq[s0:s0 + len(q)], nq[s0:s0 + len(q)] = zm, nm
+    return zq, nq
+
+
+def print_frame(T):
+    """Print orientation of a part mesh (rotor frame): z up or flipped 180 deg about x, whichever leaves less
+    >50 deg overhang off the plate; returns (R, dz) with the part's lowest point on z = 0."""
+    best = None
+    for R in (np.eye(3), np.diag([1.0, -1.0, -1.0])):
+        Tp = T @ R.T
+        z0 = Tp[:, :, 2].min()
+        A = np.linalg.norm(np.cross(Tp[:, 1] - Tp[:, 0], Tp[:, 2] - Tp[:, 0]), axis=1) / 2
+        bad = (_facet_nz(Tp) < -math.sin(math.radians(50))) & ~(np.abs(Tp[:, :, 2] - z0) < 0.05).all(axis=1)
+        if best is None or A[bad].sum() < best[0] - 1.0:
+            best = (A[bad].sum(), R, -z0)
+    return best[1], best[2]
+
+
+def support_commands(T, name, exclude=(), pitch=SUP_PITCH):
+    """Breakaway support walls under a part mesh T (n,3,3; print frame, plate z = 0), one body `name`.
+    A grid of SUP_WALL-thick vertical walls (pitch apart, both ways: cross-braced) rises from the plate to every
+    exposed downward surface steeper than SUP_ANG from vertical, stopping SUP_ZGAP (one 0.2 mm layer) below it:
+    the slicer bridges the gap and the walls snap off. Columns passing within SUP_CLEAR of an `exclude` box
+    (origin, axes, ranges: slots, lands, mouths) are dropped. Returns (commands, columns (x, y, top))."""
+    S, cols, thr = _Script(), [], -math.sin(math.radians(SUP_ANG))
+    lo, hi = T[:, :, :2].reshape(-1, 2).min(0), T[:, :, :2].reshape(-1, 2).max(0)
+    zz = np.arange(0.0, T[:, :, 2].max() + 0.25, 0.25)
+    walls = []
+    for ax in (0, 1):
+        o = 1 - ax
+        s = np.arange(lo[ax], hi[ax] + SUP_STEP, SUP_STEP)
+        for cpos in np.arange(lo[o] + pitch / 2, hi[o], pitch):
+            top, need = np.full(len(s), np.inf), np.zeros(len(s), bool)
+            for dc in (-SUP_WALL / 2, 0.0, SUP_WALL / 2):
+                Q = np.zeros((len(s), 2)); Q[:, ax] = s; Q[:, o] = cpos + dc
+                z, nz = ray_first_hit(T, Q)
+                top = np.minimum(top, z)
+                need |= np.isfinite(z) & (nz < thr) & (z > SUP_ZGAP + 0.4)
+            top = np.minimum(top, np.minimum(np.r_[top[1:], np.inf], np.r_[np.inf, top[:-1]])) - SUP_ZGAP
+            need &= np.isfinite(top) & (top > 0.4)
+            for org, E, rr in exclude:                       # keep-out round slots / lands / mouths
+                idx = np.nonzero(need)[0]
+                if not len(idx):
+                    break
+                P = np.zeros((len(idx), len(zz), 3)); P[:, :, ax] = s[idx, None]; P[:, :, o] = cpos; P[:, :, 2] = zz[None]
+                loc = (P - org) @ E
+                lo_, hi_ = np.array([r[0] for r in rr]), np.array([r[1] for r in rr])
+                d = np.linalg.norm(np.maximum(np.maximum(lo_ - loc, loc - hi_), 0.0), axis=2)
+                bad = ((d < SUP_CLEAR + SUP_WALL / 2) & (zz[None] <= top[idx, None])).any(axis=1)
+                need[idx[bad]] = False
+            j = 0
+            while j < len(s):
+                if not need[j]:
+                    j += 1
+                    continue
+                e = j
+                while e + 1 < len(s) and need[e + 1]:
+                    e += 1
+                if e > j:
+                    walls.append((ax, cpos, s[j:e + 1], top[j:e + 1]))
+                    cols += [(*(np.array([sv, cpos]) if ax == 0 else np.array([cpos, sv])), tv)
+                             for sv, tv in zip(s[j:e + 1], top[j:e + 1])]
+                j = e + 1
+    names = []
+    for i, (ax, cpos, sv, tv) in enumerate(walls):
+        nm = name if i == 0 else f"{name}_w{i}"
+        if ax == 0:      # along x at y = cpos: plane normal -y, extrude 0.8 from y = cpos + 0.4
+            pl = {"origin": [0, round(float(cpos) + SUP_WALL / 2, 5), 0], "x_dir": [1, 0, 0], "y_dir": [0, 0, 1]}
+        else:            # along y at x = cpos: plane normal +x
+            pl = {"origin": [round(float(cpos) - SUP_WALL / 2, 5), 0, 0], "x_dir": [0, 1, 0], "y_dir": [0, 0, 1]}
+        pts = [(sv[0], 0.0), (sv[-1], 0.0)] + list(zip(sv[::-1], tv[::-1]))
+        S.add("sketch.create", plane=pl, name=nm + "_sk")
+        S.add("sketch.line", points=[_r(q, 4) for q in pts], closed=True)
+        S.add("sketch.finish")
+        S.add("solid.extrude", sketch=nm + "_sk", distance=SUP_WALL, operation="new", body_name=nm)
+        names.append(nm)
+    if len(names) > 1:
+        S.join(name, names[1:])
+    return S.cmds, np.array(cols).reshape(-1, 3)
+
 
 
 def part_names(design: dict) -> list[str]:

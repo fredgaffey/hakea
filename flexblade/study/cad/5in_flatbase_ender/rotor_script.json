@@ -1,0 +1,4184 @@
+{
+ "commands": [
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 10.0,
+    "height": 13.0,
+    "base": [
+     0,
+     0,
+     -12.5
+    ],
+    "body_name": "hub"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 9.125,
+    "width": 5.9,
+    "height": 14.5,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_spine1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_spine1"
+    ],
+    "matrix": [
+     [
+      1.0,
+      0.0,
+      0.0,
+      4.5625
+     ],
+     [
+      0.0,
+      1.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      1.0,
+      -5.25
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -12.5
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "hub_jaw11_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      7.51903,
+      -9.43471
+     ],
+     [
+      8.61778,
+      -11.23056
+     ],
+     [
+      12.85593,
+      -11.23056
+     ],
+     [
+      15.1423,
+      -4.88373
+     ],
+     [
+      14.04355,
+      -3.08788
+     ],
+     [
+      9.8054,
+      -3.08788
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "hub_jaw11_sk",
+    "distance": 11.27949,
+    "operation": "new",
+    "body_name": "hub_jaw11"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 60.0,
+    "width": 120.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw11_c0"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw11_c0"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      20.253083572863673
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      19.814793027113886
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      12.16719773808935
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 120.0,
+    "width": 60.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw11_c1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw11_c1"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      -16.13365098540742
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      -3.9858071816231706
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      10.8304188147866
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 120.0,
+    "width": 120.0,
+    "height": 60.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw11_c2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw11_c2"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      23.402276992835972
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      -23.14657315967265
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      18.08996914752577
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub_jaw11",
+    "tools": [
+     "hub_jaw11_c0",
+     "hub_jaw11_c1",
+     "hub_jaw11_c2"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -12.5
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "hub_arm11_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      -4.4,
+      0.0
+     ],
+     [
+      -4.33315,
+      -0.76405
+     ],
+     [
+      -4.13465,
+      -1.50489
+     ],
+     [
+      -3.81051,
+      -2.2
+     ],
+     [
+      -3.3706,
+      -2.82827
+     ],
+     [
+      -2.82827,
+      -3.3706
+     ],
+     [
+      -2.2,
+      -3.81051
+     ],
+     [
+      8.61778,
+      -11.23056
+     ],
+     [
+      12.85593,
+      -11.23056
+     ],
+     [
+      15.1423,
+      -4.88373
+     ],
+     [
+      14.04355,
+      -3.08788
+     ],
+     [
+      2.2,
+      3.81051
+     ],
+     [
+      1.50489,
+      4.13465
+     ],
+     [
+      0.76405,
+      4.33315
+     ],
+     [
+      0.0,
+      4.4
+     ],
+     [
+      -0.76405,
+      4.33315
+     ],
+     [
+      -1.50489,
+      4.13465
+     ],
+     [
+      -2.2,
+      3.81051
+     ],
+     [
+      -2.82827,
+      3.3706
+     ],
+     [
+      -3.3706,
+      2.82827
+     ],
+     [
+      -3.81051,
+      2.2
+     ],
+     [
+      -4.13465,
+      1.50489
+     ],
+     [
+      -4.33315,
+      0.76405
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "hub_arm11_sk",
+    "distance": 8.5,
+    "operation": "new",
+    "body_name": "hub_arm11"
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -12.5
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "hub_jaw12_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      1.19965,
+      9.43471
+     ],
+     [
+      3.48602,
+      3.08788
+     ],
+     [
+      7.72417,
+      3.08788
+     ],
+     [
+      8.82292,
+      4.88373
+     ],
+     [
+      6.53655,
+      11.23056
+     ],
+     [
+      2.2984,
+      11.23056
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "hub_jaw12_sk",
+    "distance": 14.63957,
+    "operation": "new",
+    "body_name": "hub_jaw12"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 60.0,
+    "width": 120.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw12_c0"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw12_c0"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      15.523007182547992
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      -19.814793027113886
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      14.682223967299477
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 120.0,
+    "width": 60.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw12_c1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw12_c1"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      -22.45303304286915
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      3.985807181623166
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      14.190493857011333
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 120.0,
+    "width": 120.0,
+    "height": 60.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw12_c2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw12_c2"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      18.67220060252029
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      23.14657315967265
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      20.6049953767359
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub_jaw12",
+    "tools": [
+     "hub_jaw12_c0",
+     "hub_jaw12_c1",
+     "hub_jaw12_c2"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -12.5
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "hub_arm12_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      -4.4,
+      0.0
+     ],
+     [
+      -4.33315,
+      -0.76405
+     ],
+     [
+      -4.13465,
+      -1.50489
+     ],
+     [
+      -3.81051,
+      -2.2
+     ],
+     [
+      -3.3706,
+      -2.82827
+     ],
+     [
+      -2.82827,
+      -3.3706
+     ],
+     [
+      -2.2,
+      -3.81051
+     ],
+     [
+      -1.50489,
+      -4.13465
+     ],
+     [
+      -0.76405,
+      -4.33315
+     ],
+     [
+      -0.0,
+      -4.4
+     ],
+     [
+      0.76405,
+      -4.33315
+     ],
+     [
+      1.50489,
+      -4.13465
+     ],
+     [
+      2.2,
+      -3.81051
+     ],
+     [
+      2.82827,
+      -3.3706
+     ],
+     [
+      3.3706,
+      -2.82827
+     ],
+     [
+      7.72417,
+      3.08788
+     ],
+     [
+      8.82292,
+      4.88373
+     ],
+     [
+      6.53655,
+      11.23056
+     ],
+     [
+      2.2984,
+      11.23056
+     ],
+     [
+      -3.81051,
+      2.2
+     ],
+     [
+      -4.13465,
+      1.50489
+     ],
+     [
+      -4.33315,
+      0.76405
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "hub_arm12_sk",
+    "distance": 8.5,
+    "operation": "new",
+    "body_name": "hub_arm12"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_spine1"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_jaw11"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_arm11"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_jaw12"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_arm12"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 11.95,
+    "width": 5.9,
+    "height": 7.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade1"
+    ],
+    "matrix": [
+     [
+      1.0,
+      0.0,
+      0.0,
+      18.349999999999998
+     ],
+     [
+      0.0,
+      1.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      1.0,
+      1.5
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 9.2,
+    "width": 4.8,
+    "height": 2.95,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_jaw11"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_jaw11"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      16.660193459666207
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      7.635232546962847
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      3.4929051937471414
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      4.0
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "blade_arm11_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      12.375,
+      -2.95
+     ],
+     [
+      23.325,
+      -2.95
+     ],
+     [
+      23.325,
+      2.95
+     ],
+     [
+      20.6433,
+      10.38673
+     ],
+     [
+      19.54456,
+      12.18258
+     ],
+     [
+      15.30641,
+      12.18258
+     ],
+     [
+      12.67708,
+      4.88373
+     ],
+     [
+      12.375,
+      2.95
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "blade_arm11_sk",
+    "distance": 2.0,
+    "operation": "new",
+    "body_name": "blade_arm11"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 9.2,
+    "width": 4.8,
+    "height": 2.95,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_jaw12"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_jaw12"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      10.34081140220446
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      -7.635232546962847
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      6.852980235971874
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      4.0
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "blade_arm12_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      6.3577,
+      -4.88373
+     ],
+     [
+      8.98703,
+      -12.18258
+     ],
+     [
+      13.22517,
+      -12.18258
+     ],
+     [
+      23.325,
+      -2.95
+     ],
+     [
+      23.325,
+      2.95
+     ],
+     [
+      12.375,
+      2.95
+     ],
+     [
+      7.45645,
+      -3.08788
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "blade_arm12_sk",
+    "distance": 2.0,
+    "operation": "new",
+    "body_name": "blade_arm12"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade1",
+    "tools": [
+     "blade_jaw11"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade1",
+    "tools": [
+     "blade_arm11"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade1",
+    "tools": [
+     "blade_jaw12"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade1",
+    "tools": [
+     "blade_arm12"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 9.125,
+    "width": 5.9,
+    "height": 7.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_spine2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_spine2"
+    ],
+    "matrix": [
+     [
+      -1.0,
+      -1.2246467991473532e-16,
+      0.0,
+      -4.5625
+     ],
+     [
+      1.2246467991473532e-16,
+      -1.0,
+      0.0,
+      5.587451021109799e-16
+     ],
+     [
+      0.0,
+      0.0,
+      1.0,
+      1.5
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 4.8,
+    "height": 2.95,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw21"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw21"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589269,
+      -0.3724568325079329,
+      -11.330666305459834
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087208,
+      7.159220542788107
+     ],
+     [
+      -0.5375044383686105,
+      0.46947156278589075,
+      -0.7004894220967353,
+      6.530477572950708
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      4.0
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "hub_arm21_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      -15.1423,
+      4.88373
+     ],
+     [
+      -14.04355,
+      3.08788
+     ],
+     [
+      -2.2,
+      -3.81051
+     ],
+     [
+      -1.50489,
+      -4.13465
+     ],
+     [
+      -0.76405,
+      -4.33315
+     ],
+     [
+      -0.0,
+      -4.4
+     ],
+     [
+      0.76405,
+      -4.33315
+     ],
+     [
+      1.50489,
+      -4.13465
+     ],
+     [
+      2.2,
+      -3.81051
+     ],
+     [
+      2.82827,
+      -3.3706
+     ],
+     [
+      3.3706,
+      -2.82827
+     ],
+     [
+      3.81051,
+      -2.2
+     ],
+     [
+      4.13465,
+      -1.50489
+     ],
+     [
+      4.33315,
+      -0.76405
+     ],
+     [
+      4.4,
+      -0.0
+     ],
+     [
+      4.33315,
+      0.76405
+     ],
+     [
+      4.13465,
+      1.50489
+     ],
+     [
+      3.81051,
+      2.2
+     ],
+     [
+      3.3706,
+      2.82827
+     ],
+     [
+      2.82827,
+      3.3706
+     ],
+     [
+      2.2,
+      3.81051
+     ],
+     [
+      -8.61778,
+      11.23056
+     ],
+     [
+      -12.85593,
+      11.23056
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "hub_arm21_sk",
+    "distance": 2.0,
+    "operation": "new",
+    "body_name": "hub_arm21"
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -12.5
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "hub_jaw22_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      -8.82292,
+      -4.88373
+     ],
+     [
+      -6.53655,
+      -11.23056
+     ],
+     [
+      -2.2984,
+      -11.23056
+     ],
+     [
+      -1.19965,
+      -9.43471
+     ],
+     [
+      -3.48602,
+      -3.08788
+     ],
+     [
+      -7.72417,
+      -3.08788
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "hub_jaw22_sk",
+    "distance": 20.98037,
+    "operation": "new",
+    "body_name": "hub_jaw22"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 60.0,
+    "width": 120.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw22_c0"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw22_c0"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      3.9111330194057485
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      -34.1332341126901
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      21.86807784176603
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 120.0,
+    "width": 60.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw22_c1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw22_c1"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -34.7619709743893
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      -3.9858071816231653
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      16.2312634115144
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 120.0,
+    "width": 120.0,
+    "height": 60.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw22_c2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw22_c2"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      4.773957003854078
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      15.174958796426317
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      23.490813744253572
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 60.0,
+    "width": 120.0,
+    "height": 120.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_jaw22_cm"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_jaw22_cm"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -15.523007182547992
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      19.814793027113886
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      -14.682223967299477
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub_jaw22",
+    "tools": [
+     "hub_jaw22_c0",
+     "hub_jaw22_c1",
+     "hub_jaw22_c2",
+     "hub_jaw22_cm"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_spine2"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_jaw21"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_arm21"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_jaw22"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 11.95,
+    "width": 5.9,
+    "height": 7.0,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade2"
+    ],
+    "matrix": [
+     [
+      -1.0,
+      -1.2246467991473532e-16,
+      0.0,
+      -18.349999999999998
+     ],
+     [
+      1.2246467991473532e-16,
+      -1.0,
+      0.0,
+      2.247226876435393e-15
+     ],
+     [
+      0.0,
+      0.0,
+      1.0,
+      -1.5
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 9.2,
+    "width": 4.8,
+    "height": 2.95,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_jaw21"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_jaw21"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589269,
+      -0.3724568325079329,
+      -16.660193459666207
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087208,
+      -7.635232546962845
+     ],
+     [
+      -0.5375044383686105,
+      0.46947156278589075,
+      -0.7004894220967353,
+      -3.4929051937471423
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -6.0
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "blade_arm21_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      -23.325,
+      -2.95
+     ],
+     [
+      -20.6433,
+      -10.38673
+     ],
+     [
+      -19.54456,
+      -12.18258
+     ],
+     [
+      -15.30641,
+      -12.18258
+     ],
+     [
+      -12.67708,
+      -4.88373
+     ],
+     [
+      -12.375,
+      -2.95
+     ],
+     [
+      -12.375,
+      2.95
+     ],
+     [
+      -23.325,
+      2.95
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "blade_arm21_sk",
+    "distance": 2.0,
+    "operation": "new",
+    "body_name": "blade_arm21"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 9.2,
+    "width": 4.8,
+    "height": 2.95,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_jaw22"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_jaw22"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -10.340811402204462
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      7.635232546962847
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      -6.852980235971874
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      0,
+      0,
+      -6.0
+     ],
+     "x_dir": [
+      1,
+      0,
+      0
+     ],
+     "y_dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "name": "blade_arm22_sk"
+   }
+  },
+  {
+   "command": "sketch.line",
+   "params": {
+    "points": [
+     [
+      -23.325,
+      -2.95
+     ],
+     [
+      -12.375,
+      -2.95
+     ],
+     [
+      -7.45645,
+      3.08788
+     ],
+     [
+      -6.3577,
+      4.88373
+     ],
+     [
+      -8.98703,
+      12.18258
+     ],
+     [
+      -13.22517,
+      12.18258
+     ],
+     [
+      -23.325,
+      2.95
+     ]
+    ],
+    "closed": true
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.extrude",
+   "params": {
+    "sketch": "blade_arm22_sk",
+    "distance": 2.0,
+    "operation": "new",
+    "body_name": "blade_arm22"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade2",
+    "tools": [
+     "blade_jaw21"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade2",
+    "tools": [
+     "blade_arm21"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade2",
+    "tools": [
+     "blade_jaw22"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade2",
+    "tools": [
+     "blade_arm22"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.1,
+    "height": 24.0,
+    "base": [
+     0.0,
+     0.0,
+     -12.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "body_name": "bore"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "bore"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 11.0,
+    "height": 21.5,
+    "base": [
+     0.0,
+     0.0,
+     0.5
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "body_name": "seat_clear"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "seat_clear"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 18.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_slot11"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_slot11"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      8.339681406328463
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      -10.927648909171474
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      -8.21510126404771
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_slot11"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_slot11"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      14.78381366035277
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      6.960882207715297
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      3.9045488122877217
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10.048,
+    "width": 5.0,
+    "height": 1.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "keepout11"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "keepout11"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      13.115038195157839
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      -4.440892098500626e-16
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      -1.2575131146050644
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      11.73636,
+      -3.82714,
+      -3.85043
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "hub_mouth11_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      11.5363,
+      -4.38248,
+      -4.22669
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "hub_mouth11_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "hub_mouth11_s0"
+     },
+     {
+      "sketch": "hub_mouth11_s1"
+     }
+    ],
+    "body_name": "hub_mouth11"
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      14.49372,
+      3.82714,
+      1.33541
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "blade_mouth11_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      14.69378,
+      4.38248,
+      1.71166
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "blade_mouth11_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "blade_mouth11_s0"
+     },
+     {
+      "sketch": "blade_mouth11_s1"
+     }
+    ],
+    "body_name": "blade_mouth11"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 18.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_slot12"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_slot12"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      5.287205442444745
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      10.927648909171474
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      -6.592071004130771
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_slot12"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_slot12"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      11.731337696469055
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      -6.960882207715297
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      5.527579072204657
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10.048,
+    "width": 5.0,
+    "height": 1.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "keepout12"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "keepout12"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      8.38496180484216
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      4.440892098500626e-16
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      1.2575131146050647
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      7.00628,
+      3.82714,
+      -1.33541
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "hub_mouth12_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      6.80622,
+      4.38248,
+      -1.71166
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "hub_mouth12_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "hub_mouth12_s0"
+     },
+     {
+      "sketch": "hub_mouth12_s1"
+     }
+    ],
+    "body_name": "hub_mouth12"
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      9.76364,
+      -3.82714,
+      3.85043
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "blade_mouth12_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      9.9637,
+      -4.38248,
+      4.22669
+     ],
+     "x_dir": [
+      0.882947593,
+      0.0,
+      -0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "blade_mouth12_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "blade_mouth12_s0"
+     },
+     {
+      "sketch": "blade_mouth12_s1"
+     }
+    ],
+    "body_name": "blade_mouth12"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.5,
+    "height": 10.0,
+    "base": [
+     6.75,
+     0.0,
+     -7.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "body_name": "hub_well1"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.6,
+    "height": 3.375,
+    "base": [
+     6.75,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "body_name": "hub_chan1"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.5,
+    "height": 10.0,
+    "base": [
+     20.375,
+     0.0,
+     -3.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "body_name": "blade_well1"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.6,
+    "height": 9.0,
+    "base": [
+     11.375,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "body_name": "blade_chan1"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_slot11",
+     "hub_mouth11",
+     "hub_slot12",
+     "hub_mouth12",
+     "hub_well1",
+     "hub_chan1"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "keepout11",
+     "keepout12"
+    ],
+    "operation": "cut",
+    "keep_tools": true
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade1",
+    "tools": [
+     "blade_slot11",
+     "blade_mouth11",
+     "blade_slot12",
+     "blade_mouth12",
+     "keepout11",
+     "keepout12",
+     "blade_well1",
+     "blade_chan1"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      23.325,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      -0.0,
+      -1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero1_af0"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 16.251,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -26.1273
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      33.36875,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      -0.0,
+      -1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero1_af1"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 15.0457,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -20.9073
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      43.4125,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      -0.0,
+      -1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero1_af2"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 13.8405,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -17.981
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      53.45625,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      -0.0,
+      -1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero1_af3"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 12.6352,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -16.123
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      63.5,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      -0.0,
+      -1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero1_af4"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 11.43,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -14.8428
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "aero1_af0"
+     },
+     {
+      "sketch": "aero1_af1"
+     },
+     {
+      "sketch": "aero1_af2"
+     },
+     {
+      "sketch": "aero1_af3"
+     },
+     {
+      "sketch": "aero1_af4"
+     }
+    ],
+    "body_name": "aero1"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade1",
+    "tools": [
+     "aero1"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 26.048,
+    "width": 4.0,
+    "height": 0.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "strip_b1_1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "strip_b1_1"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589271,
+      -0.37245683250793293,
+      13.115038195157839
+     ],
+     [
+      0.793353340291235,
+      1.4300566750017382e-16,
+      0.6087614290087207,
+      -4.440892098500626e-16
+     ],
+     [
+      0.5375044383686105,
+      -0.469471562785891,
+      -0.700489422096735,
+      -1.2575131146050644
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 26.048,
+    "width": 4.0,
+    "height": 0.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "strip_b1_2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "strip_b1_2"
+    ],
+    "matrix": [
+     [
+      0.2857961794404962,
+      0.8829475928589268,
+      0.3724568325079328,
+      8.38496180484216
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      4.440892098500626e-16
+     ],
+     [
+      0.5375044383686104,
+      -0.469471562785891,
+      0.700489422096735,
+      1.2575131146050647
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.3,
+    "height": 13.625,
+    "base": [
+     6.75,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "body_name": "strap_b1"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 18.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_slot21"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_slot21"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589269,
+      -0.3724568325079329,
+      -8.339681406328463
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087208,
+      10.927648909171474
+     ],
+     [
+      -0.5375044383686105,
+      0.46947156278589075,
+      -0.7004894220967353,
+      8.21510126404771
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_slot21"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_slot21"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589269,
+      -0.3724568325079329,
+      -14.783813660352772
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087208,
+      -6.960882207715295
+     ],
+     [
+      -0.5375044383686105,
+      0.46947156278589075,
+      -0.7004894220967353,
+      -3.9045488122877208
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10.048,
+    "width": 5.0,
+    "height": 1.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "keepout21"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "keepout21"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589269,
+      -0.3724568325079329,
+      -13.115038195157839
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087208,
+      1.7763568394002505e-15
+     ],
+     [
+      -0.5375044383686105,
+      0.46947156278589075,
+      -0.7004894220967353,
+      1.2575131146050644
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -11.73636,
+      3.82714,
+      3.85043
+     ],
+     "x_dir": [
+      -0.882947593,
+      -0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      -0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "hub_mouth21_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -11.5363,
+      4.38248,
+      4.22669
+     ],
+     "x_dir": [
+      -0.882947593,
+      -0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      -0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "hub_mouth21_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "hub_mouth21_s0"
+     },
+     {
+      "sketch": "hub_mouth21_s1"
+     }
+    ],
+    "body_name": "hub_mouth21"
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -14.49372,
+      -3.82714,
+      -1.33541
+     ],
+     "x_dir": [
+      -0.882947593,
+      -0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      -0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "blade_mouth21_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -14.69378,
+      -4.38248,
+      -1.71166
+     ],
+     "x_dir": [
+      -0.882947593,
+      -0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      0.372456833,
+      -0.608761429,
+      0.700489422
+     ]
+    },
+    "name": "blade_mouth21_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "blade_mouth21_s0"
+     },
+     {
+      "sketch": "blade_mouth21_s1"
+     }
+    ],
+    "body_name": "blade_mouth21"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 18.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "hub_slot22"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "hub_slot22"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -5.287205442444746
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      -10.927648909171472
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      6.592071004130771
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.5,
+    "width": 6.1,
+    "height": 0.55,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "blade_slot22"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "blade_slot22"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -11.731337696469055
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      6.960882207715297
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      -5.527579072204657
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10.048,
+    "width": 5.0,
+    "height": 1.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "keepout22"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "keepout22"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -8.38496180484216
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      4.440892098500626e-16
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      -1.2575131146050647
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -7.00628,
+      -3.82714,
+      1.33541
+     ],
+     "x_dir": [
+      -0.882947593,
+      0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      -0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "hub_mouth22_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -6.80622,
+      -4.38248,
+      1.71166
+     ],
+     "x_dir": [
+      -0.882947593,
+      0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      -0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "hub_mouth22_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "hub_mouth22_s0"
+     },
+     {
+      "sketch": "hub_mouth22_s1"
+     }
+    ],
+    "body_name": "hub_mouth22"
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -9.76364,
+      3.82714,
+      -3.85043
+     ],
+     "x_dir": [
+      -0.882947593,
+      0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      -0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "blade_mouth22_s0"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.8,
+     0.975
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -9.9637,
+      4.38248,
+      -4.22669
+     ],
+     "x_dir": [
+      -0.882947593,
+      0.0,
+      0.469471563
+     ],
+     "y_dir": [
+      -0.372456833,
+      -0.608761429,
+      -0.700489422
+     ]
+    },
+    "name": "blade_mouth22_s1"
+   }
+  },
+  {
+   "command": "sketch.rectangle.center",
+   "params": {
+    "center": [
+     0,
+     0
+    ],
+    "corner": [
+     2.1,
+     0.275
+    ]
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "blade_mouth22_s0"
+     },
+     {
+      "sketch": "blade_mouth22_s1"
+     }
+    ],
+    "body_name": "blade_mouth22"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.5,
+    "height": 10.0,
+    "base": [
+     -6.75,
+     0.0,
+     7.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     -1.0
+    ],
+    "body_name": "hub_well2"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.6,
+    "height": 3.375,
+    "base": [
+     -6.75,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "body_name": "hub_chan2"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.5,
+    "height": 10.0,
+    "base": [
+     -20.375,
+     0.0,
+     3.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     -1.0
+    ],
+    "body_name": "blade_well2"
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.6,
+    "height": 9.0,
+    "base": [
+     -11.375,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "body_name": "blade_chan2"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "hub_slot21",
+     "hub_mouth21",
+     "hub_slot22",
+     "hub_mouth22",
+     "hub_well2",
+     "hub_chan2"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "hub",
+    "tools": [
+     "keepout21",
+     "keepout22"
+    ],
+    "operation": "cut",
+    "keep_tools": true
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade2",
+    "tools": [
+     "blade_slot21",
+     "blade_mouth21",
+     "blade_slot22",
+     "blade_mouth22",
+     "keepout21",
+     "keepout22",
+     "blade_well2",
+     "blade_chan2"
+    ],
+    "operation": "cut",
+    "keep_tools": false
+   }
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -23.325,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      0.0,
+      1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero2_af0"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 16.251,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -26.1273
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -33.36875,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      0.0,
+      1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero2_af1"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 15.0457,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -20.9073
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -43.4125,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      0.0,
+      1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero2_af2"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 13.8405,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -17.981
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -53.45625,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      0.0,
+      1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero2_af3"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 12.6352,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -16.123
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "sketch.create",
+   "params": {
+    "plane": {
+     "origin": [
+      -63.5,
+      0.0,
+      0.0
+     ],
+     "x_dir": [
+      0.0,
+      1.0,
+      -0.0
+     ],
+     "y_dir": [
+      0,
+      0,
+      1
+     ]
+    },
+    "name": "aero2_af4"
+   }
+  },
+  {
+   "command": "sketch.insert_airfoil",
+   "params": {
+    "text": "NACA4412\n1.000000 -0.000000\n0.997313 0.000758\n0.989278 0.003007\n0.975972 0.006669\n0.957523 0.011622\n0.934110 0.017700\n0.905965 0.024709\n0.873368 0.032429\n0.836652 0.040628\n0.796195 0.049065\n0.752420 0.057499\n0.705790 0.065695\n0.656806 0.073424\n0.606000 0.080471\n0.553929 0.086636\n0.501174 0.091737\n0.448328 0.095616\n0.395929 0.098140\n0.343869 0.098792\n0.293534 0.097254\n0.245557 0.093616\n0.200539 0.088044\n0.159040 0.080772\n0.121566 0.072094\n0.088560 0.062343\n0.060394 0.051876\n0.037364 0.041048\n0.019693 0.030193\n0.007533 0.019598\n0.000963 0.009486\n0.000000 0.000000\n0.004515 -0.008394\n0.014319 -0.015287\n0.029250 -0.020704\n0.049091 -0.024692\n0.073581 -0.027324\n0.102423 -0.028706\n0.135289 -0.028970\n0.171830 -0.028283\n0.211676 -0.026841\n0.254443 -0.024866\n0.299729 -0.022596\n0.347114 -0.020277\n0.396159 -0.018148\n0.447143 -0.016122\n0.498826 -0.013960\n0.550599 -0.011789\n0.601912 -0.009715\n0.652211 -0.007818\n0.700947 -0.006146\n0.747580 -0.004722\n0.791590 -0.003543\n0.832478 -0.002594\n0.869776 -0.001847\n0.903052 -0.001271\n0.931915 -0.000834\n0.956022 -0.000509\n0.975084 -0.000277\n0.988869 -0.000120\n0.997209 -0.000030\n1.000000 0.000000\n",
+    "chord": 11.43,
+    "pivot": 0.25,
+    "at": [
+     0,
+     0
+    ],
+    "angle": -14.8428
+   }
+  },
+  {
+   "command": "sketch.finish",
+   "params": {}
+  },
+  {
+   "command": "solid.loft",
+   "params": {
+    "sections": [
+     {
+      "sketch": "aero2_af0"
+     },
+     {
+      "sketch": "aero2_af1"
+     },
+     {
+      "sketch": "aero2_af2"
+     },
+     {
+      "sketch": "aero2_af3"
+     },
+     {
+      "sketch": "aero2_af4"
+     }
+    ],
+    "body_name": "aero2"
+   }
+  },
+  {
+   "command": "solid.combine",
+   "params": {
+    "target": "blade2",
+    "tools": [
+     "aero2"
+    ],
+    "operation": "join"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 26.048,
+    "width": 4.0,
+    "height": 0.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "strip_b2_1"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "strip_b2_1"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589269,
+      -0.3724568325079329,
+      -13.115038195157839
+     ],
+     [
+      -0.793353340291235,
+      0.0,
+      0.6087614290087208,
+      1.7763568394002505e-15
+     ],
+     [
+      -0.5375044383686105,
+      0.46947156278589075,
+      -0.7004894220967353,
+      1.2575131146050644
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 26.048,
+    "width": 4.0,
+    "height": 0.3,
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "strip_b2_2"
+   }
+  },
+  {
+   "command": "solid.move",
+   "params": {
+    "bodies": [
+     "strip_b2_2"
+    ],
+    "matrix": [
+     [
+      -0.2857961794404962,
+      -0.8829475928589268,
+      0.3724568325079328,
+      -8.38496180484216
+     ],
+     [
+      0.793353340291235,
+      0.0,
+      0.6087614290087207,
+      4.440892098500626e-16
+     ],
+     [
+      -0.5375044383686104,
+      0.469471562785891,
+      0.700489422096735,
+      -1.2575131146050647
+     ]
+    ],
+    "tolerance": 1e-09
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.3,
+    "height": 13.625,
+    "base": [
+     -6.75,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "body_name": "strap_b2"
+   }
+  }
+ ]
+}
