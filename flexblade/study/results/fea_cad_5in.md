@@ -64,3 +64,6 @@ The linear numbers are listed only as inflated upper bounds:
 - **Hover stresses still unresolved:** they need either a converged NLGEOM whole-rotor run (fixed increments plus stabilisation, or a strap pretension step first) or the strip-only sub-model with beam end kinematics (`study/ccx_preset_strip.py`). The linear whole-rotor hover run is not usable for stresses on this soft-hinge rotor.
 
 ## Convergence
+Case 1 with PA6-CF fittings: refining the mesh from h 0.5 mm with 40 x 8 strip elements (162k tets) to h 0.36 mm with 60 x 12 (398k tets) changes k_hinge 0.01422 -> 0.01421 (-0.02 %), k_cross 9.50 -> 9.52 (+0.2 %) and k_flap 4.688 -> 4.694 (+0.1 %). Case 1 is mesh-converged.
+
+Status at hand-back: the CF-prestressed modal run c3_PACF (NLGEOM step with *STATIC, DIRECT 0.5) is still running on the Mac, capped at 12 min (/tmp/fea/5in_301/m05/c3_PACF.*). It is not in this report.
