@@ -2,7 +2,7 @@
 
 c1_<MAT>.inp  hinge stiffness: hub bore encastre, blade-1 outboard of r_aero + 3 mm rigid (pilot at the hinge
               point), three linear steps with a 1 N.mm pure moment about a (hinge axis), s (= y x a), y (flap)
-c2_<MAT>.inp  hover static, NLGEOM: CENTRIF at the design hover rpm + lumped thrust (T/2 per blade over
+c2_<MAT>.inp  hover static, LINEAR (NLGEOM cut its increment to 1/256 and could not finish): CENTRIF at the design hover rpm + lumped thrust (T/2 per blade over
               0.65-0.85 R, +z)
 c3_<MAT>.inp  step 1 = c2 loads (CF only), step 2 = *FREQUENCY 8 modes (stress-stiffened, rotating frame,
               no Coriolis);  c3s_<MAT>.inp = same at rest (no pre-stress)
@@ -97,7 +97,7 @@ def hover_loads(thrust=True):
 def c2(mat):
     o, _ = common(mat)
     o += nset("STRAPN", [n for k in ("1", "2") for n in SETS["strap"][k]])
-    o += ["*STEP, NLGEOM, INC=200", "*STATIC", "0.25, 1., 1e-5, 0.5"] + hover_loads()
+    o += ["*STEP", "*STATIC"] + hover_loads()           # linear: NLGEOM cut to 1/256 increments (20 h)
     o += ["*NODE FILE, FREQUENCY=1000", "U", "*EL FILE, FREQUENCY=1000", "S",
           "*EL PRINT, ELSET=STRIPS, FREQUENCY=1000", "S", "*EL PRINT, ELSET=GLUES, FREQUENCY=1000", "S",
           "*NODE PRINT, NSET=STRAPN, FREQUENCY=1000", "U", "*NODE PRINT, NSET=TIPS, FREQUENCY=1000", "U",
@@ -108,7 +108,7 @@ def c2(mat):
 def c3(mat, rotating=True):
     o, _ = common(mat)
     if rotating:
-        o += ["*STEP, NLGEOM, INC=200", "*STATIC", "0.25, 1., 1e-5, 0.5"] + hover_loads(False) + ["*END STEP"]
+        o += ["*STEP, NLGEOM, INC=20", "*STATIC, DIRECT", "0.5, 1."] + hover_loads(False) + ["*END STEP"]
     o += ["*STEP", "*FREQUENCY", "8", "*NODE PRINT, NSET=TIPS", "U", "*END STEP"]
     return o
 
