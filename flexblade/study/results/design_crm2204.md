@@ -53,3 +53,14 @@ Move to A' (both rotors, each designed for half authority with thicker strips an
 
 ## Bench measurements on arrival
 J_rotor per half (spin-down with a known prop), kV and R (line-line plus ESC), L, inner-shaft torsion and bending frequency (tap test with the hub fitted), stock rotor spacing and overhang, shaft diameter, and whether the shafts are concentric.
+
+## DE2 result (designs/7in_tt_strap_steelx_crm2204_de2.json; sa.py file, SA_WORKERS=2, Goodman + ground resonance, 7" default hub J set)
+| design | CQ_TOL | cr_pl | feasible | notes |
+|---|---|---|---|---|
+| DE2 | default | 0.0946 | yes, no hard viol | phase_res 2.2 deg, gain_res 17.7 %, mech margin 0.094, res_margin 0.157 (pitch antisym+hub 1.16/rev vs 1P) |
+| DE2 | datumed | 0.0946 | yes | phase 1.5 deg, gain 13.7 %, mech margin 0.118 |
+| previous (crm2204) | default | 0.1095 | NO | gain residual 97 % (CAL limit 25 %); resonance 1.08/rev vs 1P (viol 0.45) |
+| previous (crm2204) | datumed | 0.1095 | NO | gain residual 31 %; same resonance violation |
+- Binding constraint for DE2 is the 1P resonance margin (res_margin 0.157, pitch antisym+hub 1.16/rev); no gate is violated. The DE objective's 0.1305 (mech_band) drops to 0.0946 under CAL scoring; the nominal tol.py score is 0.1189.
+- tol.py (12 random builds, +-5 % t/w/L/r_h, presets fixed): 12/12 feasible (13/13 with nominal); cr_pl 0.0965-0.149, res margin 0.175-0.236; worst builds are thick/wide (t,w,r_h +4 %, cr 0.097-0.099).
+- Verdict: DE2 supersedes the previous design. The previous one has the higher raw cr_pl (0.110) but is infeasible under CAL scoring (resonance in the 1P band, gain residual). DE2 is the first feasible CRM2204 design, robust to build tolerance, and does not need datumed tolerances.
