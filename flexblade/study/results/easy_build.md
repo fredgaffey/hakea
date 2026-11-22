@@ -16,7 +16,7 @@ Tolerance: screen cr_pl moves ~0.04 per 0.1x (2 mm) of free length, so +-1 mm ha
 Hinge radius +-0.2 mm printed = +-0.93 % of 21.5 mm (inside the +-1.5 % allowance). Shim +-1 mm scoring not run.
 PETG fittings: no stress/fatigue fail seen; binding is PETG creep_strain (0.95-0.97). PETG-CF screened worse; PLA+ not run.
 What Fred needs: PETG (Ender) hub/root fittings with printed bottom stops and over-long blind slots; 12.7 mm 1095 feeler roll (0.25 mm); 3 mm dowels; aramid strand; CA/epoxy; snips.
-Steps: 1 print; 2 snip strips over-length; 3 drop strip into slot to the stop; 4 CA; 5 thread aramid; 6 pin-balance.
+Steps: 1 print; 2 snip strips over-length; 3 drop strip into slot to the stop; 4 thick epoxy on lands only (laminae dry/sliding in the free span, no CA); 5 thread aramid; 6 pin-balance.
 Status: no feasible easy design yet; next try 2x0.15 / 0.7x with PA-CF X1C fittings and the full sa gates.
 
 ## Attempt 2 (12.7 mm 1095 roll, n laminae stacked, PETG blade, PA-CF (pa6_cf) fittings, aramid strand + dowels)
@@ -47,7 +47,7 @@ What Fred needs:
 1. Print PA-CF (X1C) hub/root fittings with a bottom stop and a slot for an 8-lamina 0.075 mm stack (~0.6 mm plus clearance).
 2. 12.7 mm 1095 feeler roll, 0.075 mm (0.003"); snip 16 pieces over-length.
 3. Dry-stack 8 per strip, drop to the stop at both ends.
-4. Wick CA/epoxy.
+4. Thick epoxy on the LANDS only; laminae dry (free to slide) in the free span: no thin CA (wicks, bonds the stack, k up to n² ×).
 5. Aramid strand and 3 mm dowels.
 6. PETG blades, pin-balance.
 Caveat: gates pass in the model only; no bench data.
