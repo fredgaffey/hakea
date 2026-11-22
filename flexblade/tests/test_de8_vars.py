@@ -199,3 +199,21 @@ def test_g10_single_strip_allowed(monkeypatch):
     monkeypatch.setattr(rs, "MATERIAL", "fr4_g10")
     n, i = _lam_bounds(monkeypatch)
     assert (n.lo, n.hi, i.lo, i.hi) == (0.5, 6.5, -0.5, 5.5)
+
+
+def test_stencil_304_single_strip(monkeypatch):
+    opt = _reload(monkeypatch, False)
+    from flexblade.materials import SHIM_THICKNESSES
+    st = SHIM_THICKNESSES["steel_304_hta"]
+    assert opt.STENCIL_STOCK == st == (0.8e-4, 1.0e-4, 1.2e-4, 1.3e-4, 1.5e-4, 1.8e-4, 2.0e-4)
+    d = _with_mat(rs.base_design(10.0, "tt_strap_steelx", False)[0], "steel_304_hta")
+    for i, t in enumerate(st):
+        d2 = opt.set_design(d, {"flexure.lamina_idx": i + 0.3})
+        assert d2.flexure.thickness == t
+        assert opt.get_path(d2, "flexure.lamina_idx") == float(i)
+    assert opt.set_design(d, {"flexure.strip_laminae": 0.6}).flexure.strip_laminae == 1
+    assert opt.set_design(d, {"flexure.strip_laminae": 9.0}).flexure.strip_laminae == 3
+    assert opt.LAMINA_STOCK == _BASE
+    monkeypatch.setattr(rs, "MATERIAL", "steel_304_hta")
+    n, i = _lam_bounds(monkeypatch)
+    assert (n.lo, n.hi, i.lo, i.hi) == (0.5, 3.5, -0.5, 6.5)
