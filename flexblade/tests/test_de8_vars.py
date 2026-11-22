@@ -78,3 +78,16 @@ def test_laminae_vars_and_snap():
     assert isinstance(d2.flexure.strip_laminae, int) and d2.flexure.strip_laminae == 6
     assert d2.flexure.thickness == LAMINA_STOCK[3]
     assert set_design(d, {"flexure.strip_laminae": 1.5}).flexure.strip_laminae == 2
+
+
+def test_lamina_idx_get_path_roundtrip():
+    """run_study reads every DE var's start value with get_path; the virtual lamina_idx must resolve."""
+    import json
+    from pathlib import Path
+    from flexblade.optimize import get_path, set_design, LAMINA_STOCK
+    from flexblade.schema import Design
+    d = Design.model_validate(json.loads(Path("study/designs/6in_tt_strap_steelx_2307.json").read_text()))
+    i = get_path(d.model_dump(mode="json"), "flexure.lamina_idx")
+    assert 0 <= i <= len(LAMINA_STOCK) - 1 and i == int(i)
+    d2 = set_design(d, {"flexure.lamina_idx": 2.0})
+    assert get_path(d2.model_dump(mode="json"), "flexure.lamina_idx") == 2.0

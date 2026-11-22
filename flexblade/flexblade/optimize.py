@@ -76,6 +76,9 @@ def _bal_get(obj: Any, key: str) -> float:
 def get_path(obj: Any, path: str) -> Any:
     if path in BAL_KEYS:
         return _bal_get(obj, path)
+    if path == "flexure.lamina_idx":   # virtual DE var: index of the nearest stock lamina thickness
+        t = float(get_path(obj, "flexure.thickness"))
+        return float(min(range(len(LAMINA_STOCK)), key=lambda i: abs(LAMINA_STOCK[i] - t)))
     cur = obj
     for k in path.split("."):
         if isinstance(cur, list):
