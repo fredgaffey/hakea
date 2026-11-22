@@ -1,5 +1,5 @@
 {
- "name": "10in_easy_steelx",
+ "name": "10in_tt_strap_steelx_v5",
  "layout": "single",
  "coaxial": {
   "spacing_frac": 0.25,
@@ -109,7 +109,7 @@
   ],
   "layup": {
    "kind": "solid",
-   "material": "prusament_petg",
+   "material": "pa6_cf",
    "skin_material": null,
    "skin_thickness": 0.0,
    "insert_material": null,
@@ -156,8 +156,8 @@
   "pre_lag_deg": "auto",
   "pre_lag_axis": "pitch",
   "pre_lag_ref_mass": null,
-  "length": 0.020096000000000003,
-  "thickness": 0.00025,
+  "length": 0.0221056,
+  "thickness": 0.000075,
   "width": 0.0127,
   "cross_angle_deg": 105.0,
   "bar_diameter": 0.0015,
@@ -172,19 +172,19 @@
    [
     [
      0.0,
-     0.5731392294038056,
-     -0.21815613130852185,
+     -3.190275884094696,
+     -0.19687237034433724,
      0.0,
-     -0.727087553171209,
-     -0.039597441229135055
+     2.934474723309159,
+     -0.04183886095682293
     ],
     [
      0.0,
-     1.396074635251753,
-     -0.004021127843251376,
+     2.390581014212399,
+     0.0048335298878927424,
      0.0,
-     -1.1520091889143116,
-     0.014082606329124097
+     -2.3188821075059103,
+     -0.02234309040059213
     ],
     [
      0.0,
@@ -198,19 +198,19 @@
    [
     [
      0.0,
-     -0.26098037555534115,
-     -0.29886019321278084,
+     5.511953927686835,
+     -0.27517549276039377,
      0.0,
-     0.1336903225602239,
-     -0.027246669432361394
+     -5.1260319542515,
+     -0.018433585329439818
     ],
     [
      0.0,
-     -1.1362190362741689,
-     -0.13793162209301355,
+     -2.8699739612840007,
+     -0.11583303639537933,
      0.0,
-     0.7075624868337225,
-     0.09921340170037195
+     2.040549328942304,
+     0.0574035645385937
     ],
     [
      0.0,
@@ -222,14 +222,14 @@
     ]
    ]
   ],
-  "strip_laminae": 1,
-  "strip_lam_eta": 0.0,
+  "strip_laminae": 8,
+  "strip_lam_eta": 0.000169,
   "strip_clamp_radius": 0.0,
   "fitting_mass": "auto",
   "fitting_slim": true,
   "fitting_balance_mass": 0.0,
   "fitting_balance_z": 0.008,
-  "fitting_material": "prusament_petg",
+  "fitting_material": "pa6_cf",
   "taper": 1.0,
   "twist_deg": 0.0,
   "layup": {
@@ -279,15 +279,15 @@
   "name": "3115_640kv_6s",
   "kv": 640.0,
   "R": 0.09,
-  "J_rotor": 2.1879170237997393e-05,
-  "J_hub": 1.6e-05,
+  "J_rotor": 0.000021879170237997393,
+  "J_hub": 0.000016,
   "supply_V": 24.0,
   "max_current": 60.0,
   "torque_bandwidth_hz": 2000.0,
-  "L": 5.142830141129033e-05,
+  "L": 0.00005142830141129033,
   "Rb": 0.043,
-  "b": 7.4e-06,
-  "T0": 1.3e-06,
+  "b": 7.4e-6,
+  "T0": 1.3e-6,
   "voltage_gain": 1.04,
   "poles": 14,
   "thermal_resistance_KW": 0.5193548387096775,
@@ -328,5 +328,5 @@
   "member_anchorage": "both"
  },
  "print_setup": null,
- "notes": "EASY-BUILD from v8: 1095 roll 12.7 mm x 0.25 mm x 1 lamina/strip, free length 20.1 mm (0.8x v8), PETG blade+fittings, hub_radius 12 mm, no VHB/oil, aramid+dowels kept, presets re-solved. sa.py file (CQ_TOL=datumed): cr_pl 0.2294 (v8 0.0715), NOT feasible: cqc_mech_margin 0.94 / mech_side flip, creep_strain 0.954, strip fatigue_stress 1.05-1.27 at T1.4."
+ "notes": "preset: cf_flexure, mass ∝ D^1.5, hover blade law; flexure dimensions are scaled placeholders (structures to tune); study: 1/rev duty pulse at 0.95× motor capability (DC-equivalent), AM32 max_ramp 255 (duty_slew_max 2550/s); v3 (7\" v3 recipe scaled, pitch_cf_ratio sized): {\"flexure.thickness\": 0.00015, \"flexure.width\": 0.012, \"flexure.length\": 0.036, \"flexure.cross_angle_deg\": 130.0, \"flexure.skew_deg\": 65.0, \"flexure.hinge_radius\": 0.022, \"flexure.strap_strand_diameter\": 0.0022, \"flexure.strap_length\": 0.004, \"flexure.strap_pin_diameter\": 0.0088, \"blade.elastic_axis_chord_frac\": 0.38, \"balance_masses\": [{\"mass\": 0.001, \"r_frac\": 0.2, \"normal_offset\": 0.01}, {\"mass\": 0.001, \"r_frac\": 0.2, \"normal_offset\": -0.01}]}; v5 (cyclic-mode placement, steelx_10in_v5.py): {\"flexure.length\": 0.02512, \"flexure.width\": 0.009} | v8 (skew +2 deg to 62.0 and 0.55 x v5zs presets, sa.py SA_SKEW_ADD=2 alpha 0.55): cr_pl 0.0911 feasible under CAL+Goodman+ground_res, worst-corner mech margin 0.036, resid phase 6.2 deg / gain 9.8 %, binding sm 219 MPa at T0.7. PRINTED SLOT ANGLES (strip_preset_deg [blade][strip][hub th1..3, blade th1..3]): blade1 strip1: hub-end th2 -2.45 th3 -0.17, blade-end th2 +2.17 th3 -0.04 deg; blade1 strip2: hub-end th2 +2.73 th3 +0.01, blade-end th2 -2.67 th3 -0.02 deg; blade1 strip3: hub-end th2 +0.00 th3 +0.00, blade-end th2 +0.00 th3 +0.00 deg; blade2 strip1: hub-end th2 +4.38 th3 -0.24, blade-end th2 -3.87 th3 -0.01 deg; blade2 strip2: hub-end th2 -3.14 th3 -0.11, blade-end th2 +2.61 th3 +0.05 deg; blade2 strip3: hub-end th2 +0.00 th3 +0.00, blade-end th2 +0.00 th3 +0.00 deg."
 }
