@@ -1,0 +1,87 @@
+[
+ {
+  "check": "one_body hub",
+  "ok": true,
+  "detail": "shells 1, 1756.8 mm3"
+ },
+ {
+  "check": "one_body blade1",
+  "ok": true,
+  "detail": "shells 1, 1742.5 mm3"
+ },
+ {
+  "check": "one_body blade2",
+  "ok": true,
+  "detail": "shells 1, 1742.6 mm3"
+ },
+ {
+  "check": "one_body strip_b1_1",
+  "ok": true,
+  "detail": "shells 1, 46.9 mm3"
+ },
+ {
+  "check": "one_body strip_b1_2",
+  "ok": true,
+  "detail": "shells 1, 46.9 mm3"
+ },
+ {
+  "check": "one_body strip_b2_1",
+  "ok": true,
+  "detail": "shells 1, 46.9 mm3"
+ },
+ {
+  "check": "one_body strip_b2_2",
+  "ok": true,
+  "detail": "shells 1, 46.9 mm3"
+ },
+ {
+  "check": "one_body strap_b1",
+  "ok": true,
+  "detail": "shells 1, 18.1 mm3"
+ },
+ {
+  "check": "one_body strap_b2",
+  "ok": true,
+  "detail": "shells 1, 18.1 mm3"
+ },
+ {
+  "check": "no stray bodies",
+  "ok": true,
+  "detail": "9 bodies"
+ },
+ {
+  "check": "strip_b1_1",
+  "ok": true,
+  "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+ },
+ {
+  "check": "strip_b1_2",
+  "ok": true,
+  "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+ },
+ {
+  "check": "strip_b2_1",
+  "ok": true,
+  "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+ },
+ {
+  "check": "strip_b2_2",
+  "ok": true,
+  "detail": "land hub 8.00 / blade 8.00 mm (glue land 8.0), free 10.048 mm (design 10.048), clamped continuously True"
+ },
+ {
+  "check": "interference",
+  "ok": false,
+  "detail": "[('strip_b1_1', 'strap_b1', 0.407), ('strip_b1_2', 'strap_b1', 0.407), ('strip_b2_1', 'strap_b2', 0.407), ('strip_b2_2', 'strap_b2', 0.407)]"
+ },
+ {
+  "check": "swing blade1",
+  "ok": true,
+  "detail": "min hub gap 1.13 mm at flap +15 deg (rest 2.00); lag (z) -15 1.34, lag (z) +15 2.00, flap -15 1.13, flap +15 1.13, hinge axis -15 2.06, hinge axis +15 1.35"
+ },
+ {
+  "check": "swing blade2",
+  "ok": true,
+  "detail": "min hub gap 1.13 mm at flap +15 deg (rest 2.00); lag (z) -15 1.34, lag (z) +15 2.00, flap -15 1.13, flap +15 1.13, hinge axis -15 1.35, hinge axis +15 2.06"
+ }
+]
