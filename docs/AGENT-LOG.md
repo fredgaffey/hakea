@@ -150,3 +150,4 @@ rows without the token field (or the green flag, if the project requires it).
 | 2026-11-22 | sonnet-5-5 | lean | Score CRM2204 de2 winner | CRM2204 de2 scored: cr_pl 0.0946 feasible default+datumed; tol 12/12 feasible; supersedes infeasible previous | 36k / 19 calls | green: yes |
 | 2026-11-22 | sonnet-5-5 | lean | DE var: lamina count | --laminae-vars DE flag (n 2-12, stock t snap), schema strip_laminae le 12; test; DE11 queued after DE10 | 28k / 22 calls | green: yes |
 | 2026-11-22 | sonnet-5-5 | lean | Easy-build STLs + BUILD sheet | easy-build print package: strip_stop flag, blind slots w/ stops, STLs watertight, BUILD.md; GAP: free length still = hand-cut length (stops at both ends) | 66k / 30 calls | green: yes |
+| 2026-11-22 | sonnet-5-5 | lean | Easy-build breakaway spacing jig | easy-build breakaway jig: one-body rotor_jig.stl (hub+blades, 2 sprues/blade), over-deep slots, jaw exits within 0.05 mm; suite 336 pass | 71k / 26 calls | green: yes |
