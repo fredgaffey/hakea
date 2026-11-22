@@ -117,7 +117,9 @@ def is_clamped_strip(design: Design) -> bool:
         strips, _, _ = strip_members(design)
     except Exception:
         return False
-    return bool(strips) and all(m.layup.material.lower().startswith("steel") for m in strips)
+    from .materials import SHEET_MATERIALS   # steel shim and FR4/G10 sheet strips
+    return bool(strips) and all(m.layup.material.lower().startswith("steel")
+                                or m.layup.material.split("@")[0] in SHEET_MATERIALS for m in strips)
 
 
 def strip_params(design: Design) -> StripParams:
