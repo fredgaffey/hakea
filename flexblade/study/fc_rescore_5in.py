@@ -31,9 +31,11 @@ def ev(arg):
     r = api.evaluate(dv, ["trim", "modes", "harmonic", "checks"]).model_dump(mode="json")
     m = rs.metrics(dv, r)
     s = r["summary"]
-    rev = (s.get("rpm") or r.get("trim", {}).get("rpm") or 0) / 60.0
+    rev = (s.get("rpm") or (r.get("trim") or {}).get("rpm") or 0) / 60.0
+    ml = r.get("modes")
+    ml = ml.get("modes", []) if isinstance(ml, dict) else (ml or [])
     modes = [(md["label"], round(md["freq_hz"] / rev, 3) if rev else None, round(md["damping_ratio"], 4))
-             for md in (r.get("modes") or {}).get("modes", r.get("modes") if isinstance(r.get("modes"), list) else [])][:10]
+             for md in ml][:10]
     chk = [(c["name"], round(c["utilisation"], 3)) for c in r["checks"] if any(k in c["name"] for k in STAB)]
     return dict(cfg=cfg, tag=tag, cr_pl=m.get("cr_pl"), feas=m.get("feasible_pl"),
                 hard=sorted((m.get("viol_hard") or {}).keys()), bind=m.get("pulse_binding"),

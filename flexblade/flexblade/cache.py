@@ -66,7 +66,11 @@ def _tol_tag() -> str:
     """active opt-in robust tolerance set; empty (key unchanged) for the default set"""
     t = os.environ.get("CQ_TOL")
     cs = os.environ.get("CABLE_STRAIN", "").strip().lower()      # opt-in cable strain model
-    return (f"|tol={t}" if t else "") + (f"|cable={cs}" if cs else "")
+    fc = ""                                                       # opt-in fitting compliance model
+    if os.environ.get("FITTING_COMPLIANCE", "0").strip().lower() in ("1", "true", "on", "yes"):
+        fc = "|fc=" + ",".join(f"{k}={os.environ.get(k, '')}" for k in (
+            "FITTING_E", "FITTING_GLUE_E", "FITTING_GLUE_T", "FITTING_BLADE_ARM_END"))
+    return (f"|tol={t}" if t else "") + (f"|cable={cs}" if cs else "") + fc
 
 
 def make_key(design, kind: str = "") -> str:
