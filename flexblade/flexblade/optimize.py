@@ -93,7 +93,9 @@ def get_path(obj: Any, path: str) -> Any:
     return cur
 
 
-LAMINA_STOCK = (0.05e-3, 0.075e-3, 0.10e-3, 0.127e-3, 0.15e-3)   # shim stock, m
+LAMINA_STOCK = (0.05e-3, 0.075e-3, 0.10e-3, 0.127e-3, 0.15e-3)   # shim stock, m (indices 0-4 are frozen: running DEs index it)
+if os.environ.get("LAMINA_STOCK_EXT") == "1":   # opt-in thin 301 foil, appended -> indices 5,6
+    LAMINA_STOCK += (0.038e-3, 0.025e-3)
 
 WIDTH_STOCK = (3.0e-3, 4.0e-3, 5.0e-3, 6.0e-3, 8.0e-3, 10.0e-3, 12.7e-3)   # strip widths, m
 
@@ -114,7 +116,7 @@ def set_design(design: Design, values: dict[str, float]) -> Design:
             i = min(max(int(round(float(v))), 0), len(WIDTH_STOCK) - 1)
             d["flexure"]["width"] = WIDTH_STOCK[i]
         elif p == "flexure.strip_laminae":
-            d["flexure"]["strip_laminae"] = min(max(int(round(float(v))), 2), 12)
+            d["flexure"]["strip_laminae"] = min(max(int(round(float(v))), 2), 24 if len(LAMINA_STOCK) > 5 else 12)
         elif p in BAL_KEYS:
             bal[p] = float(v)
         else:

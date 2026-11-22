@@ -283,7 +283,7 @@ class Flexure(_M):
         "element as pre-curved and over-stiffened via the arc-length term). "
         "Empty / missing entries = 0 (legacy). rotor.resolve_strip_preset sets θ2, θ3 to the "
         "hover trim end rotations so the strips carry no static bending at the reference op")
-    strip_laminae: int = Field(1, ge=1, le=12, description="steel shim strips: number of "
+    strip_laminae: int = Field(1, ge=1, le=24, description="steel shim strips: number of "
                                "unbonded laminae per strip (each `thickness` thick, clamped "
                                "together at both ends, free to slide between): bending about "
                                "the thin axis n*E*w*t^3/12, axial / in-plane / torsion / mass x n, "

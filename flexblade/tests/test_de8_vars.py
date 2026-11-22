@@ -113,3 +113,42 @@ def test_material_override_on_seed():
     finally:
         rs.MATERIAL = None
     assert rs._material(d).flexure.layup.material == "steel_301_fh"
+
+
+_BASE = (0.05e-3, 0.075e-3, 0.10e-3, 0.127e-3, 0.15e-3)
+
+
+def _reload(monkeypatch, ext):
+    import importlib
+    import flexblade.optimize as opt
+    if ext:
+        monkeypatch.setenv("LAMINA_STOCK_EXT", "1")
+    else:
+        monkeypatch.delenv("LAMINA_STOCK_EXT", raising=False)
+    return importlib.reload(opt)
+
+
+def _lam_bounds(monkeypatch):
+    monkeypatch.setattr(rs, "LAMINAE_VARS", True)
+    V = {v.path: v for v in rs.variables("tt_strap_steelx", 10.0)}
+    return V["flexure.strip_laminae"], V["flexure.lamina_idx"]
+
+
+def test_lamina_stock_default_unchanged(monkeypatch):
+    opt = _reload(monkeypatch, False)
+    assert opt.LAMINA_STOCK == _BASE
+    n, i = _lam_bounds(monkeypatch)
+    assert (n.hi, i.lo, i.hi) == (12.5, -0.5, 4.5)
+
+
+def test_lamina_stock_ext(monkeypatch):
+    opt = _reload(monkeypatch, True)
+    try:
+        assert opt.LAMINA_STOCK[:5] == _BASE and opt.LAMINA_STOCK[5] == 0.038e-3
+        n, i = _lam_bounds(monkeypatch)
+        assert (n.hi, i.hi) == (24.5, 6.5)
+        d = opt.set_design(Design(), {"flexure.lamina_idx": 5.0, "flexure.strip_laminae": 24})
+        assert d.flexure.thickness == 0.038e-3 and d.flexure.strip_laminae == 24
+        assert opt.get_path(d.model_dump(mode="json"), "flexure.lamina_idx") == 5.0
+    finally:
+        _reload(monkeypatch, False)
