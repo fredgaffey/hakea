@@ -1695,6 +1695,21 @@ def strap_anchor_capacity(f) -> tuple[float, str]:
     return cap, f"epoxy pot τ={a['tau'] / 1e6:.0f} MPa, L={f.strap_pot_length * 1e3:.1f} mm"
 
 
+# Opt-in (env CABLE_STRAIN=axial; default = solid-section fibre strain): a bought twisted or
+# braided cord's filaments bend individually, so its fatigue/creep strain is the axial strain
+# eps0 + kappa * r_filament, not the bending strain over the cord radius. r_filament is a material
+# constant (Material.filament_radius if present, else Kevlar 49 ~12 um filament -> 6 um).
+CABLE_FILAMENT_RADIUS = 6e-6
+
+
+def _cable_axial() -> bool:
+    return _os.environ.get("CABLE_STRAIN", "").strip().lower() == "axial"
+
+
+def _r_fil(mat) -> float:
+    return getattr(mat, "filament_radius", None) or CABLE_FILAMENT_RADIUS
+
+
 def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.ndarray,
                   cable: bool = False):
     """Max stress utilisation, interlayer utilisation, max tensile strain, details, and the
@@ -1712,6 +1727,7 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
     creep_u = 0.0
     tau = abs(sec.tau_per_twist * eps[3])
     det = None
+    ax = cable and _cable_axial()
     for fb in sec.fibres:
         ex = eps[0] + fb.z * eps[4] - fb.y * eps[5]
         sig = fb.E * ex
@@ -1726,6 +1742,8 @@ def _fibre_checks(e: Element, sec: SectionProps, s_force: np.ndarray, t_hat: np.
         if u1 > out_static:
             out_static, det = u1, (sig, Xa, fb.material)
         out_il = max(out_il, u2)
+        if ax:      # creep strain only (static strength above keeps the section strain)
+            ex = eps[0] + _r_fil(mat) * float(np.hypot(eps[4], eps[5]))
         max_strain = max(max_strain, ex)
         creep_u = max(creep_u, ex / mat.creep_strain_allow)
     return out_static, out_il, max_strain, det, creep_u
@@ -1760,9 +1778,14 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cabl
     S = sec.stiffness6()
     eps = np.linalg.solve(S.astype(complex), s_amp)
     best_e = best_s = 0.0
+    ax = cable and _cable_axial()
+    exs = []
     for i, fb in enumerate(sec.fibres):
         ex = abs(eps[0] + fb.z * eps[4] - fb.y * eps[5])
         mat = get_material(fb.material)
+        if ax:      # 1P amplitude bound |eps0| + r_fil |kappa|
+            ex = abs(eps[0]) + _r_fil(mat) * float(np.hypot(abs(eps[4]), abs(eps[5])))
+            exs.append(ex)
         sa = ex * fb.E * mat.storage_scale(freq_hz)
         Xa = mat.Xt if cable else _strength_along(fb, t_hat)
         ge = 1.0
@@ -1777,6 +1800,8 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cabl
                                 swt=swt_util(sa * kt, mean[i] * kt, se))
         best_e = max(best_e, ex / mat.fatigue_strain_amp_allow * ge)
         best_s = max(best_s, sa / (mat.fatigue_stress_ratio * Xa) * ge)
+    if ax:
+        return best_e, best_s, float(max(exs))
     return best_e, best_s, float(np.max([abs(eps[0] + fb.z * eps[4] - fb.y * eps[5]) for fb in sec.fibres]))
 
 

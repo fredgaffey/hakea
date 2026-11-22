@@ -252,7 +252,7 @@
   "strap_material": "aramid_yarn",
   "strap_length": 0.00325,
   "strap_bend_factor": 0.001,
-  "strap_anchor": "pin_wrap",
+  "strap_anchor": "knot",
   "strap_pin_diameter": 0.004285714285714286,
   "strap_pot_length": 0.006,
   "axial_release": true,
