@@ -194,7 +194,10 @@ def preset_stage():
     for tag, d in robust.variants(D, thrust_factors=tfs):
         with R.part_temperature(d.op.ambient_C):
             strips = beam_hover(d)
-        b = max(strips, key=lambda s_: max(s_["sm_hub"], s_["sm_blade"]))
+        sel = os.environ.get("STRIP")   # force a strip tag, e.g. STRIP=b2.flex2
+        if sel and sel not in [t_["tag"] for t_ in strips]:
+            sys.exit("STRIP not found; tags: " + str([t_["tag"] for t_ in strips]))
+        b = next(s_ for s_ in strips if s_["tag"] == sel) if sel else max(strips, key=lambda s_: max(s_["sm_hub"], s_["sm_blade"]))
         b0 = stop[b["tag"]]
         print(f"== {tag} binding {b['tag']} kt {kt:.2f} preset_deg {np.round(b['preset'], 2) if b['preset'] is not None else None}")
         for nm, k_ in (("stopped", b0), ("hover", b)):
