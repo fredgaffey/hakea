@@ -42,6 +42,8 @@ WEB_T = 3.0             # mm, web slab thickness (connects the jaws)
 CH_LEN = 8.0            # mm, strand channel length from the strand end to the knot well
 SEG = 48
 WEB_T_SLIM = 2.0        # mm, slim web slab thickness (> WALL, two perimeters + skin)
+STOP_CLEAR = 0.25       # mm, slot thickness clearance over the stack (strip_stop)
+STOP_BIAS = 0.3         # mm, stop-to-stop distance over the nominal cut length (free length biased long)
 JAW_FACE_SLIM = 1.5     # mm, slim jaw face wall over the slot beyond the exit radius (>= WALL)
 
 
@@ -63,6 +65,8 @@ class StripParams:
     strand_d: float
     channel_d: float
     well_d: float
+    stop: bool = False      # printed stop: blind slots, stop face at stop_depth from each exit
+    stop_depth: float = 0.0
     slim: bool = False      # stepped jaws, thin web, per-jaw web hulls (fittings ~40 % lighter)
 
 
@@ -72,6 +76,29 @@ def strip_members(design: Design):
     strips = [m for m in ms if m.kind == "blade" and m.shape == "rect"]
     wires = [m for m in ms if m.kind == "wire"]
     return strips, wires, hinge
+
+
+def stop_free_length(design: Design) -> float:
+    """Free length (mm) of a strip cut to L + 2 land when it bottoms on both printed stops, from
+    the actual slot cutters: stop face = far end of the slot cutter along the slot axis."""
+    fits = build_strip_fittings(design)
+    prm = fits.params
+    strips, _, _ = strip_members(design)
+    out = []
+    for i, m in enumerate(strips):
+        p0, p1, _, _, _, _ = _frame(m)
+        pts = {}
+        for (j, end, d, dw) in fits.slot_axes:
+            if j != i:
+                continue
+            cuts = fits.hub_cuts if end == 0 else fits.blade_cuts
+            k = [a for a in fits.slot_axes if a[1] == end].index((j, end, d, dw))
+            cut = cuts[2 * k]                       # slot box (the next entry is the exit flare)
+            v = np.asarray(cut.to_mesh().vert_properties)[:, :3]
+            o = p0 if end == 0 else p1
+            pts[end] = o + d * float(((v - o) @ d).max())
+        out.append(float(np.linalg.norm(pts[1] - pts[0])) - (prm.L + 2 * prm.land))
+    return prm.L + float(np.mean(out))
 
 
 def is_clamped_strip(design: Design) -> bool:
@@ -94,7 +121,10 @@ def strip_params(design: Design) -> StripParams:
     L = float(np.linalg.norm(np.subtract(m.p1, m.p0))) * 1e3
     R = f.strip_clamp_radius * 1e3 if f.strip_clamp_radius > 0 else 10.0 * t_lam
     d = f.strap_strand_diameter * 1e3
-    return StripParams(t=t, w=w, L=L, land=max(4.0 * math.sqrt(w), 5.0), slot_t=t + SLOT_ALLOW,
+    stop = bool(getattr(f, "strip_stop", False))
+    land = max(4.0 * math.sqrt(w), 5.0)
+    return StripParams(t=t, w=w, L=L, land=land, slot_t=t + (STOP_CLEAR if stop else SLOT_ALLOW),
+                       stop=stop, stop_depth=land + STOP_BIAS / 2,
                        slot_w=w + 2 * SIDE, jaw_r=R, wall=WALL, strand_d=d,
                        channel_d=d + CH_CLEAR, well_d=max(2.5 * d, 3.5), slim=bool(f.fitting_slim))
 
@@ -259,7 +289,7 @@ def _side(design, strips, wires, P, s, end, prm: StripParams, Qs=None, axes=None
                                 _box([x1 - 0.01, lo_w, -hs], [prm.land, hi_w, hs], Rm, o)]))
         else:
             jaws.append(_box([0, lo_w, -hn], [prm.land, hi_w, hn], Rm, o))
-        depth = prm.land + (80.0 if end == 0 else 0.3)
+        depth = prm.stop_depth if prm.stop else prm.land + (80.0 if end == 0 else 0.3)
         cuts.append(_box([-0.5, cl_w, -H], [depth, ch_w, H], Rm, o))
         fl = _box([-0.5, cl_w, -(H + R)], [R, ch_w, H + R], Rm, o)
         cyls = [_cyl(o + d * R + nn * k * (H + R) + w * (cl_w - 1.0), w, R, ch_w - cl_w + 2.0)
@@ -500,8 +530,21 @@ def to_trimesh(m, clean_min_mm3: float = 1.0):
     keep = [c for c in comps if c.volume() >= clean_min_mm3]
     mm = keep[0] if len(keep) == 1 else mf.Manifold.batch_boolean(keep, mf.OpType.Add)
     mo = mm.to_mesh()
-    tm = trimesh.Trimesh(np.asarray(mo.vert_properties)[:, :3].astype(float),
-                         np.asarray(mo.tri_verts), process=True)
+    V, F = np.asarray(mo.vert_properties)[:, :3].astype(float), np.asarray(mo.tri_verts)
+    def ok(v):      # watertight after the float32 STL round trip and vertex merge a slicer sees
+        return trimesh.Trimesh(v.astype(np.float32).astype(float), F, process=True).is_watertight
+    if not ok(V):                                    # pinch edge (two sheets touching along a line,
+        V = V.copy()                                 # valid for manifold3d, 4-valent after a merge)
+        _, inv, cnt = np.unique(V, axis=0, return_inverse=True, return_counts=True)
+        inv = np.asarray(inv).ravel()
+        for g in np.where(cnt > 1)[0]:
+            for k in np.where(inv == g)[0][1:]:      # split the extra copies 4 um into their own sheet
+                nb = np.unique(F[(F == k).any(axis=1)])
+                nb = nb[nb != k]
+                dv = V[nb].mean(axis=0) - V[k]
+                if np.linalg.norm(dv) > 1e-9:
+                    V[k] += 0.004 * dv / np.linalg.norm(dv)
+    tm = trimesh.Trimesh(V, F, process=True)
     return tm, len(keep), len(comps) - len(keep)
 
 
