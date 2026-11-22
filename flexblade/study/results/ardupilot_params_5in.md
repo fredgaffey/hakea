@@ -7,7 +7,7 @@ All values are **starting point, tune on bench**. Fred applies them himself. Nam
 | INS_HNTCH_ENABLE | 1 | enable (reboot, then refresh params) | HN:66 |
 | INS_HNTCH_MODE | 3 (ESC Telemetry) | rpm from ESC | HN:127 |
 | INS_HNTCH_REF | 1 | enables dynamic tracking; sensor rpm is converted to Hz | HN:121 |
-| INS_HNTCH_FREQ | 218 | hover 1P; fallback centre if telemetry is lost | HN:74 |
+| INS_HNTCH_FREQ | 160 | MINIMUM tracked frequency for ESC-telemetry mode (HarmonicNotchFilter.cpp @Param FREQ: "the minimum limit of center frequency variation for all other notch types"); must sit below the T0.7 1P (~190 Hz), so NOT the 218 Hz hover value | HN:74 |
 | INS_HNTCH_BW | 60 | about 1/3 of 1P, covers the 190-240 Hz sweep and rpm lag | HN:82 |
 | INS_HNTCH_ATT | 30 | dB; default 40 is deeper than needed for a ~1 rad/s line | HN:90 |
 | INS_HNTCH_HMNCS | 3 (bits 0+1 = 1P and 2P) | 1P = 176 mN m torque-reaction line; 2P = blade-pass of a 2-blade rotor | HN:113 |
