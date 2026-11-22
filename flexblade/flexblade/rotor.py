@@ -400,6 +400,12 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
         from .fittings import fitting_mass_props, is_clamped_strip
         if is_clamped_strip(design):
             fit_mp = fitting_mass_props(design)
+    # series compliance of the glue lands and printed fitting arms (fitting_compliance.py, opt-in)
+    fc_glue, fc_arm = None, {}
+    if ideal_hinge is None:
+        from . import fitting_compliance as _fc
+        if _fc.active(design):
+            fc_glue, fc_arm = _fc.glue_props(design), _fc.arm_compliance(design)
 
     max_EA = max(s[0].EA for s in blade_secs)
     max_EI = max(max(s[0].EIy, s[0].EIz) for s in blade_secs)
@@ -449,6 +455,17 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 el.extra_mpts = np.array(xm)
             blade_elems.append(fe.add_element(el))
         member_elems: dict[str, list[int]] = {}
+        hub_att, bl_att = hub, master
+        if fc_arm.get("hub") is not None:
+            hub_att = fe.add_node(fe.X0[hub].copy(), f"b{k}.hubarm")
+            _fc_spring(fe, hub, hub_att, fc_arm["hub"][1], Tk, Rk, f"b{k}.hubarm", k)
+        if fc_arm.get("blade") is not None:
+            Pb = Rk @ Tk @ fc_arm["blade"][0]
+            z0 = fe.add_node(Pb.copy(), f"b{k}.bladearm0")
+            bl_att = fe.add_node(Pb.copy(), f"b{k}.bladearm1")
+            _fc_spring(fe, z0, bl_att, fc_arm["blade"][1], Tk, Rk, f"b{k}.bladearm", k)
+            pending_stiff.append((bl_att, master, np.array([0.0, 0.0, 1.0]), f"b{k}.bladearm_link", k))
+            bl_att = z0
         for j, m in enumerate(mem_H):
             p0, p1 = np.asarray(m.p0), np.asarray(m.p1)
             tag = f"b{k}.flex{j}" if m.kind != "rigid" else f"b{k}.rigid{j}"
@@ -486,16 +503,25 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
             # member-end anchorage on the printed fittings (zero-length punch springs)
             n_in, n_out = nodes[0], nodes[-1]
             anc = an.member_anchorage
+            end_K = []
             if m.kind != "rigid" and anc != "none" and m.anchorage != "embedded":
                 from .anchorage import end_spring
                 from .geometry import HUB_MATERIAL
                 mo = _rot_orient(m.orientation, Rk)
-                F = np.column_stack([e1, e2, e3])
                 ends = [("hub", HUB_MATERIAL, None)]
                 if anc == "both":
                     ends.append(("blade", b.layup.material, _rot_orient(b.orientation, Rk)))
-                for side, fmat, fo in ends:
-                    Ka = end_spring(m, mo, e1, e2, e3, fmat, fo)
+                end_K = [(side, end_spring(m, mo, e1, e2, e3, fmat, fo)) for side, fmat, fo in ends]
+            elif fc_glue is not None and m.kind == "blade" and not m.cable and m.anchorage == "embedded":
+                sp0 = member_sections(m, Rk, 0.0, 1.0 / n_el, e1, e2, e3)[0][0]
+                sp1 = member_sections(m, Rk, 1.0 - 1.0 / n_el, 1.0, e1, e2, e3)[0][-1]
+                end_K = [(side, _fc.glue_end_spring(sp_, m.width, sg, fc_glue))
+                         for side, sp_, sg in (("hub", sp0, -1.0), ("blade", sp1, 1.0))]
+            if end_K:
+                F = np.column_stack([e1, e2, e3])
+                for side, Ka in end_K:
+                    if Ka is None:
+                        continue
                     nd = nodes[0] if side == "hub" else nodes[-1]
                     s_node = fe.add_node(fe.X0[nd].copy(), f"{tag}.anc_{side}")
                     pair = (s_node, nd) if side == "hub" else (nd, s_node)
@@ -517,11 +543,11 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                                        spring_frame=np.column_stack([Rk[:, 0], Rk[:, 1], Rk[:, 2]])))
                 n_out = s_node
             # spokes and connectors (stiff, massless)
-            pending_stiff.append((hub, n_in, np.array([0.0, 0.0, 1.0]), f"b{k}.spoke{j}", k))
-            if np.linalg.norm(p1 - fe.X0[master]) > 1e-9:
-                pending_stiff.append((n_out, master, np.array([0.0, 0.0, 1.0]), f"b{k}.conn{j}", k))
+            pending_stiff.append((hub_att, n_in, np.array([0.0, 0.0, 1.0]), f"b{k}.spoke{j}", k))
+            if np.linalg.norm(p1 - fe.X0[bl_att]) > 1e-9:
+                pending_stiff.append((n_out, bl_att, np.array([0.0, 0.0, 1.0]), f"b{k}.conn{j}", k))
             else:
-                pending_stiff.append((n_out, master, None, f"b{k}.conn{j}", k))
+                pending_stiff.append((n_out, bl_att, None, f"b{k}.conn{j}", k))
         H0, a = fact.hinge_axis(design, k)
         if ideal_hinge is not None:
             A = fe.add_node(Rk @ H0, f"b{k}.hingeA")
@@ -613,6 +639,16 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
     if full_springs:
         _compensate_links(model, full_springs)
     return model
+
+
+def _fc_spring(fe: FEModel, n0: int, n1: int, C: np.ndarray, Tk: np.ndarray, Rk: np.ndarray, tag: str, k: int) -> None:
+    """Zero-length 6x6 spring n0-n1 from a blade-1 frame (H) compliance C (fitting_compliance arm):
+    blade k mirrors by Tk (translations Tk, rotations det(Tk) Tk) and rotates by Rk."""
+    D = np.zeros((6, 6))
+    D[:3, :3], D[3:, 3:] = Tk, np.linalg.det(Tk) * Tk
+    Ks = D @ np.linalg.inv(C) @ D
+    fe.add_element(Element(n0, n1, np.zeros(3), [], tag=tag, kind="spring", blade=k,
+                           spring_K=0.5 * (Ks + Ks.T), spring_frame=np.column_stack([Rk[:, 0], Rk[:, 1], Rk[:, 2]])))
 
 
 def _rigid6(m: float, c: np.ndarray, Ic: np.ndarray) -> np.ndarray:
