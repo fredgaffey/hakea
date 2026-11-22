@@ -305,6 +305,77 @@ LIBRARY: dict[str, Material] = {
                         creep_strain_allow=0.006, fatigue_strain_amp_allow=0.004,
                         fatigue_stress_ratio=0.27,
                         source="FR4/G10 sheet: E 20 GPa in-plane, Xt 300 MPa, ε_a 0.4 % (1e8)"),
+    # ---- off-the-shelf sheet/strip candidates (study/results/materials_5in.md). All values
+    # handbook typical, verify by coupon. fatigue_strain_amp_allow = fatigue strength at 1e8 / E;
+    # metals: creep_strain_allow = min(0.005, yield/E) (no room-temperature creep, the check
+    # guards yield); composites: Xt = min(Xt, Xc) (bending loads both faces), S = ILSS,
+    # fatigue_stress_ratio = E*eps_a / Xt so the strain and stress fatigue checks agree.
+    # C260 cartridge brass, half-hard shim (K&S): UTS 420, yield ~330, fatigue 140 MPa @1e8.
+    "brass_c260_h": _iso("brass_c260_h", 8530, 110e9, 0.34, loss_factor=0.002,
+                         Xt=420e6, Yt=420e6, Zt=420e6, S=245e6,
+                         creep_strain_allow=0.003, fatigue_strain_amp_allow=140e6 / 110e9,
+                         fatigue_stress_ratio=0.33,
+                         source="C260 brass H02 shim: E 110 GPa, UTS 420 MPa, fatigue 140 MPa @1e8; "
+                                "handbook typical, verify by coupon"),
+    # C510 phosphor bronze, spring temper: UTS 720, yield ~650, fatigue 215 MPa @1e8.
+    "phosbronze_c510": _iso("phosbronze_c510", 8860, 110e9, 0.34, loss_factor=0.002,
+                            Xt=720e6, Yt=720e6, Zt=720e6, S=420e6,
+                            creep_strain_allow=0.005, fatigue_strain_amp_allow=215e6 / 110e9,
+                            fatigue_stress_ratio=0.30,
+                            source="C510 phosphor bronze spring: E 110 GPa, UTS 720 MPa, fatigue "
+                                   "215 MPa @1e8; handbook typical, verify by coupon"),
+    # C17200 beryllium copper TH04 (BeCu dust is toxic: shear, do not grind or sand).
+    "becu_c17200": _iso("becu_c17200", 8250, 128e9, 0.30, loss_factor=0.001,
+                        Xt=1300e6, Yt=1300e6, Zt=1300e6, S=750e6,
+                        creep_strain_allow=0.005, fatigue_strain_amp_allow=295e6 / 128e9,
+                        fatigue_stress_ratio=0.23,
+                        source="C17200 BeCu TH04: E 128 GPa, UTS 1300 MPa, fatigue 295 MPa @1e8; "
+                               "handbook typical, verify by coupon"),
+    # Ti-6Al-4V annealed sheet, cut edges (stoned): UTS 950, yield ~880, fatigue 380 MPa @1e8.
+    "ti6al4v": _iso("ti6al4v", 4430, 114e9, 0.34, loss_factor=0.001,
+                    Xt=950e6, Yt=950e6, Zt=950e6, S=550e6,
+                    creep_strain_allow=0.005, fatigue_strain_amp_allow=380e6 / 114e9,
+                    fatigue_stress_ratio=0.40,
+                    source="Ti-6Al-4V annealed sheet, cut edges: E 114 GPa, UTS 950 MPa, fatigue "
+                           "380 MPa @1e8; handbook typical, verify by coupon"),
+    # flat pultruded UD carbon hobby strip, fibre along raster_dir (= strip length): E1 125,
+    # E2 8, G12 4.5 GPa, Xt 1800 / Xc 1000 MPa (Xc used), ILSS 50 MPa, eps_a 0.45 % @1e8.
+    # (cf_rod_pultruded: same moduli, Xt 1500, eps_a 0.5 %, unsourced -> not reused.)
+    "cf_ud_pultruded_strip": Material(
+        "cf_ud_pultruded_strip", 1550, 125e9, 8e9, 8e9, 4.5e9, 4.5e9, 3e9, 0.3, 0.3, 0.4,
+        loss_factor=0.005, Xt=1000e6, Yt=50e6, Zt=50e6, S=50e6,
+        creep_strain_allow=0.008, fatigue_strain_amp_allow=0.0045,
+        fatigue_stress_ratio=0.0045 * 125e9 / 1000e6,
+        source="pultruded UD CF flat strip: E1 125 GPa, Xt 1800 / Xc 1000 MPa (Xc used), ILSS 50 "
+               "MPa, eps_a 0.45 % @1e8; handbook typical, verify by coupon"),
+    # 2x2 twill CF plate (0/90): E 60 GPa in-plane, Xt 600 / Xc 500 (Xc used), ILSS 40, eps_a 0.30 %.
+    "cf_woven_sheet": Material(
+        "cf_woven_sheet", 1500, 60e9, 60e9, 8e9, 4.5e9, 3.5e9, 3.5e9, 0.05, 0.3, 0.3,
+        loss_factor=0.008, Xt=500e6, Yt=500e6, Zt=40e6, S=40e6,
+        creep_strain_allow=0.006, fatigue_strain_amp_allow=0.003,
+        fatigue_stress_ratio=0.003 * 60e9 / 500e6,
+        source="CF twill plate: E 60 GPa, Xt 600 / Xc 500 MPa (Xc used), ILSS 40 MPa, eps_a 0.30 % "
+               "@1e8; handbook typical, verify by coupon"),
+    # POM acetal (Delrin) sheet: E 3.1 GPa, UTS 70, fatigue 25 MPa @1e8 (eps ~0.8 %), HDT 110 C.
+    "pom_acetal": _iso("pom_acetal", 1420, 3.1e9, 0.35, loss_factor=0.02,
+                       Xt=70e6, Yt=70e6, Zt=70e6, S=45e6,
+                       creep_strain_allow=0.005, fatigue_strain_amp_allow=25e6 / 3.1e9,
+                       fatigue_stress_ratio=25 / 70,
+                       source="POM (Delrin) sheet: E 3.1 GPa, UTS 70 MPa, fatigue 25 MPa @1e8; handbook typical, verify by coupon"),
+    # PET film (Mylar / BoPET): E 4.5 GPa, UTS 200; fatigue 40 MPa @1e8 is a GUESS (no data).
+    "pet_film": _iso("pet_film", 1390, 4.5e9, 0.38, loss_factor=0.02,
+                     Xt=200e6, Yt=200e6, Zt=60e6, S=60e6,
+                     creep_strain_allow=0.005, fatigue_strain_amp_allow=40e6 / 4.5e9,
+                     fatigue_stress_ratio=0.20,
+                     source="PET film (BoPET): E 4.5 GPa, UTS 200 MPa, fatigue 40 MPa @1e8 GUESS; "
+                            "handbook typical, verify by coupon"),
+    # PP living-hinge sheet (homopolymer): E 1.5 GPa, UTS ~33, fatigue 15 MPa @1e8, HDT 100 C.
+    "pp_sheet": _iso("pp_sheet", 905, 1.5e9, 0.42, loss_factor=0.05,
+                     Xt=33e6, Yt=33e6, Zt=33e6, S=20e6,
+                     creep_strain_allow=0.005, fatigue_strain_amp_allow=15e6 / 1.5e9,
+                     fatigue_stress_ratio=15 / 33,
+                     source="PP living-hinge sheet: E 1.5 GPa, UTS ~33 MPa, fatigue 15 MPa @1e8; "
+                            "handbook typical, verify by coupon"),
     # ---- tension-torsion strap strands (unbonded yarn/tow/braid; fibre along raster_dir =
     # strand axis). E1/Xt are for the *fibre-equivalent* solid diameter (strand diameter given
     # as the solid fibre area equivalent, not the bulky yarn envelope). Transverse values are
@@ -344,11 +415,31 @@ LIBRARY: dict[str, Material] = {
 }
 STRAP_MATERIALS = ("aramid_yarn", "uhmwpe_braid", "cf_tow")
 # sheet stock cut into strips and clamped (embedded) in the printed fittings, not printed
-SHEET_MATERIALS = ("steel_1095_shim", "steel_301_fh", "fr4_g10")
+SHEET_MATERIALS = ("steel_1095_shim", "steel_301_fh", "fr4_g10", "brass_c260_h", "phosbronze_c510",
+                   "becu_c17200", "ti6al4v", "cf_ud_pultruded_strip", "cf_woven_sheet", "pom_acetal",
+                   "pet_film", "pp_sheet")
 SHIM_STEELS = ("steel_1095_shim", "steel_301_fh")
+# unbonded (dry) stacks of any sheet stock: k = n*k1 (laminate.py); dry stacks never bond
+LAMINABLE_SHEETS = SHEET_MATERIALS
+# metal sheets: modified-Goodman mean-stress check (Su = rotor.STRIP_SU or Xt). Composites and
+# polymers get none (their mean strain is covered by the creep and static-strength checks).
+SHEET_METALS = ("steel_1095_shim", "steel_301_fh", "brass_c260_h", "phosbronze_c510", "becu_c17200",
+                "ti6al4v")
 SHIM_THICKNESSES = {"steel_1095_shim": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
                     "steel_301_fh": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
-                    "fr4_g10": (2e-4, 4e-4)}
+                    "fr4_g10": (2e-4, 4e-4),
+                    "brass_c260_h": (2.5e-5, 5e-5, 7.5e-5, 1.0e-4, 1.3e-4, 2.5e-4),
+                    "phosbronze_c510": (5e-5, 1.0e-4, 1.3e-4, 2.0e-4),
+                    "becu_c17200": (5e-5, 1.0e-4, 1.3e-4, 2.0e-4),
+                    "ti6al4v": (1.0e-4, 2.0e-4, 3.0e-4, 5.0e-4),
+                    "cf_ud_pultruded_strip": (3e-4, 5e-4, 6e-4, 1.0e-3),
+                    "cf_woven_sheet": (2e-4, 3e-4, 5e-4),
+                    "pom_acetal": (2.5e-4, 5e-4, 1.0e-3),
+                    "pet_film": (1.0e-4, 1.9e-4, 2.5e-4, 5e-4),
+                    "pp_sheet": (5e-4, 1.0e-3)}
+# fixed stock widths (m): flat pultruded CF hobby strip (report the nearest); feeler stock 12.7 mm
+SHEET_WIDTHS = {"cf_ud_pultruded_strip": (1e-3, 2e-3, 3e-3, 4e-3, 5e-3, 6e-3, 8e-3, 10e-3),
+                "steel_1095_shim": (12.7e-3,)}
 
 
 # assumed: TPU 95A/64D soften ~100-130 C; PETG-CF Tg ~85 C (form ~90-100); PLA Tg ~60 C;
@@ -365,7 +456,8 @@ CLASS_HDT_C = {"pla": 55, "pla_plus": 55, "pla_tough": 55, "pla_ht": 100, "pla_c
 FORMING_TEMP_C = {"tpu_95a": 100.0, "tpu_64d": 105.0, "petg_cf": 90.0, "pla": 65.0, "pa6_cf": 160.0}
 TG_C = {"cf_rod_pultruded": 110.0, "steel_302_spring": 400.0, "steel_1095_shim": 400.0, "steel_301_fh": 400.0}
 # FR4 Tg ~130-140 C: HDT-type derating applies
-HDT_C_SHEET = {"fr4_g10": 130.0}
+HDT_C_SHEET = {"fr4_g10": 130.0, "pom_acetal": 110.0, "pet_film": 75.0, "pp_sheet": 100.0,
+               "cf_ud_pultruded_strip": 110.0, "cf_woven_sheet": 110.0}
 for _n, _m in list(LIBRARY.items()):
     LIBRARY[_n] = dataclasses.replace(_m, forming_temp_C=FORMING_TEMP_C.get(_n, 0.0), tg_C=TG_C.get(_n, 0.0),
                                       hdt_C=HDT_C.get(_n, HDT_C_SHEET.get(_n, 0.0)))
@@ -418,7 +510,10 @@ _register_filaments()
 # generic entries: class/group for grouping in the GUI and class filters
 _GENERIC_CLASS = {"tpu_95a": "tpu", "tpu_64d": "tpu", "pa6_cf": "pa_cf", "petg_cf": "petg_cf",
                   "pla": "pla", "cf_rod_pultruded": "cf_rod", "steel_302_spring": "steel_wire",
-                  "steel_1095_shim": "steel_shim", "steel_301_fh": "steel_shim", "fr4_g10": "fr4"}
+                  "steel_1095_shim": "steel_shim", "steel_301_fh": "steel_shim", "fr4_g10": "fr4",
+                  "brass_c260_h": "metal_shim", "phosbronze_c510": "metal_shim", "becu_c17200": "metal_shim",
+                  "ti6al4v": "metal_shim", "cf_ud_pultruded_strip": "cf_strip", "cf_woven_sheet": "cf_sheet",
+                  "pom_acetal": "polymer_sheet", "pet_film": "polymer_sheet", "pp_sheet": "polymer_sheet"}
 
 
 def material_class(name: str) -> str | None:

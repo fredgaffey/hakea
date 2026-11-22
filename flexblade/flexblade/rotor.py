@@ -34,7 +34,7 @@ from .beam import (Element, FEModel, State, _edofs, assemble, assemble_internal,
                    assemble_Kmat, element_end_forces, element_end_forces_lin, element_point_maps,
                    skew, solve_static, unit, _logm)
 from .bladegeom import airfoil_coords, resolve_stations
-from .materials import SHIM_STEELS
+from .materials import LAMINABLE_SHEETS, SHEET_METALS, SHIM_STEELS  # noqa: F401
 from .materials import _get_raw, get_material, part_temperature
 from .schema import (BladeHarmonic, CampbellResult, Check, Design, FlexureMember, HarmonicResult,
                      Layup, Mode, PrintOrientation, Results, TrimResult)
@@ -385,8 +385,8 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 phi = 1.0 - 2.0 * t / m.width
                 fq = 1.0 + phi * (Eq / E0 - 1.0)
                 sp = dataclasses.replace(sp, EIy=sp.EIy * fq, EA=sp.EA * fq)
-            if n_lam > 1 and not m.cable and m.kind == "blade" and m.layup.material.startswith(SHIM_STEELS):
-                sp = laminate_section(sp, n_lam)     # unbonded shim stack (laminate.py)
+            if n_lam > 1 and not m.cable and m.kind == "blade" and m.layup.material.startswith(LAMINABLE_SHEETS):
+                sp = laminate_section(sp, n_lam)     # unbonded sheet stack (laminate.py)
             return _cable_section(sp, m.cable_bend_factor) if m.cable else sp
         if m.taper == 1.0 or m.layup.kind != "solid":
             s = sec_at(0.5)
@@ -472,7 +472,7 @@ def build_model(design: Design, ideal_hinge: dict | None = None) -> RotorModel:
                 max_GJ = max(max_GJ, max(s.GJ for s in secs))
                 ids.append(fe.add_element(Element(nodes[i], nodes[i + 1], e2, secs, msecs, fr, tag=tag,
                                                   kind="flexure", blade=k)))
-                if eta_lam > 0 and not m.cable and m.kind == "blade" and m.layup.material.startswith(SHIM_STEELS):
+                if eta_lam > 0 and not m.cable and m.kind == "blade" and m.layup.material.startswith(LAMINABLE_SHEETS):
                     fe.elements[ids[-1]].loss_eta = eta_lam
             member_elems[tag] = ids
             sp = design.flexure.strip_preset_deg
@@ -1789,7 +1789,7 @@ def _fibre_amp(sec: SectionProps, s_amp: np.ndarray, t_hat, freq_hz: float, cabl
         sa = ex * fb.E * mat.storage_scale(freq_hz)
         Xa = mat.Xt if cable else _strength_along(fb, t_hat)
         ge = 1.0
-        if mean is not None and fb.material.startswith(SHIM_STEELS):
+        if mean is not None and fb.material.startswith(SHEET_METALS):
             su = STRIP_SU.get(fb.material, mat.Xt)
             ge = goodman_factor(mean[i] * kt, su)
             if diag is not None:
@@ -1941,14 +1941,14 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                     g["fat_e_n"] = max(g["fat_e_n"], ue)
                     g["fat_s_n"] = max(g["fat_s_n"], us)
                     g["famp_n"] = max(g["famp_n"], amp)
-    shim_groups = [n for n, ms in used.items() if any(m.startswith(SHIM_STEELS) for m in ms)]
+    shim_groups = [n for n, ms in used.items() if any(m.startswith(LAMINABLE_SHEETS) for m in ms)]
     for n in shim_groups:
         for k_ in ("fat_e", "fat_s", "famp", "fat_e_n", "fat_s_n", "famp_n"):
             groups[n][k_] *= kfac
     model.np_info = {}
     for n in shim_groups:
         g = groups[n]
-        E = get_material([m for m in used[n] if m.startswith(SHIM_STEELS)][0]).E1
+        E = get_material([m for m in used[n] if m.startswith(LAMINABLE_SHEETS)][0]).E1
         model.np_info[n] = dict(strain=g["famp_n"], stress=g["famp_n"] * E, util=g["fat_e_n"],
                                 strain_1p=g["famp"], which=g["cross_n"])
     for g in groups.values():
@@ -1994,7 +1994,7 @@ def checks(model: RotorModel, ss: StaticState, hd: HarmonicData | None = None,
                                  if g["fat_s_n"] > 0 else "")))
     for n in shim_groups:
         g = groups[n]
-        mat = get_material([m for m in used[n] if m.startswith(SHIM_STEELS)][0])
+        mat = get_material([m for m in used[n] if m.startswith(LAMINABLE_SHEETS)][0])
         if ff.strip_clamp == "sharp" or Rj <= 0:
             continue
         kap = 2 * g["strain"] / ff.thickness           # peak operating curvature (conservative: incl. axial)
