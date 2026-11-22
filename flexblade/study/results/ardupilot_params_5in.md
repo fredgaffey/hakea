@@ -1,14 +1,14 @@
 # ArduPilot starting parameters, 5" single-rotor vehicle (vehicle_spec_v1.md)
 All values are **starting point, tune on bench**. Fred applies them himself. Names verified in `ardupilot-hakea/libraries/` (submodule empty in worktree; read from the main checkout). Line refs: HN = Filter/HarmonicNotchFilter.cpp, BL = AP_BLHeli/AP_BLHeli.cpp, SC = SRV_Channel/SRV_Channels.cpp, IS = AP_InertialSensor/AP_InertialSensor.cpp.
 
-## 1. Harmonic notch on ESC rpm (hover 1P ~218 Hz = 13.1k rpm, range 190-240 Hz)
+## 1. Harmonic notch on ESC rpm (hover 1P ~237 Hz = 14.2k rpm trimmed, range 204-261 Hz over T0.7-1.25)
 | param | value | why | source |
 |---|---|---|---|
 | INS_HNTCH_ENABLE | 1 | enable (reboot, then refresh params) | HN:66 |
 | INS_HNTCH_MODE | 3 (ESC Telemetry) | rpm from ESC | HN:127 |
 | INS_HNTCH_REF | 1 | enables dynamic tracking; sensor rpm is converted to Hz | HN:121 |
 | INS_HNTCH_FREQ | 160 | MINIMUM tracked frequency for ESC-telemetry mode (HarmonicNotchFilter.cpp @Param FREQ: "the minimum limit of center frequency variation for all other notch types"); must sit below the T0.7 1P (~190 Hz), so NOT the 218 Hz hover value | HN:74 |
-| INS_HNTCH_BW | 60 | about 1/3 of 1P, covers the 190-240 Hz sweep and rpm lag | HN:82 |
+| INS_HNTCH_BW | 60 | about 1/3 of 1P, covers the 204-261 Hz sweep and rpm lag | HN:82 |
 | INS_HNTCH_ATT | 30 | dB; default 40 is deeper than needed for a ~1 rad/s line | HN:90 |
 | INS_HNTCH_HMNCS | 3 (bits 0+1 = 1P and 2P) | 1P = 176 mN m torque-reaction line; 2P = blade-pass of a 2-blade rotor | HN:113 |
 | INS_HNTCH_OPTS | 16 (triple notch) | wider flat stop band per harmonic for a lightly damped rotor | HN:137 |
@@ -30,7 +30,7 @@ Not verified: any AM32-side setting (that is Fred's am32-hakea code) and the H74
 | param | value | source |
 |---|---|---|
 | INS_GYRO_FILTER | 80 Hz (start 60-100) | IS:350 (default is board/vehicle dependent, IS:65-73) |
-One line: a lower cutoff removes more of the 218 Hz line and its noise but adds phase lag inside the attitude loop; 80 Hz is far above the ~10-20 Hz attitude bandwidth (little lag) and gives roughly 17 dB at 218 Hz (assumes second order), with the notch doing the rest.
+One line: a lower cutoff removes more of the ~237 Hz line and its noise but adds phase lag inside the attitude loop; 80 Hz is far above the ~10-20 Hz attitude bandwidth (little lag) and gives roughly 17 dB at 218 Hz (assumes second order), with the notch doing the rest.
 
 ## 3. Outputs (TODO, Fred's own code)
 FRAME_CLASS: TODO. Mixer: TODO.

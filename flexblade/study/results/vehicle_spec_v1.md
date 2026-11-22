@@ -24,13 +24,13 @@ Labels: [MODEL] = simulation estimate, [MEASURED] = from Fred's logs, [EST] = ma
 ## 3. Key numbers (all [MODEL] at T1.0, 0.245 kg)
 - Control authority: cr_pl **0.169** (T1.25 optimiser run, 9 x 4 mm 301 strip, feasible, no hard violations). The authority needed is **0.039-0.053** (5", gusts + 1 mm CG error).
   Nominal screen at T0.7/1.0/1.25 was 0.439/0.284/0.180. Worst perturbed corner has fatigue stress 0.86 of the limit, so margin is not unlimited.
-- Hover: ~13.1k rpm, ~57 W [MODEL, v0]. Rotor tip speed ~87 m/s.
+- Hover: ~14.2k rpm trimmed (12.2k at T0.7, 15.7k at T1.25) [MODEL, flexblade trim of the 301 lead; v0's rigid estimate was 13.1k], ~57 W [MODEL, v0]. Rotor tip speed ~87 m/s.
 - Flight time: ~12.2 min on 650 mAh (v0, 22.2 V x Ah x 0.8 / P). With camera and 850 mAh (~290 g): ~74 W, ~12 min [EST].
 - Vanes (all [MODEL]): fixed set returns ~100 % of rotor torque across T0.7-1.25, so trim needs only +-0.3 deg of servo. Yaw authority is +25 % / -28 % of Q. Yaw rate time constant ~0.5 s.
 - Measured motor facts: R loop 0.154 ohm; at 1500/1800 throttle the 5" setup read 15,650/22,480 rpm; ESC temp reached 59 C. There is no thrust data and no usable current data.
 
 ## 4. Must-haves
-1. **ArduPilot harmonic notch driven by ESC rpm.** The 1P torque reaction (176 mN m [MODEL]) lands at 190-240 Hz and puts ~1 rad/s on gyro z. Without a notch the FC will fight it. AM32 telemetry must give rpm to the H743.
+1. **ArduPilot harmonic notch driven by ESC rpm.** The 1P torque reaction (176 mN m [MODEL]) lands at 204-261 Hz (1P over T0.7-1.25, trimmed rpm) and puts ~1 rad/s on gyro z. Without a notch the FC will fight it. AM32 telemetry must give rpm to the H743.
 2. **Glue the foils at the lands only.** Stack the 9 laminae dry, with no glue between them, and mist the free span with PTFE spray. Use thick slow epoxy (30 min+) on the 8 mm lands. No thin CA near the strips.
    Check after cure: the foils must fan slightly and flex easily. If it feels like a solid plate, scrap that stack.
    Cure 24 h before snipping the breakaway sprues, then pin-balance the rotor.

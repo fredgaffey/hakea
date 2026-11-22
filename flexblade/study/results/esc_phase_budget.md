@@ -2,6 +2,7 @@
 Tags: [F] fact (repo/code read), [E] estimate. Rotor-frame mech deg at 1P; 1 us of timing = 0.0786 deg at hover.
 ## 1. Motor and rates
 - Pole count [E]: 2307 is the usual 12N14P (14 magnets, 7 pole pairs); NOT stated in motor.py or 2307_measured.md, Fred to confirm the eeprom motor_poles value. AM32 uses ZC per mech rev = 3*poles = 42 (main.c:980) [F], so 6 ZC per elec rev, one every 8.57 deg mech.
+- NOTE: trimmed lead rpm is 12.2k/14.2k/15.7k (T0.7/1.0/1.25, trim_convergence.md), ~8 % above the 13.1k used below → ZC intervals ~8 % shorter; conclusions unchanged.
 - Hover 13.1k rpm (218 Hz): f_elec 1528 Hz, ZC every 109 us. T0.7 (rpm ~ sqrt(T) = 10.96k, 183 Hz): 1279 Hz, 130 us. T1.25 (14.65k, 244 Hz): 1709 Hz, 97.5 us [E, thrust ~ rpm^2].
 - [F] measured (2307_measured.md): rpm 15650@1500, 22480@1800; duty->rpm tau 14.5-23.5 ms, ~6.5 ms delay. No ZC, comparator or phase-lag data exists. Everything below is estimate.
 ## 2. Error sources

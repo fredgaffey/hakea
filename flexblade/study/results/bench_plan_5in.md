@@ -24,19 +24,19 @@ Rotor: `study/designs/5in_v8s_2307_m245_301.json`, prints in `study/build/5in_30
 
 ## 3. Spin-up thrust vs rpm (30 min, rotor spinning)
 - SAFETY: clear lexan guard on all sides. Stand out of the rotor plane, at least 2 m away, with glasses on. Mount the motor so thrust reduces the scale reading (rotor above). Slew-limit the throttle, with no punches.
-- Do NOT use 1500 / 1800 throttle as the target. Those gave 15650 / 22480 rpm [MEAS] on the quad prop. This rotor loads the motor differently. Step the throttle up and stop at about 14.7k rpm. 22.5k rpm is 1.7x hover rpm and about 2.9x thrust (about 7 N), far beyond the T1.25 study point.
-- Read rpm from ESC telemetry and the tach. Thrust N = scale drop (g) x 9.81e-3. [MODEL] with T proportional to rpm^2 and hover 13.1k rpm = 2.40 N (0.245 kg design AUW):
+- Do NOT use 1500 / 1800 throttle as the target. Those gave 15650 / 22480 rpm [MEAS] on the quad prop. This rotor loads the motor differently. Step the throttle up and stop at about 16k rpm (just past T1.25). 22.5k rpm is 1.6x hover rpm and about 2.5x thrust (about 7 N), far beyond the T1.25 study point.
+- Read rpm from ESC telemetry and the tach. Thrust N = scale drop (g) x 9.81e-3. [MODEL, flexblade trim of the 301 lead, trim_convergence.md; the older 13.1k hover figure was the v0 rigid estimate] hover 14.2k rpm = 2.40 N (0.245 kg design AUW):
 | point | rpm | thrust |
 |---|---|---|
-| smoke test | 8k | about 91 g |
-| T0.7 | 10.96k | 171 g |
-| T1.0 hover | 13.1k | 245 g |
-| T1.25 | 14.65k | 306 g |
+| smoke test | 8k | about 75 g |
+| T0.7 | 12.25k | 171 g |
+| T1.0 hover | 14.2k | 245 g |
+| T1.25 | 15.67k | 306 g |
 - Pass: thrust within +-20 % at each rpm, rpm steady within 1 %, no table vibration. Slow-mo of the tips: both blades in one plane within 2 mm, no flutter. Note ESC temp (reached 59 C in your logs [MEAS]). Current data are unusable (uncalibrated sensors), so use a clamp meter if you want power (hover 57 W [MODEL, v0]).
 - Thrust under 0.7x or over 1.3x: stop, recheck test 1 and the blade pitch zero.
 
 ## 4. Fatigue soak (45 min including cool-downs)
-- Hold hover rpm 13.1k behind the same guard, 3 x 10 min with cool-downs. 10 min is about 131k 1P cycles, which covers the 1e5-cycle strap test recommended in strap_audit_5in.md. It is 1.3 % of the 1e7 design life [MODEL], so it is a screen, not proof. Without cyclic code only the steady loads are present.
+- Hold hover rpm 14.2k behind the same guard, 3 x 10 min with cool-downs. 10 min is about 142k 1P cycles, which covers the 1e5-cycle strap test recommended in strap_audit_5in.md. It is 1.3 % of the 1e7 design life [MODEL], so it is a screen, not proof. Without cyclic code only the steady loads are present.
 - Afterwards repeat the section 0 fan check and test 1. Pass: k_pitch change under 10 %, stacks still fanned, no cracks at slot mouths, no fretting dust at the clamps, sprue stubs, strap and nut still tight and the strap taut. Fail: any foil crack, a slack strap, or a stiffer stack (laminae stuck).
 
 ## 5. 1P cyclic response (needs ESC cyclic code first)
