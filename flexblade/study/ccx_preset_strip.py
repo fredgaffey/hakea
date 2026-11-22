@@ -196,7 +196,7 @@ def preset_stage():
             strips = beam_hover(d)
         b = max(strips, key=lambda s_: max(s_["sm_hub"], s_["sm_blade"]))
         b0 = stop[b["tag"]]
-        print(f"== {tag} binding {b['tag']} kt {kt:.2f} preset_deg {np.round(b['preset'], 2)}")
+        print(f"== {tag} binding {b['tag']} kt {kt:.2f} preset_deg {np.round(b['preset'], 2) if b['preset'] is not None else None}")
         for nm, k_ in (("stopped", b0), ("hover", b)):
             print(f"   beam {nm}: u_mm {np.round(k_['u'] * 1e3, 4)} rot_deg {np.round(np.degrees(k_['rot']), 3)}; "
                   + "; ".join(f"{e} surf {k_['sm_' + e] / kt / 1e6:.1f} (oop {k_['oop'][i][0] / 1e6:.1f}, in-plane "

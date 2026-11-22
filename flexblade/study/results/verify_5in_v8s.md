@@ -35,3 +35,14 @@ Modelling: ONE 0.05 mm lamina meshed, scaled ×8 analytically (unscaled ratio 0.
 - The split still differs: ccx mid-width (~oop) is 59-68 vs beam oop 144-208, and the ccx edge excess is 105-125 vs beam in-plane 43-48. The totals match but the split does not (LTB coupling vs 3D clamp edge; unresolved).
 - Verdict: the beam is right on total clamp stress to ~25 %. It is conservative at the hub, and at most 15 % unconservative at the blade end. It is NOT 3-4x conservative. The preset/mean state agrees (ccx 1.20x, plate E/(1-nu^2) + clamp Poisson restraint). The alternating sa is not checked by static ccx.
 - Goodman (beam flex0): T1.0 g 1.18, util 0.635; T1.25 g 1.27, util 0.855. The mean enters only through g = 1/(1 - sm/Su). With the ccx+loads sm, util is 0.62 / 0.80 (-2 / -7 %). Even the old ccx-mixed sm only gives 0.57 / 0.71. The DE binding constraint is effectively unchanged.
+
+## Blade-end stress, 3 designs
+`DN=<d> TF=0.7,1.0,1.25 CCXMODES=loads python study/ccx_preset_strip.py preset` (ccx + beam in-plane end loads; ccx strip = highest static-stress strip). ccx/beam peak, hub / blade:
+| design | T0.7 | T1.0 | T1.25 |
+|---|---|---|---|
+| 301 lead (b1.flex0) | 1.23 / 1.51 | 0.89 / 1.15 | 0.75 / 1.01 |
+| 10in v8 (b2.flex0) | 1.08 / 1.83 | 0.64 / 1.08 | 0.45 / 0.70 |
+| 7in crm2204_de2 (b1.flex1) | 1.12 / 1.08 | 1.13 / 1.08 | 1.14 / 1.09 |
+- Beam strain-fatigue util per strip end (evaluate(), includes Kt/fret; hub/blade; T0.7 | T1.0 | T1.25). 301 binding b2.flex2 at T0.7, blade 0.69 (hub 0.53), b1.flex0 hub-binding at T1.0/1.25 (0.56, 0.76). 10in b2.flex2 blade 1.43 at T0.7 (util 1.36 overall), b2.flex0 hub-binding 0.94/0.82 at T1.0/1.25. 7in b2.flex1 both ends equal 0.65/0.61/0.60.
+- Util x blade ratio at the ccx'd strip: 301 b1.flex0 (util 0.47/0.56/0.65 at blade) = 0.71/0.65/0.66; 10in b2.flex0 (0.90/0.65/0.52) = 1.65/0.70/0.36; 7in = 0.70/0.66/0.65. The util-binding strips at T0.7 (301 b2.flex2, 10in b2.flex2) were NOT ccx'd; at 301 b2.flex2 blade 0.69 x 1.51 = 1.05 if the same ratio applied.
+- Verdict: blade ccx/beam is not consistently > 1. It is >1 at T0.7 for the two preset designs (1.5-1.8) and ~1.0-1.15 at T1.0; 7in (no preset) is a flat 1.08-1.09. A single factor ~1.1 covers T >= 1.0 on all three but NOT T0.7 (need 1.5-1.8 there). The T0.7 excess is the beam's in-plane M3 / LTB split, not a uniform bias.
