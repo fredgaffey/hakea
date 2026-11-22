@@ -30,6 +30,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from clean_rotor import blade_loft, frame  # noqa: E402
+from flexblade.cad.solidcraft import naca4  # noqa: E402
 
 from flexblade.cad.solidcraft import _Script, _blade_map, _r, rotor_layout  # noqa: E402
 
@@ -52,7 +53,9 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          slits=1,       # 0: solid printed flexure (no shim slits, no strips, no pauses)
          paddle=0,      # 1: flat T-section test paddles instead of the aero blades
          pad_x0=19.5, pad_x1=60.0, pad_w=12.0, pad_t=3.0, pad_rib=23.0, pad_rw=6.0, pad_hole=2.5, pad_hx=55.0, pad_hy=4.5,
-         inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),))
+         inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),),
+         blade=2,       # 1: clean_rotor.blade_loft (9 sections, 4412, 2 % TE); 2: blade_loft2 below
+         n_sec=18, tc_root=15, tc_tip=9, tc_in=20, te_abs=0.45, tip_min=0.3)
 
 
 def section(lay, p):
@@ -266,6 +269,60 @@ def paddle(S, p, k, join=True):
         S.join("rotor", [f"pad{k}"])
 
 
+def blade_loft2(S, lay, k, name, p):
+    """Blade v2: same design chord/twist, smoother + printable.
+    * n_sec sections, sine-spaced: even at the root (uneven spacing there made the loft spline overshoot into a
+      hook under the root), dense at the tip
+    * thickness tapers tc_root -> tc_tip % (NACA 44tt, same camber line as 4412): stiff root, thin fast tip
+    * trailing edge a fixed te_abs mm thick (two 0.4 mm lines can print it; a 2 % TE is 0.25 mm = not printable)
+    * root fairing: the in-bar section is a tc_in % thick section, so the blade grows out of the bar end
+      as a smooth thick-to-thin taper instead of a step
+    * elliptic tip over the last `tip` mm down to tip_min x chord"""
+    D, R, n = lay["D"], lay["R"], lay["n"]
+    st = sorted(D.blade.stations, key=lambda s_: s_.r_frac)
+    rf = np.array([s_.r_frac * R for s_ in st])
+    ch = np.array([s_.chord * 1e3 for s_ in st])
+    tw = np.array([s_.twist_deg for s_ in st])
+
+    def txt(tc, chord):
+        te = min(p["te_abs"] / chord, 0.06)
+        pts = naca4(f"44{int(round(tc)):02d}", n=41)
+        m = len(pts) // 2
+        pts = [(x, y + te * x / 2) for x, y in pts[:m + 1]] + [(x, y - te * x / 2) for x, y in pts[m + 1:]]
+        return "NACA44\n" + "\n".join(f"{x:.6f} {y:.6f}" for x, y in pts) + "\n"
+
+    ang = 2 * math.pi * (k - 1) / n
+    er = np.array([math.cos(ang), math.sin(ang), 0.0])
+    xd = -np.cross([0, 0, 1.0], er)
+    r0, tip = lay["r_aero"], p["tip"]
+    t = np.linspace(0.0, 1.0, p["n_sec"])
+    rr = r0 + (R - r0) * (0.5 * t + 0.5 * np.sin(np.pi / 2 * t))   # ~3 mm steps at the root, ~1.2 at the tip
+    def chs(r):
+        c = float(np.interp(r, rf, ch))
+        if r > R - tip:
+            c *= math.sqrt(max(1 - ((r - (R - tip)) / tip) ** 2, 0.0)) * (1 - p["tip_min"]) + p["tip_min"]
+        return c
+    zs = -1.0 if k % 2 == 0 else 1.0
+    tw0 = float(np.interp(r0, rf, tw))
+    secs = []
+    for nm, r, c, f, z, pv in p["inb"]:
+        S.add("sketch.create", plane={"origin": _r(r * er + np.array([0, 0, zs * z])), "x_dir": _r(xd, 9), "y_dir": [0, 0, 1]},
+              name=f"{name}_{nm}")
+        S.add("sketch.insert_airfoil", text=txt(p["tc_in"], c), chord=c, pivot=pv, at=[0, 0], angle=round(-f * tw0, 4))
+        S.add("sketch.finish")
+        secs.append({"sketch": f"{name}_{nm}"})
+    for j, r in enumerate(rr):
+        sk = f"{name}_af{j}"
+        c = chs(r)
+        tc = p["tc_root"] + (p["tc_tip"] - p["tc_root"]) * (r - r0) / (R - r0)
+        S.add("sketch.create", plane={"origin": _r(r * er), "x_dir": _r(xd, 9), "y_dir": [0, 0, 1]}, name=sk)
+        S.add("sketch.insert_airfoil", text=txt(tc, c), chord=round(c, 4), pivot=0.25,
+              at=[0, 0], angle=round(-float(np.interp(r, rf, tw)), 4))
+        S.add("sketch.finish")
+        secs.append({"sketch": sk})
+    S.add("solid.loft", sections=secs, body_name=name)
+
+
 def build(design, p=P, ov=OV, blades=True, strips=True):
     lay = rotor_layout(design, ov)
     S = _Script()
@@ -285,7 +342,7 @@ def build(design, p=P, ov=OV, blades=True, strips=True):
             paddle(S, p, k, join=not p["free"])
     elif blades:
         for k in range(1, lay["n"] + 1):
-            blade_loft(S, lay, k, f"aero{k}", p)
+            (blade_loft2 if p["blade"] == 2 else blade_loft)(S, lay, k, f"aero{k}", p)
             S.join("rotor", [f"aero{k}"])
     if strips:
         for k in range(1, lay["n"] + 1):

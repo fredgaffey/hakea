@@ -133,8 +133,12 @@ def rotor_sector_case(design: Design, case_dir: str | Path, rpm: Optional[float]
                       farfield_R: float = 2.5, above_R: float = 2.0, below_R: float = 4.0,
                       background_cells_per_R: int = 12, surface_level: tuple = (4, 5),
                       n_layers: int = 0, np_: int = 8, iterations: int = 1500,
-                      overwrite: bool = True) -> RotorCase:
-    """Write the hover sector case. rpm default = aero trim rpm (hover thrust)."""
+                      overwrite: bool = True, stl: Optional[str | Path] = None) -> RotorCase:
+    """Write the hover sector case. rpm default = aero trim rpm (hover thrust).
+
+    stl: optional ready-made blade-1 surface (ASCII STL in metres, blade along +x, rotation about +z as
+    write_blade_stl), e.g. a mesh of the real CAD (blade + flexure); default = the design's ideal blade.
+    """
     case = Path(case_dir)
     if case.exists() and overwrite:
         shutil.rmtree(case)
@@ -153,7 +157,15 @@ def rotor_sector_case(design: Design, case_dir: str | Path, rpm: Optional[float]
     except Exception as e:  # noqa: BLE001
         if rpm is None:
             raise ValueError(f"rpm required (aero trim failed: {e})") from e
-    V = write_blade_stl(d, case / "constant/triSurface/blade.stl")
+    if stl is None:
+        V = write_blade_stl(d, case / "constant/triSurface/blade.stl")
+    else:
+        txt = Path(stl).read_text()
+        if not txt.lstrip().startswith("solid blade"):
+            raise ValueError("custom stl must be ASCII with solid name 'blade'")
+        (case / "constant/triSurface").mkdir(parents=True, exist_ok=True)
+        (case / "constant/triSurface/blade.stl").write_text(txt)
+        V = np.array([[float(t) for t in ln.split()[1:4]] for ln in txt.splitlines() if ln.lstrip().startswith("vertex")])
     r_in = 0.5 * float(np.linalg.norm(V[:, :2], axis=1).min())
     cell = R / background_cells_per_R
     ncell = _sector_blockmesh(case, n, r_in, farfield_R * R, -below_R * R, above_R * R, cell)
