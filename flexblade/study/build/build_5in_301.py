@@ -20,13 +20,22 @@ OUT = Path("study/build/5in_301"); OUT.mkdir(parents=True, exist_ok=True)
 _d = json.load(open("study/designs/5in_v8s_2307_m245_301.json"))
 _d["flexure"]["strip_slot_clear"] = 0.25     # slot = 9 x 0.05 + 0.25 mm (easy build); width = 4.0 + 0.2 mm
 D = Design.model_validate(_d)
-parts = FT.strip_print_parts(D, breakaway_jig=True)
+# Motor interface (2306/2307, M5 prop shaft): hub boss OD 10 x 12 mm tall (z +-6, flat washer faces
+# top and bottom, OD 10 = M5 washer OD) and a 5.1 mm bore. The boss is built into the hub before the
+# slot cutters, so strip slots / keep-outs stay open. Slot-mouth chamfer 0.5 mm at every jaw exit.
+BOSS_OD, BOSS_H, BORE_D = 10.0, 12.0, 5.1
+parts = FT.strip_print_parts(D, breakaway_jig=True, mouth_chamfer=0.5, hub_boss=(BOSS_OD, BOSS_H))
 fits = parts.pop("_fits")
 bridge_info = parts.pop("_bridge_info")
 prm = fits.params
-# PLACEHOLDER motor interface: no 2307 shaft/bolt pattern exists in the design or fittings.py,
-# so cut a plain 5 mm bore on the rotor axis. Replace with the real shaft/bolt pattern before use.
-parts["rotor"] = FT._sub(parts["rotor"], [FT._cyl(np.array([0.0, 0.0, -30.0]), np.array([0.0, 0.0, 1.0]), 2.5, 60.0)])
+_ax = np.array([0.0, 0.0, 1.0])
+_boss = FT._cyl(np.array([0.0, 0.0, -BOSS_H / 2]), _ax, BOSS_OD / 2, BOSS_H)
+_slots = FT._union(fits.hub_cuts + [fits.keepout])
+boss_chk = dict(od_mm=BOSS_OD, height_mm=BOSS_H, bore_mm=BORE_D,
+                gap_to_strip_keepout_mm=round(float(_boss.min_gap(fits.keepout, 10.0)), 3),
+                boss_cut_by_slots_mm3=round(float((_boss ^ _slots).volume()), 2))
+parts["rotor"] = FT._sub(parts["rotor"], [FT._cyl(np.array([0.0, 0.0, -30.0]), _ax, BORE_D / 2, 60.0)])
+print(boss_chk)
 info = {}
 
 for name, fn in (("rotor", "rotor_jig"),):
@@ -55,7 +64,7 @@ m_model = sum(e.sections[0].mass_per_len * e.L0 for e in M.fe.elements
 lag, pit = FT.motion_range(D)
 clr = FT.fitting_clearance(D, lag, pit, fits=fits)
 rest = float(fits.blade.min_gap(fits.hub, 20.0))
-info.update(params=vars(prm), notes=fits.notes, clearance=clr, rest_gap_mm=rest,
+info.update(motor_boss=boss_chk, params=vars(prm), notes=fits.notes, clearance=clr, rest_gap_mm=rest,
             mass_g=dict(hub_fitting_per_blade=round(m_hub, 2), root_fitting=round(m_root, 2),
                         model_shank=round(m_model, 2), hub_material=HUB_MATERIAL,
                         blade_material=D.blade.layup.material))

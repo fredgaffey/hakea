@@ -75,6 +75,7 @@ class StripParams:
     stop_depth: float = 0.0
     slim: bool = False      # stepped jaws, thin web, per-jaw web hulls (fittings ~40 % lighter)
     blade_extra: float = 0.3  # mm, blade slot depth beyond the land (breakaway jig: OVERDEEP)
+    mouth_chamfer: float = 0.0  # mm, 45 deg chamfer round the slot mouth at each jaw exit (0 = off)
 
 
 def strip_members(design: Design):
@@ -299,6 +300,14 @@ def _side(design, strips, wires, P, s, end, prm: StripParams, Qs=None, axes=None
             jaws.append(_box([0, lo_w, -hn], [prm.land, hi_w, hn], Rm, o))
         depth = prm.stop_depth if prm.stop else prm.land + (80.0 if end == 0 else prm.blade_extra)
         cuts.append(_box([-0.5, cl_w, -H], [depth, ch_w, H], Rm, o))
+        if prm.mouth_chamfer > 0:
+            # 45 deg mouth chamfer: root (full slot size) at x = c, widened by c at the exit face x = 0
+            # (and continued to x = -0.5). The exit face plane x = 0 (jaw-exit datum) is unchanged.
+            c = prm.mouth_chamfer
+            sl = [_box([x, cl_w - (c - x if cl_w == -prm.slot_w / 2 else 0.0), -(H + c - x)],
+                       [x + 0.01, ch_w + (c - x if ch_w == prm.slot_w / 2 else 0.0), H + c - x], Rm, o)
+                  for x in (-0.5, c - 0.01)]
+            cuts.append(mf.Manifold.batch_hull(sl))
         fl = _box([-0.5, cl_w, -(H + R)], [R, ch_w, H + R], Rm, o)
         cyls = [_cyl(o + d * R + nn * k * (H + R) + w * (cl_w - 1.0), w, R, ch_w - cl_w + 2.0)
                 for k in (1, -1)]
@@ -448,7 +457,8 @@ def _keepout(strips, prm: StripParams):
     return _union(ks)
 
 
-def build_strip_fittings(design: Design, blade: int = 1, over_deep: float | None = None) -> StripFittings:
+def build_strip_fittings(design: Design, blade: int = 1, over_deep: float | None = None,
+                         mouth_chamfer: float = 0.0) -> StripFittings:
     """Blade-1 hub and root fittings (frame H, mm) as manifold3d solids, with their cutters."""
     from .geometry import _hinge_frame
     strips, wires, hinge = strip_members(design)
@@ -457,6 +467,8 @@ def build_strip_fittings(design: Design, blade: int = 1, over_deep: float | None
     prm = strip_params(design)
     if over_deep is not None:
         prm = dataclasses.replace(prm, blade_extra=over_deep)
+    if mouth_chamfer > 0:
+        prm = dataclasses.replace(prm, mouth_chamfer=mouth_chamfer)
     P, s, t_, a = _hinge_frame(*hinge)
     P = P * 1e3
     Qs = slot_rotations(design, blade)
@@ -638,7 +650,8 @@ def breakaway_bridges(hub, blade, e, P, ko, n_bridges: int = 4, step: float = 2.
     return _union(parts), info
 
 
-def strip_print_parts(design: Design, breakaway_jig: bool = False) -> dict:
+def strip_print_parts(design: Design, breakaway_jig: bool = False, mouth_chamfer: float = 0.0,
+                      hub_boss: tuple | None = None) -> dict:
     """Printable solids (manifolds, mm, frame H): 'hub' (hub + spokes + all hub fittings) and
     'blade<k>' (blade k airfoil + shank + root fitting), with all cutters applied.
 
@@ -648,12 +661,15 @@ def strip_print_parts(design: Design, breakaway_jig: bool = False) -> dict:
     'bridges' holds the sprues alone. The sprues are snipped after the strips are glued in. The
     blade (not just the root fitting) is joined: the blade is already one body with its fitting in
     the assembled pose, so there is no second joint to align or glue."""
-    fits = build_strip_fittings(design, over_deep=OVERDEEP if breakaway_jig else None)
+    fits = build_strip_fittings(design, over_deep=OVERDEEP if breakaway_jig else None, mouth_chamfer=mouth_chamfer)
     n = design.blade.n_blades
-    fits_k = {1: fits, 0: build_strip_fittings(design, 2, OVERDEEP if breakaway_jig else None) if n > 1 else fits}   # odd / even blades
+    fits_k = {1: fits, 0: build_strip_fittings(design, 2, OVERDEEP if breakaway_jig else None, mouth_chamfer) if n > 1 else fits}   # odd / even blades
     sp = loft_manifold(design, "blade1_spoke", hull=True)
     sp = _mf().Manifold.batch_hull([sp, sp.translate((-1.0, 0.0, 0.0))])  # overlap, not touch, at the centre
     hub_core = _union([loft_manifold(design, "hub", hull=True), sp])
+    if hub_boss is not None:     # (OD, height) mm: flat-faced motor boss on the rotor axis, centred on z = 0
+        od, bh = hub_boss
+        hub_core = _union([hub_core, _cyl(np.array([0.0, 0.0, -bh / 2]), np.array([0.0, 0.0, 1.0]), od / 2, bh)])
     hubs = []
     for par, f_ in fits_k.items():
         core = _sub(hub_core, f_.hub_cuts + [f_.keepout])

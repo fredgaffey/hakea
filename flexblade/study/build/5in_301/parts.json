@@ -3,7 +3,7 @@
   "watertight": true,
   "components": 1,
   "fragments_dropped": 5,
-  "volume_mm3": 4309.4,
+  "volume_mm3": 4293.5,
   "bbox_mm": [
    127.0,
    23.3,
@@ -37,6 +37,13 @@
    ]
   ]
  },
+ "motor_boss": {
+  "od_mm": 10.0,
+  "height_mm": 12.0,
+  "bore_mm": 5.1,
+  "gap_to_strip_keepout_mm": 0.331,
+  "boss_cut_by_slots_mm3": 73.27
+ },
  "params": {
   "t": 0.45,
   "w": 4.0,
@@ -52,7 +59,8 @@
   "stop": false,
   "stop_depth": 8.15,
   "slim": true,
-  "blade_extra": 3.0
+  "blade_extra": 3.0,
+  "mouth_chamfer": 0.5
  },
  "notes": [
   "crossing edge gap 1.36 mm < 2 walls: U jaws, slot open on the crossing edge (strip overhangs the jaw by 0.5 mm)"
@@ -76,16 +84,16 @@
  "mass_check": {
   "hub": {
    "mass_g_fittings": 0.543,
-   "mass_g_trimesh": 0.543,
+   "mass_g_trimesh": 0.541,
    "Ixx_Iyy_Izz_fittings": [
     2.2783154904258853e-08,
     1.1812622113040319e-08,
     2.705078120163614e-08
    ],
    "Ixx_Iyy_Izz_trimesh": [
-    2.27831165304548e-08,
-    1.1812579504977842e-08,
-    2.7050709175016093e-08
+    2.2744963256257603e-08,
+    1.1778141110055264e-08,
+    2.6994393163605128e-08
    ],
    "com_mm_fittings": [
     7.135348366132972,
@@ -93,23 +101,23 @@
     -4.046332719479835
    ],
    "com_mm_trimesh": [
-    7.1353356180118315,
-    0.04634418033649214,
-    -4.046328351841798
+    7.1285209195883885,
+    0.04648992099003985,
+    -4.050299497213877
    ]
   },
   "root": {
    "mass_g_fittings": 0.625,
-   "mass_g_trimesh": 0.625,
+   "mass_g_trimesh": 0.623,
    "Ixx_Iyy_Izz_fittings": [
     2.501481358517917e-08,
     2.341619409676304e-08,
     3.847439183354026e-08
    ],
    "Ixx_Iyy_Izz_trimesh": [
-    2.501479708412835e-08,
-    2.3416191814789994e-08,
-    3.84743760423445e-08
+    2.49785884476475e-08,
+    2.3369289658157903e-08,
+    3.84035120013267e-08
    ],
    "com_mm_fittings": [
     15.813931993401955,
@@ -117,9 +125,9 @@
     3.4013757087459706
    ],
    "com_mm_trimesh": [
-    15.813931330994972,
-    0.0325732543081931,
-    3.4013770671774983
+    15.823919192502935,
+    0.03265553356983356,
+    3.403054596583266
    ]
   }
  }
