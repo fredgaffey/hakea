@@ -1,0 +1,975 @@
+[
+ {
+  "case": "single_min",
+  "tag": "T0.7:J1.57e-06",
+  "rpm": 7375.671066602716,
+  "Q": 0.01972708875151987,
+  "W": 1.388398683128423,
+  "R": 0.07619999999999999,
+  "QWR": 0.18646350093797798,
+  "FM": 0.5074824683224578,
+  "dQ": 0.25760569154012763,
+  "s": 1.0640192766442922,
+  "dQav_Q": 13.894468921617309,
+  "mpt": 0.03003926224155692,
+  "cr": 0.07314346866838357,
+  "cr_pl": 0.07782606062378794,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 13.894468921617309,
+  "capV": 40.35679878269365,
+  "capT": 20.389215592784005,
+  "I0": 2.685560674267842,
+  "checks": {
+   "esc_duty_slew": [
+    0.068,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.501,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.94,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.462,
+    "copper 24.8 W, total 29.2 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.1261459445889297
+ },
+ {
+  "case": "single_min",
+  "tag": "T1:J1.57e-06",
+  "rpm": 8434.666944509578,
+  "Q": 0.026584000722671985,
+  "W": 1.9834266901834614,
+  "R": 0.07619999999999999,
+  "QWR": 0.17589326708502154,
+  "FM": 0.5622813388669562,
+  "dQ": 0.2503854753176741,
+  "s": 1.0673163419793756,
+  "dQav_Q": 10.052682152273373,
+  "mpt": 0.03966202598940001,
+  "cr": 0.06570719117401097,
+  "cr_pl": 0.0701303589255849,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 10.052682152273373,
+  "capV": 28.229747355511268,
+  "capT": 14.829918190707605,
+  "I0": 3.619031059512789,
+  "checks": {
+   "esc_duty_slew": [
+    0.076,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.538,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.937,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.477,
+    "copper 24.4 W, total 30.2 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.044351669728425,
+  "auw": 0.2022532353233226,
+  "P_hover": 35.006648218865784,
+  "Wh": 9.990000000000002,
+  "hover_min": 13.697969511447747
+ },
+ {
+  "case": "single_min",
+  "tag": "T1.25:J1.57e-06",
+  "rpm": 9204.529902800166,
+  "Q": 0.03226477212699477,
+  "W": 2.4792833627293267,
+  "R": 0.07619999999999999,
+  "QWR": 0.17078411155265524,
+  "FM": 0.5933094707826694,
+  "dQ": 0.24446721656114084,
+  "s": 0.5867593819694096,
+  "dQav_Q": 4.445821973779969,
+  "mpt": 0.02521029088880285,
+  "cr": 0.0326225080664965,
+  "cr_pl": 0.019141562671389563,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 8.1066662168572,
+  "capV": 22.20899495657054,
+  "capT": 11.989910175401194,
+  "I0": 4.392386746969671,
+  "checks": {
+   "esc_duty_slew": [
+    0.082,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.565,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.935,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.493,
+    "copper 24.3 W, total 31.2 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9989924390551516
+ },
+ {
+  "case": "single_norm",
+  "tag": "T0.7:J1.57e-06",
+  "rpm": 7918.68155261268,
+  "Q": 0.023100115920672532,
+  "W": 1.680558399928423,
+  "R": 0.07619999999999999,
+  "QWR": 0.18038714250025029,
+  "FM": 0.5375648912495334,
+  "dQ": 0.2540421714923449,
+  "s": 1.0656671402723557,
+  "dQav_Q": 11.719611941884349,
+  "mpt": 0.035253209839151006,
+  "cr": 0.06993521302872666,
+  "cr_pl": 0.07452765847266113,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 11.719611941884349,
+  "capV": 33.45659252679593,
+  "capT": 17.24718738262717,
+  "I0": 3.144750027183156,
+  "checks": {
+   "esc_duty_slew": [
+    0.072,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.519,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.938,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.469,
+    "copper 24.6 W, total 29.7 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.0809292952460907
+ },
+ {
+  "case": "single_norm",
+  "tag": "T1:J1.57e-06",
+  "rpm": 9087.61609138081,
+  "Q": 0.03136765384396136,
+  "W": 2.4007977141834616,
+  "R": 0.07619999999999999,
+  "QWR": 0.17146342573761042,
+  "FM": 0.5890124975854317,
+  "dQ": 0.24539867207822855,
+  "s": 0.5713254192611051,
+  "dQav_Q": 4.469652078815037,
+  "mpt": 0.01196361736466098,
+  "cr": 0.01604812071495084,
+  "cr_pl": 0.009168699295822116,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 8.367117852840746,
+  "capV": 23.00935376494857,
+  "capT": 12.371665026278114,
+  "I0": 4.2702569379832545,
+  "checks": {
+   "esc_duty_slew": [
+    0.081,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.56,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.935,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.49,
+    "copper 24.3 W, total 31.0 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.0052963871507319,
+  "auw": 0.2448132353233226,
+  "P_hover": 43.60816995450932,
+  "Wh": 14.430000000000001,
+  "hover_min": 15.883262258483686
+ },
+ {
+  "case": "single_norm",
+  "tag": "T1.25:J1.57e-06",
+  "rpm": 9941.401842526395,
+  "Q": 0.03821393350093515,
+  "W": 3.000997142729327,
+  "R": 0.07619999999999999,
+  "QWR": 0.16710951941956526,
+  "FM": 0.6175993911397372,
+  "dQ": 0.2383202662323586,
+  "s": 1.0725507354601038,
+  "dQav_Q": 6.688936558083161,
+  "mpt": 0.051665410226884916,
+  "cr": 0.053844370526921155,
+  "cr_pl": 0.057750819209035624,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 6.688936558083161,
+  "capV": 17.889213747878422,
+  "capT": 9.898606547678904,
+  "I0": 5.2022798858899595,
+  "checks": {
+   "esc_duty_slew": [
+    0.087,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.59,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.932,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.513,
+    "copper 24.5 W, total 32.5 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9636081156098633
+ },
+ {
+  "case": "single_cam",
+  "tag": "T0.7:J1.57e-06",
+  "rpm": 8461.814996139792,
+  "Q": 0.026776806510988578,
+  "W": 2.0001767367284224,
+  "R": 0.07619999999999999,
+  "QWR": 0.1756853051015692,
+  "FM": 0.5635072866942776,
+  "dQ": 0.2501839867952999,
+  "s": 1.067405261356749,
+  "dQav_Q": 9.97309756497364,
+  "mpt": 0.03985938987177626,
+  "cr": 0.06542847717772983,
+  "cr_pl": 0.0698387007820688,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 9.97309756497364,
+  "capV": 27.982127394046152,
+  "capT": 14.714282406741031,
+  "I0": 3.6452788069324056,
+  "checks": {
+   "esc_duty_slew": [
+    0.077,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.538,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.937,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.477,
+    "copper 24.4 W, total 30.2 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.0426281857386275
+ },
+ {
+  "case": "single_cam",
+  "tag": "T1:J1.57e-06",
+  "rpm": 9744.758056814973,
+  "Q": 0.03658078778639695,
+  "W": 2.8573953381834607,
+  "R": 0.07619999999999999,
+  "QWR": 0.16800714462832128,
+  "FM": 0.6115824006169247,
+  "dQ": 0.24000306876754476,
+  "s": 1.0718351388508947,
+  "dQav_Q": 7.032208383242136,
+  "mpt": 0.04963275875426609,
+  "cr": 0.05470914240252704,
+  "cr_pl": 0.05863918124342594,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 7.032208383242136,
+  "capV": 18.929503282784754,
+  "capT": 10.407507076454698,
+  "I0": 4.979950480798449,
+  "checks": {
+   "esc_duty_slew": [
+    0.086,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.584,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.933,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.507,
+    "copper 24.4 W, total 32.1 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9724257002948459,
+  "auw": 0.29137323532332254,
+  "P_hover": 53.7042074894518,
+  "Wh": 18.870000000000005,
+  "hover_min": 16.86571764750282
+ },
+ {
+  "case": "single_cam",
+  "tag": "T1.25:J1.57e-06",
+  "rpm": 10682.235489781067,
+  "Q": 0.04470914743581212,
+  "W": 3.5717441727293258,
+  "R": 0.07619999999999999,
+  "QWR": 0.16427106476368805,
+  "FM": 0.6379734336342482,
+  "dQ": 0.2316654946496037,
+  "s": 1.0753235533175813,
+  "dQav_Q": 5.571910384677679,
+  "mpt": 0.057905832030833035,
+  "cr": 0.04928881111796168,
+  "cr_pl": 0.05300141951016566,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 5.571910384677679,
+  "capV": 14.537854117402688,
+  "capT": 8.226988812776328,
+  "I0": 6.086510262413112,
+  "checks": {
+   "esc_duty_slew": [
+    0.092,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.617,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.93,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.54,
+    "copper 24.9 W, total 34.2 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9340915600624211
+ },
+ {
+  "case": "coax_norm",
+  "tag": "T0.7:J1.57e-06",
+  "rpm": 6617.914798448045,
+  "Q": 0.015560567213141745,
+  "W": 1.0290339938784228,
+  "R": 0.07619999999999999,
+  "QWR": 0.19844526033389806,
+  "FM": 0.45752283290893037,
+  "dQ": 0.2620484437093748,
+  "s": 0.0,
+  "dQav_Q": 0.0,
+  "mpt": 0.022486224386230182,
+  "cr": 0.07514730873841612,
+  "cr_pl": 0.0,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "check:harmonic_jitter",
+   "resonance",
+   "pulse_infeasible"
+  ],
+  "capI": 17.882634951465548,
+  "capV": 53.21500931388339,
+  "capT": 26.134140227173482,
+  "I0": 2.118348424508173,
+  "checks": {
+   "esc_duty_slew": [
+    0.062,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.474,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.942,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.455,
+    "copper 25.2 W, total 28.8 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.204316117131328
+ },
+ {
+  "case": "coax_norm",
+  "tag": "T1:J1.57e-06",
+  "rpm": 7532.967201483465,
+  "Q": 0.020670539824694585,
+  "W": 1.4700485626834614,
+  "R": 0.07619999999999999,
+  "QWR": 0.18452922829847557,
+  "FM": 0.516646860047857,
+  "dQ": 0.2566061901113909,
+  "s": 1.0644870662715904,
+  "dQav_Q": 13.214651035502914,
+  "mpt": 0.031574053655688876,
+  "cr": 0.07232872644676495,
+  "cr_pl": 0.07699299382247722,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 13.214651035502914,
+  "capV": 38.19033181948142,
+  "capT": 19.40805656889606,
+  "I0": 2.8139980292231495,
+  "checks": {
+   "esc_duty_slew": [
+    0.069,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.506,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.939,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.464,
+    "copper 24.7 W, total 29.4 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.112187825794563,
+  "auw": 0.2998064706466452,
+  "P_hover": 56.21665028173774,
+  "Wh": 14.430000000000001,
+  "hover_min": 12.320904865884684
+ },
+ {
+  "case": "coax_norm",
+  "tag": "T1.25:J1.57e-06",
+  "rpm": 8191.511313658436,
+  "Q": 0.024907230024265287,
+  "W": 1.8375607033543269,
+  "R": 0.07619999999999999,
+  "QWR": 0.1778806736315394,
+  "FM": 0.5510468977742863,
+  "dQ": 0.25214240757884904,
+  "s": 1.0665293588708953,
+  "dQav_Q": 10.796755802923387,
+  "mpt": 0.03770331116091161,
+  "cr": 0.06789358188478675,
+  "cr_pl": 0.07241049835903024,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 10.796755802923387,
+  "capV": 30.555245856347447,
+  "capT": 15.910158935963826,
+  "I0": 3.3907627375051277,
+  "checks": {
+   "esc_duty_slew": [
+    0.075,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.529,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.938,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.473,
+    "copper 24.5 W, total 29.9 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.0608380581074277
+ },
+ {
+  "case": "tandem_norm",
+  "tag": "T0.7:J1.57e-06",
+  "rpm": 6602.126192327717,
+  "Q": 0.015480641194344273,
+  "W": 1.022169338878423,
+  "R": 0.07619999999999999,
+  "QWR": 0.19875182437585998,
+  "FM": 0.4563796766018092,
+  "dQ": 0.26213420676022203,
+  "s": 0.0,
+  "dQav_Q": 0.0,
+  "mpt": 0.022331139223073237,
+  "cr": 0.07515480552580918,
+  "cr_pl": 0.0,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "check:harmonic_jitter",
+   "resonance",
+   "pulse_infeasible"
+  ],
+  "capI": 17.980125347188174,
+  "capV": 53.532292302993504,
+  "capT": 26.274424415388516,
+  "I0": 2.1074676414571645,
+  "checks": {
+   "esc_duty_slew": [
+    0.062,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.474,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.942,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.454,
+    "copper 25.2 W, total 28.8 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.2061714942881767
+ },
+ {
+  "case": "tandem_norm",
+  "tag": "T1:J1.57e-06",
+  "rpm": 7514.333458930976,
+  "Q": 0.020557232446289486,
+  "W": 1.4602419126834614,
+  "R": 0.07619999999999999,
+  "QWR": 0.18475017804934057,
+  "FM": 0.5155800782919805,
+  "dQ": 0.2567260975112355,
+  "s": 1.0644312382976577,
+  "dQav_Q": 13.292999366095774,
+  "mpt": 0.03139287505821557,
+  "cr": 0.07243047440361448,
+  "cr_pl": 0.07709725955992616,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 13.292999366095774,
+  "capV": 38.43955625136511,
+  "capT": 19.52116945635133,
+  "I0": 2.798572852027367,
+  "checks": {
+   "esc_duty_slew": [
+    0.069,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.505,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.939,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.463,
+    "copper 24.8 W, total 29.3 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.1137987021397482,
+  "auw": 0.29780647064664517,
+  "P_hover": 48.72773477688917,
+  "Wh": 14.430000000000001,
+  "hover_min": 14.214492078718767
+ },
+ {
+  "case": "tandem_norm",
+  "tag": "T1.25:J1.57e-06",
+  "rpm": 8170.649934224381,
+  "Q": 0.024766212667879997,
+  "W": 1.8253023908543267,
+  "R": 0.07619999999999999,
+  "QWR": 0.17806140829329536,
+  "FM": 0.5500491183386221,
+  "dQ": 0.25229040941726594,
+  "s": 1.066462646269762,
+  "dQav_Q": 10.863925835724105,
+  "mpt": 0.037522358604768005,
+  "cr": 0.06806143120654733,
+  "cr_pl": 0.07258497403344182,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 10.863925835724105,
+  "capV": 30.765785807837013,
+  "capT": 16.00756771330877,
+  "I0": 3.3715652435683516,
+  "checks": {
+   "esc_duty_slew": [
+    0.074,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.528,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.938,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.473,
+    "copper 24.5 W, total 29.9 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.062310841160011
+ },
+ {
+  "case": "single_norm_J3.46",
+  "tag": "T0.7:J3.46e-06",
+  "rpm": 7918.68155261268,
+  "Q": 0.023100115920672532,
+  "W": 1.680558399928423,
+  "R": 0.07619999999999999,
+  "QWR": 0.18038714250025029,
+  "FM": 0.5375648912495334,
+  "dQ": 0.2540421714923449,
+  "s": 1.0656671402723557,
+  "dQav_Q": 11.719611941884349,
+  "mpt": 0.03437907397413557,
+  "cr": 0.06820110489460683,
+  "cr_pl": 0.07267967641645062,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 11.719611941884349,
+  "capV": 33.45659252679593,
+  "capT": 17.24718738262717,
+  "I0": 3.144750027183156,
+  "checks": {
+   "esc_duty_slew": [
+    0.072,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.519,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.938,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.469,
+    "copper 24.6 W, total 29.7 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.0809133260098023
+ },
+ {
+  "case": "single_norm_J3.46",
+  "tag": "T1:J3.46e-06",
+  "rpm": 9087.61609138081,
+  "Q": 0.03136765384396136,
+  "W": 2.4007977141834616,
+  "R": 0.07619999999999999,
+  "QWR": 0.17146342573761042,
+  "FM": 0.5890124975854317,
+  "dQ": 0.24539867207822855,
+  "s": 0.5710097012426464,
+  "dQav_Q": 4.467182120976737,
+  "mpt": 0.011967594659297118,
+  "cr": 0.016053455899326448,
+  "cr_pl": 0.009166679056986394,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 8.367117852840746,
+  "capV": 23.00935376494857,
+  "capT": 12.371665026278114,
+  "I0": 4.2702569379832545,
+  "checks": {
+   "esc_duty_slew": [
+    0.081,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.56,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.935,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.49,
+    "copper 24.3 W, total 31.0 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 1.0052843378853455,
+  "auw": 0.2448132353233226,
+  "P_hover": 43.60816995450932,
+  "Wh": 14.430000000000001,
+  "hover_min": 15.883262258483686
+ },
+ {
+  "case": "single_norm_J3.46",
+  "tag": "T1.25:J3.46e-06",
+  "rpm": 9941.401842526395,
+  "Q": 0.03821393350093515,
+  "W": 3.000997142729327,
+  "R": 0.07619999999999999,
+  "QWR": 0.16710951941956526,
+  "FM": 0.6175993911397372,
+  "dQ": 0.2383202662323586,
+  "s": 1.0725507354601038,
+  "dQav_Q": 6.688936558083161,
+  "mpt": 0.05237373242327605,
+  "cr": 0.054582565822912064,
+  "cr_pl": 0.05854257111666386,
+  "bind": "motor_torque_1p",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 6.688936558083161,
+  "capV": 17.889213747878422,
+  "capT": 9.898606547678904,
+  "I0": 5.2022798858899595,
+  "checks": {
+   "esc_duty_slew": [
+    0.087,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.59,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.932,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.513,
+    "copper 24.5 W, total 32.5 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9635972928260697
+ },
+ {
+  "case": "single_norm_5in",
+  "tag": "T0.7:J9.09e-07",
+  "rpm": 11411.528061757825,
+  "Q": 0.019359492234280438,
+  "W": 1.680558399928423,
+  "R": 0.0635,
+  "QWR": 0.1814122576556817,
+  "FM": 0.5340190579671796,
+  "dQ": 0.25449456358620764,
+  "s": 0.6048832376327594,
+  "dQav_Q": 7.951628778226741,
+  "mpt": 0.0484740888886551,
+  "cr": 0.11560079750810252,
+  "cr_pl": 0.06992498466963008,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "check:aeroelastic_stability",
+   "resonance"
+  ],
+  "capI": 14.177283927065773,
+  "capV": 33.50297991659836,
+  "capT": 19.643085567441897,
+  "I0": 2.635517671819243,
+  "checks": {
+   "esc_duty_slew": [
+    0.108,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.641,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.927,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.55,
+    "copper 24.2 W, total 34.8 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9685373258611095
+ },
+ {
+  "case": "single_norm_5in",
+  "tag": "T1:J9.09e-07",
+  "rpm": 13093.741508905316,
+  "Q": 0.026296822524658345,
+  "W": 2.4007977141834616,
+  "R": 0.0635,
+  "QWR": 0.17249399519090525,
+  "FM": 0.5850468865941646,
+  "dQ": 0.24642971066987598,
+  "s": 0.7128208906381007,
+  "dQav_Q": 6.679903842932928,
+  "mpt": 0.06985547067280765,
+  "cr": 0.11291826488690625,
+  "cr_pl": 0.08049049814599349,
+  "bind": "fatigue_stress",
+  "feas": false,
+  "hard": [
+   "resonance"
+  ],
+  "capI": 10.173384542865662,
+  "capV": 22.056683236887284,
+  "capT": 13.851733720261493,
+  "I0": 3.5799358597695874,
+  "checks": {
+   "esc_duty_slew": [
+    0.122,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.7,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.921,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.594,
+    "copper 23.7 W, total 37.6 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.9138956961956115,
+  "auw": 0.2448132353233226,
+  "P_hover": 56.87309300876025,
+  "Wh": 14.430000000000001,
+  "hover_min": 12.178694060006755
+ },
+ {
+  "case": "single_norm_5in",
+  "tag": "T1.25:J9.09e-07",
+  "rpm": 14320.689254997593,
+  "Q": 0.0320437049364543,
+  "W": 3.000997142729327,
+  "R": 0.0635,
+  "QWR": 0.16815253417098833,
+  "FM": 0.6134333016643881,
+  "dQ": 0.23992328500502197,
+  "s": 0.7016659526463935,
+  "dQav_Q": 5.2536372017201804,
+  "mpt": 0.08634604430339347,
+  "cr": 0.10871151254419698,
+  "cr_pl": 0.07627916701295433,
+  "bind": "fatigue_stress",
+  "feas": true,
+  "hard": [],
+  "capI": 8.169492444964803,
+  "capV": 16.518495477697257,
+  "capT": 10.915167179222536,
+  "I0": 4.362291614293765,
+  "checks": {
+   "esc_duty_slew": [
+    0.133,
+    "AM32 duty ramp limit; >1 clips the 1/rev pulse to a triangle"
+   ],
+   "esc_duty_peak": [
+    0.744,
+    ""
+   ],
+   "motor_torque_1p": [
+    0.917,
+    "limit: current"
+   ],
+   "motor_thermal": [
+    0.635,
+    "copper 23.5 W, total 40.2 W, Rth 1.50 K/W (guess)"
+   ]
+  },
+  "pitch_pr": 0.884010372730722
+ }
+]
