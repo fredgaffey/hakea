@@ -300,6 +300,8 @@ class Flexure(_M):
     strip_stop: bool = Field(False, description="easy-build fittings: slots are blind with a printed "
                              "stop (depth land + STOP_BIAS/2 from each exit) and 0.25 mm thickness "
                              "clearance, so the free length is set by the print")
+    strip_slot_clear: float = Field(-1.0, description="mm, slot thickness clearance over the stack; "
+                                    "<0 = default (0.05, or 0.25 with strip_stop)")
     fitting_slim: bool = Field(False, description="slim steelx fittings: stepped jaws (1.5 mm "
                                "faces past the exit radius), 2 mm web, no filler between the jaws "
                                "(walls >= 1.2 mm, clamp lands kept)")

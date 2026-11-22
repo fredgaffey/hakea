@@ -274,7 +274,8 @@
   "root_envelope_ratio": 2.0,
   "topopt": null,
   "ideal": null,
-  "strip_stop": true
+  "strip_stop": false,
+  "strip_slot_clear": 0.25
  },
  "motor": {
   "name": "3115_640kv_6s",

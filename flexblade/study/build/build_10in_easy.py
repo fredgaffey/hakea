@@ -1,4 +1,4 @@
-"""Build the printable parts (printed strip stop) for 10in_easy_steelx (run from flexblade/).
+"""Build the printable parts (one-piece breakaway jig print) for 10in_easy_steelx (run from flexblade/).
 
 Parts come from flexblade.fittings (parametric clamp fittings built by manifold3d CSG from the
 flexure parameters: clamp lands + slots, radiused jaw exits, free span = modelled strip length,
@@ -18,21 +18,24 @@ from flexblade.geometry import HUB_MATERIAL
 
 OUT = Path("study/build/10in_easy"); OUT.mkdir(parents=True, exist_ok=True)
 D = Design.model_validate(json.load(open("study/designs/10in_easy_steelx.json")))
-parts = FT.strip_print_parts(D)
+parts = FT.strip_print_parts(D, breakaway_jig=True)
 fits = parts.pop("_fits")
+bridge_info = parts.pop("_bridge_info")
 prm = fits.params
 info = {}
 
-for name, fn in (("hub", "hub_fitting_assembly"), ("blade1", "blade1_with_root_fitting"),
-                 ("blade2", "blade2_with_root_fitting")):
+for name, fn in (("rotor", "rotor_jig"),):
     m, kept, dropped = FT.to_trimesh(parts[name])
     m.export(OUT / f"{fn}.stl")
     m2 = trimesh.load(OUT / f"{fn}.stl", process=True)
     info[fn] = dict(watertight=bool(m2.is_watertight), components=kept, fragments_dropped=dropped,
-                    volume_mm3=round(float(m2.volume), 1), bbox_mm=np.round(m2.extents, 1).tolist())
+                    volume_mm3=round(float(m2.volume), 1), bbox_mm=np.round(m2.extents, 1).tolist(),
+                    bridge_volume_mm3=round(parts["bridges"].volume(), 2),
+                    bridges=[[dict(a=a_, b=b_, length_mm=round(g, 2)) for a_, b_, g in bi] for bi in bridge_info])
     print(fn, info[fn])
-for p in OUT.glob("blade_with_root_fitting.stl"):
-    p.unlink()                                   # old single-blade file (blade 2 is mirrored)
+for old in ("blade_with_root_fitting", "hub_fitting_assembly", "blade1_with_root_fitting", "blade2_with_root_fitting"):
+    for p in OUT.glob(old + ".stl"):
+        p.unlink()                               # superseded by the one-piece jig print
 
 rho_hub = get_material(HUB_MATERIAL).rho
 rho_bl = get_material(D.blade.layup.material).rho
@@ -97,4 +100,4 @@ info["mass_check"] = chk
 print(json.dumps(chk, indent=1, default=float))
 
 (OUT / "parts.json").write_text(json.dumps(info, indent=1, default=float))
-print("stop free length mm", FT.stop_free_length(D), "design L", prm.L)
+print("jig free length mm (print sets jaw exits)", prm.L)

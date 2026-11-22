@@ -24,6 +24,7 @@ the radial x axis through the hinge point) and returns the minimum gap to the hu
 """
 from __future__ import annotations
 
+import dataclasses
 import math
 from dataclasses import dataclass
 from functools import lru_cache
@@ -43,6 +44,11 @@ CH_LEN = 8.0            # mm, strand channel length from the strand end to the k
 SEG = 48
 WEB_T_SLIM = 2.0        # mm, slim web slab thickness (> WALL, two perimeters + skin)
 STOP_CLEAR = 0.25       # mm, slot thickness clearance over the stack (strip_stop)
+OVERDEEP = 3.0          # mm, blade slot depth beyond the land in the breakaway-jig build (no stops)
+SPRUE = 1.2             # mm, breakaway bridge square section
+SPRUE_NECK = 0.8        # mm, notched (necked) section at both joints
+SPRUE_NECK_LEN = 0.8    # mm, neck length at each joint
+SPRUE_CLEAR = 0.6       # mm, bridge clearance to strips, strand and channels
 STOP_BIAS = 0.3         # mm, stop-to-stop distance over the nominal cut length (free length biased long)
 JAW_FACE_SLIM = 1.5     # mm, slim jaw face wall over the slot beyond the exit radius (>= WALL)
 
@@ -68,6 +74,7 @@ class StripParams:
     stop: bool = False      # printed stop: blind slots, stop face at stop_depth from each exit
     stop_depth: float = 0.0
     slim: bool = False      # stepped jaws, thin web, per-jaw web hulls (fittings ~40 % lighter)
+    blade_extra: float = 0.3  # mm, blade slot depth beyond the land (breakaway jig: OVERDEEP)
 
 
 def strip_members(design: Design):
@@ -122,8 +129,9 @@ def strip_params(design: Design) -> StripParams:
     R = f.strip_clamp_radius * 1e3 if f.strip_clamp_radius > 0 else 10.0 * t_lam
     d = f.strap_strand_diameter * 1e3
     stop = bool(getattr(f, "strip_stop", False))
+    sc = float(getattr(f, "strip_slot_clear", -1.0))
     land = max(4.0 * math.sqrt(w), 5.0)
-    return StripParams(t=t, w=w, L=L, land=land, slot_t=t + (STOP_CLEAR if stop else SLOT_ALLOW),
+    return StripParams(t=t, w=w, L=L, land=land, slot_t=t + (sc if sc >= 0 else (STOP_CLEAR if stop else SLOT_ALLOW)),
                        stop=stop, stop_depth=land + STOP_BIAS / 2,
                        slot_w=w + 2 * SIDE, jaw_r=R, wall=WALL, strand_d=d,
                        channel_d=d + CH_CLEAR, well_d=max(2.5 * d, 3.5), slim=bool(f.fitting_slim))
@@ -289,7 +297,7 @@ def _side(design, strips, wires, P, s, end, prm: StripParams, Qs=None, axes=None
                                 _box([x1 - 0.01, lo_w, -hs], [prm.land, hi_w, hs], Rm, o)]))
         else:
             jaws.append(_box([0, lo_w, -hn], [prm.land, hi_w, hn], Rm, o))
-        depth = prm.stop_depth if prm.stop else prm.land + (80.0 if end == 0 else 0.3)
+        depth = prm.stop_depth if prm.stop else prm.land + (80.0 if end == 0 else prm.blade_extra)
         cuts.append(_box([-0.5, cl_w, -H], [depth, ch_w, H], Rm, o))
         fl = _box([-0.5, cl_w, -(H + R)], [R, ch_w, H + R], Rm, o)
         cyls = [_cyl(o + d * R + nn * k * (H + R) + w * (cl_w - 1.0), w, R, ch_w - cl_w + 2.0)
@@ -440,13 +448,15 @@ def _keepout(strips, prm: StripParams):
     return _union(ks)
 
 
-def build_strip_fittings(design: Design, blade: int = 1) -> StripFittings:
+def build_strip_fittings(design: Design, blade: int = 1, over_deep: float | None = None) -> StripFittings:
     """Blade-1 hub and root fittings (frame H, mm) as manifold3d solids, with their cutters."""
     from .geometry import _hinge_frame
     strips, wires, hinge = strip_members(design)
     if not strips:
         raise ValueError("design has no strip flexure members")
     prm = strip_params(design)
+    if over_deep is not None:
+        prm = dataclasses.replace(prm, blade_extra=over_deep)
     P, s, t_, a = _hinge_frame(*hinge)
     P = P * 1e3
     Qs = slot_rotations(design, blade)
@@ -571,12 +581,74 @@ def _mirror_rot(m, k: int, n: int):
     return m.rotate((0.0, 0.0, 360.0 * (k - 1) / n))
 
 
-def strip_print_parts(design: Design) -> dict:
+def breakaway_bridges(hub, blade, e, P, ko, n_bridges: int = 4):
+    """2-4 thin breakaway sprues (SPRUE square, necked to SPRUE_NECK for SPRUE_NECK_LEN at both
+    joints) between the hub fitting and the root fitting in the assembled pose (blade-1 frame).
+    Each runs along the web-plane normal (62 deg from horizontal for 10in_easy: prints unsupported),
+    is anchored 1 mm inside both webs, and clears the strip keep-out, the strand path and every
+    cutter in `ko` (strip + strand keep-out). Returns (manifold, [(a, b, gap_mm)])."""
+    e = np.asarray(e, float)
+    P = np.asarray(P, float)
+    v = np.array([0.0, 1.0, 0.0])
+    u = np.cross(v, e); u /= np.linalg.norm(u)
+    R = np.c_[e, u, v]
+    both = _union([hub, blade])
+
+    def seg(t0, t1, a, b, sz):
+        return _box([t0, -sz / 2, -sz / 2], [t1, sz / 2, sz / 2], R, P + a * u + b * v)
+
+    cand = []
+    for a in np.arange(-30.0, 60.0, 2.0):
+        for b in np.arange(-20.0, 20.1, 2.0):
+            line = seg(-80.0, 80.0, a, b, 0.4)
+            hp, bp = line ^ hub, line ^ blade
+            if hp.is_empty() or bp.is_empty():
+                continue
+            vh = np.asarray(hp.to_mesh().vert_properties)[:, :3]
+            vb = np.asarray(bp.to_mesh().vert_properties)[:, :3]
+            th = float(((vh - (P + a * u + b * v)) @ e).max())
+            tb = float(((vb - (P + a * u + b * v)) @ e).min())
+            gap = tb - th
+            if not (2 * SPRUE_NECK_LEN + 1.0 < gap < 20.0):
+                continue
+            anc_h, anc_b = seg(th - 1.0, th, a, b, SPRUE), seg(tb, tb + 1.0, a, b, SPRUE)
+            full = SPRUE * SPRUE * 1.0 * 0.995
+            if (anc_h ^ hub).volume() < full or (anc_b ^ blade).volume() < full:
+                continue
+            mid = seg(th + 1e-3, tb - 1e-3, a, b, SPRUE + 2 * SPRUE_CLEAR / 2)
+            if not (mid ^ _union([both, ko])).is_empty():
+                continue
+            cand.append((a, b, th, tb))
+    if len(cand) < 2:
+        raise ValueError("no clear breakaway bridge sites between the fittings")
+    gmin = min(c[3] - c[2] for c in cand)
+    cand = [c for c in cand if c[3] - c[2] < gmin + 3.0] if sum(c[3] - c[2] < gmin + 3.0 for c in cand) >= 3 else cand
+    pick = [max(cand, key=lambda c: (c[0] - np.mean([x[0] for x in cand])) ** 2 + (c[1] ** 2) * 4)]
+    while len(pick) < min(n_bridges, len(cand)):
+        pick.append(max(cand, key=lambda c: min((c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2 for p in pick)))
+    parts, info = [], []
+    nl = SPRUE_NECK_LEN
+    for a, b, th, tb in pick:
+        parts += [seg(th - 1.0, th, a, b, SPRUE), seg(th - 1e-3, th + nl, a, b, SPRUE_NECK),
+                  seg(th + nl - 1e-3, tb - nl + 1e-3, a, b, SPRUE),
+                  seg(tb - nl, tb + 1e-3, a, b, SPRUE_NECK), seg(tb, tb + 1.0, a, b, SPRUE)]
+        info.append((float(a), float(b), float(tb - th)))
+    return _union(parts), info
+
+
+def strip_print_parts(design: Design, breakaway_jig: bool = False) -> dict:
     """Printable solids (manifolds, mm, frame H): 'hub' (hub + spokes + all hub fittings) and
-    'blade<k>' (blade k airfoil + shank + root fitting), with all cutters applied."""
-    fits = build_strip_fittings(design)
+    'blade<k>' (blade k airfoil + shank + root fitting), with all cutters applied.
+
+    breakaway_jig=True: easy build. Blade slots are over-deep (land + OVERDEEP, no stops) and the
+    whole rotor prints as ONE body 'rotor' (hub + every blade) with 2-4 breakaway sprues holding
+    each blade's root fitting at its assembled pose, so the print sets the jaw-exit spacing;
+    'bridges' holds the sprues alone. The sprues are snipped after the strips are glued in. The
+    blade (not just the root fitting) is joined: the blade is already one body with its fitting in
+    the assembled pose, so there is no second joint to align or glue."""
+    fits = build_strip_fittings(design, over_deep=OVERDEEP if breakaway_jig else None)
     n = design.blade.n_blades
-    fits_k = {1: fits, 0: build_strip_fittings(design, 2) if n > 1 else fits}   # odd / even blades
+    fits_k = {1: fits, 0: build_strip_fittings(design, 2, OVERDEEP if breakaway_jig else None) if n > 1 else fits}   # odd / even blades
     sp = loft_manifold(design, "blade1_spoke", hull=True)
     sp = _mf().Manifold.batch_hull([sp, sp.translate((-1.0, 0.0, 0.0))])  # overlap, not touch, at the centre
     hub_core = _union([loft_manifold(design, "hub", hull=True), sp])
@@ -607,5 +679,21 @@ def strip_print_parts(design: Design) -> dict:
         shank = mf.Manifold.batch_hull([env_k, shank0]).trim_by_plane(tuple(ek), off)
         bk = _sub(_union([fb, shank, body]), cuts)
         out[f"blade{k}"] = bk.rotate((0.0, 0.0, 360.0 * (k - 1) / n))
+        if breakaway_jig:
+            hk = dict(hubs)[k % 2]
+            fz = (lambda m_: m_.mirror((0.0, 0.0, 1.0))) if k % 2 == 0 else (lambda m_: m_)
+            zs = np.array([1.0, 1.0, -1.0 if k % 2 == 0 else 1.0])
+            keep = [fz(fk.keepout)]
+            for m in strip_members(design)[1]:           # strand path keep-out
+                a0, a1 = np.asarray(m.p0, float) * 1e3 * zs, np.asarray(m.p1, float) * 1e3 * zs
+                keep.append(_cyl(a0, a1 - a0, fk.params.channel_d / 2 + SPRUE_CLEAR + WALL,
+                                 float(np.linalg.norm(a1 - a0))))
+            br, binfo = breakaway_bridges(fz(hk), bk, ek, fk.hinge_point * zs, _union(keep))
+            out.setdefault("_bridges", []).append(br.rotate((0.0, 0.0, 360.0 * (k - 1) / n)))
+            out.setdefault("_bridge_info", []).append(binfo)
     out["_fits"] = fits
+    if breakaway_jig:
+        br = _union(out.pop("_bridges"))
+        out["bridges"] = br
+        out["rotor"] = _union([out.pop("hub")] + [out.pop(f"blade{k}") for k in range(1, n + 1)] + [br])
     return out
