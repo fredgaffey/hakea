@@ -156,7 +156,7 @@ def ccx_strip(s, mat, wd: Path, nl=40, nw=12, nt=2, mixed=True):
 
 def strip_stage():
     D = Design.model_validate_json(DES.read_text())
-    for tag, d in robust.variants(D, thrust_factors=(0.7, 1.0)):
+    for tag, d in robust.variants(D, thrust_factors=tuple(float(x) for x in __import__("os").environ.get("TF","0.7,1.0").split(","))):
         with R.part_temperature(d.op.ambient_C):
             strips = beam_hover(d)
             mat = M.get_material("steel_1095_shim")
