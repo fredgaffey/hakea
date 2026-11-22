@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flexblade recap: what we tried, what works, what doesn't</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;background:#f6f6f3;color:#222;margin:0;line-height:1.5}
+  main{max-width:1000px;margin:0 auto;padding:24px 20px 80px}
+  h1{font-size:28px;margin:8px 0 4px}
+  h2{font-size:22px;margin:40px 0 8px;padding-bottom:4px;border-bottom:2px solid #c9cfd4}
+  h3{font-size:17px;margin:22px 0 6px}
+  p,li{font-size:15.5px}
+  .sub{color:#555;margin-top:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 16px;background:#fff}
+  th,td{border:1px solid #d6d6d0;padding:5px 8px;vertical-align:top;text-align:left}
+  th{background:#e3e7eb;font-weight:600}
+  tbody tr:nth-child(even) td{background:#f2f2ee}
+  tr.grp td{background:#d9dfe6 !important;font-weight:600;color:#1f3347}
+  .st{display:inline-block;padding:0 6px;border-radius:3px;font-size:12px;font-weight:600;white-space:nowrap}
+  .ok{background:#d9ead3;color:#274e13}
+  .no{background:#f4cccc;color:#660000}
+  .op{background:#fff2cc;color:#7f6000}
+  .pt{background:#dbe6f4;color:#1c4587}
+  .box{background:#fff;border:1px solid #d0d6da;border-left:5px solid #3d85c6;padding:10px 14px;margin:12px 0}
+  .warn{border-left-color:#e69138}
+  .good{border-left-color:#6aa84f}
+  nav.toc{background:#fff;border:1px solid #d0d6da;padding:10px 18px;margin:16px 0}
+  nav.toc ol{margin:4px 0;padding-left:22px;columns:2;column-gap:30px}
+  nav.toc a{text-decoration:none;color:#1c4587}
+  code{font-size:13px;background:#ececE8;padding:0 3px;border-radius:2px}
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:12px}
+  figure{margin:0;background:#fff;border:1px solid #d6d6d0;padding:8px}
+  figure img{width:100%;height:auto;display:block;background:#fff}
+  figcaption{font-size:13px;color:#444;margin-top:6px}
+  svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+  .small{font-size:13px;color:#555}
+  ul.tight li{margin:3px 0}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Flexblade: the full recap</h1>
+<p class="sub">Swashplate-less cyclic control through a flexure hinge. Every idea, test, mistake and the current state, as of 2026-11-22 about 18:30.
+Sources: <code>study/campaign/LOG.md</code> (iterations 1–45), <code>study/results/*.md</code>, <code>study/build/*/BUILD.md</code>, <code>docs/AGENT-LOG.md</code>.</p>
+
+<div class="box warn"><b>Read this first.</b> Every number on this page comes from the simulator: a nonlinear beam model checked against CalculiX FEA, with blade aerodynamics, a motor/ESC model and stability analysis. <b>Nothing has been built or spun yet.</b> Several numbers moved by 20–90 % when we found model bugs (section 7). Treat the figures as the best current estimate. Bench data is still the deciding evidence.</div>
+
+<div class="box"><b>Short version.</b> Printed plastic cannot be the hinge. Every TPU/PETG/nylon hinge fails on creep or fatigue, or gives about 30× too little control. What works is a <b>split load path</b>. An aramid strand carries the centrifugal pull. Two crossed stacks of very thin spring-steel strips form the hinge and only bend. The current best design is a <b>5" rotor on your 2307 1300KV</b> with 9 × 4 mm × 0.05 mm stainless laminae per strip. It scores a control ratio of <b>0.169</b>, about 3–4× what a ~245 g vehicle needs, and passes every model check. Its biggest open risk is <b>slot angle accuracy</b>: a 0.5° in-plane mismatch between the two ends of a strip fails about half of the simulated builds. The fix is a datum wall in the print.</div>
+
+<nav class="toc"><b>Contents</b>
+<ol>
+  <li><a href="#s1">What we're building</a></li>
+  <li><a href="#s2">The physics that decides everything</a></li>
+  <li><a href="#s3">Timeline</a></li>
+  <li><a href="#s4">Every idea and concept tried</a></li>
+  <li><a href="#s5">What doesn't work, and why</a></li>
+  <li><a href="#s6">Tests and verification done</a></li>
+  <li><a href="#s7">Model bugs and wrong claims we corrected</a></li>
+  <li><a href="#s8">Current best design and its open risks</a></li>
+  <li><a href="#s9">Materials and sourcing findings</a></li>
+  <li><a href="#s10">Decisions waiting on you, and next steps</a></li>
+  <li><a href="#s11">Gallery</a></li>
+</ol></nav>
+
+<!-- ============================================================ -->
+<h2 id="s1">1. What we're building</h2>
+<p>A two-blade rotor on a single motor that can also <b>tilt the vehicle</b>, with no swashplate, no servos on the rotor and no pitch links. The only control input is the motor itself. On top of the normal throttle, the ESC adds a small <b>torque pulse once per revolution</b>, timed to the rotor angle. Each blade is attached to the hub through a <b>flexure hinge whose axis is skewed</b> (tilted about 60° from the span). When the pulse speeds the hub up, the blade's inertia makes it swing back (lag) on that hinge. Because the hinge is skewed, swinging back also twists the blade in pitch. Blade 2's hinge is the mirror image, so the same pulse pitches blade 1 up and blade 2 down. That is <b>cyclic pitch</b>. One side of the disc lifts more, the rotor produces a hub moment, and the vehicle tilts. The pulse timing chooses the direction.</p>
+<p>The principle is published (Paulos &amp; Yim 2013–2018 used a passive hinge; Vertiq sells a commercial version). Our differences are the <b>bearing-free flexure</b>, the deliberate tuning of the blade's "mechanism mode" just below 1/rev, per-unit gain/phase calibration, and the ESC governor findings. The figure of merit throughout is the <b>control ratio</b> <i>cr</i> = hub moment ÷ (weight × rotor radius). <i>cr_pl</i> is that ratio at the largest pulse the design can take before something hits its limit (fatigue, motor heat, current).</p>
+
+<svg viewBox="0 0 960 430" width="100%" role="img" aria-label="How the cyclic flexure rotor works" style="background:#fff;border:1px solid #d0d6da">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#38761d"/></marker>
+  </defs>
+  <!-- chain of 5 boxes -->
+  <g font-size="13" fill="#222">
+    <rect x="15" y="15" width="172" height="150" rx="8" fill="#eef3f8" stroke="#3d85c6"/>
+    <text x="27" y="37" font-weight="700">1. Torque pulse</text>
+    <text x="27" y="57">The ESC adds a small</text>
+    <text x="27" y="74">torque pulse once per</text>
+    <text x="27" y="91">rev, timed to the</text>
+    <text x="27" y="108">rotor angle.</text>
+    <path d="M30,140 C45,118 60,118 75,140 S105,162 120,140 S150,118 165,140" fill="none" stroke="#3d85c6" stroke-width="2"/>
+    <text x="80" y="160" font-size="11" fill="#555">1 cycle per rev</text>
+
+    <rect x="202" y="15" width="172" height="150" rx="8" fill="#eef3f8" stroke="#3d85c6"/>
+    <text x="214" y="37" font-weight="700">2. Blades lag</text>
+    <text x="214" y="57">The hub surges and</text>
+    <text x="214" y="74">slows; the blades'</text>
+    <text x="214" y="91">inertia makes them</text>
+    <text x="214" y="108">swing back and forth</text>
+    <text x="214" y="125">on their hinges.</text>
+
+    <rect x="389" y="15" width="172" height="150" rx="8" fill="#eef3f8" stroke="#3d85c6"/>
+    <text x="401" y="37" font-weight="700">3. Skewed hinge</text>
+    <text x="401" y="57">Hinge axis tilted</text>
+    <text x="401" y="74">~60°, so swinging</text>
+    <text x="401" y="91">back also twists the</text>
+    <text x="401" y="108">blade: lag → pitch</text>
+    <text x="401" y="125">(gain ≈ tan skew,</text>
+    <text x="401" y="142">1.88 at 62°).</text>
+
+    <rect x="576" y="15" width="172" height="150" rx="8" fill="#eef3f8" stroke="#3d85c6"/>
+    <text x="588" y="37" font-weight="700">4. Cyclic pitch</text>
+    <text x="588" y="57">Blade 2's hinge is a</text>
+    <text x="588" y="74">mirror image: one</text>
+    <text x="588" y="91">blade pitches up while</text>
+    <text x="588" y="108">the other pitches</text>
+    <text x="588" y="125">down, once per rev.</text>
+
+    <rect x="763" y="15" width="182" height="150" rx="8" fill="#eef3f8" stroke="#3d85c6"/>
+    <text x="775" y="37" font-weight="700">5. Tilt control</text>
+    <text x="775" y="57">One side of the disc</text>
+    <text x="775" y="74">lifts more → hub</text>
+    <text x="775" y="91">moment → vehicle</text>
+    <text x="775" y="108">tilts. Pulse timing</text>
+    <text x="775" y="125">sets the direction.</text>
+    <text x="775" y="142">No swashplate.</text>
+  </g>
+  <g stroke="#444" stroke-width="2" marker-end="url(#ar)">
+    <line x1="188" y1="90" x2="200" y2="90"/><line x1="375" y1="90" x2="387" y2="90"/>
+    <line x1="562" y1="90" x2="574" y2="90"/><line x1="749" y1="90" x2="761" y2="90"/>
+  </g>
+
+  <!-- top view rotor -->
+  <g>
+    <text x="20" y="200" font-size="13" font-weight="700" fill="#222">Top view at the moment of the pulse</text>
+    <path d="M262,292 L440,296 L440,306 L262,310 z" fill="#d9ead3" stroke="#38761d"/>
+    <path d="M218,292 L40,296 L40,306 L218,310 z" fill="#f4cccc" stroke="#990000"/>
+    <rect x="244" y="290" width="16" height="22" fill="#f6b26b" stroke="#b45f06"/>
+    <rect x="220" y="290" width="16" height="22" fill="#f6b26b" stroke="#b45f06"/>
+    <circle cx="240" cy="301" r="14" fill="#9fc5e8" stroke="#3d85c6"/>
+    <path d="M200,262 A55,55 0 0 1 285,268" fill="none" stroke="#444" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="215" y="250" font-size="12" fill="#444">rotation</text>
+    <text x="300" y="285" font-size="12" fill="#274e13">blade 1: lag → nose UP (more lift)</text>
+    <text x="40" y="335" font-size="12" fill="#660000">blade 2 (mirrored hinge): nose DOWN</text>
+    <path d="M440,330 A140,140 0 0 1 300,380" fill="none" stroke="#38761d" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arg)"/>
+    <text x="300" y="402" font-size="12" fill="#38761d">disc tilts toward the low-lift side</text>
+    <text x="20" y="420" font-size="11" fill="#666">Hub (blue), printed root fittings (orange). The pulse phase sets which azimuth gets the extra lift.</text>
+  </g>
+
+  <!-- blade root close-up -->
+  <g>
+    <text x="500" y="200" font-size="13" font-weight="700" fill="#222">Blade root, side view (one blade)</text>
+    <rect x="510" y="255" width="60" height="90" fill="#9fc5e8" stroke="#3d85c6"/>
+    <text x="518" y="360" font-size="11" fill="#1c4587">hub (print)</text>
+    <rect x="690" y="255" width="50" height="90" fill="#f6b26b" stroke="#b45f06"/>
+    <text x="684" y="360" font-size="11" fill="#7f3f00">blade root (print)</text>
+    <path d="M740,288 L935,294 L935,306 L740,312 z" fill="#ddd" stroke="#888"/>
+    <text x="850" y="285" font-size="11" fill="#555">blade</text>
+    <line x1="575" y1="262" x2="685" y2="338" stroke="#222" stroke-width="4"/>
+    <line x1="575" y1="338" x2="685" y2="262" stroke="#222" stroke-width="4"/>
+    <line x1="570" y1="300" x2="690" y2="300" stroke="#38761d" stroke-width="3"/>
+    <line x1="590" y1="395" x2="670" y2="205" stroke="#cc0000" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="672" y="222" font-size="11" fill="#cc0000">virtual hinge axis, skewed ~62°</text>
+    <text x="505" y="390" font-size="11" fill="#222">black: two crossed stacks of thin steel strips = the hinge (they bend, carry little pull)</text>
+    <text x="505" y="406" font-size="11" fill="#38761d">green: aramid strand carries the centrifugal pull (~70–120 N per blade at 5")</text>
+    <text x="505" y="422" font-size="11" fill="#555">Lag about the red axis = swing + twist (pitch) at the same time.</text>
+  </g>
+</svg>
+
+<!-- ============================================================ -->
+<h2 id="s2">2. The physics that decides everything</h2>
+<ul class="tight">
+  <li><b>The 1/rev resonance margin.</b> The cyclic gain comes from a "mechanism mode" (hub swing + opposite blade pitch). Its gain grows as 1/|1 − (f/Ω)²|, so the closer that mode sits to once-per-rev, the more control you get. Too close and the gain and phase swing wildly with rpm, build tolerance and hub inertia. Every lever that "won big" (precone, removing balance masses, 120° crossing, light blades, full presets) won by sliding the mode toward 1P. At 10" we measured a <b>frontier</b>: about −1 in <i>cr_pl</i> per +1 in margin around (margin 0.15, <i>cr</i> 0.065). Rules adopted: other modes keep ≥ 0.15 from 1P (undamped amplification ≤ 4.1). The mechanism mode must not cross 1P on any build corner (≥ 0.03) and is calibrated per unit. Simple arithmetic adds one more limit. Throttle 0.7–1.4× thrust spans √2 in rpm, so <b>any fixed-frequency mode above 2P must cross some harmonic</b> somewhere in the range. Those crossings are scored by forced response, not by margin.</li>
+  <li><b>Fatigue.</b> At 5" hover (~14.2k rpm, 1P ≈ 237 Hz) the hinge flexes about <b>860,000 times per hour</b>, so it needs 10⁸–10⁹ cycles of life. Only metals (and maybe glass/epoxy) survive. Printed PETG folding hinges broke at about 860 cycles. Mean stress matters (Goodman): the strips carry centrifugal tension plus bending.</li>
+  <li><b>Centrifugal pull.</b> About <b>70–120 N per blade</b> on the 5" lead (≈ 7–12 kg of pull) and ~785 N on the 10". If that load passes through the part that sets the hinge stiffness, it stiffens and creeps it. For a solid plastic blade the root strain from its own spin is ρV²/2E ≈ 7–12 % at 105–135 m/s tip speed, against a 1.5 % creep limit. Hence the <b>split load path</b>: a strand carries the pull, a separate element is the hinge.</li>
+  <li><b>Why the flexure must be thin.</b> Bending stress σ = E·t·θ/(2L) depends on the strip's <i>thickness</i>, while stiffness goes as n·w·t³. So you get stiffness from <b>many thin laminae stacked dry</b>, never from one thick strip. One thick strip at the same stiffness has about 2× the stress. The ideal hinge is close to a frictionless pin: cross-stiffness/hinge-stiffness 3,000–30,000. Printed plates reach 180–440; steel shim reaches thousands.</li>
+  <li><b>The ESC is part of the mechanism.</b> The pulse must be generated on the ESC, phase-locked to rotor angle, within a ~15° phase budget. A normal fast speed governor fights the pulse and can make the rotor unstable.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s3">3. Timeline</h2>
+<table>
+<thead><tr><th style="width:150px">When</th><th style="width:210px">Phase</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>2026-11-20 day</td><td>0. Simulator + first broad study</td><td>Built flexblade: nonlinear beam FEA, blade-element aero and trim, motor/ESC/thermal model, CalculiX cross-check, CLI/GUI. Ran DE over 4–12" × 8 concepts (TPU blade, TPU+CF rods, TPU split, PA6-CF crossed plates, torsion bar, coax). Partial report: "print the 5" torsion bar first, cr 0.034". <i>That model was later found 3.4× too stiff, so these results are obsolete.</i></td></tr>
+<tr><td>11-20 23:30 → 11-21 05:00 (iter. 1–8)</td><td>1. Model honesty + concept triage</td><td>Anchorage bug found and fixed (old 5" winner 0.22 → 0.017). Motor pulse capped thermally (the old winner had a 380 °C winding). "Ideal spring" study: the ideal hinge is a pin joint. Skewed cruciform killed, printed crossed plates killed. Aramid tension–torsion strap and <b>steel shim cross-spring (steelx)</b> found and kept. Static pitch-split problem identified.</td></tr>
+<tr><td>11-21 09:30–12:00 (iter. 9–12)</td><td>2. First feasible steel designs</td><td>Per-blade pitch preset solves pitch split. Floquet stability and damping-aware resonance rule. <b>7" v3</b> is the first design feasible across throttle (min cr 0.107), but it fails tolerance (9/20 random ±5 % builds infeasible) and has an air-resonance window.</td></tr>
+<tr><td>11-21 ~12–16 (iter. 13–17)</td><td>3. Robustness and realism</td><td>7" v4 tolerance-robust (21/21). Clamp-edge stress added (radiused jaws mandatory). <b>Real printed fitting mass sank v4.</b> Forced-response rule for nP crossings. 7" v5/v6, pulse-limited scoring, laminated stacks, 10" v4/v5. Soft motor mounts, tilt divergence, ground resonance, arm stiffness spec.</td></tr>
+<tr><td>11-21 15:00–22:00 (iter. 18–24)</td><td>4. The system around the rotor</td><td>ESC governor "pumping" found; rev-averaged governor fixes it in the model. Continuous eRPM gain/phase calibration. <b>Goodman mean stress</b> (−18 %). Zero-stress / partial slot presets (10" v7, v8). Lateral-torsional buckling check. Blade-2 asymmetry found.</td></tr>
+<tr><td>11-21 22:25 → 11-22 09:00 (iter. 25–35)</td><td>5. Corrections, literature, your hardware</td><td>Stress-recovery fix (all leads −19 %). Precone trade, literature review, manufacturing review, 2/rev loads. First looks at your 2307 and at a CRM2204 coax. Gate audit, 120° crossing (v10m), light/wide blade, authority–margin frontier. <b>Decisions at 09:00:</b> minimal gates rejected, datumed tolerances adopted.</td></tr>
+<tr><td>11-22 09:00–13:30 (iter. 36–39)</td><td>6. Buildability</td><td>10" v8 build package. <b>Your constraint</b>: PLA/PETG, drop-in-and-glue, no precision hand work. Easy-build attempt 1 failed; attempt 2 (8 × 0.075 mm feeler roll) costs only −10 %. One-body breakaway print jig.</td></tr>
+<tr><td>11-22 13:30–18:30 (iter. 40–45)</td><td>7. Your 2307, single 5" rotor</td><td>Vehicle spec v0: AUW ~245 g, not 0.79 kg. The old 6" design was 6× short because of its <i>mechanism</i>, not the motor. v8-style mechanism scaled to 5" → <b>cr_pl 0.167</b>. 301 stainless 9 × 4 mm × 0.05 mm → <b>0.169, all gates pass (current lead)</b>. Then ccx, tolerance, selective assembly, slot-angle root cause, strap audit, ESC phase budget, ArduPilot params, bench plan. You chose G10; materials survey started.</td></tr>
+</tbody></table>
+
+<!-- ============================================================ -->
+<h2 id="s4">4. Every idea and concept tried</h2>
+<p class="small">Status: <span class="st ok">works</span> passes the model checks / kept · <span class="st pt">partly</span> mechanism real but not a fix on its own, or a trade · <span class="st no">rejected</span> · <span class="st op">open</span> untested, running, or waiting on you. "I-numbers" are the ideas logged in LOG.md.</p>
+<table>
+<thead><tr><th style="width:170px">Idea</th><th>What it was</th><th style="width:78px">Status</th><th>Result / why (key number)</th></tr></thead>
+<tbody>
+<tr class="grp"><td colspan="4">A. First broad study (Nov 20, old model)</td></tr>
+<tr><td>Monolithic TPU blade</td><td>Whole blade is one tuned TPU flexure</td><td><span class="st no">rejected</span></td><td>Its own spin strain is 7–12 % vs a 1.5 % creep limit. Fails at every size (creep util up to 4.8, cr ≤ 0.005).</td></tr>
+<tr><td>TPU + CF rod inserts (tpu_rod)</td><td>TPU hinge with carbon rods for the pull</td><td><span class="st no">rejected</span></td><td>Creep 1.56 at 5". Its "0.22 winner" was the anchorage bug: 0.017 once rod ends were modelled as contact-soft.</td></tr>
+<tr><td>TPU split / TPU + CF skin</td><td>Soft core with stiff skins</td><td><span class="st no">rejected</span></td><td>"Feasible" but cr ≤ 0.0008: ≥ 30× less control than needed.</td></tr>
+<tr><td>PA6-CF crossed plates</td><td>Printed cross-spring hinge</td><td><span class="st no">rejected</span></td><td>Printed plates can't get stiff enough across the hinge relative to along it: ratios 180–440 vs 3,000–30,000 needed.</td></tr>
+<tr><td>Torsion bar (CF bar + TPU plate + strap)</td><td>Nov 20 "print first" 5" design, cr 0.034</td><td><span class="st no">rejected</span></td><td>Scored on the 3.4×-too-stiff model. In ccx the fittings touched. Superseded by the steel cross-spring.</td></tr>
+<tr><td>Coax, both rotors flexured (Nov 20)</td><td>Two counter-rotating rotors</td><td><span class="st no">rejected</span></td><td>cr 0.003–0.005 then. Revisited later (group F).</td></tr>
+<tr class="grp"><td colspan="4">B. First idea backlog I1–I10 (Nov 20 night)</td></tr>
+<tr><td>I1 CF rod through hub</td><td>One capped rod blade-to-blade as tension member</td><td><span class="st op">not tested</span></td><td>Superseded by the aramid strap.</td></tr>
+<tr><td>I2 neutral-axis strip in TPU</td><td>Thin stiff strip at the bending neutral axis</td><td><span class="st op">not tested</span></td><td>The thin steel lamina stack took its place.</td></tr>
+<tr><td>I3 cross-spring pivot on the skewed axis</td><td>Crossed leaves whose virtual pivot is the lag axis</td><td><span class="st ok">works</span></td><td>This is the hinge in every lead design since Nov 21.</td></tr>
+<tr><td>I4 heat-formed twist</td><td>Print flat, twist into the skewed shape</td><td><span class="st op">not tested</span></td><td>—</td></tr>
+<tr><td>I5 cut commercial prop blades</td><td>Clamp bought blades into a printed hub</td><td><span class="st op">not tested</span></td><td>—</td></tr>
+<tr><td>I6 Kevlar/Dyneema tension thread</td><td>Thread carries the pull, no bending stiffness</td><td><span class="st ok">works</span></td><td>Aramid strand carries essentially all centrifugal load; strips take only 2.5–6.5 %. No Dyneema near motor heat (creep).</td></tr>
+<tr><td>I7 whole prop as graded flexure</td><td>Infill/wall grading along span</td><td><span class="st no">rejected</span></td><td>Same plastic creep wall as the TPU blade.</td></tr>
+<tr><td>I8 drilled post-insert rods</td><td>Standard rods pushed in after printing</td><td><span class="st no">rejected</span></td><td>Butted or inserted rod ends are compliant; anchorage collapses the stiffness (0.22 → 0.017).</td></tr>
+<tr><td>I9 LET hinge in CF-nylon</td><td>Lamina-emergent torsion hinge, printed</td><td><span class="st op">not tested</span></td><td>Printed material can't reach pin-joint stiffness ratios.</td></tr>
+<tr><td>I10 bought steel or FR4 strip</td><td>Off-the-shelf strip bolted/glued</td><td><span class="st ok">works</span> / <span class="st op">open</span></td><td>Steel verified (ccx within 5 %). FR4/G10 is your chosen material, being scored now.</td></tr>
+<tr class="grp"><td colspan="4">C. First-principles levers I11–I18</td></tr>
+<tr><td>I11 pitch–lag amplifier lever</td><td>Compliant lever to raise pitch per lag</td><td><span class="st op">not tested</span></td><td>Skew alone gave enough coupling (tan 62° = 1.88).</td></tr>
+<tr><td>I12 tune lag mode near 1/rev</td><td>Use resonance to amplify the response</td><td><span class="st pt">partly</span></td><td>Confirmed: the gain <i>is</i> resonance gain. This became the central trade-off (the frontier).</td></tr>
+<tr><td>I13 shrink hub inertia</td><td>Lighter hub swings more per pulse</td><td><span class="st pt">partly</span></td><td>Refuted as a design lever (non-monotonic). Hub J (0.9–5.5e-6 kg·m²) is now a measured, calibrated quantity. On the 2307 6" a heavier hub actually helped.</td></tr>
+<tr><td>I14 square-ish pulse</td><td>4/π more fundamental than a sine</td><td><span class="st op">not tested</span></td><td>Pulse kept sinusoidal so it doesn't excite the 4P/5P strip modes.</td></tr>
+<tr><td>I15 tip / trailing-edge mass</td><td>Add lag inertia without flap inertia</td><td><span class="st no">rejected</span></td><td>Tip ballast on 7" v6: no feasible design in ~45 evals. Every inertia lever just moved the mode onto 1P.</td></tr>
+<tr><td>I16 motor constant / cooling</td><td>Small rotors heat-limited</td><td><span class="st pt">partly</span></td><td>True at high throttle, but for your 2307 the real gap was the mechanism (section 7).</td></tr>
+<tr><td>I17/I18 strap frees the stiffness choices</td><td>Strap makes CF and hinge stiffness independent</td><td><span class="st ok">works</span></td><td>Opened the path to near-ideal pin-joint hinges.</td></tr>
+<tr class="grp"><td colspan="4">D. Realising the ideal (Nov 21 early)</td></tr>
+<tr><td>Ideal 6×6 spring study</td><td>Optimise an abstract spring + masses</td><td><span class="st ok">works</span></td><td>Ideal ≈ pin joint: k_hinge 0.013–0.09 N·m/rad, cross/hinge 3e3–3e4, flap/hinge 1e4–2e6. Ideal cr is 3.4–4.5× the real leads.</td></tr>
+<tr><td>Skewed cruciform</td><td>Cross-shaped torsion hinge carrying CF</td><td><span class="st no">rejected</span></td><td>Tension through the hinge stiffens it: ratio ≈ 10 vs ~1900 needed.</td></tr>
+<tr><td>Tension–torsion strap (tt_strap)</td><td>Aramid strands carry CF, hinge only bends</td><td><span class="st ok">works</span></td><td>4 × Ø0.6 mm aramid at ~10 % utilisation. Kept in every design since.</td></tr>
+<tr><td>Strap + printed crossed plates</td><td>Released printed plates as hinge</td><td><span class="st no">rejected</span></td><td>Ratios 180–440; plates stay loaded under trim (+0.4 N·m/rad); pitch split.</td></tr>
+<tr><td>I19 feeler-gauge steel cross-spring (steelx)</td><td>Crossed spring-steel shims + strap</td><td><span class="st ok">works</span></td><td>k_hinge on target (0.080/0.029/0.016 vs 0.088/0.029/0.013 at 5/7/10"); ratios 1.3e3–4.3e3; strip fatigue ≤ 16 %. The concept family of every lead.</td></tr>
+<tr><td>Compact / faired root</td><td>Small root hardware, fairing caps</td><td><span class="st ok">works</span></td><td>Blocky root costs +16 % hover power; faired +5.8 %.</td></tr>
+<tr><td>I20 pre-lag about the hinge axis</td><td>Build hinge pre-deflected by static lag</td><td><span class="st no">rejected</span></td><td>Clips ±15°: with a soft hinge, CF + drag set the equilibrium, not the spring's rest angle.</td></tr>
+<tr><td>Per-blade pitch preset</td><td>Blades built with ∓ incidence difference</td><td><span class="st ok">works</span></td><td>5" pitch split −0.12/0.00/+0.07° over throttle (was ~2.9°).</td></tr>
+<tr><td>I21 lag stop</td><td>Mechanical limiter for spool-up/crash</td><td><span class="st op">not built</span></td><td>—</td></tr>
+<tr><td>I22 hinge much softer than CF stiffness</td><td>Static lag then doesn't change with throttle</td><td><span class="st ok">works</span></td><td>Split +2.78/+2.88/+2.92° at T0.7/1.0/1.4: rpm-invariant.</td></tr>
+<tr><td>I23 bifilar strap for pitch</td><td>CF-stiffened pitch via strap geometry</td><td><span class="st no">rejected</span></td><td>The 2nd pitch mode is a strip mode the strap barely sees; fatigue 3.6.</td></tr>
+<tr class="grp"><td colspan="4">E. Robustness, the system, and gain levers (Nov 21)</td></tr>
+<tr><td>Radiused clamp jaws</td><td>Round the jaw exits</td><td><span class="st ok">works</span></td><td>Required. Sharp jaws: 7" v4 util 1.41 → radiused 0.71. ccx: sharp K = 1.28, r ≥ 1 mm K = 0.95–0.97.</td></tr>
+<tr><td>Constrained-layer VHB damper</td><td>Damping tape on strips</td><td><span class="st no">rejected</span></td><td>Loss factor only 0.04–0.2 on short strips; tape also stiffens. Net loss.</td></tr>
+<tr><td>I24 isotropic arm + soft TPU mount</td><td>Motor on a damped, round mount</td><td><span class="st pt">partly</span></td><td>Isotropic arm is a requirement (2-blade rotors are anisotropic). A single soft washer gives tilt divergence (ζ −0.09…−0.14). Twin washers work.</td></tr>
+<tr><td>I25 fittings as own counterweight</td><td>Cross angle stacks jaws in z</td><td><span class="st pt">partly</span></td><td>Works physically (185 → 31 g·mm²; cross 105° kept) but as a fix 0/9 tolerance.</td></tr>
+<tr><td>I26 3-strip cross-spring</td><td>Compact jaws, lower chord inertia</td><td><span class="st op">not tested</span></td><td>—</td></tr>
+<tr><td>I27 fatigue governor</td><td>ESC/FC caps pulse at the fatigue limit</td><td><span class="st op">open</span></td><td>Sound idea: pulse amplitude is a software knob.</td></tr>
+<tr><td>I28 laminated shim stacks</td><td>Several thin laminae per strip, dry</td><td><span class="st ok">works</span></td><td>Fatigue 0.686 → 0.515. Friction damping between leaves is useless (ζ ≈ 2e-4).</td></tr>
+<tr><td>I29 tuned blade/hub inertia pair</td><td>Blade lag as a vibration "amplifier"</td><td><span class="st no">rejected</span></td><td>No feasible design; same 1P trap.</td></tr>
+<tr><td>Planar TPU pad ring mount</td><td>Ring of pads: tilt-stiff, shear-soft</td><td><span class="st no">rejected</span></td><td>Needs R ≥ 50 mm (120 mm across), 2–4× heavier. An elastomer can't give the stiffness ratio compactly.</td></tr>
+<tr><td>I30 steel XY flexure motor stage</td><td>Shim parallelogram mount</td><td><span class="st op">option</span></td><td>Tilt stiffness 7.8–10× the rule, 15 mm tall, 26 g, but less damping. Twin washers stay baseline.</td></tr>
+<tr><td>Rev-averaged ESC governor</td><td>Speed loop averages eRPM over exactly 1 rev</td><td><span class="st ok">works</span></td><td>Model: restores free-spin response in 24/24 cases. A plain low-pass doesn't (gain 0.41–3.4×, phase ±140°).</td></tr>
+<tr><td>Continuous eRPM calibration</td><td>Gain/phase as a smooth function of rpm</td><td><span class="st ok">works</span></td><td>10" v5 residual 6.8°/15 % (5 nodes) vs 19.6°/34 % with ±5 % rpm bins.</td></tr>
+<tr><td>I32 ground-resonance check</td><td>Fast check of arm modes vs regressing lag</td><td><span class="st ok">works</span></td><td>Flags 7" arms 65–167 Hz vs Floquet 75–175 Hz.</td></tr>
+<tr><td>I33 10" skew 58.5° (v6)</td><td>Local search under calibrated criterion</td><td><span class="st no">rejected</span></td><td>0.096 → 0.067 once mean stress counted. No gain.</td></tr>
+<tr><td>I34 zero-stress slot presets</td><td>Pre-angle slots so strips are straight at hover</td><td><span class="st pt">partly</span></td><td>10" 0.067 → 0.130, but mode lands at 0.98/rev (fails). Full presets too aggressive.</td></tr>
+<tr><td>I35 CF-dominated mechanism mode</td><td>Make mode/rev rpm-invariant</td><td><span class="st no">rejected</span></td><td>Already 92 % CF-stiffened; the problem is proximity, not drift.</td></tr>
+<tr><td>I36 partial presets (α)</td><td>Fraction α of the zero-stress angle</td><td><span class="st ok">works</span></td><td>10" v7 (α 0.3) +22 %; v8 (α 0.55, skew +2°) 0.0715 final.</td></tr>
+<tr><td>Precone 1.0–1.3°</td><td>Blades coned up in the print</td><td><span class="st pt">partly</span></td><td>Trade: balances blade fatigue (worst 1.28 → 0.875) and cuts 1P vertical force 11 → 1.55 N, but 2P lateral force rises 0.45 → 9.75 N. Stability safe. Adopted for the 10" build.</td></tr>
+<tr><td>C2-symmetric blade 2</td><td>Rotate instead of mirror blade 2's flexure</td><td><span class="st no">rejected</span></td><td>Gives pure collective, zero cyclic. Mirroring is mandatory.</td></tr>
+<tr><td>Remove ±z balance masses</td><td>Cancel the common 1P feathering moment</td><td><span class="st no">rejected</span></td><td>cr ×2 (0.142–0.153), but the mode flips across 1P.</td></tr>
+<tr><td>Collective-pitch link between blades</td><td>Tie blade pitches</td><td><span class="st no">rejected</span></td><td>2P force 33 N.</td></tr>
+<tr><td>Strips in tension</td><td>Let strips share CF</td><td><span class="st no">rejected</span></td><td>Premise wrong (3 of 4 already in tension); sharing CF doubles fatigue.</td></tr>
+<tr><td>Chordwise balance mass pair</td><td>±10 mm, 1 g at 0.35R</td><td><span class="st pt">partly</span></td><td>Biggest raw lever: moment 0.37 → 1.39 N·m, but it drags the mode onto 1P.</td></tr>
+<tr><td>Cross angle 120° (v10m)</td><td>Wider strip crossing</td><td><span class="st no">rejected</span></td><td>cr_pl 0.124 but Goodman 1.064 at T0.7, resonance margin 0.08. Kept only as "conditional" v11d.</td></tr>
+<tr><td>Thicker strips 0.20 mm at 120°</td><td>Restore fatigue</td><td><span class="st pt">partly</span></td><td>Fixes fatigue (&lt; 0.31) but not the mode margin.</td></tr>
+<tr><td>Light / wide hollow blade (v11)</td><td>Blade inertia sets the mode: p² = (B−C)/(B+C)</td><td><span class="st pt">partly</span></td><td>Moves the frontier on paper (0.1257) but 4/20 tolerance builds; hollow version fails jitter 1.105; DE10 stalled.</td></tr>
+<tr><td>Minimal gates</td><td>Loosen the 1P checks</td><td><span class="st no">rejected</span></td><td>Decision 11-22: every design they admit fails independent checks.</td></tr>
+<tr><td>Datumed tolerance scoring</td><td>Dowel datums → ±1.5 % hinge radius, not ±5 %</td><td><span class="st ok">adopted</span></td><td>Conditional on datum features in the build.</td></tr>
+<tr class="grp"><td colspan="4">F. Your hardware and buildability (Nov 22)</td></tr>
+<tr><td>10" v8 precision build</td><td>8 × 0.10 mm 1095, EDM edges, dowels</td><td><span class="st ok">works</span></td><td>cr_pl 0.0715, full package, but too much precision work for you.</td></tr>
+<tr><td>Easy build attempt 1</td><td>1 × 0.25 or 2 × 0.15 laminae, PETG</td><td><span class="st no">rejected</span></td><td>Fatigue 1.05–1.27 (thick lamina), PETG fitting creep 0.95.</td></tr>
+<tr><td>Easy build attempt 2</td><td>8 × 0.075 mm × 12.7 mm feeler roll, dry stack</td><td><span class="st ok">works</span></td><td>0.0692 vs v8 0.0772 same scorer (−10 %). PETG-CF fittings fail jitter; PA-CF used.</td></tr>
+<tr><td>Printed strip stops at both ends</td><td>Set free length by stops</td><td><span class="st no">rejected</span></td><td>Free length = cut length ±1 mm → resonance fail.</td></tr>
+<tr><td>One-body breakaway jig</td><td>Hub + blades printed as one, sprues snipped after glue</td><td><span class="st ok">works</span></td><td>Model holds jaw spacing to 0.05 mm; hand cut length irrelevant.</td></tr>
+<tr><td>CRM2204 coax (7")</td><td>Flexure rotor + rigid rotor</td><td><span class="st op">out of scope</span></td><td>cr_pl 0.0946, 12/12 builds, the most robust design found. You chose: no new motor, no coax.</td></tr>
+<tr><td>2307 on 6" at 0.79 kg</td><td>Old small-skew flexure</td><td><span class="st no">rejected</span></td><td>cr_pl 0.0123 (6× short); skew coupling tan 39° vs 62° was the cause.</td></tr>
+<tr><td>3 blades / more pitch / more chord / 5" scale</td><td>No-hardware levers at 6"</td><td><span class="st no">rejected</span></td><td>All made it worse.</td></tr>
+<tr><td>Separate trim from control</td><td>Movable battery or trim screw for CG</td><td><span class="st op">open</span></td><td>Cyclic then only covers gusts.</td></tr>
+<tr><td>Vehicle spec v0/v1</td><td>Design the vehicle around the 2307</td><td><span class="st ok">works</span></td><td>AUW ~245 g (not 0.79 kg); single 5", 6S 650 mAh, ~12 min, 6 vanes.</td></tr>
+<tr><td>v8-like 5" (1095, 8 × 4.5 × 0.05)</td><td>Scale v8 mechanism to 5"</td><td><span class="st pt">partly</span></td><td>cr_pl 0.167; one fail (harmonic jitter at T1.25).</td></tr>
+<tr><td>12.7 mm feeler stock at 5"</td><td>Use the only common roll width</td><td><span class="st no">rejected</span></td><td>cr_pl 0.084, doesn't fit the hub (0.43), creep, aeroelastic.</td></tr>
+<tr><td><b>301 FH 9 × 4 × 0.05 mm</b></td><td>Narrow slit stainless</td><td><span class="st ok">LEAD</span></td><td><b>cr_pl 0.169, all gates pass</b> (section 8).</td></tr>
+<tr><td>301 7 × 5 mm</td><td>Fewer, wider laminae</td><td><span class="st no">rejected</span></td><td>Aeroelastic at T0.7, jitter at T1.0. Width matters.</td></tr>
+<tr><td>Selective assembly</td><td>Measure foil, pick n = round(9·0.05³/t³)</td><td><span class="st ok">works</span></td><td>Realistic tolerance set 13/13 builds, cr_pl 0.150–0.172. Needs 0.80 mm slot.</td></tr>
+<tr><td>Slot datum wall + springy tongue</td><td>Both slots of a strip share one edge datum</td><td><span class="st op">open</span></td><td>The proposed fix for the slot-angle risk.</td></tr>
+<tr><td>Hall index sensor on bell</td><td>Once-per-rev absolute reference, ~1 g</td><td><span class="st op">open</span></td><td>Kills the missed-ZC drift and the 7-fold boot ambiguity.</td></tr>
+<tr><td>Anti-torque vanes</td><td>6 twisted vanes, 2 on a servo for yaw</td><td><span class="st op">estimate</span></td><td>±0.3° trim, ±8–10° yaw; lean vanes 15° to move ring torsion (213 Hz) out of the 1P band.</td></tr>
+<tr><td>G10/FR4 strip</td><td>One 0.2 mm strip ≈ 9 × 0.05 steel</td><td><span class="st op">open</span></td><td>Your choice; scoring running.</td></tr>
+<tr><td>Thin foil 0.038 mm (dental band)</td><td>More, thinner laminae</td><td><span class="st op">running</span></td><td>DE d2307_de7 on the Mac.</td></tr>
+</tbody></table>
+
+<!-- ============================================================ -->
+<h2 id="s5">5. What doesn't work, and why</h2>
+<ol>
+  <li><b>Any printed-plastic hinge (TPU, PETG, PLA, nylon, PA-CF) that bends every rev.</b> Creep: spin strain 7–12 % vs 1.5 % allowed. Fatigue: PETG folding specimens fail at ~860 cycles, against ~860,000 per hour. Every 5" TPU concept is infeasible (tpu_rod creep 1.56) or gives ≥ 30× too little control. Printed plates are also far too stiff across the hinge relative to along it (180–440 vs 3,000+). <i>Plastic is fine for the hub and blades, not for the part that flexes.</i></li>
+  <li><b>Letting the centrifugal pull go through the hinge element.</b> Tension stiffens it and makes it creep (skewed cruciform: ratio ≈ 10 vs ~1900). The pull must go through a separate strand.</li>
+  <li><b>Rods butted or pushed into printed fittings.</b> The ends are contact-soft and the hinge loses its stiffness (0.22 → 0.017).</li>
+  <li><b>Gluing the laminae together (thin CA, wicked glue, bonded stack).</b> A bonded stack of n leaves is up to n² stiffer in bending: 81× for 9 laminae. That detunes the rotor completely. Laminae go in <b>dry</b> (PTFE dry film in the free span), with thick slow epoxy <b>only on the lands</b>, then a post-cure check that they fan when bent.</li>
+  <li><b>One thick lamina instead of many thin ones.</b> Stress scales with thickness, so 1 × 0.25 or 2 × 0.15 mm fails fatigue (1.05–1.27).</li>
+  <li><b>12.7 mm feeler-gauge roll on a 5" hub.</b> Too wide to fit (flexure_inside_hub 0.43); in-plane stiffness ∝ w³ moves the modes; creep and aeroelastic fails; cr_pl 0.084. It is fine at 10" (easy build).</li>
+  <li><b>Sharp clamp jaws.</b> Stress concentration 1.28. With sharp jaws the 7" v4 fails (util 1.41). Jaw exits need a radius ≥ 0.5–1 mm or a 0.5 mm chamfer.</li>
+  <li><b>Snipped or filed strip edges without finishing.</b> About 0.5–0.6 of the fatigue strength of polished/EDM edges (0.85–0.95). At the lead's stresses that is pass/fail. Deburr and stone lengthwise.</li>
+  <li><b>Setting free length with printed stops at both strip ends.</b> Free length then equals cut length ±1 mm, enough to fail resonance. The one-piece breakaway print fixes it.</li>
+  <li><b>Letting a strip stack float in its slot while the glue cures.</b> Width-wise play (4.2 mm slot, 4.0 mm strip, 8 mm land) allows up to 1.4° per end. A 0.5° in-plane mismatch fails about half the builds.</li>
+  <li><b>A single soft TPU washer as motor mount.</b> 2-blade rotors on a tilt-soft mount diverge once per rev (ζ −0.09…−0.14); a single soft 10" washer tilts 9–16°. Decouple: soft sideways, stiff in tilt (twin washers).</li>
+  <li><b>A normal fast ESC speed governor, or a plain low-pass on rpm.</b> The speed loop sees the 1P pulse and "pumps" the mechanism mode. In the model it goes unstable with τ 2 ms. Needed: a one-rev moving average (zeros at every harmonic), or no ESC governor.</li>
+  <li><b>Trying to buy margin with damping.</b> Damping tape and constrained layers add ≤ 0.012 to ζ; friction between laminae ≈ 2e-4. Realistic total ζ is only 0.045–0.06, and ≳ 0.08 would be needed.</li>
+  <li><b>Gain tricks that just move the mode onto 1P:</b> precone alone, removing balance masses, chordwise or tip mass, 120° crossing, full zero-stress presets, light blades, I29 inertia pairing. They raise cr on paper by sitting closer to resonance and fail tolerance or phase checks.</li>
+  <li><b>Rotating (C2) instead of mirroring blade 2.</b> Pure collective, zero cyclic.</li>
+  <li><b>Hinge pre-lag about the hinge axis (I20)</b>, a <b>bifilar strap for pitch (I23)</b>, and <b>strips sharing the CF load</b>.</li>
+  <li><b>Small skew on your 2307 at 6" (old design).</b> cr_pl 0.0123. Adding a blade, more pitch, more chord, or a geometric 5" scale all made it worse. The fix was the v8-style high-skew mechanism, not the motor.</li>
+  <li><b>Coax with only the upper rotor flexured</b> (vehicle spec v0). Not enough authority.</li>
+  <li><b>Other hinge materials for 5":</b> carbon fibre (thinnest stock 0.25–0.38 mm vs ~0.09 needed), NiTi (stiffness changes with temperature), Markforged CF (matrix creep), beryllium copper (toxic dust, no better than steel), titanium (notch and fretting sensitive, hard to buy).</li>
+  <li><b>Blind DE optimisation as the main search tool.</b> Across DE2–DE10 no optimiser run beat the hand-found lead. Several runs were wasted on stale models, a wrong criterion, or a broken worker. DE is now used only for local polish.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="s6">6. Tests and verification done</h2>
+<p class="small">All are computer checks except the bench-log comparison and your ESC logs. "ccx" = CalculiX solid FEA used to check the fast beam model.</p>
+<table>
+<thead><tr><th style="width:190px">Test</th><th>What it checks</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>ccx vs beam, first hinge (E01)</td><td>Is the fast model's stiffness right?</td><td>Beam was 3.4× too stiff (10.2 vs 2.99 N·m/rad). After the anchorage fix, within 3 %.</td></tr>
+<tr><td>ccx crossed printed plates</td><td>Plate stiffness</td><td>Beam/ccx 0.54 → 0.70 after a plate-modulus fix; ~30 % unexplained, beam conservative.</td></tr>
+<tr><td>ccx steel strips (7" v2, v3, v5)</td><td>Steel cross-spring stiffness and axis</td><td>Within 20 % (v2); 0.94–1.02 (v3); 0.95/1.03/1.03 (v5). Axis error &lt; 1°.</td></tr>
+<tr><td>ccx 10" v4, v5, v8</td><td>8-lamina stacks</td><td>0.95–1.08, 0.94–1.05, 1.03–1.11.</td></tr>
+<tr><td>ccx k_cross vs crossing angle 60–120°</td><td>Is the beam valid at wide angles?</td><td>1.02–1.05 everywhere. The scary 1.80 was a verify-script artefact.</td></tr>
+<tr><td>ccx 5" lead (301)</td><td>Stiffness, mesh-converged</td><td>0.94–1.04 on all six stiffnesses, axis 0.001°. PASS.</td></tr>
+<tr><td>ccx clamp-edge contact (16 cases)</td><td>Stress concentration at jaw exit</td><td>Sharp jaw 1.28 (steel) / 1.11 (PETG); r 0.5 mm 1.02–1.04; r ≥ 1 mm 0.95–0.97.</td></tr>
+<tr><td>ccx loaded strip stress (5" lead)</td><td>Beam fatigue stress at the clamps</td><td>ccx/beam hub 1.23/0.89/0.75 and blade 1.51/1.15/1.01 at T0.7/1.0/1.25. Beam right to ~25 %; blade end up to 15 % unconservative at T≥1.0, 51 % at T0.7 (low stress there).</td></tr>
+<tr><td>Fitting mass vs STL</td><td>Do printed parts weigh what the model thinks?</td><td>After the fix, exactly. Before it: 3.4 + 3.5 g per blade missing.</td></tr>
+<tr><td>Tolerance runs</td><td>Random ±5 % builds (t, w, L, hinge radius)</td><td>7" v3: 9/20 infeasible. 7" v4: 21/21. 7" v5: 9/9. 10" v5: 8/9. 10" v8: 9 builds OK. <b>5" lead: ±5 % 13/13, datumed 13/13, ±10 % 9/13, selective assembly 12–13/13.</b></td></tr>
+<tr><td>Slot-angle tolerance (5" lead)</td><td>Print error in the pre-angled slots</td><td>±0.5° presets only: 7/12. Geometry ±5 % only: 10/12. Both: 6/12; ±1°: 5/12. Only the in-plane angle difference blade-end minus hub-end matters (0.21–0.32 /rev per degree).</td></tr>
+<tr><td>Floquet stability + airframe</td><td>Air/ground resonance, flutter</td><td>Validated on the classic Coleman case (1e-6). 7" v3 had an unstable window; with twin mounts and arm spec, leads are stable. 10" v5 integrated system check: min ζ 0.0089–0.0153, no interaction.</td></tr>
+<tr><td>Ground-resonance quick check</td><td>Arm frequency bands to avoid</td><td>7" arms must avoid 65–175 Hz (spec ≥ 180–200 Hz); 10" in-plane ≥ 120 Hz, vertical ≥ 210 Hz (≥ 170 with precone 1.3°).</td></tr>
+<tr><td>Control quality, calibrated</td><td>Gain/phase spread after per-unit calibration</td><td>All leads pass with a continuous eRPM schedule. 5" lead: phase 0.9–1.8°, gain 3–7 % (limits 15° / 25 %).</td></tr>
+<tr><td>Calibration tool (fit_cyclic.py)</td><td>Can gain/phase be measured in flight?</td><td>Synthetic 10" recovery 1.8 % / 1.4° from a 20 s sweep. The command phase must rotate 1–3 Hz during the sweep.</td></tr>
+<tr><td>Trim convergence</td><td>Silent false results</td><td>Old secant reported bracket ends as converged. Now flagged. Leads converge everywhere checked.</td></tr>
+<tr><td>2/rev loads</td><td>Second-order forces</td><td>2P strip strain 13–29 % of 1P (+1–4 % to fatigue). 10": 11 N vertical 1P hub force from mismatched flapping (precone → 1.55 N).</td></tr>
+<tr><td>Lateral-torsional buckling</td><td>Thin wide strips under in-plane moment</td><td>All leads pass (v8 factor 4.77, v5 1.77).</td></tr>
+<tr><td>Stopped / bench state</td><td>Preset misfit loads with rotor stopped</td><td>Safe: strip axial 0.1–0.5 N vs Euler 82 N, needs the blade-end radial slider free.</td></tr>
+<tr><td>Precone stability</td><td>Hingeless flap–lag destabilisation</td><td>1.3° safe on v8/v11d (min ζ ≥ 0.0068).</td></tr>
+<tr><td>Strap audit + cable axial audit</td><td>Aramid strand load path</td><td>Static fine even with a knot. Never slack (1P swing 3–7 % of mean 70–122 N). Old fatigue number was 99 % fictitious bending: 0.905 → 0.294. No bench check yet.</td></tr>
+<tr><td>Bench-log validation (logs 33/34)</td><td>Motor model vs your Hakea logs</td><td>Steady rpm vs duty 4.5 % rms; small-signal gain within 2–13 %. Large sweep gain −29…−35 % at 30 Hz and 35–45° unmodelled phase → pulse authority treated as ~0.7×. Rth not identifiable.</td></tr>
+<tr><td>Your ESC logs 31/32</td><td>Sensorless sync under modulation</td><td>2307 on AM32 took a ±500 sine at 50 Hz and a 1→50 Hz sweep with no desync. 1P (~240 Hz) still untested.</td></tr>
+<tr><td>AM32 SITL (G431)</td><td>Can the ESC make a 1P pulse?</td><td>Commutates cleanly to 414k eRPM. The ramp limiter (16/tick) attenuates the pulse (18.9 → 5.9 % at 300 → 1000 Hz). The cyclic term must bypass it.</td></tr>
+<tr><td>ESC phase budget</td><td>Sensorless timing errors</td><td>~1.7° RSS vs 13.2° available. Discrete risks: one missed zero-cross = permanent 8.57°; 7-fold boot ambiguity; ±4.3° quantisation without interpolation.</td></tr>
+<tr><td>AUW robustness (5" lead)</td><td>Build weight 0.20–0.29 kg</td><td>0.20 kg → 0.208, 0.29 kg → 0.130, no hard violation.</td></tr>
+<tr><td>Literature review</td><td>Is this known?</td><td>Core mechanism known (Paulos &amp; Yim, HKU MARS, TAMU, Vertiq). Likely new: precone to balance mirrored blades; mode tuned near 1P with per-unit calibration; governor pumping + rev-averaged filter. Related patents: US9914535, US11345469.</td></tr>
+</tbody></table>
+
+<!-- ============================================================ -->
+<h2 id="s7">7. Model bugs and wrong claims we corrected</h2>
+<p>Most of the progress on Nov 21–22 was the model getting <i>more honest</i>, often downward. Here is everything we said that turned out wrong.</p>
+<table>
+<thead><tr><th style="width:230px">What we claimed or computed</th><th>What was actually true</th><th style="width:220px">Effect</th></tr></thead>
+<tbody>
+<tr><td>Nov 20 winners (5" torsion bar 0.034; TPU rod 0.22)</td><td>Beam model treated fittings as rigid; hinge 3.4× too stiff.</td><td>All Nov 20 numbers obsolete; rod winner 0.017.</td></tr>
+<tr><td>Pulse amplitude unlimited by heat</td><td>Old winner ran the winding at 380 °C.</td><td>Thermal cap added.</td></tr>
+<tr><td>Loaded hinge stiffness 0.34 N·m/rad</td><td>Missing preload term in condensation; true 0.0195.</td><td>Reporting only; dynamics unaffected.</td></tr>
+<tr><td>Bought aramid "overstressed" (2.26)</td><td>It was judged with printed-plastic strength; real 0.07.</td><td>Strap fine.</td></tr>
+<tr><td>10" trims converged</td><td>Secant returned bracket ends as converged.</td><td>Now flagged as failed.</td></tr>
+<tr><td>Strip fatigue OK</td><td>No clamp stress concentration modelled (assumed perfect jaws).</td><td>Radiused jaws became mandatory.</td></tr>
+<tr><td>7" v4 lead feasible</td><td>Model carried 0.08 g of fitting vs ~7 g real.</td><td>v4 fell; "score as-built geometry" rule.</td></tr>
+<tr><td>2P/3P margins fixable by tuning</td><td>Impossible by arithmetic over a √2 rpm span.</td><td>Forced-response criterion.</td></tr>
+<tr><td>Hub inertia 5.49e-6 kg·m²</td><td>Generic guess; itemised light hub 0.65–0.92e-6.</td><td>J treated as measured and calibrated.</td></tr>
+<tr><td>7" mount damping "thin"</td><td>frame_zeta picked the wrong frequency alias.</td><td>0.0043 → 0.0116.</td></tr>
+<tr><td>Real positive roots in every Floquet case</td><td>Spurious rigid-spin stiffness (missing follower term).</td><td>Removed; no verdict changed.</td></tr>
+<tr><td>Fatigue by amplitude only</td><td>Non-conservative: needs Goodman mean stress.</td><td>10" v5 0.082 → 0.067 (−18 %).</td></tr>
+<tr><td>Zero-stress presets (first version)</td><td>Strip modelled as a pre-curved arch, 30 % too stiff.</td><td>"Slot" mode fix.</td></tr>
+<tr><td>Strip stress recovery</td><td>Wrong frame (−3 %), then amplitude under-predicted.</td><td><b>All leads −19 %</b> (v8 0.0883 → 0.0715).</td></tr>
+<tr><td>DE5/DE6 results</td><td>Ran with the legacy criterion and could never find valid designs; progress line printed the wrong metric.</td><td>~6 h of 20-core compute wasted.</td></tr>
+<tr><td>"C2 symmetry fixes blade asymmetry" (my idea)</td><td>C2 gives zero cyclic; asymmetry is a load problem.</td><td>Rejected.</td></tr>
+<tr><td>"Make the mode CF-dominated" (I35)</td><td>Already 92 % CF.</td><td>Rejected.</td></tr>
+<tr><td>"Strips are in compression"</td><td>Stale; 3 of 4 in tension.</td><td>Idea dropped.</td></tr>
+<tr><td>v10m k_cross 1.80 (beam wrong at 120°)</td><td>Script measured at a non-equilibrium state; true 1.02–1.05.</td><td>False alarm.</td></tr>
+<tr><td>2P lateral force 13.8 N</td><td>√2 error; real 9.75 N.</td><td>Arm windows corrected.</td></tr>
+<tr><td>"The 2307's limit is the motor"</td><td>It was the mechanism (M/dQ 9.5× lower; tan 39° vs 62°).</td><td>Led to the 5" breakthrough.</td></tr>
+<tr><td>2307 designed at 0.79 kg</td><td>Mass-law guess; spec says ~245 g.</td><td>Everything redone at 0.245 kg.</td></tr>
+<tr><td>"Beam is 3–4× conservative on stress"</td><td>ccx boundary-condition artefact; beam right to ~25 %.</td><td>Retracted.</td></tr>
+<tr><td>"Light build is the risky side"</td><td>rpm direction backwards: <b>heavy</b> build is closer to resonance.</td><td>Conclusion unchanged (band OK).</td></tr>
+<tr><td>T0.7 fatigue risk 1.37</td><td>The binding item was the aramid strand, not steel; steel ≈ 0.71.</td><td>Resolved.</td></tr>
+<tr><td>Strap fatigue 0.905</td><td>99 % fictitious cord-bending strain.</td><td>0.294 (axial).</td></tr>
+<tr><td>Build sheet: "CA between laminae"</td><td>Bonded stack up to n² stiffer.</td><td>Rewritten: dry stack.</td></tr>
+<tr><td>10" v8 STLs</td><td>Slots weren't pre-angled; printed hub ≠ scored design.</td><td>Fixed.</td></tr>
+<tr><td>Bench plan stop at 14.7k rpm</td><td>Below hover; trimmed rpm is 12.2k/14.2k/15.7k.</td><td>Stop ~16k rpm.</td></tr>
+<tr><td>Notch INS_HNTCH_FREQ 218 Hz</td><td>FREQ is the <i>minimum</i> tracked frequency.</td><td>Set 160 Hz.</td></tr>
+<tr><td>"Every flying system needs an encoder"</td><td>Your logs show no desync up to 50 Hz.</td><td>Encoder now optional.</td></tr>
+<tr><td>Harmonic-jitter cliff (cr 0.099 → 0 over 1°)</td><td>Fixed 0.3° floor broke the pulse scaling.</td><td>Hard check at s = 1.</td></tr>
+<tr><td>DEs explored lamina count</td><td>run_study fixed n from the lead; no DE ever varied it.</td><td>Var added.</td></tr>
+<tr><td>Ops: results archive, Mac worker</td><td>evals.jsonl.gz truncated; Mac lacked manifold3d (1434 failed evals); orphan worker pools for hours.</td><td>Fixed + host quarantine + stop_job.sh.</td></tr>
+</tbody></table>
+
+<!-- ============================================================ -->
+<h2 id="s8">8. Current best design and its open risks</h2>
+<div class="box good"><b>Lead: <code>designs/5in_v8s_2307_m245_301.json</code></b>. Build package <code>study/build/5in_301/</code>.</div>
+<table>
+<tbody>
+<tr><th style="width:230px">Vehicle</th><td>Single 5" 2-blade rotor, your <b>2307 1300KV</b>, 6S 650 mAh, Matek H743-Slim, design AUW <b>0.245 kg</b> (OK 0.20–0.29), ~12 min hover [model], 6 anti-torque vanes (2 on a micro servo for yaw).</td></tr>
+<tr><th>Hinge</th><td>Per blade: two crossed strips at <b>105°</b>, skew <b>62°</b>, hinge radius 10.75 mm, free length <b>10.05 mm</b>. Each strip = <b>9 laminae of 301 full-hard stainless, 4.0 × 0.05 mm, stacked dry</b>. Slot presets 0.55 × zero-stress.</td></tr>
+<tr><th>Pull path</th><td>Aramid strand (design 1.3 mm, BUILD 1.5 mm, to reconcile), knotted in a well; mean tension 70–122 N.</td></tr>
+<tr><th>Print</th><td>Whole rotor as <b>one PA-CF body</b> (127 × 23 × 23 mm, ~5 g) with 2 breakaway sprues per blade; slot 0.70 × 4.2 mm; jaw chamfer 0.5 mm; M5 boss with steel washers.</td></tr>
+<tr><th>Performance [model]</th><td><b>cr_pl 0.169</b> (required 0.039–0.053 for 1 mm CG + 2 m/s gust → ×3.2–4.3). Trim 12.2k/14.2k/15.7k rpm at T0.7/1.0/1.25; 1P band 204–261 Hz. Phase residual 0.9–1.8°, gain 3–7 %, mechanism margin 0.13, nearest other mode flap-antisym 1.27/rev (margin 0.27).</td></tr>
+<tr><th>Verified</th><td>ccx stiffness 0.94–1.04; ±5 % and datumed tolerance 13/13; selective assembly 13/13; AUW band OK; strap never slack.</td></tr>
+<tr><th>Bench sanity numbers</th><td>Static pitch: 10 g at 50 mm → 2.82° (pass 2.26–3.39°; a glued stack reads ~1/81 of that). Strap pull test 366 N. Spin thrust 171/245/306 g at T0.7/1.0/1.25; stop at ~16k rpm.</td></tr>
+</tbody></table>
+
+<h3>Open risks (largest first)</h3>
+<table>
+<thead><tr><th style="width:200px">Risk</th><th>Why it matters</th><th>Planned fix / test</th></tr></thead>
+<tbody>
+<tr><td><b>Slot angle (in-plane)</b></td><td>A 0.5° mismatch between hub and blade slot of one strip fails ~half the builds. Strips are ~6400× stiffer in-plane, so the mismatch kills flap stiffness and the mode drops to ~1.09/rev. Width play alone allows 1.4° per end.</td><td>Both slots of a strip share one straight datum wall; a springy printed tongue pushes the strip edge against it at both ends. Or a routed/etched strip on pegs.</td></tr>
+<tr><td>Foil thickness scatter</td><td>Stiffness ∝ t³: ±10 % thickness → ±27 % stiffness.</td><td>Selective assembly (caliper one stack, pick n 7–12); slot 0.80 mm.</td></tr>
+<tr><td>No hardware data</td><td>Damping, hub inertia J, motor I_t, Rth, real fatigue of slit edges, fretting at clamp exits: all assumed.</td><td>Bench plan; 100 Hz coupon fatigue test to 10⁷ (~28 h) before flight.</td></tr>
+<tr><td>ESC cyclic path</td><td><code>cyclic_apply()</code> is a stub. <code>angle_from_zc_cnt()</code> uses <code>sizeof(uint16_t)</code> where 65536 is meant. One missed zero-cross = permanent 8.57° error. Boot reference is 7-fold ambiguous. Ramp limiter. Pole count assumed 14.</td><td>Your code (guide only): bypass the ramp for the cyclic term, apply at the commutation ISR, run phase calibration continuously, consider a hall index.</td></tr>
+<tr><td>Body material</td><td>Lead scored with PA-CF; your printers do PLA/PETG (Ender 3 S1: PLA/TPU/ABS). At 10", PETG fittings were marginal on creep (0.95) and PETG-CF failed jitter.</td><td>Re-score with PLA/PETG/ABS body (running, section 12 of <code>2307_5_6in.md</code>, not landed yet).</td></tr>
+<tr><td>Blade-end clamp stress at low throttle</td><td>ccx 1.51× beam at T0.7 (steel util ≈ 0.71 after correction): thin, not failing.</td><td>Chamfered slot mouths (in print).</td></tr>
+<tr><td>Aramid strand</td><td>No bench or FE check; knot ≈ 45 % efficiency; chafe in the well.</td><td>Pull test 3 × 122 N on a spare knotted strand.</td></tr>
+<tr><td>Motor interface</td><td>Boss needs ~18 mm of exposed M5 thread.</td><td>Your shaft length; or a nut trap / 4-bolt mount.</td></tr>
+<tr><td>Root drag</td><td>Root hardware 2.3–2.7× taller than the root airfoil (soft check).</td><td>Accepted for now; costs hover power.</td></tr>
+<tr><td>Frame and mount</td><td>Arm stiffness bands and the full Floquet system check were done for 7"/10", not yet for the 5" frame. Motor 1P torque shakes the FC.</td><td>Derive the 5" arm spec; ESC-rpm harmonic notch (FREQ 160 Hz) mandatory.</td></tr>
+</tbody></table>
+<p class="small">Reference designs kept: 10" v8 (cr_pl 0.0715, precision build), 10" easy build (0.0692, feeler roll), 7" v6 (0.065, most robust 7"), CRM2204 coax 7" (0.0946, 12/12, out of scope).</p>
+
+<!-- ============================================================ -->
+<h2 id="s9">9. Materials and sourcing findings</h2>
+<p><b>Rule of thumb for 5"</b> (lead free length ~10 mm): usable thickness ≈ 0.05 mm × (allowed strain ÷ 0.25 %). That gives G10 ~0.08 mm, CF ~0.09, Ti ~0.07, phosphor bronze ~0.04, brass ~0.026 mm. Thinner stock with more laminae always wins at 5".</p>
+<table>
+<thead><tr><th style="width:190px">Material / source</th><th>Finding</th><th style="width:90px">Verdict</th></tr></thead>
+<tbody>
+<tr><td>1095 spring-steel feeler roll</td><td>Only 12.7 mm (½") wide at common suppliers (Precision Brand 19H2 0.002", Online Metals 0.0025"). Great at 10"; too wide for the 5" hub.</td><td><span class="st pt">10" only</span></td></tr>
+<tr><td>301 full-hard stainless, slit 4–5 mm</td><td>The lead's material (E 193 GPa, fatigue strain 0.25 %, non-magnetic, rustproof). Sold slit to width by Frbiz, Gengfeisteel, Hamilton Precision Metals, but as inquiry items with lead time, not catalogue.</td><td><span class="st ok">reference</span></td></tr>
+<tr><td><b>Dental matrix band rolls</b></td><td>Stainless 0.038/0.04/0.05 mm, factory-slit 5/6/7 mm, 3 m rolls, cheap, Australian stock (Medident). <b>Must be hard temper</b>: wrap on a Ø20 mm dowel; hard stock springs back flat, dead-soft stays bent. The thin-foil DE covers it.</td><td><span class="st op">promising</span></td></tr>
+<tr><td>Clock suspension spring steel</td><td>Sheets 0.05–0.18 mm (Timesavers #19398, Perrin). Flexure-grade, but you cut the width by hand.</td><td><span class="st op">option</span></td></tr>
+<tr><td>Photo-etched 301/304 FH</td><td>Small runs (Qualitetch UK, PEI). Best fatigue edges, exact outline, can include datum holes.</td><td><span class="st op">option</span></td></tr>
+<tr><td>SMT stencil steel (PCB fabs)</td><td>Laser-cut 304 HTA, ±0.003 mm thickness, 0.05 / 0.10–0.20 mm. Laser edges need electropolish; fatigue of 304 HTA unverified.</td><td><span class="st op">option</span></td></tr>
+<tr><td><b>G10 / FR4 (your choice)</b></td><td>E 20 vs 193 GPa; allowed strain ~0.4 % vs 0.25 %. One ~0.2 mm strip (w ≈ 5.4 mm) ≈ 9 × 0.05 steel in pitch stiffness: one piece instead of nine, and epoxy bonds it natively. Risks: 4× the strain at the same angle, lower edgewise stiffness, generic fatigue data. Needs a coupon test. Scoring running.</td><td><span class="st op">open</span></td></tr>
+<tr><td>PCB-fab FR4 strips</td><td>PCBWay 0.2/0.4/0.6 mm, CNC-routed outline with datum holes (also fixes slot angle). Board thickness ±0.1 mm, and stiffness ∝ t³, so put 5 widths on a panel, measure the board, pick the width.</td><td><span class="st op">idea</span></td></tr>
+<tr><td>Carbon fibre</td><td>Thinnest common stock: reed sheet 0.25 mm, pultruded 0.5 mm, archery UD carbon 0.38 / glass 0.76 mm. Too thick for a 10 mm free length (needs ~0.09 mm). Maybe at 10".</td><td><span class="st no">too thick</span></td></tr>
+<tr><td>Phosphor bronze / brass</td><td>Model-rail PB 0.127–0.135 mm, weaker. Brass would need ~0.026 mm.</td><td><span class="st no">weak</span></td></tr>
+<tr><td>17-7PH CH900, BeCu, Ti, NiTi</td><td>17-7PH rustproof but −15–25 % fatigue. BeCu equal to steel, toxic dust. Ti notch/fretting sensitive, hard to buy. NiTi temperature-dependent stiffness.</td><td><span class="st no">no gain</span></td></tr>
+<tr><td>TPU, PETG, PLA, nylon as hinge</td><td>See section 5.</td><td><span class="st no">no</span></td></tr>
+<tr><td>Aramid strand</td><td>Knot = 40–60 % strength and beds in. Better: pin-wrap (D ≥ 4–6 d) + potting, or spliced Vectran, pre-tensioned. No Dyneema near motor heat.</td><td><span class="st ok">use</span></td></tr>
+<tr><td>Edge finish</td><td>Snipped/filed ≈ 0.5–0.6 × polished fatigue; EDM/stoned 0.85–0.95. Factory-slit edges (dental band, slit 301) are the drop-in answer; deburr anyway.</td><td><span class="st pt">critical</span></td></tr>
+<tr><td>Body plastics</td><td>PA-CF (dried) on the X1C is what the leads are scored with. PETG fittings creep-marginal at 10"; PETG-CF failed jitter at 10". 5" PLA/PETG/ABS re-score pending.</td><td><span class="st op">open</span></td></tr>
+<tr><td>Glue</td><td>Thick slow epoxy on lands only; PTFE dry film in the free span; never thin CA near laminae.</td><td><span class="st ok">rule</span></td></tr>
+</tbody></table>
+
+<!-- ============================================================ -->
+<h2 id="s10">10. Decisions waiting on you, and next steps</h2>
+<h3>Waiting on you</h3>
+<ol>
+  <li><b>Strip material:</b> G10 (your preference) vs 301 slit strip vs dental matrix band. G10 variants are being scored; any of them needs a fatigue coupon.</li>
+  <li><b>Body plastic:</b> is printing the rotor in PA-CF on the X1C acceptable, or must it be PLA/PETG/ABS? The re-score will show the cost.</li>
+  <li><b>Motor details:</b> exposed M5 shaft length (boss needs ~18 mm) or a bell bolt pattern; 2307 magnet count (14 assumed, affects ZC spacing and notch poles).</li>
+  <li><b>Hall index sensor</b> on the bell (~1 g) for an absolute once-per-rev reference: yes/no?</li>
+  <li><b>AM32 items</b> (your code, guidance only): the <code>angle_from_zc_cnt()</code> sizeof bug; <code>cyclic_apply()</code> stub; cyclic term bypassing the ramp limiter; continuous phase calibration; governor rev-averaged or off; ESC eeprom ramp 160/s vs the 2550/s assumed.</li>
+  <li><b>Vehicle spec v1:</b> single 5", 6S 650, ~245 g, 6 vanes / 2 servos, H743-Slim: agree?</li>
+  <li><b>Loop pace:</b> keep simulating, or slow down until there is bench data? (asked on 11-22). Most recent sim work corrected the model rather than improving the design.</li>
+</ol>
+<h3>Next steps (in order)</h3>
+<ol>
+  <li>Add the slot datum wall + springy tongue and a 0.80 mm slot to the 5" print package; add the selective-assembly table to BUILD.md.</li>
+  <li>Land the G10 variants (section 13 of <code>2307_5_6in.md</code>), the PLA/PETG/ABS re-score (section 12) and the materials survey (<code>materials_5in.md</code>). None of these is in the repo yet.</li>
+  <li>Finish running DEs: d2307_de6 (301, stock widths), d2307_de7 (0.038 mm dental foil); then d2307_fam (6 concepts incl. TPU, on your hardware).</li>
+  <li>Bench, no ESC code needed: print the jig, static pitch test (2.82° target), strap pull 366 N, spin-up thrust vs rpm, 3 × 10 min soak, then re-check pitch and lamina fan.</li>
+  <li>Strip fatigue coupon at 100 Hz to 10⁷ cycles (~28 h), on the strip you will actually fly.</li>
+  <li>ESC: extend your SWP sweep toward ~300 Hz watching for desync; then a ZC-locked 1P pulse on a 2-axis load cell; then calibrate gain/phase vs rpm.</li>
+  <li>Derive the 5" arm/frame stiffness spec and run the full Floquet system check for the 5" vehicle.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="s11">11. Gallery</h2>
+<p class="small">Click an image for full size. Drawings are generated by the build scripts; "obsolete" marks pictures from models we later corrected.</p>
+<div class="gal">
+<figure><a href="../build/5in_301/drawing.png"><img src="../build/5in_301/drawing.png" loading="lazy" alt="5in 301 lead fittings"></a><figcaption><b>Current lead, 5" 301.</b> Hub fitting (blue), blade-root fitting (orange), strips (black, free length 10.05 mm), strand (green). Slot 0.70 × 4.2 mm, jaw R 0.5, min gap 2.7 mm over lag ±5° / pitch ±8°.</figcaption></figure>
+<figure><a href="../results/steelx_5in.png"><img src="../results/steelx_5in.png" loading="lazy" alt="5in steelx hand design"></a><figcaption>First 5" steel cross-spring + strap hand design (Nov 21, skew 50°). Purple = steel shim and aramid. The hand design was killed by pitch split; the concept became every lead.</figcaption></figure>
+<figure><a href="../build/10in_v8/drawing.png"><img src="../build/10in_v8/drawing.png" loading="lazy" alt="10in v8"></a><figcaption>10" v8 build package (cr_pl 0.0715): pre-angled slots, 3 mm dowel datums, z-mirrored blade 2. Judged too much precision work.</figcaption></figure>
+<figure><a href="../build/10in_easy/drawing.png"><img src="../build/10in_easy/drawing.png" loading="lazy" alt="10in easy"></a><figcaption>10" easy build: 8 × 0.075 mm feeler-roll stacks, whole rotor as one breakaway-jig print (cr_pl 0.0692, −10 % vs v8).</figcaption></figure>
+<figure><a href="../build/7in_v6/drawing.png"><img src="../build/7in_v6/drawing.png" loading="lazy" alt="7in v6"></a><figcaption>7" v6 (cr_pl 0.065, the most robust 7"): strips 0.15 × 5.84 × 12.5 mm, cross 88°, with twin-washer mount parts.</figcaption></figure>
+<figure><a href="../build/10in_v5/drawing.png"><img src="../build/10in_v5/drawing.png" loading="lazy" alt="10in v5"></a><figcaption>10" v5, the first complete verified system (flexure + twin mount + arm spec + rev-averaged governor). Later −18 % under Goodman.</figcaption></figure>
+<figure><a href="../build/7in_v5/drawing.png"><img src="../build/7in_v5/drawing.png" loading="lazy" alt="7in v5"></a><figcaption>7" v5 with real fitting mass (cross 105°), ccx-verified; first build package with the TPU damped mount.</figcaption></figure>
+<figure><a href="../build/7in_v4/drawing.png"><img src="../build/7in_v4/drawing.png" loading="lazy" alt="7in v4"></a><figcaption>7" v4 draft package: realising it exposed the missing fitting mass that sank the design.</figcaption></figure>
+<figure><a href="../build/10in_v4/drawing.png"><img src="../build/10in_v4/drawing.png" loading="lazy" alt="10in v4"></a><figcaption>10" v4: first robust-feasible 10" (8 × 0.10 mm laminae), failed the 1P margin at T0.7.</figcaption></figure>
+<figure><a href="../results/steelx_7in_v3.png"><img src="../results/steelx_7in_v3.png" loading="lazy" alt="7in v3"></a><figcaption>7" v3, the first throttle-robust design. The drawing review found a strand wider than the crossing gap and no clamp faces; it also failed tolerance.</figcaption></figure>
+<figure><a href="../results/steelx_7in_v5.png"><img src="../results/steelx_7in_v5.png" loading="lazy" alt="7in v5 render"></a><figcaption>7" steelx v5 model sheet.</figcaption></figure>
+<figure><a href="../results/steelx_10in_v4.png"><img src="../results/steelx_10in_v4.png" loading="lazy" alt="10in v4 render"></a><figcaption>10" steelx v4 model sheet (balance pins, 2.6 mm strap).</figcaption></figure>
+<figure><a href="../results/steelx_10in.png"><img src="../results/steelx_10in.png" loading="lazy" alt="10in steelx hand"></a><figcaption>First 10" steelx hand design: strips buckled (34 N vs 27 N critical) and large static lag.</figcaption></figure>
+<figure><a href="../results/strap_5in.png"><img src="../results/strap_5in.png" loading="lazy" alt="strap 5in"></a><figcaption>Tension–torsion strap hand design, 5": aramid carries CF, printed hinge.</figcaption></figure>
+<figure><a href="../results/strap_xplate_5in.png"><img src="../results/strap_xplate_5in.png" loading="lazy" alt="strap xplate"></a><figcaption>Strap + printed crossed plates, rejected (ratios 180–440; plates stay loaded).</figcaption></figure>
+<figure><a href="../results/cruciform_5in.png"><img src="../results/cruciform_5in.png" loading="lazy" alt="cruciform"></a><figcaption>Skewed cruciform, rejected: CF through the hinge member.</figcaption></figure>
+<figure><a href="../results/root_5in_tt_strap_hand_before.png"><img src="../results/root_5in_tt_strap_hand_before.png" loading="lazy" alt="root before"></a><figcaption>Blocky root before the compact-root work (+16 % hover power from root drag).</figcaption></figure>
+<figure><a href="../results/root_5in_tt_strap_hand_after.png"><img src="../results/root_5in_tt_strap_hand_after.png" loading="lazy" alt="root after"></a><figcaption>Compact, faired root after (+5.8 %).</figcaption></figure>
+<figure><a href="../results/lag_tuning.png"><img src="../results/lag_tuning.png" loading="lazy" alt="lag tuning"></a><figcaption>I12/I13 lag-tuning sweep: the response sits on a sharp resonance; shrinking hub inertia was not monotonic.</figcaption></figure>
+<figure><a href="../results/validate_bench.png"><img src="../results/validate_bench.png" loading="lazy" alt="bench validation"></a><figcaption>Motor model vs your Hakea bench logs 33/34: steady state within 4.5 %, large-signal gain over-predicted 29–35 % at 30 Hz.</figcaption></figure>
+<figure><a href="../results/root_5in_tpu_rod_winner_before.png"><img src="../results/root_5in_tpu_rod_winner_before.png" loading="lazy" alt="tpu rod root"></a><figcaption>Obsolete: the Nov 20 TPU + CF rod "winner" root (collapsed to 0.017 after the anchorage fix).</figcaption></figure>
+<figure><a href="../../examples/drawing_5in_rod_winner.png"><img src="../../examples/drawing_5in_rod_winner.png" loading="lazy" alt="rod winner drawing"></a><figcaption>Obsolete: Nov 20 5" TPU rod drawing sheet.</figcaption></figure>
+<figure><a href="../figures/control_ratio_vs_size.png"><img src="../figures/control_ratio_vs_size.png" loading="lazy" alt="cr vs size"></a><figcaption>Obsolete (Nov 20 model): control ratio vs rotor size per concept.</figcaption></figure>
+<figure><a href="../figures/utilisation_breakdown.png"><img src="../figures/utilisation_breakdown.png" loading="lazy" alt="util breakdown"></a><figcaption>Obsolete (Nov 20 model): which check binds each design. Creep dominated.</figcaption></figure>
+<figure><a href="../figures/campbell_winners.png"><img src="../figures/campbell_winners.png" loading="lazy" alt="campbell"></a><figcaption>Obsolete (Nov 20 model): Campbell diagrams (mode frequency vs rpm against the nP lines) of the first winners.</figcaption></figure>
+<figure><a href="../../examples/gui_real_geometry_dark.png"><img src="../../examples/gui_real_geometry_dark.png" loading="lazy" alt="gui geometry"></a><figcaption>flexblade GUI: real-geometry view.</figcaption></figure>
+<figure><a href="../../examples/gui_campbell_light.png"><img src="../../examples/gui_campbell_light.png" loading="lazy" alt="gui campbell"></a><figcaption>flexblade GUI: Campbell diagram panel.</figcaption></figure>
+<figure><a href="../../examples/gui_fea_vm.png"><img src="../../examples/gui_fea_vm.png" loading="lazy" alt="gui fea"></a><figcaption>flexblade GUI: FEA stress view.</figcaption></figure>
+</div>
+
+<p class="small" style="margin-top:30px">Generated 2026-11-22 from the repository logs. File: <code>flexblade/study/recap/index.html</code>; open from file:// (images are relative links into <code>study/build</code>, <code>study/results</code>, <code>study/figures</code> and <code>flexblade/examples</code>).</p>
+</main>
+</body>
+</html>
