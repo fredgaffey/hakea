@@ -152,3 +152,50 @@ def test_lamina_stock_ext(monkeypatch):
         assert opt.get_path(d.model_dump(mode="json"), "flexure.lamina_idx") == 5.0
     finally:
         _reload(monkeypatch, False)
+
+
+def _with_mat(d, m):
+    return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
+        layup=d.flexure.layup.model_copy(update=dict(material=m))))))
+
+
+def test_steel_lamina_mapping_unchanged(monkeypatch):
+    """steel strips (running DEs) keep LAMINA_STOCK indices 0-4, n >= 2 and bounds 1.5..12.5."""
+    opt = _reload(monkeypatch, False)
+    d = rs.base_design(10.0, "tt_strap_steelx", False)[0]
+    for m in ("steel_1095_shim", "steel_301_fh"):
+        dm = _with_mat(d, m)
+        for i, t in enumerate(_BASE):
+            d2 = opt.set_design(dm, {"flexure.lamina_idx": float(i), "flexure.strip_laminae": 1.0})
+            assert d2.flexure.thickness == t and d2.flexure.strip_laminae == 2
+            assert opt.get_path(d2.model_dump(mode="json"), "flexure.lamina_idx") == float(i)
+        assert opt.set_design(dm, {"flexure.lamina_idx": 9.0}).flexure.thickness == _BASE[-1]
+        assert opt.set_design(dm, {"flexure.strip_laminae": 30}).flexure.strip_laminae == 12
+    monkeypatch.setattr(rs, "MATERIAL", "steel_301_fh")
+    n, i = _lam_bounds(monkeypatch)
+    assert (n.lo, n.hi, i.lo, i.hi) == (1.5, 12.5, -0.5, 4.5)
+
+
+def test_g10_lamina_mapping(monkeypatch):
+    opt = _reload(monkeypatch, False)
+    from flexblade.materials import SHIM_THICKNESSES, G10_STOCK
+    assert opt.G10_STOCK == G10_STOCK == SHIM_THICKNESSES["fr4_g10"] == (1e-4, 2e-4, 3e-4, 4e-4, 5e-4, 8e-4)
+    d = _with_mat(rs.base_design(10.0, "tt_strap_steelx", False)[0], "fr4_g10")
+    for i, t in enumerate(G10_STOCK):
+        d2 = opt.set_design(d, {"flexure.lamina_idx": i + 0.3})
+        assert d2.flexure.thickness == t
+        assert opt.get_path(d2.model_dump(mode="json"), "flexure.lamina_idx") == float(i)
+        assert opt.get_path(d2, "flexure.lamina_idx") == float(i)
+    assert opt.set_design(d, {"flexure.lamina_idx": -0.5}).flexure.thickness == 1e-4
+    assert opt.set_design(d, {"flexure.lamina_idx": 5.5}).flexure.thickness == 8e-4
+    assert opt.LAMINA_STOCK == _BASE   # G10 has its own index space
+
+
+def test_g10_single_strip_allowed(monkeypatch):
+    opt = _reload(monkeypatch, False)
+    d = _with_mat(rs.base_design(10.0, "tt_strap_steelx", False)[0], "fr4_g10")
+    assert opt.set_design(d, {"flexure.strip_laminae": 0.6}).flexure.strip_laminae == 1
+    assert opt.set_design(d, {"flexure.strip_laminae": 6.4}).flexure.strip_laminae == 6
+    monkeypatch.setattr(rs, "MATERIAL", "fr4_g10")
+    n, i = _lam_bounds(monkeypatch)
+    assert (n.lo, n.hi, i.lo, i.hi) == (0.5, 6.5, -0.5, 5.5)

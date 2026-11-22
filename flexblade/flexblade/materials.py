@@ -346,9 +346,11 @@ STRAP_MATERIALS = ("aramid_yarn", "uhmwpe_braid", "cf_tow")
 # sheet stock cut into strips and clamped (embedded) in the printed fittings, not printed
 SHEET_MATERIALS = ("steel_1095_shim", "steel_301_fh", "fr4_g10")
 SHIM_STEELS = ("steel_1095_shim", "steel_301_fh")
+# FR4/G10 sheet thicknesses sold as thin laminate (m); optimize maps flexure.lamina_idx into it
+G10_STOCK = (0.1e-3, 0.2e-3, 0.3e-3, 0.4e-3, 0.5e-3, 0.8e-3)
 SHIM_THICKNESSES = {"steel_1095_shim": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
                     "steel_301_fh": (5e-5, 8e-5, 1.0e-4, 1.3e-4, 1.5e-4, 2.0e-4),
-                    "fr4_g10": (2e-4, 4e-4)}
+                    "fr4_g10": G10_STOCK}
 
 
 # assumed: TPU 95A/64D soften ~100-130 C; PETG-CF Tg ~85 C (form ~90-100); PLA Tg ~60 C;

@@ -154,8 +154,12 @@ def variables(concept: str, D: float) -> list[Variable]:
         if LAMINAE_VARS:   # (n, t) fatigue lever: strip stress ~ t, stiffness ~ n*w*t^3
             V = [v for v in V if v.path != "flexure.thickness"]
             _ext = os.environ.get("LAMINA_STOCK_EXT") == "1"   # thin foil: idx 5,6 and n up to 24
-            V += [Variable(path="flexure.strip_laminae", lo=1.5, hi=24.5 if _ext else 12.5),
-                  Variable(path="flexure.lamina_idx", lo=-0.5, hi=6.5 if _ext else 4.5)]
+            if MATERIAL == "fr4_g10":   # G10 sheet: idx into optimize.G10_STOCK (0.1-0.8 mm), n = 1 reachable
+                V += [Variable(path="flexure.strip_laminae", lo=0.5, hi=6.5),
+                      Variable(path="flexure.lamina_idx", lo=-0.5, hi=5.5)]
+            else:
+                V += [Variable(path="flexure.strip_laminae", lo=1.5, hi=24.5 if _ext else 12.5),
+                      Variable(path="flexure.lamina_idx", lo=-0.5, hi=6.5 if _ext else 4.5)]
         if BLADE_VARS:   # light wide hollow CF-skin blade: mass/EI/GJ follow from the layup
             V += [Variable(path="blade.chord_scale", lo=0.9, hi=1.6),
                   Variable(path="blade.layup.skin_thickness", lo=0.0004, hi=0.0012, log=True),
