@@ -91,3 +91,25 @@ def test_lamina_idx_get_path_roundtrip():
     assert 0 <= i <= len(LAMINA_STOCK) - 1 and i == int(i)
     d2 = set_design(d, {"flexure.lamina_idx": 2.0})
     assert get_path(d2.model_dump(mode="json"), "flexure.lamina_idx") == 2.0
+
+
+def _lead():
+    p = Path(__file__).resolve().parents[1] / "study/designs/5in_v8s_2307_m245_301.json"
+    return Design.model_validate_json(p.read_text())
+
+
+def test_width_idx_roundtrip():
+    d = _lead()
+    assert get_path(d.model_dump(mode="json"), "flexure.width_idx") == 1.0
+    d2 = set_design(d, {"flexure.width_idx": 2.0})
+    assert abs(d2.flexure.width - 5.0e-3) < 1e-12
+
+
+def test_material_override_on_seed():
+    d = _lead()
+    rs.MATERIAL = "steel_1095_shim"
+    try:
+        assert rs._material(d).flexure.layup.material == "steel_1095_shim"
+    finally:
+        rs.MATERIAL = None
+    assert rs._material(d).flexure.layup.material == "steel_301_fh"

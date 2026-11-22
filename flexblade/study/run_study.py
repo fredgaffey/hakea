@@ -55,6 +55,8 @@ from flexblade.schema import Design, Layup, OptimizeRequest, Target, Variable  #
 RAMP_SLEW = 2550.0          # AM32 max_ramp 255 → 255/2000 per 50 µs tick = 2550 /s
 STOCK_SLEW = 160.0
 RES_BAND = 0.15
+WIDTH_STOCK_VARS = False   # --width-stock: flexure.width -> virtual stock-width index
+MATERIAL = None        # --material: flexure.layup.material override on every design
 LAMINAE_VARS = False   # --laminae-vars: strip_laminae count + stock lamina thickness (steelx)
 BLADE_VARS = False     # --blade-vars: blade.chord_scale + hollow-skin layup (steelx)
 BAL_VARS = False       # --one-sided also enables the bal.* balance-pair variables (steelx)
@@ -168,6 +170,10 @@ def variables(concept: str, D: float) -> list[Variable]:
               Variable(path="flexure.cross_gap", lo=0.0008, hi=0.004 * s)]
     else:
         raise KeyError(concept)
+    if WIDTH_STOCK_VARS:   # absolute stock widths (not scaled by size)
+        from flexblade.optimize import WIDTH_STOCK
+        V = [Variable(path="flexure.width_idx", lo=-0.5, hi=len(WIDTH_STOCK) - 0.5)
+             if v.path == "flexure.width" else v for v in V]
     return V
 
 
@@ -726,6 +732,13 @@ def _jhub(D):
 J_HUB = None    # tuple of motor.J_hub values: robust/tolerance dimension
 
 
+def _material(d: Design) -> Design:
+    if not MATERIAL:
+        return d
+    return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(
+        layup=d.flexure.layup.model_copy(update=dict(material=MATERIAL))))))
+
+
 def _goodman(d: Design) -> Design:
     return d.model_copy(update=dict(flexure=d.flexure.model_copy(update=dict(strip_fatigue_mean="goodman"))))
 
@@ -780,6 +793,8 @@ def run_case(case: str, D: float, concept: str, coax: bool, pool, log: Logger, p
         base = bo[0].model_copy(update=dict(name=base.name))
         if MOTOR:   # lead's motor -> override; pulse re-derived from the override's capability
             base = set_design(with_motor(base), {"op.torque_mod_frac": tmf})
+    base = _material(base)
+    leads = [_material(d) for d in leads]
     if GOODMAN:
         base = _goodman(base)
     V = variables(concept, D)
@@ -951,6 +966,12 @@ def main(argv=None):
     ap.add_argument("--laminae-vars", action="store_true",
                     help="steelx: vary flexure.strip_laminae (int 2-12) and lamina thickness "
                          "(index snapped to stock 0.05/0.075/0.10/0.127/0.15 mm)")
+    ap.add_argument("--width-stock", action="store_true",
+                    help="steelx: replace flexure.width with a stock-width index "
+                         "(3/4/5/6/8/10/12.7 mm, absolute, not scaled by size)")
+    ap.add_argument("--material", default=None,
+                    help="override the flexure strip material (flexure.layup.material) on every design "
+                         "incl. seeds/base designs; one of materials.SHEET_MATERIALS")
     ap.add_argument("--gates", choices=("default", "minimal"), default="default",
                     help="minimal: drop mech_band / one-sided gates, add zeta_mech >= 0.02; keeps bal.* variables")
     ap.add_argument("--mech-margin", type=float, default=0.075,
@@ -993,6 +1014,11 @@ def main(argv=None):
     global ONE_SIDED, BAL_VARS, BLADE_VARS, LAMINAE_VARS
     BLADE_VARS = a.blade_vars
     LAMINAE_VARS = a.laminae_vars
+    global WIDTH_STOCK_VARS, MATERIAL
+    from flexblade.materials import SHEET_MATERIALS
+    if a.material and a.material not in SHEET_MATERIALS:
+        ap.error(f"--material {a.material!r} not in {SHEET_MATERIALS}")
+    WIDTH_STOCK_VARS, MATERIAL = a.width_stock, a.material
     global GATES_MINIMAL
     GATES_MINIMAL = a.gates == "minimal"
     ONE_SIDED = a.one_sided
