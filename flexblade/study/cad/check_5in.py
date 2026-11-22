@@ -9,7 +9,9 @@ Writes study/cad/5in_301/: rotor_script.json (pure modelling commands, replayabl
   interference  inspect.interference over all bodies: no overlaps (strips sit in slot clearance)
   swing         hub-to-blade-fitting gap >= 0.5 mm with the fitting turned +-15 deg about lag (z), flap and
                 the flexure hinge axis through the hinge point (solid.move + inspect.clearance)
-Usage: python study/cad/check_5in.py [--no-export]
+Usage: python study/cad/check_5in.py [--no-export] [--out DIR] [--ov JSON]
+  --out DIR   output directory (default study/cad/5in_301); --ov JSON: solidcraft overrides, e.g.
+              '{"strap_route": "pair_z"}' (study/cad/5in_301_strapfix) - also adds crossing.png, a close-up
 """
 import json
 import math
@@ -202,18 +204,23 @@ def export(base, names, lay):
                  "root.png": ["--camera", json.dumps({"target": H, "yaw": 0.9, "pitch": 0.45, "distance": 48}), "--no-grid"],
                  "root_section.png": ["--camera", json.dumps({"target": H, "yaw": 0.0, "pitch": 0.0, "distance": 45}),
                                       "--section", "XZ", "--no-grid"]}
+        if lay["overrides"]:     # close-up of the strap passing the crossing (override builds only)
+            views["crossing.png"] = ["--camera", json.dumps({"target": H, "yaw": 0.35, "pitch": 0.25, "distance": 22}),
+                                     "--no-grid"]
         for fn, v in views.items():
             subprocess.run([CLI, "snapshot", str(p), "--out", str(OUT / fn), "--width", "1200", "--height", "900"]
                            + v + body_args(names), check=True, capture_output=True)
 
 
-def main(do_export=True):
+def main(do_export=True, out=None, ov=None):
+    global OUT
+    OUT = Path(out) if out else OUT
     design = json.load(open(DESIGN))
-    base = rotor_commands(design)
+    base = rotor_commands(design, ov)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "rotor_script.json").write_text(json.dumps(base, indent=1))
-    lay = rotor_layout(design)
-    names = part_names(design)
+    lay = rotor_layout(design, ov)
+    names = part_names(design, ov)
     ev = cli(base)
     by = {b["name"]: b for b in ev["bodies"]}
     rows = []
@@ -243,4 +250,6 @@ def main(do_export=True):
 
 
 if __name__ == "__main__":
-    sys.exit(1 if main(do_export="--no-export" not in sys.argv) else 0)
+    a = sys.argv
+    sys.exit(1 if main(do_export="--no-export" not in a, out=a[a.index("--out") + 1] if "--out" in a else None,
+                       ov=json.loads(a[a.index("--ov") + 1]) if "--ov" in a else None) else 0)

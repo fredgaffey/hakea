@@ -11,7 +11,8 @@ so it replays unchanged in the CLI (`solidcraft-cli run`) and in Keel's page
                  blade-side U jaws (blind, over-deep slots), joined to a lofted blade (`blade_loft_commands`)
   strip_b{k}_{i} 9-lamina strip stack (one solid), sitting in its two slots: land in the hub jaw, free span,
                  land in the blade jaw
-  strap_b{k}     aramid strand (centrifugal tie) from the hub knot well to the blade knot well
+  strap_b{k}     aramid strand (centrifugal tie) from the hub knot well to the blade knot well; it clips the
+                 crossing stacks (see _strap_route). overrides strap_route="pair_z": strap_b{k}_1 / _2 at z = +-dz
 
 Strip frames (exit points, directions, crossing) come from the analysis model (fittings.strip_members), so
 the CAD and the beam model share the same flexure. Every dimension is the 5in_301 print package's
@@ -139,7 +140,54 @@ OVERRIDE_KEYS = {"n_lam": "laminae per stack", "t_lam": "lamina thickness, mm", 
                  "mouth_chamfer": "45 deg slot-mouth chamfer, mm", "boss_h": "boss height, mm", "boss_od": "boss OD, mm",
                  "bore": "bore, mm",
                  "flat_base": "support-free flat motor face (bool, default off): see _flat_base_doc",
-                 "supports": "designed breakaway supports (bool, default off; needs meshes=, see support_commands)"}
+                 "supports": "designed breakaway supports (bool, default off; needs meshes=, see support_commands)",
+                 "strap_route": "'axis' (default: one strand on the pitch axis) | 'pair_z': see _strap_route"}
+STRAP_CLEAR = 0.15              # strap_route pair_z: min strand-surface to strip-stack clearance, mm
+NOTCH_X, NOTCH_Y = 2.6, 1.0     # pair_z: blade arm-plate notch past the hub rib (x: 1 mm + the 15 deg flap sweep), mm
+RIB_THIN, NOTCH_JAW = 0.5, 3.0  # pair_z: rib wall on the -y (blade-jaw) side and over the channel; notch -y edge (jaw at -3.04), mm
+
+
+def _stack_dist(fr, prm, y0, z0, x0, x1, step=0.01):
+    """Min distance (mm) from the x-parallel line (y0, z0), x in [x0, x1], to the strip stacks (lands included)."""
+    xs = np.arange(x0, x1 + 1e-9, step)
+    P = np.stack([xs, np.full_like(xs, y0), np.full_like(xs, z0)], 1)
+    out = []
+    for f in fr:
+        d = P - f["p0"]
+        a, b, c = d @ f["t"], d @ f["w"], d @ f["n"]
+        da = np.maximum(0, np.maximum(-prm.land - a, a - f["L"] - prm.land))
+        out.append(float(np.sqrt(da ** 2 + np.maximum(0, abs(b) - prm.w / 2) ** 2
+                                 + np.maximum(0, abs(c) - prm.t / 2) ** 2).min()))
+    return min(out)
+
+
+def _strap_route(fr, prm, ov, x_hw, x_bw, ch_h, x_bs):
+    """Strand route(s) of the tension-torsion strap, blade-1 frame. 'axis': the analysis strap, one strand of
+    strand_d on the pitch axis (through the hinge point). It clips the crossing stacks: the stacks sit side by
+    side along the hinge axis (28 deg off the pitch axis) with only cross_gap between their crossing edges, so
+    the clear radius round the pitch axis is ~0.06 mm (lead) and no load-carrying strand fits there.
+    'pair_z': two area-equivalent strands (strand_d / sqrt 2) at z = +-dz, y = 0, dz the smallest 0.05 mm step
+    that clears both stacks by STRAP_CLEAR over the whole knot-to-knot run. An offset along z (the pitch-axis
+    normal in the plane of pitch and hinge axes) is the only one with no first-order stretch / moment about the
+    hinge axis (w . (e x x) = 0); a y offset stretches the strand at 0.47 dy per rad of hinge rotation. The
+    pair adds trapeze pitch stiffness ~ T (0.88 dz)^2 / L_free (= flexure.strap_strands 2, strap_radius dz in
+    the beam model). The +dz strand leaves the hub through a narrow rib on the spine (channel + wall), runs in the
+    blade shank; the -dz strand runs in the hub spine, passes under the shank and knots in a short lug at the
+    blade well (kept outboard of the hub arm plates so +-15 deg swing stays clear)."""
+    route = ov.get("strap_route", "axis") or "axis"
+    if route == "axis":
+        return dict(route="axis", d=prm.strand_d, ch_d=prm.channel_d, zs=(0.0,), dz=0.0, top=ch_h,
+                    bx0=(x_bs,))
+    if route != "pair_z":
+        raise ValueError(f"strap_route {route!r}: 'axis' | 'pair_z'")
+    d = prm.strand_d / math.sqrt(2.0)
+    ch_d = d + FT.CH_CLEAR
+    dz = round(math.ceil((ch_d / 2) / 0.05) * 0.05, 4)
+    while min(_stack_dist(fr, prm, 0.0, s * dz, x_hw, x_bw) for s in (1, -1)) < d / 2 + STRAP_CLEAR:
+        dz = round(dz + 0.05, 4)
+    lug_x0 = x_bw - CH_LEN / 2
+    return dict(route="pair_z", d=d, ch_d=ch_d, zs=(dz, -dz), dz=dz, top=max(ch_h, dz + ch_d / 2 + RIB_THIN),
+                rib_y=(-(ch_d / 2 + RIB_THIN), ch_d / 2 + prm.wall), rib_hw=ch_d / 2 + prm.wall, lug_x0=lug_x0, bx0=(x_bs, lug_x0))
 FB_GAP = 2.0                    # flat_base: min xy gap from an upper hub jaw's shadow to its blade fitting, mm
 FB_SLOT_EXT = 8.0               # flat_base: hub slot cutter run-out past the jaw back, so it exits the pedestal
 
@@ -200,7 +248,8 @@ def rotor_layout(design: dict | Design, overrides: dict | None = None) -> dict:
                 boss_h=float(ov.get("boss_h", BOSS_H)), boss_od=float(ov.get("boss_od", BOSS_OD)),
                 bore=float(ov.get("bore", BORE_D)), blade_extra=float(ov.get("blade_extra", OVERDEEP)),
                 chamfer=float(ov.get("mouth_chamfer", 0.0)), flat_base=bool(ov.get("flat_base", False)),
-                z_base=_z_base(fr, prm, D.blade.n_blades, float(ov.get("blade_extra", OVERDEEP))), overrides=ov)
+                z_base=_z_base(fr, prm, D.blade.n_blades, float(ov.get("blade_extra", OVERDEEP))), overrides=ov,
+                strap=_strap_route(fr, prm, ov, x_hw, x_bw, prm.channel_d / 2 + prm.wall, xw[1]))
 
 
 FB_BELL_R, FB_BELL_GAP = 14.5, 1.0   # flat_base: 2307 bell radius; blade-fitting clearance above the motor face there, mm
@@ -342,7 +391,7 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
     """SolidCraft script for the whole rotor (see module doc). Pure modelling commands only.
     overrides: see OVERRIDE_KEYS (e.g. the Ender/PETG spin-test variant in study/cad/build_5in_ender_tonight.py)."""
     lay = rotor_layout(design, overrides)
-    prm, fr, n, hw = lay["prm"], lay["strips"], lay["n"], lay["hw"]
+    prm, fr, n, hw, st = lay["prm"], lay["strips"], lay["n"], lay["hw"], lay["strap"]
     boss_h, BOSS_OD, BORE_D, ex_d, cham = lay["boss_h"], lay["boss_od"], lay["bore"], lay["blade_extra"], lay["chamfer"]
     zb = BOSS_H / 2 - ARM_T                            # arm plates: hub z in [-6, -4], blade z in [4, 6]
     fb, zB = lay["flat_base"], lay["z_base"]
@@ -364,6 +413,10 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
         down = fb and mz > 0                            # flat_base, hub side hanging down: everything on pedestals
         S.obox(f"hub_spine{k}", L, [0, 0, 0], ex, ey, ez, (0.0, lay["x_hub_end"]), (-hw, hw),
                (zB if down else -(BOSS_H / 2 - ARM_T / 2), lay["ch_h"]))
+        if st["route"] == "pair_z":                     # rib walling the outer (+dz) strand from the knot well
+            S.obox(f"hub_rib{k}", L, [0, 0, 0], ex, ey, ez, (lay["x_hw"], lay["x_hub_end"]), st["rib_y"],
+                   (lay["ch_h"] - 0.5, st["top"]))
+            hub_parts.append(f"hub_rib{k}")
         if fb and not down:                             # blade k fitting footprint (it lies under the upper hub jaws)
             bfp = _hull2([(L @ [x, y, 0])[:2] for x in (lay["x_blade_start"], x_be) for y in (-hw, hw)]
                          + [(L @ p)[:2] for f in fr for p in _box_corners(f, _jaw_ranges(f, prm, 1, ex_d)[0])])
@@ -391,6 +444,10 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
         S.obox(f"blade{k}", L, [0, 0, 0], ex, ey, ez, (lay["x_blade_start"], x_be), (-hw, hw),
                (-lay["ch_h"], BOSS_H / 2 - ARM_T / 2))
         bl_parts = []
+        if st["route"] == "pair_z":                     # lug holding the outer (-dz) strand's knot, clear of the hub arms
+            S.obox(f"blade_lug{k}", L, [0, 0, 0], ex, ey, ez, (st["lug_x0"], lay["x_bw"]), (-st["rib_hw"], st["rib_hw"]),
+                   (-st["top"], -lay["ch_h"] + 0.5))
+            bl_parts.append(f"blade_lug{k}")
         for i, f in enumerate(fr, 1):
             jr, _ = _jaw_ranges(f, prm, 1, ex_d)
             S.obox(f"blade_jaw{k}{i}", L, f["p0"], f["t"], f["w"], f["n"], *jr)
@@ -399,6 +456,10 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
             S.plate(f"blade_arm{k}{i}", poly, zb if mz > 0 else -BOSS_H / 2, ARM_T)
             bl_parts += [f"blade_jaw{k}{i}", f"blade_arm{k}{i}"]
         S.join(f"blade{k}", bl_parts)
+        if st["route"] == "pair_z":                     # arm-plate notch over the hub rib (rest + 15 deg swing clearance)
+            S.obox(f"blade_notch{k}", L, [0, 0, 0], ex, ey, ez, (lay["x_hw"] - 5.0, lay["x_hub_end"] + NOTCH_X),
+                   (-NOTCH_JAW, st["rib_y"][1] + NOTCH_Y), (lay["ch_h"], BOSS_H / 2 + 1.0))
+            S.cut(f"blade{k}", [f"blade_notch{k}"])
     fil = [p for p in fil if z_boss0 < p[2] < -BOSS_H / 2 + boss_h]     # arms that meet the boss
     if fillet and fil:  # arm roots: arm plate face meeting the boss cylinder
         S.add("solid.fillet", body="hub", edges=[_r(p) for p in fil],
@@ -428,19 +489,23 @@ def rotor_commands(design: dict, overrides: dict | None = None, fillet: bool = T
         # strap channel + knot wells (wells open through the arm side for knotting)
         zt = BOSS_H / 2 + 1
         z_w0 = zB - 1 if (fb and mz > 0) else -zt       # flat_base: the hub well opens through the motor face
-        S.cyl(f"hub_well{k}", L, [lay["x_hw"], 0, z_w0], [lay["x_hw"], 0, lay["ch_h"] + 1], prm.well_d)
-        S.cyl(f"hub_chan{k}", L, [lay["x_hw"], 0, 0], [lay["x_hub_end"] + 1, 0, 0], prm.channel_d)
-        S.cyl(f"blade_well{k}", L, [lay["x_bw"], 0, -lay["ch_h"] - 1], [lay["x_bw"], 0, zt], prm.well_d)
-        S.cyl(f"blade_chan{k}", L, [lay["x_blade_start"] - 1, 0, 0], [lay["x_bw"], 0, 0], prm.channel_d)
-        S.cut("hub", hs + [f"hub_well{k}", f"hub_chan{k}"])
+        S.cyl(f"hub_well{k}", L, [lay["x_hw"], 0, z_w0], [lay["x_hw"], 0, st["top"] + 1], prm.well_d)
+        sfx = [""] if len(st["zs"]) == 1 else [f"_{j}" for j in range(1, len(st["zs"]) + 1)]
+        for j, z in zip(sfx, st["zs"]):
+            S.cyl(f"hub_chan{k}{j}", L, [lay["x_hw"], 0, z], [lay["x_hub_end"] + 1, 0, z], st["ch_d"])
+        S.cyl(f"blade_well{k}", L, [lay["x_bw"], 0, -st["top"] - 1], [lay["x_bw"], 0, zt], prm.well_d)
+        for j, z, x0 in zip(sfx, st["zs"], st["bx0"]):
+            S.cyl(f"blade_chan{k}{j}", L, [x0 - 1, 0, z], [lay["x_bw"], 0, z], st["ch_d"])
+        S.cut("hub", hs + [f"hub_well{k}"] + [f"hub_chan{k}{j}" for j in sfx])
         S.cut("hub", ko, keep=True)
-        S.cut(f"blade{k}", bs + ko + [f"blade_well{k}", f"blade_chan{k}"])
+        S.cut(f"blade{k}", bs + ko + [f"blade_well{k}"] + [f"blade_chan{k}{j}" for j in sfx])
         blade_loft_commands(S, lay, k, f"aero{k}", n_sec)
         S.join(f"blade{k}", [f"aero{k}"])
         for i, f in enumerate(fr, 1):
             S.obox(f"strip_b{k}_{i}", L, f["p0"], f["t"], f["w"], f["n"], (-prm.land, f["L"] + prm.land),
                    (-prm.w / 2, prm.w / 2), (-prm.t / 2, prm.t / 2))
-        S.cyl(f"strap_b{k}", L, [lay["x_hw"], 0, 0], [lay["x_bw"], 0, 0], prm.strand_d)
+        for j, z in zip(sfx, st["zs"]):
+            S.cyl(f"strap_b{k}{j}", L, [lay["x_hw"], 0, z], [lay["x_bw"], 0, z], st["d"])
     if lay["overrides"].get("supports") and meshes:     # print-frame parts + breakaway supports (second pass)
         for part, T in meshes.items():
             R, dz = print_frame(T)
@@ -583,8 +648,9 @@ def support_commands(T, name, exclude=(), pitch=SUP_PITCH):
 
 
 
-def part_names(design: dict) -> list[str]:
+def part_names(design: dict, overrides: dict | None = None) -> list[str]:
     n = int(design["blade"]["n_blades"])
+    pair = (overrides or {}).get("strap_route", "axis") == "pair_z"
     return (["hub"] + [f"blade{k}" for k in range(1, n + 1)]
             + [f"strip_b{k}_{i}" for k in range(1, n + 1) for i in (1, 2)]
-            + [f"strap_b{k}" for k in range(1, n + 1)])
+            + [f"strap_b{k}{j}" for k in range(1, n + 1) for j in (("_1", "_2") if pair else ("",))])

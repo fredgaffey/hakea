@@ -86,3 +86,39 @@ def test_flat_base_hub_sits_flat(design, tmp_path):
     on_plate = (np.abs(low[:, :, 2] - zb) < 0.05).all(axis=1)
     bad = (N[:, 2] / np.maximum(2 * A, 1e-30) < -0.766) & ~on_plate
     assert A[bad].sum() < 1.0
+
+
+def test_strap_route_is_off_by_default(design):
+    """Default (and explicit 'axis') script is unchanged: the committed study/cad/5in_301 build replays byte for byte."""
+    from flexblade.cad.solidcraft import rotor_layout, _stack_dist
+    base = rotor_commands(design)
+    assert base == rotor_commands(design, {"strap_route": "axis"})
+    ref = ROOT / "study/cad/5in_301/rotor_script.json"
+    if ref.exists():
+        assert json.dumps(base, indent=1) == ref.read_text()
+    lay = rotor_layout(design)
+    assert part_names(design) == part_names(design, {"strap_route": "axis"})
+    # the pitch-axis strand clips the crossing stacks (clear radius ~0.06 mm << strand radius 0.65 mm)
+    assert _stack_dist(lay["strips"], lay["prm"], 0.0, 0.0, lay["x_hw"], lay["x_bw"]) < lay["prm"].strand_d / 2
+    st = rotor_layout(design, {"strap_route": "pair_z"})["strap"]
+    assert st["zs"] == (st["dz"], -st["dz"]) and 2.5 < st["dz"] < 4.0
+    assert st["d"] == pytest.approx(lay["prm"].strand_d / 2 ** 0.5)      # area-equivalent pair
+    with pytest.raises(ValueError):
+        rotor_layout(design, {"strap_route": "bogus"})
+
+
+@pytest.mark.skipif(not HAVE_CLI, reason="solidcraft-cli not installed")
+def test_strap_route_pair_clears_strips(design):
+    """pair_z: two strands per blade, every part one solid, and no interference at all (the axis strand clips)."""
+    import sys
+    sys.path.insert(0, str(ROOT / "study/cad"))
+    import check_5in as C
+    ov = {"strap_route": "pair_z"}
+    names = part_names(design, ov)
+    assert {"strap_b1_1", "strap_b1_2", "strap_b2_1", "strap_b2_2"} <= set(names) and "strap_b1" not in names
+    base = rotor_commands(design, ov)
+    bodies = {b["name"]: b for b in C.cli(base)["bodies"]}
+    assert set(bodies) == set(names)
+    assert all(b["closed"] and b["kernel"]["shells"] == 1 for b in bodies.values())
+    itf = C.cli(C.plus(base, ("inspect.interference", {})), results=True)[-1]
+    assert not itf.get("interferences") and not itf.get("unchecked"), itf.get("interferences")
