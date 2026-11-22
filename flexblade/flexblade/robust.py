@@ -42,7 +42,7 @@ def tol_ranges():
     import os
     if os.environ.get("CQ_TOL") == "datumed":
         return dict(TOL_DATUMED)
-    return {k: 0.05 for k in TOL_DATUMED}
+    return {k: float(os.environ.get("CQ_TOL_MAG", 0.05)) for k in TOL_DATUMED}
 
 
 def _perturb_set():
