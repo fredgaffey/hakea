@@ -49,6 +49,9 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          chisel=46.0, x_ch=16.5,           # end taper (deg from horizontal; < 45 deg overhang) from |x|
          bore=5.1, nut_af=8.0, nut_seat=6.0,
          te=0.02, tip=7.0, free=0,
+         slits=1,       # 0: solid printed flexure (no shim slits, no strips, no pauses)
+         paddle=0,      # 1: flat T-section test paddles instead of the aero blades
+         pad_x0=19.5, pad_x1=60.0, pad_w=12.0, pad_t=3.0, pad_rib=23.0, pad_rw=6.0, pad_hole=2.5, pad_hx=55.0, pad_hy=4.5,
          inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),))
 
 
@@ -143,7 +146,7 @@ def hinge_cuts(S, lay, k, p, target):
             S.cut(tl, webs, keep=True)
     knife = [tuple(q) for q in sec["line"]] + [(sec["line"][-1][0], B), (sec["line"][0][0], B)]
     below = [tuple(q) for q in sec["line"]] + [(sec["line"][-1][0], -B), (sec["line"][0][0], -B)]
-    sk_prism(S, f"gapK{k}", Lm, h + (a0 - g) * a, u, v, knife, g)
+    sk_prism(S, f"gapK{k}", Lm, h + (a0 - g) * a, u, v, knife, g + 0.1)   # +0.1 overlap: no knife/cradle edge contact
     sk_prism(S, f"gapC{k}", Lm, h + a1 * a, u, v, below, g)
     tools += [f"gapK{k}", f"gapC{k}"]
     S.cut(target, tools)
@@ -239,6 +242,30 @@ def checks(lay, p):
     return out
 
 
+def paddle(S, p, k, join=True):
+    """Flat test paddle on blade k's side (blade 2 = -x): plate |y|<=pad_w/2, |z|<=pad_t/2 from |x|=pad_x0 (inside
+    the blade-side end chunk: outboard of the cradle gap plane for |z|<=1.5 is |x|>19.02), plus a 45-deg gusset and
+    rib down to the bed from |x|=pad_rib (clear of the envelope) so it prints without support. Two vertical holes
+    at (pad_hx, +-pad_hy) to hang weights (torque about the ~radial hinge axis)."""
+    sg = 1.0 if k == 1 else -1.0
+    hw, ht, zb = p["pad_w"] / 2, p["pad_t"] / 2, p["zb"]
+    ey, ez = np.array([0.0, 1.0, 0.0]), np.array([0.0, 0.0, 1.0])
+    I3 = np.eye(3)
+    x0 = p["pad_x0"] if k == 1 else -p["pad_x1"]
+    sk_prism(S, f"pad{k}", I3, np.array([x0, 0.0, 0.0]), ey, ez,
+             [(-hw, -ht), (hw, -ht), (hw, ht), (-hw, ht)], p["pad_x1"] - p["pad_x0"])
+    xr = p["pad_rib"] if k == 1 else -p["pad_x1"]
+    rw = p["pad_rw"] / 2
+    rib = [(-hw, ht), (-hw, -ht), (-rw, -ht - (hw - rw)), (-rw, zb), (rw, zb), (rw, -ht - (hw - rw)), (hw, -ht), (hw, ht)]
+    sk_prism(S, f"padr{k}", I3, np.array([xr, 0.0, 0.0]), ey, ez, rib, p["pad_x1"] - p["pad_rib"])
+    S.join(f"pad{k}", [f"padr{k}"])
+    for j, yy in enumerate((p["pad_hy"], -p["pad_hy"])):
+        S.cyl(f"padh{k}{j}", I3, (sg * p["pad_hx"], yy, zb - 1), (sg * p["pad_hx"], yy, ht + 1), p["pad_hole"])
+    S.cut(f"pad{k}", [f"padh{k}0", f"padh{k}1"])
+    if join:
+        S.join("rotor", [f"pad{k}"])
+
+
 def build(design, p=P, ov=OV, blades=True, strips=True):
     lay = rotor_layout(design, ov)
     S = _Script()
@@ -246,11 +273,17 @@ def build(design, p=P, ov=OV, blades=True, strips=True):
     pauses = {}
     for k in range(1, lay["n"] + 1):
         hinge_cuts(S, lay, k, p, "rotor")
-    for k in range(1, lay["n"] + 1):
-        pauses[k] = slit_cuts(S, lay, k, p, "rotor")
-    S.cut("rotor", [f"slit{k}{i}" for k in range(1, lay["n"] + 1) for i in range(len(lay["strips"]))])
+    if p["slits"]:
+        for k in range(1, lay["n"] + 1):
+            pauses[k] = slit_cuts(S, lay, k, p, "rotor")
+        S.cut("rotor", [f"slit{k}{i}" for k in range(1, lay["n"] + 1) for i in range(len(lay["strips"]))])
+    else:
+        strips = False
     hub_bore(S, p)
-    if blades:
+    if p["paddle"]:
+        for k in (1, 2):
+            paddle(S, p, k, join=not p["free"])
+    elif blades:
         for k in range(1, lay["n"] + 1):
             blade_loft(S, lay, k, f"aero{k}", p)
             S.join("rotor", [f"aero{k}"])
