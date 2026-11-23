@@ -54,7 +54,7 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          paddle=0,      # 1: flat T-section test paddles instead of the aero blades
          pad_x0=19.5, pad_x1=60.0, pad_w=12.0, pad_t=3.0, pad_rib=23.0, pad_rw=6.0, pad_hole=2.5, pad_hx=55.0, pad_hy=4.5,
          inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),),
-         tag="v3", tag_h=3.2, tag_d=0.5,   # version stamp engraved on the hub's -y side; +y side: web/build code
+         tag="v3", tag_h=3.5, tag_d=0.6, tag_x=5.2,   # version stamp + web/build code engraved in hub bottom face
          steel=1,       # 0: no strip bodies in the export (slits stay empty: unreinforced test print)
          blade=2,       # 1: clean_rotor.blade_loft (9 sections, 4412, 2 % TE); 2: blade_loft2 below
          n_sec=18, tc_root=15, tc_tip=9, tc_in=20, te_abs=0.45, tip_min=0.3)
@@ -201,15 +201,17 @@ def hub_bore(S, p):
 
 
 def stamp(S, p):
-    """Engrave the version tag (-y side) and the build code (+y side: web thickness, S = solid web / L = slits)
-    tag_d deep in the middle of the hub's flat vertical sides, between the two hinges. Vertical engraving
-    prints clean with no support; the nut pocket stays > 3.5 mm away."""
+    """Engrave (negative) the version tag and build code (web thickness, S = solid web / L = slits) tag_d deep
+    in the hub's BOTTOM face (bed side: sharpest surface, flat, no support), two lines on the +x side of the bore
+    (the -x bottom flat is cut short by the tilted hinge), text running along y and mirrored so it reads right when the part is turned over."""
     code = f"w{p['tw']:g}{'L' if p['slits'] else 'S'}"
-    for nm, txt, sg in (("tagA", p["tag"], -1.0), ("tagB", code, 1.0)):
-        y0 = sg * (p["W"] - p["tag_d"])
-        S.add("sketch.create", plane={"origin": [0.0, y0, 0.0], "x_dir": [-sg, 0.0, 0.0], "y_dir": [0.0, 0.0, 1.0]},
+    zc = p["zb"] + p["tag_d"]
+    for nm, txt, xc in (("tagA", p["tag"], p["tag_x"]), ("tagB", code, p["tag_x"] + 1.55 * p["tag_h"])):
+        # plane normal -z (viewer below the part); sketch x = world +y, sketch y = world +x
+        S.add("sketch.create", plane={"origin": [0.0, 0.0, zc], "x_dir": [0.0, 1.0, 0.0], "y_dir": [1.0, 0.0, 0.0]},
               name=nm + "_sk")
-        S.add("sketch.text", text=txt, at=[0, 0], height=p["tag_h"], align="center", vertical_align="middle")
+        S.add("sketch.text", text=txt, at=[0, xc], height=p["tag_h"], font="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", align="center",
+              vertical_align="middle")
         S.add("sketch.finish")
         S.add("solid.extrude", sketch=nm + "_sk", distance=p["tag_d"] + 1.0, operation="new", body_name=nm)
         S.cut("rotor", [nm])
