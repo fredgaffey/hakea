@@ -54,6 +54,7 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          paddle=0,      # 1: flat T-section test paddles instead of the aero blades
          pad_x0=19.5, pad_x1=60.0, pad_w=12.0, pad_t=3.0, pad_rib=23.0, pad_rw=6.0, pad_hole=2.5, pad_hx=55.0, pad_hy=4.5,
          inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),),
+         steel=1,       # 0: no strip bodies in the export (slits stay empty: unreinforced test print)
          blade=2,       # 1: clean_rotor.blade_loft (9 sections, 4412, 2 % TE); 2: blade_loft2 below
          n_sec=18, tc_root=15, tc_tip=9, tc_in=20, te_abs=0.45, tip_min=0.3)
 
@@ -360,7 +361,7 @@ if __name__ == "__main__":
         k_, v_ = kv.split("=")
         p[k_] = (tuple(("in%d" % j, *[float(x) for x in sec.split(":")][:3], 0.0, float(sec.split(":")[3]))
                        for j, sec in enumerate(v_.split(","))) if k_ == "inb" else type(P[k_])(v_))
-    cmds, lay, pauses = build(d, p, blades=not p["free"], strips=not p["free"])
+    cmds, lay, pauses = build(d, p, blades=not p["free"], strips=not p["free"] and bool(p["steel"]))
     json.dump(cmds, open(sys.argv[2], "w"))
     sec = section(lay, p)
     print(len(cmds), "commands; theta", round(math.degrees(sec["th"]), 2), "rm", round(sec["rm"], 3), "d", sec["d"])
