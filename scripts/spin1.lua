@@ -7,6 +7,7 @@
 -- the pull at hover (~12 750 rpm), so the first run loads the printed webs to half of what
 -- flight will. Raise RPM_CAP only after a clean run (no whitening at the webs, no change
 -- of blade pitch at rest, no growing vibration).
+-- Only ONE bench script (spin1 / fatigue / bench*) may be on the FC: they all drive output 1.
 -- Stand out of the rotor plane. Guard round the rotor. Eye protection.
 
 local RPM_CAP = 9000        -- stop climbing once the ESC reports this (rpm)
@@ -20,6 +21,7 @@ local ARM_WAIT = 3          -- seconds at zero throttle after arming
 
 local t_arm, t_last, t_step = nil, 0, 0
 local pwm, top, state = 1000, nil, 'wait'
+local rbuf = {}
 
 local function out(p, rpm)
   SRV_Channels:set_output_pwm_chan_timeout(0, p, 50)
@@ -28,7 +30,7 @@ end
 
 function update()
   if not arming:is_armed() then
-    t_arm, state, pwm, top = nil, 'wait', 1000, nil
+    t_arm, state, pwm, top, rbuf = nil, 'wait', 1000, nil, {}
     return update, 100
   end
   local now = millis():tofloat() / 1000
@@ -36,7 +38,18 @@ function update()
     t_arm, t_step = now, now
     gcs:send_text(6, string.format('spin1: start, cap %d rpm / %d us', RPM_CAP, PWM_CAP))
   end
-  local rpm = esc_telem:get_rpm(0) or -1
+  local raw = esc_telem:get_rpm(0)
+  if raw then
+    rbuf[#rbuf + 1] = raw
+    if #rbuf > 50 then table.remove(rbuf, 1) end   -- 0.5 s at 100 Hz
+  end
+  local rpm = -1
+  if #rbuf > 0 then
+    local c = {}
+    for i = 1, #rbuf do c[i] = rbuf[i] end
+    table.sort(c)
+    rpm = c[math.floor((#c + 1) / 2)]               -- median: one bad sample can't trip it
+  end
   local held = now - t_step
 
   if state == 'wait' and held >= ARM_WAIT then
