@@ -54,6 +54,7 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          paddle=0,      # 1: flat T-section test paddles instead of the aero blades
          pad_x0=19.5, pad_x1=60.0, pad_w=12.0, pad_t=3.0, pad_rib=23.0, pad_rw=6.0, pad_hole=2.5, pad_hx=55.0, pad_hy=4.5,
          inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),),
+         tag="v3", tag_h=3.2, tag_d=0.5,   # version stamp engraved on the hub's -y side; +y side: web/build code
          steel=1,       # 0: no strip bodies in the export (slits stay empty: unreinforced test print)
          blade=2,       # 1: clean_rotor.blade_loft (9 sections, 4412, 2 % TE); 2: blade_loft2 below
          n_sec=18, tc_root=15, tc_tip=9, tc_in=20, te_abs=0.45, tip_min=0.3)
@@ -199,6 +200,21 @@ def hub_bore(S, p):
     S.cut("rotor", ["nut"])
 
 
+def stamp(S, p):
+    """Engrave the version tag (-y side) and the build code (+y side: web thickness, S = solid web / L = slits)
+    tag_d deep in the middle of the hub's flat vertical sides, between the two hinges. Vertical engraving
+    prints clean with no support; the nut pocket stays > 3.5 mm away."""
+    code = f"w{p['tw']:g}{'L' if p['slits'] else 'S'}"
+    for nm, txt, sg in (("tagA", p["tag"], -1.0), ("tagB", code, 1.0)):
+        y0 = sg * (p["W"] - p["tag_d"])
+        S.add("sketch.create", plane={"origin": [0.0, y0, 0.0], "x_dir": [-sg, 0.0, 0.0], "y_dir": [0.0, 0.0, 1.0]},
+              name=nm + "_sk")
+        S.add("sketch.text", text=txt, at=[0, 0], height=p["tag_h"], align="center", vertical_align="middle")
+        S.add("sketch.finish")
+        S.add("solid.extrude", sketch=nm + "_sk", distance=p["tag_d"] + 1.0, operation="new", body_name=nm)
+        S.cut("rotor", [nm])
+
+
 def _inside(poly, pts):
     """Even-odd point-in-polygon for an (N, 2) array."""
     poly = np.asarray(poly, float)
@@ -338,6 +354,8 @@ def build(design, p=P, ov=OV, blades=True, strips=True):
     else:
         strips = False
     hub_bore(S, p)
+    if p["tag"]:
+        stamp(S, p)
     if p["paddle"]:
         for k in (1, 2):
             paddle(S, p, k, join=not p["free"])
