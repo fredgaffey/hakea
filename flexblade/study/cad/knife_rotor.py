@@ -213,8 +213,10 @@ def stamp(S, p):
         S.add("sketch.text", text=txt, at=[0, xc], height=p["tag_h"], font="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", align="center",
               vertical_align="middle")
         S.add("sketch.finish")
-        S.add("solid.extrude", sketch=nm + "_sk", distance=p["tag_d"] + 1.0, operation="new", body_name=nm)
-        S.cut("rotor", [nm])
+        # cut straight into the rotor: a "new" text extrude makes one body per glyph and only the first takes
+        # body_name, so combining by name left the other letters behind as raised solids
+        S.add("solid.extrude", sketch=nm + "_sk", distance=p["tag_d"] + 1.0, operation="cut", targets=["rotor"],
+              name=nm)
 
 
 def _inside(poly, pts):
