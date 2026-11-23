@@ -59,7 +59,7 @@ function update()
     end
   end
   -- overspeed guard: the rpm cap is a ceiling, not a target
-  if rpm > RPM_CAP * 1.1 then
+  if rpm > RPM_CAP * 1.1 and state ~= 'done' then
     state, pwm = 'done', 1000
     gcs:send_text(3, string.format('spin1: OVERSPEED %.0f rpm, throttle cut', rpm))
   end
