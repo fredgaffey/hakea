@@ -42,6 +42,7 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          land=3.0,      # strip land past the top mouth at mid-width (level-cut end: +-1.74 across width)
          land_b=3.0,    # strip land past the bottom mouth (level-cut too)
          e=0.6,         # web edge wall past the strip along a
+         xgap=1.2,      # min gap between the two webs where they pass at the cross (along a)
          g=0.8,         # end-gap width (planes normal to a)
          a_end=5.8,     # knife inboard end / cradle outboard end, |a| mm
          t_stack=0.45,  # strip: 9 x 0.05 steel (or one G10 strip of the same EI)
@@ -54,7 +55,7 @@ P = dict(tw=1.6,        # printed web thickness, mm (slit + two skins)
          paddle=0,      # 1: flat T-section test paddles instead of the aero blades
          pad_x0=19.5, pad_x1=60.0, pad_w=12.0, pad_t=3.0, pad_rib=23.0, pad_rw=6.0, pad_hole=2.5, pad_hx=55.0, pad_hy=4.5,
          inb=(("in0", 20.0, 15.0, 0.8, 0.0, 0.3),),
-         tag="v3", tag_h=3.5, tag_d=0.6, tag_x=5.2,   # version stamp + web/build code engraved in hub bottom face
+         tag="v3.1", tag_h=3.5, tag_d=0.6, tag_x=5.2,   # version stamp + web/build code engraved in hub bottom face
          steel=1,       # 0: no strip bodies in the export (slits stay empty: unreinforced test print)
          blade=2,       # 1: clean_rotor.blade_loft (9 sections, 4412, 2 % TE); 2: blade_loft2 below
          n_sec=18, tc_root=15, tc_tip=9, tc_in=20, te_abs=0.45, tip_min=0.3)
@@ -134,8 +135,17 @@ def hinge_cuts(S, lay, k, p, target):
     webs = []
     for i, f in enumerate(lay["strips"]):
         nm = f"web{k}{i}"
+        # the two webs sit side by side along a and pass each other at the cross; trim each one's inner edge so
+        # they stay >= xgap apart there (0.16 mm as laid out: fused/bridged by 0.66 mm lines -> snapped at the cross)
+        oa = float(((f["p0"] + f["p1"]) / 2 - h) @ a)
+        wa = float(np.asarray(f["w"], float) @ a)
+        lo, hi = -hw - p["e"], hw + p["e"]
+        if oa * wa > 0:
+            lo = max(lo, p["xgap"] / 2 - abs(oa))
+        else:
+            hi = min(hi, abs(oa) - p["xgap"] / 2)
         S.obox(nm, Lm, (f["p0"] + f["p1"]) / 2, f["t"], f["w"], np.cross(f["t"], f["w"]),
-               (-L2 - 0.6, L2 + 0.6), (-hw - p["e"], hw + p["e"]), (-p["tw"] / 2, p["tw"] / 2))
+               (-L2 - 0.6, L2 + 0.6), (lo, hi), (-p["tw"] / 2, p["tw"] / 2))
         webs.append(nm)
     tools = []
     band = [tuple(q) for q in sec["line"]] + [tuple(q) for q in sec["kerf"]]
