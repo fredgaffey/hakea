@@ -1,59 +1,62 @@
--- Rotor wear test ("wear"), PROP ON, output 1. Pair with the TEMPORARY ESC build
--- FOXEER_F421_WEAR, which adds the once-per-rev (1P) torque pulse on top of whatever
--- throttle this script sends, as cyclic does in flight.
+-- Rotor wear test ("wear"), PROP ON, output 1. Closed loop on RPM, so the supply voltage
+-- does not matter. Optional: the TEMPORARY ESC build FOXEER_F421_WEAR adds the 1P pulse.
 --
--- Arm and it flies a repeating ~40 s "flight" on the throttle, until the rotor breaks,
--- WR_CYC cycles are done, or you disarm:
+-- Arm: waits for ESC telemetry (it drops ~3 s on every arm), then flies a repeating ~40 s
+-- "flight" as rpm targets around WRR_RHOV (hover rpm), until the rotor breaks, WRR_CYC
+-- cycles are done, or you disarm:
 --   spin-up, hover, slow gusts (2 Hz), fast gusts (6 Hz), manoeuvre buzz (12 Hz),
 --   punch-outs, hover, descent, bounce, settle.
--- Levels are relative to WR_HOV (hover throttle); WR_SCL scales every excursion.
+-- WRR_SCL scales every excursion from hover. Fast segments are tracked as well as the
+-- motor can; that is fine, it is the load history that matters.
 --
--- Break detection, rpm only (the FC does not need to be on the stand):
--- cycle 1 is a warm-up, cycle 2 learns the rpm at every 0.2 s slot of the flight, and
--- from cycle 3 every slot is compared with what it was. A blade or chunk lost makes the
--- motor run faster at the same throttle; something rubbing makes it slower. The median
--- of the last 5 slot ratios (1 s) beyond WR_DRPM % trips. Each slot's learnt rpm follows
--- slow drift (battery sag) by 10 % per cycle.
--- Also stops on: no rpm telemetry 1 s, overspeed, battery low (ESC voltage), ESC hot.
+-- Break detection: with rpm held, a lost blade (or chunk) shows up as a sudden DROP in
+-- the throttle needed (less drag); rubbing as a RISE. Cycle 1 warms up, cycle 2 learns
+-- the throttle at every 0.2 s slot of the flight, then every slot is compared with it.
+-- The median of the last 5 slots (1 s) beyond WRR_DTHR % of the learnt throttle above idle
+-- trips. Learnt values follow slow drift by 10 % per cycle.
+-- Also stops on: no rpm telemetry 1 s, overspeed, cannot hold rpm (2 s below half the
+-- target), battery low (ESC voltage), ESC hot.
 -- On any stop: throttle zero, DISARM, message + tune, cycles and revolutions reported.
 -- Only ONE bench script (wear / fatigue / spin1 / bench*) may be on the FC.
 -- Guard round the rotor, stand out of its plane, eye protection.
 
-local KEY = 74
-assert(param:add_table(KEY, 'WR_', 10), 'wear: param table')
-assert(param:add_param(KEY, 1, 'HOV', 1500))    -- hover throttle (us)
+local KEY = 75
+assert(param:add_table(KEY, 'WRR_', 12), 'wear: param table')
+assert(param:add_param(KEY, 1, 'RHOV', 12750))  -- hover rpm
 assert(param:add_param(KEY, 2, 'SCL', 1.0))     -- scale on every excursion from hover
 assert(param:add_param(KEY, 3, 'CYC', 0))       -- stop after this many cycles (0 = until break)
-assert(param:add_param(KEY, 4, 'DRPM', 8))      -- rpm change vs learnt that trips (%)
+assert(param:add_param(KEY, 4, 'DTHR', 15))     -- throttle change vs learnt that trips (%)
 assert(param:add_param(KEY, 5, 'RMAX', 21000))  -- overspeed (rpm)
-assert(param:add_param(KEY, 6, 'VLOW', 14.0))   -- battery low from ESC voltage (V, 2 s)
+assert(param:add_param(KEY, 6, 'VLOW', 21.0))   -- battery low from ESC voltage (V, 2 s); 6S 3.5 V/cell
 assert(param:add_param(KEY, 7, 'TMAX', 90))     -- ESC too hot (deg C)
-assert(param:add_param(KEY, 8, 'PMAX', 1850))   -- never command more than this (us)
+assert(param:add_param(KEY, 8, 'PMAX', 1900))   -- never command more than this (us)
+assert(param:add_param(KEY, 9, 'KP', 0.010))    -- rpm loop: us per rpm of error
+assert(param:add_param(KEY, 10, 'KI', 0.040))   -- rpm loop: us per rpm per second
 
 local P = {}
-for _, n in ipairs({'HOV', 'SCL', 'CYC', 'DRPM', 'RMAX', 'VLOW', 'TMAX', 'PMAX'}) do
-  P[n] = Parameter('WR_' .. n)
+for _, n in ipairs({'RHOV', 'SCL', 'CYC', 'DTHR', 'RMAX', 'VLOW', 'TMAX', 'PMAX', 'KP', 'KI'}) do
+  P[n] = Parameter('WRR_' .. n)
 end
 
 -- ---------------------------------------------------------------------------------
--- the flight: {name, seconds, function(t) -> offset from hover in us (before WR_SCL)}
-local function hold(d) return function() return d end end
+-- the flight: {name, seconds, function(t) -> rpm as a fraction of hover, before WRR_SCL}
+local function hold(f) return function() return f end end
 local function ramp(a, b, T) return function(t) return a + (b - a) * t / T end end
-local function sine(amp, f) return function(t) return amp * math.sin(2 * math.pi * f * t) end end
+local function sine(amp, f) return function(t) return 1 + amp * math.sin(2 * math.pi * f * t) end end
 local function square(hi, lo, t_hi, t_lo)
   return function(t) if t % (t_hi + t_lo) < t_hi then return hi end return lo end
 end
 local PLAN = {
-  {'spinup',  2.0, ramp(-350, 0, 2.0)},
-  {'hover',   6.0, hold(0)},
-  {'gust2',   4.0, sine(120, 2)},
-  {'gust6',   4.0, sine(120, 6)},
-  {'buzz12',  3.0, sine(80, 12)},
-  {'punch',   4.8, square(250, -100, 0.4, 0.8)},   -- 4 punch-outs
-  {'hover',   4.0, hold(0)},
-  {'descend', 3.0, hold(-200)},
-  {'bounce',  4.0, square(50, -200, 0.5, 0.5)},    -- flare / bounce, 1 Hz
-  {'settle',  3.0, ramp(-200, 0, 3.0)},
+  {'spinup',  3.0, ramp(0.4, 1.0, 3.0)},
+  {'hover',   6.0, hold(1.0)},
+  {'gust2',   4.0, sine(0.10, 2)},
+  {'gust6',   4.0, sine(0.10, 6)},
+  {'buzz12',  3.0, sine(0.06, 12)},
+  {'punch',   4.8, square(1.30, 0.90, 0.4, 0.8)},   -- 4 punch-outs to 130 % hover rpm
+  {'hover',   4.0, hold(1.0)},
+  {'descend', 3.0, hold(0.80)},
+  {'bounce',  4.0, square(1.05, 0.80, 0.5, 0.5)},   -- flare / bounce, 1 Hz
+  {'settle',  3.0, ramp(0.80, 1.0, 3.0)},
 }
 local CYCLE = 0
 for _, s in ipairs(PLAN) do CYCLE = CYCLE + s[2] end
@@ -61,17 +64,20 @@ local SLOT = 0.2                                     -- template slot (s)
 local NSLOT = math.floor(CYCLE / SLOT + 0.5)
 
 -- ---------------------------------------------------------------------------------
-local REASON = {user = 1, rpm = 2, telem = 4, overspeed = 5, battery = 6, temp = 7, cycles = 8}
+local REASON = {user = 1, thr = 2, telem = 4, overspeed = 5, battery = 6, temp = 7, cycles = 8, stall = 9}
 local state = 'idle'                                 -- idle / wait / run / stopped
-local t_wait, t_seen = nil, nil                      -- telemetry wait after arming
-local t_arm, t_last, t_rpm_ok, t_vlow = nil, 0, 0, nil
+local t_wait, t_seen = nil, nil
+local t_arm, t_last, t_rpm_ok, t_vlow, t_stall = nil, 0, 0, nil, nil
 local revs, cyc = 0, 0
-local tmpl = {}                                      -- learnt rpm per slot
+local tmpl = {}                                      -- learnt throttle above idle per slot
 local slot_i, slot_buf = -1, {}
-local ratios = {}                                    -- last 5 slot ratios
+local ratios = {}
 local ratio_now = 1
 local volt, temp, cur = 0, 0, 0
-local cs = nil                                       -- per-cycle stats
+local cs = nil
+local g = 0.02                                       -- feed-forward: us above 1000 per rpm (starts low: undershoot, the loop pulls it up)
+local integ = 0                                      -- PI integrator (us)
+local rpm_f = 0                                      -- filtered rpm for control
 
 local function median(t)
   local c = {}
@@ -94,16 +100,16 @@ local function stop(level, why, code, rpm)
   arming:disarm()
   event(code, rpm)
   gcs:send_text(level, string.format('wear: STOP %s | cycle %d, %.1f min, %.1f krev', why, cyc,
-                                     (millis():tofloat() / 1000 - t_arm) / 60, revs / 1000))
-  notify:play_tune(code == REASON.rpm and 'MFT100L4CCC' or 'MFT200L8C')
+                                     (millis():tofloat() / 1000 - (t_arm or 0)) / 60, revs / 1000))
+  notify:play_tune(code == REASON.thr and 'MFT100L4CCC' or 'MFT200L8C')
 end
 
-local function plan_at(tc)                           -- tc: time within the cycle
+local function plan_at(tc)
   for _, s in ipairs(PLAN) do
     if tc < s[2] then return s[3](tc), s[1] end
     tc = tc - s[2]
   end
-  return 0, 'hover'
+  return 1, 'hover'
 end
 
 local function seg_index(name)
@@ -126,18 +132,14 @@ function update()
   end
 
   local now = millis():tofloat() / 1000
-  -- after arming the ESC telemetry goes quiet for ~3 s: hold zero throttle until
-  -- rpm has been coming in for 0.5 s (max 8 s), then start the flight
+  -- after arming the ESC telemetry goes quiet for ~3 s: hold zero throttle until rpm has
+  -- been coming in for 0.5 s (max 8 s), then start the flight
   if t_arm == nil then
     if state ~= 'wait' then
       state, t_wait, t_seen = 'wait', now, nil
       gcs:send_text(6, 'wear: armed, waiting for ESC telemetry')
     end
-    if esc_telem:get_rpm(0) then
-      t_seen = t_seen or now
-    else
-      t_seen = nil
-    end
+    if esc_telem:get_rpm(0) then t_seen = t_seen or now else t_seen = nil end
     if t_seen == nil or now - t_seen < 0.5 then
       if now - t_wait > 8 then
         state, t_arm = 'stopped', now
@@ -149,15 +151,14 @@ function update()
       SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
       return update, 10
     end
-  end
-  if t_arm == nil then
-    t_arm, t_last, t_rpm_ok, t_vlow = now, now, now, nil
+    t_arm, t_last, t_rpm_ok, t_vlow, t_stall = now, now, now, nil, nil
     state, revs, cyc, tmpl, slot_i, slot_buf, ratios, ratio_now = 'run', 0, 0, {}, -1, {}, {}, 1
+    integ, rpm_f = 0, 0
     cs = new_stats()
-    gcs:send_text(6, string.format('wear: start, hover %d us, %.0f s cycle, learning on cycle 2',
-                                   math.floor(P.HOV:get()), CYCLE))
+    gcs:send_text(6, string.format('wear: start, hover %d rpm, %.0f s cycle, learning on cycle 2',
+                                   math.floor(P.RHOV:get()), CYCLE))
   end
-  local dt = now - t_last
+  local dt = math.max(now - t_last, 0.001)
   t_last = now
 
   -- telemetry
@@ -175,15 +176,16 @@ function update()
   local new_cyc = math.floor(t / CYCLE)
   local tc = t - new_cyc * CYCLE
   if new_cyc ~= cyc then
-    -- cycle finished: report + log
     local mean = cs.n > 0 and cs.rsum / cs.n or 1
     if cyc >= 2 then
-      gcs:send_text(6, string.format('wear: cycle %d ok | rpm/learnt %.3f (%.3f-%.3f) | %.1f krev | %.2f V | %d C',
+      gcs:send_text(6, string.format('wear: cycle %d ok | thr/learnt %.3f (%.3f-%.3f) | %.1f krev | %.1f V | %d C',
                                      cyc + 1, mean, cs.rmin, cs.rmax, revs / 1000, cs.vmin, cs.tmax))
     elseif cyc == 1 then
       gcs:send_text(6, string.format('wear: learnt %d slots, watching from cycle 3', NSLOT))
+    else
+      gcs:send_text(6, string.format('wear: cycle 1 done, hover needs %.0f us', 1000 + g * P.RHOV:get()))
     end
-    logger:write('WRC', 'cyc,krev,rmean,rmin,rmax,vmin,tmax', 'Hffffff', cyc + 1, revs / 1000, mean,
+    logger:write('WRC', 'cyc,krev,tmean,tmin,tmax,vmin,tmpmax', 'Hffffff', cyc + 1, revs / 1000, mean,
                  cs.rmin, cs.rmax, cs.vmin, cs.tmax)
     cyc = new_cyc
     cs = new_stats()
@@ -192,40 +194,64 @@ function update()
       return update, 100
     end
   end
-  local off, seg = plan_at(tc)
-  local pwm = P.HOV:get() + P.SCL:get() * off
-  pwm = math.max(1050, math.min(pwm, P.PMAX:get()))
+  local frac, seg = plan_at(tc)
+  local target = P.RHOV:get() * (1 + P.SCL:get() * (frac - 1))
+  target = math.min(target, P.RMAX:get() * 0.9)
 
-  -- slot bookkeeping: close a slot when time moves into the next one
+  -- rpm loop: feed-forward (learnt us/rpm) + PI on the error
+  if raw then rpm_f = rpm_f + math.min(1, dt / 0.02) * (raw - rpm_f) end
+  local err = target - rpm_f
+  local ff = g * target
+  local pwm_u = 1000 + ff + P.KP:get() * err + integ
+  local pmax = P.PMAX:get()
+  local pwm = math.max(1050, math.min(pwm_u, pmax))
+  if pwm == pwm_u or (pwm_u > pmax and err < 0) or (pwm_u < 1050 and err > 0) then
+    integ = integ + P.KI:get() * err * dt               -- anti-windup: only when not pushing a limit
+  end
+  integ = math.max(-150, math.min(integ, 150))
+  -- move the integrator into the feed-forward slowly, so g learns the motor/supply
+  if rpm_f > 3000 then
+    local shift = integ * math.min(1, dt / 3)
+    g = math.max(0.005, math.min(g + shift / math.max(target, 1000), 0.08))
+    integ = integ - shift
+  end
+
+  -- slot bookkeeping: throttle above idle needed at each point of the flight
   local si = math.floor(tc / SLOT)
   if si ~= slot_i then
     if slot_i >= 0 and #slot_buf > 0 then
       local m = median(slot_buf)
       local k = slot_i
-      if cyc == 1 or (cyc == 2 and si == 0 and tmpl[k] == nil) then
-        tmpl[k] = m                                  -- learning cycle
-      elseif tmpl[k] and tmpl[k] > 300 then
+      if cyc == 1 then
+        tmpl[k] = m
+      elseif cyc >= 2 and tmpl[k] and tmpl[k] > 50 then
         local r = m / tmpl[k]
         ratios[#ratios + 1] = r
         if #ratios > 5 then table.remove(ratios, 1) end
         ratio_now = median(ratios)
         cs.rmin, cs.rmax = math.min(cs.rmin, r), math.max(cs.rmax, r)
         cs.rsum, cs.n = cs.rsum + r, cs.n + 1
-        tmpl[k] = tmpl[k] + 0.1 * (m - tmpl[k])      -- follow slow drift
-        if #ratios >= 5 and math.abs(ratio_now - 1) * 100 > P.DRPM:get() then
-          stop(2, string.format('rpm %+.0f%% vs learnt in %s: blade lost or rubbing',
-                                (ratio_now - 1) * 100, seg), REASON.rpm, m)
+        tmpl[k] = tmpl[k] + 0.1 * (m - tmpl[k])
+        if #ratios >= 5 and math.abs(ratio_now - 1) * 100 > P.DTHR:get() then
+          stop(2, string.format('throttle %+.0f%% vs learnt in %s: %s', (ratio_now - 1) * 100, seg,
+                                ratio_now < 1 and 'blade lost?' or 'rubbing / drag?'), REASON.thr, raw)
           return update, 100
         end
       end
     end
     slot_i, slot_buf = si, {}
   end
-  if raw then slot_buf[#slot_buf + 1] = raw end
+  slot_buf[#slot_buf + 1] = pwm - 1000
 
   -- hard limits
-  if now - t_rpm_ok > 1 and t > 2 then stop(2, 'no rpm telemetry', REASON.telem, 0); return update, 100 end
+  if now - t_rpm_ok > 1 then stop(2, 'no rpm telemetry', REASON.telem, 0); return update, 100 end
   if raw and raw > P.RMAX:get() then stop(2, string.format('overspeed %.0f rpm', raw), REASON.overspeed, raw); return update, 100 end
+  if t > 3 and rpm_f < 0.5 * target then
+    t_stall = t_stall or now
+    if now - t_stall > 2 then stop(2, string.format('cannot hold rpm (%.0f vs %.0f)', rpm_f, target), REASON.stall, raw); return update, 100 end
+  else
+    t_stall = nil
+  end
   if temp > P.TMAX:get() then stop(2, string.format('ESC hot %d C', temp), REASON.temp, raw); return update, 100 end
   if volt > 1 and volt < P.VLOW:get() then
     t_vlow = t_vlow or now
@@ -240,10 +266,10 @@ function update()
   cs.tmax = math.max(cs.tmax, temp)
 
   SRV_Channels:set_output_pwm_chan_timeout(0, math.floor(pwm), 50)
-  logger:write('WEAR', 'pwm,rpm,tmpl,ratio,krev,volt,temp,cur,cyc,seg', 'Hfffffhfhb', math.floor(pwm),
-               raw or -1, tmpl[si] or 0, ratio_now, revs / 1000, volt, temp, cur, cyc, seg_index(seg))
+  logger:write('WEAR', 'pwm,rpm,tgt,ff,integ,ratio,krev,volt,temp,cyc,seg', 'Hffffffffhb', math.floor(pwm),
+               raw or -1, target, ff, integ, ratio_now, revs / 1000, volt, temp, cyc, seg_index(seg))
   return update, 10
 end
 
-gcs:send_text(6, string.format('wear loaded: %.0f s cycle, arm to start', CYCLE))
+gcs:send_text(6, string.format('wear loaded (rpm loop): %.0f s cycle, arm to start', CYCLE))
 return update, 1000
