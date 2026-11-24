@@ -14,6 +14,10 @@
 -- the throttle at every 0.2 s slot of the flight, then every slot is compared with it.
 -- The median of the last 5 slots (1 s) beyond WRR_DTHR % of the learnt throttle above idle
 -- trips. Learnt values follow slow drift by 10 % per cycle.
+-- Duty cycle: WRR_ON minutes flying (12 = one flight), then WRR_OFF minutes resting with the
+-- motor stopped (still armed), repeat. It also rests early when the ESC reaches WRR_TMAX - 15 C,
+-- and only flies again once the ESC is back under WRR_TMAX - 40 C (and WRR_OFF has passed).
+-- The first cycle after a rest is not checked (motor and blades warming up).
 -- Also stops on: no rpm telemetry 1 s, overspeed, cannot hold rpm (2 s below half the
 -- target), battery low (ESC voltage), ESC hot.
 -- On any stop: throttle zero, DISARM, message + tune, cycles and revolutions reported.
@@ -32,9 +36,11 @@ assert(param:add_param(KEY, 7, 'TMAX', 90))     -- ESC too hot (deg C)
 assert(param:add_param(KEY, 8, 'PMAX', 1900))   -- never command more than this (us)
 assert(param:add_param(KEY, 9, 'KP', 0.010))    -- rpm loop: us per rpm of error
 assert(param:add_param(KEY, 10, 'KI', 0.040))   -- rpm loop: us per rpm per second
+assert(param:add_param(KEY, 11, 'ON', 12))      -- fly this many minutes (one flight) ...
+assert(param:add_param(KEY, 12, 'OFF', 10))     -- ... then rest this many minutes, motor stopped
 
 local P = {}
-for _, n in ipairs({'RHOV', 'SCL', 'CYC', 'DTHR', 'RMAX', 'VLOW', 'TMAX', 'PMAX', 'KP', 'KI'}) do
+for _, n in ipairs({'RHOV', 'SCL', 'CYC', 'DTHR', 'RMAX', 'VLOW', 'TMAX', 'PMAX', 'KP', 'KI', 'ON', 'OFF'}) do
   P[n] = Parameter('WRR_' .. n)
 end
 
@@ -78,6 +84,9 @@ local cs = nil
 local g = 0.02                                       -- feed-forward: us above 1000 per rpm (starts low: undershoot, the loop pulls it up)
 local integ = 0                                      -- PI integrator (us)
 local rpm_f = 0                                      -- filtered rpm for control
+local phase, t_phase, t_fly = 'fly', 0, 0            -- fly / rest; flight-time clock
+local check_from = 2                                 -- first cycle whose slots are checked
+local flights = 0
 
 local function median(t)
   local c = {}
@@ -139,7 +148,9 @@ function update()
       state, t_wait, t_seen = 'wait', now, nil
       gcs:send_text(6, 'wear: armed, waiting for ESC telemetry')
     end
-    if esc_telem:get_rpm(0) then t_seen = t_seen or now else t_seen = nil end
+    -- get_rpm keeps returning the last value for up to 1 s after the data stops, so ignore
+    -- the first 1.2 s: anything valid after that is fresh
+    if now - t_wait > 1.2 and esc_telem:get_rpm(0) then t_seen = t_seen or now else t_seen = nil end
     if t_seen == nil or now - t_seen < 0.5 then
       if now - t_wait > 8 then
         state, t_arm = 'stopped', now
@@ -154,6 +165,7 @@ function update()
     t_arm, t_last, t_rpm_ok, t_vlow, t_stall = now, now, now, nil, nil
     state, revs, cyc, tmpl, slot_i, slot_buf, ratios, ratio_now = 'run', 0, 0, {}, -1, {}, {}, 1
     integ, rpm_f = 0, 0
+    phase, t_phase, t_fly, check_from, flights = 'fly', now, 0, 2, 1
     cs = new_stats()
     gcs:send_text(6, string.format('wear: start, hover %d rpm, %.0f s cycle, learning on cycle 2',
                                    math.floor(P.RHOV:get()), CYCLE))
@@ -171,13 +183,40 @@ function update()
   local okc, c = pcall(function() return esc_telem:get_current(0) end)
   if okc and c then cur = c end
 
+  -- duty cycle: rest with the motor stopped, then fly again from the start of a cycle
+  local thot = P.TMAX:get() - 15
+  if phase == 'rest' then
+    SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
+    integ, rpm_f, t_stall = 0, 0, nil
+    if now - t_rpm_ok > 3 then stop(2, 'no rpm telemetry while resting', REASON.telem, 0); return update, 100 end
+    if temp > P.TMAX:get() then stop(2, string.format('ESC hot %d C', temp), REASON.temp, raw); return update, 100 end
+    if now - t_phase >= P.OFF:get() * 60 and temp <= P.TMAX:get() - 40 then
+      phase, t_phase, flights = 'fly', now, flights + 1
+      t_fly = math.ceil(t_fly / CYCLE) * CYCLE           -- restart at a cycle boundary (spin-up)
+      check_from = math.floor(t_fly / CYCLE + 0.5) + 1   -- skip the warm-up cycle
+      slot_i, slot_buf, ratios, ratio_now = -1, {}, {}, 1
+      gcs:send_text(6, string.format('wear: flight %d start | ESC %d C | %.1f krev so far', flights, temp, revs / 1000))
+    end
+    logger:write('WEAR', 'pwm,rpm,tgt,ff,integ,ratio,krev,volt,temp,cyc,seg', 'Hffffffffhb', 1000,
+                 raw or -1, 0, 0, 0, ratio_now, revs / 1000, volt, temp, cyc, 0)
+    return update, 50
+  end
+  t_fly = t_fly + dt
+  if now - t_phase >= P.ON:get() * 60 or temp >= thot then
+    phase, t_phase = 'rest', now
+    SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
+    gcs:send_text(6, string.format('wear: flight %d done (%s) | resting %.0f min | %.1f krev | ESC %d C',
+                                   flights, temp >= thot and 'ESC warm' or 'time', P.OFF:get(), revs / 1000, temp))
+    return update, 50
+  end
+
   -- where in the flight
-  local t = now - t_arm
+  local t = t_fly
   local new_cyc = math.floor(t / CYCLE)
   local tc = t - new_cyc * CYCLE
   if new_cyc ~= cyc then
     local mean = cs.n > 0 and cs.rsum / cs.n or 1
-    if cyc >= 2 then
+    if cyc >= check_from then
       gcs:send_text(6, string.format('wear: cycle %d ok | thr/learnt %.3f (%.3f-%.3f) | %.1f krev | %.1f V | %d C',
                                      cyc + 1, mean, cs.rmin, cs.rmax, revs / 1000, cs.vmin, cs.tmax))
     elseif cyc == 1 then
@@ -224,7 +263,7 @@ function update()
       local k = slot_i
       if cyc == 1 then
         tmpl[k] = m
-      elseif cyc >= 2 and tmpl[k] and tmpl[k] > 50 then
+      elseif cyc >= check_from and tmpl[k] and tmpl[k] > 50 then
         local r = m / tmpl[k]
         ratios[#ratios + 1] = r
         if #ratios > 5 then table.remove(ratios, 1) end
@@ -246,7 +285,7 @@ function update()
   -- hard limits
   if now - t_rpm_ok > 1 then stop(2, 'no rpm telemetry', REASON.telem, 0); return update, 100 end
   if raw and raw > P.RMAX:get() then stop(2, string.format('overspeed %.0f rpm', raw), REASON.overspeed, raw); return update, 100 end
-  if t > 3 and rpm_f < 0.5 * target then
+  if t - (check_from - 1) * CYCLE > 3 and rpm_f < 0.5 * target and tc > 3 then
     t_stall = t_stall or now
     if now - t_stall > 2 then stop(2, string.format('cannot hold rpm (%.0f vs %.0f)', rpm_f, target), REASON.stall, raw); return update, 100 end
   else
@@ -271,5 +310,5 @@ function update()
   return update, 10
 end
 
-gcs:send_text(6, string.format('wear loaded (rpm loop): %.0f s cycle, arm to start', CYCLE))
+gcs:send_text(6, string.format('wear loaded (rpm loop, %d on / %d off min): %.0f s cycle, arm to start', math.floor(P.ON:get()), math.floor(P.OFF:get()), CYCLE))
 return update, 1000
