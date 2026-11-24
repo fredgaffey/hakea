@@ -21,10 +21,11 @@ assert(param:add_param(KEY, 5, 'VMIN', 8))     -- ... and at least this (m/s/s)
 assert(param:add_param(KEY, 6, 'RMAX', 21000)) -- overspeed (rpm)
 assert(param:add_param(KEY, 7, 'BASE', 10))    -- seconds to learn normal rpm and vibration
 assert(param:add_param(KEY, 8, 'RAMP', 6))     -- seconds to ramp from 1100 us to FTG_PWM
+assert(param:add_param(KEY, 10, 'TMAX', 90))   -- stop if ESC temperature exceeds this (deg C)
 assert(param:add_param(KEY, 9, 'VLOW', 14.0))  -- stop below this battery voltage from ESC telemetry (4S: 3.5 V/cell)
 
 local P = {}
-for _, n in ipairs({'PWM', 'MINS', 'DRPM', 'VIBX', 'VMIN', 'RMAX', 'BASE', 'RAMP', 'VLOW'}) do
+for _, n in ipairs({'PWM', 'MINS', 'DRPM', 'VIBX', 'VMIN', 'RMAX', 'BASE', 'RAMP', 'VLOW', 'TMAX'}) do
   P[n] = Parameter('FTG_' .. n)
 end
 
@@ -36,6 +37,15 @@ local revs = 0
 local rbuf, rpm_base, vib_base, vib_n, vib_sum, rpm_hist = {}, nil, nil, 0, 0, {}
 local t_rpm_ok, t_vib_hi, t_report = 0, nil, 0
 local t_vlow = nil
+local volt_now, temp_now, cur_now = 0, 0, 0
+local mn = {n = 0, rs = 0, rmin = 1e9, rmax = 0, vmin = 1e9, tmax = 0}   -- per-minute stats
+local REASON = {none = 0, user = 1, rpm = 2, vib = 3, telem = 4, overspeed = 5, battery = 6, temp = 7, time = 8}
+local function event(code, rpm, rbase)
+  -- one row per run end: why, when, life
+  logger:write('FTGE', 'why,mins,krev,rpm,rbase,volt,temp,rotor', 'Bfffffff', code,
+               (millis():tofloat() / 1000 - (t_arm or 0)) / 60, revs / 1000, rpm or 0, rbase or 0,
+               volt_now, temp_now, Parameter('RLIF_ID'):get())
+end
 
 local function median(t)
   local c = {}
@@ -44,8 +54,9 @@ local function median(t)
   return c[math.floor((#c + 1) / 2)]
 end
 
-local function trip(why)
+local function trip(why, code)
   state = 'tripped'
+  event(code or 0, rbuf and #rbuf > 0 and rbuf[#rbuf] or 0, rpm_base)
   SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
   arming:disarm()
   local mins = (millis():tofloat() / 1000 - t_arm) / 60
@@ -62,6 +73,7 @@ function update()
   if not arming:is_armed() then
     if state == 'run' or state == 'learn' then
       gcs:send_text(5, string.format('fatigue: disarmed by hand, %.1f krev', revs / 1000))
+      event(REASON.user, 0, rpm_base)
     end
     state, t_arm, rbuf, rpm_base, vib_base = 'idle', nil, {}, nil, nil
     return update, 100
@@ -110,11 +122,17 @@ function update()
   end
 
   -- checks that apply all the time
-  if now - t_rpm_ok > 1 and now - t_arm > 2 then trip('no rpm telemetry'); return update, 100 end
-  if rpm > P.RMAX:get() then trip(string.format('overspeed %.0f rpm', rpm)); return update, 100 end
+  if now - t_rpm_ok > 1 and now - t_arm > 2 then trip('no rpm telemetry', REASON.telem); return update, 100 end
+  if rpm > P.RMAX:get() then trip(string.format('overspeed %.0f rpm', rpm), REASON.overspeed); return update, 100 end
   -- battery: ESC voltage (the FC's own battery sensor is not wired). 2 s low = stop, so a load dip
   -- doesn't trip it. Ends the run as 'done' (battery), not as a rotor failure.
   local ok, volt = pcall(function() return esc_telem:get_voltage(0) end)
+  if ok and volt then volt_now = volt end
+  local okt, temp = pcall(function() return esc_telem:get_temperature(0) end)
+  if okt and temp then temp_now = temp end
+  local okc, cur = pcall(function() return esc_telem:get_current(0) end)
+  if okc and cur then cur_now = cur end
+  if temp_now > P.TMAX:get() then trip(string.format('ESC hot %d C', temp_now), REASON.temp); return update, 100 end
   if ok and volt and volt > 1 then
     if volt < P.VLOW:get() then
       t_vlow = t_vlow or now
@@ -123,6 +141,7 @@ function update()
         SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
         arming:disarm()
         gcs:send_text(4, string.format('fatigue: battery low %.2f V, stopped, rotor OK, %.1f krev', volt, revs / 1000))
+        event(REASON.battery, rpm, rpm_base)
         return update, 100
       end
     else
@@ -133,14 +152,14 @@ function update()
   if state == 'run' then
     local d = (rpm - rpm_base) / rpm_base * 100
     if math.abs(d) > P.DRPM:get() then
-      trip(string.format('rpm %+.0f%% (%.0f vs %.0f): blade lost or rubbing', d, rpm, rpm_base))
+      trip(string.format('rpm %+.0f%% (%.0f vs %.0f): blade lost or rubbing', d, rpm, rpm_base), REASON.rpm)
       return update, 100
     end
     local vlim = math.max(P.VIBX:get() * vib_base, P.VMIN:get())
     if vib > vlim then
       t_vib_hi = t_vib_hi or now
       if now - t_vib_hi > 0.3 then
-        trip(string.format('vibration %.1f > %.1f: out of balance', vib, vlim))
+        trip(string.format('vibration %.1f > %.1f: out of balance', vib, vlim), REASON.vib)
         return update, 100
       end
     else
@@ -150,23 +169,32 @@ function update()
     local a = dt / 60
     rpm_base = rpm_base + a * (rpm - rpm_base)
     vib_base = vib_base + a * (vib - vib_base)
+    mn.n, mn.rs = mn.n + 1, mn.rs + rpm
+    mn.rmin, mn.rmax = math.min(mn.rmin, rpm), math.max(mn.rmax, rpm)
+    if volt_now > 1 then mn.vmin = math.min(mn.vmin, volt_now) end
+    mn.tmax = math.max(mn.tmax, temp_now)
     if now - t_report > 60 then
       t_report = now
-      gcs:send_text(6, string.format('fatigue: %.1f min, %.1f krev, %.0f rpm, vibe %.1f',
-                                     (now - t_arm) / 60, revs / 1000, rpm, vib))
+      local mean = mn.rs / math.max(mn.n, 1)
+      gcs:send_text(6, string.format('fatigue: %.1f min %.1f krev | rpm %.0f (%.0f-%.0f) | %.2f V | %d C',
+                                     (now - t_arm) / 60, revs / 1000, mean, mn.rmin, mn.rmax, mn.vmin, mn.tmax))
+      logger:write('FTGM', 'mins,krev,rmean,rmin,rmax,rbase,vmin,tmax', 'ffffffff', (now - t_arm) / 60,
+                   revs / 1000, mean, mn.rmin, mn.rmax, rpm_base, mn.vmin, mn.tmax)
+      mn = {n = 0, rs = 0, rmin = 1e9, rmax = 0, vmin = 1e9, tmax = 0}
     end
     if P.MINS:get() > 0 and now - t_arm > P.MINS:get() * 60 then
       state = 'done'
       SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
       arming:disarm()
       gcs:send_text(5, string.format('fatigue: time up, no failure, %.1f krev', revs / 1000))
+      event(REASON.time, rpm, rpm_base)
       return update, 100
     end
   end
 
   SRV_Channels:set_output_pwm_chan_timeout(0, math.floor(pwm), 50)
-  logger:write('FTG', 'pwm,rpm,rbase,vib,vbase,krev,st', 'Hffffff', math.floor(pwm), rpm,
-               rpm_base or 0, vib, vib_base or 0, revs / 1000,
+  logger:write('FTG', 'pwm,rpm,raw,rbase,vib,vbase,krev,volt,temp,cur,st', 'Hfffffffhfb', math.floor(pwm), rpm,
+               raw or -1, rpm_base or 0, vib, vib_base or 0, revs / 1000, volt_now, temp_now, cur_now,
                ({ramp = 1, learn = 2, run = 3})[state] or 0)
   return update, 20
 end
