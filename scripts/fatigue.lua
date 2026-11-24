@@ -129,7 +129,7 @@ function update()
   local ok, volt = pcall(function() return esc_telem:get_voltage(0) end)
   if ok and volt then volt_now = volt end
   local okt, temp = pcall(function() return esc_telem:get_temperature(0) end)
-  if okt and temp then temp_now = temp end
+  if okt and temp then temp_now = math.floor(temp / 100) end   -- centidegrees -> deg C
   local okc, cur = pcall(function() return esc_telem:get_current(0) end)
   if okc and cur then cur_now = cur end
   if temp_now > P.TMAX:get() then trip(string.format('ESC hot %d C', temp_now), REASON.temp); return update, 100 end

@@ -141,7 +141,7 @@ function update()
   local ok, v = pcall(function() return esc_telem:get_voltage(0) end)
   if ok and v then volt = v end
   local okt, tc_ = pcall(function() return esc_telem:get_temperature(0) end)
-  if okt and tc_ then temp = tc_ end
+  if okt and tc_ then temp = math.floor(tc_ / 100) end   -- centidegrees -> deg C
   local okc, c = pcall(function() return esc_telem:get_current(0) end)
   if okc and c then cur = c end
 
