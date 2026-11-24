@@ -21,9 +21,10 @@ assert(param:add_param(KEY, 5, 'VMIN', 8))     -- ... and at least this (m/s/s)
 assert(param:add_param(KEY, 6, 'RMAX', 21000)) -- overspeed (rpm)
 assert(param:add_param(KEY, 7, 'BASE', 10))    -- seconds to learn normal rpm and vibration
 assert(param:add_param(KEY, 8, 'RAMP', 6))     -- seconds to ramp from 1100 us to FTG_PWM
+assert(param:add_param(KEY, 9, 'VLOW', 14.0))  -- stop below this battery voltage from ESC telemetry (4S: 3.5 V/cell)
 
 local P = {}
-for _, n in ipairs({'PWM', 'MINS', 'DRPM', 'VIBX', 'VMIN', 'RMAX', 'BASE', 'RAMP'}) do
+for _, n in ipairs({'PWM', 'MINS', 'DRPM', 'VIBX', 'VMIN', 'RMAX', 'BASE', 'RAMP', 'VLOW'}) do
   P[n] = Parameter('FTG_' .. n)
 end
 
@@ -34,6 +35,7 @@ local state, t_arm, t_last, t_state = 'idle', nil, 0, 0
 local revs = 0
 local rbuf, rpm_base, vib_base, vib_n, vib_sum, rpm_hist = {}, nil, nil, 0, 0, {}
 local t_rpm_ok, t_vib_hi, t_report = 0, nil, 0
+local t_vlow = nil
 
 local function median(t)
   local c = {}
@@ -72,7 +74,7 @@ function update()
   local now = millis():tofloat() / 1000
   if t_arm == nil then
     t_arm, t_last, t_state, t_rpm_ok, t_report = now, now, now, now, now
-    state, revs, vib_n, vib_sum, t_vib_hi = 'ramp', 0, 0, 0, nil
+    state, revs, vib_n, vib_sum, t_vib_hi, t_vlow = 'ramp', 0, 0, 0, nil, nil
     gcs:send_text(6, string.format('fatigue: start, %d us', math.floor(P.PWM:get())))
   end
   local dt = now - t_last
@@ -110,6 +112,23 @@ function update()
   -- checks that apply all the time
   if now - t_rpm_ok > 1 and now - t_arm > 2 then trip('no rpm telemetry'); return update, 100 end
   if rpm > P.RMAX:get() then trip(string.format('overspeed %.0f rpm', rpm)); return update, 100 end
+  -- battery: ESC voltage (the FC's own battery sensor is not wired). 2 s low = stop, so a load dip
+  -- doesn't trip it. Ends the run as 'done' (battery), not as a rotor failure.
+  local ok, volt = pcall(function() return esc_telem:get_voltage(0) end)
+  if ok and volt and volt > 1 then
+    if volt < P.VLOW:get() then
+      t_vlow = t_vlow or now
+      if now - t_vlow > 2 then
+        state = 'done'
+        SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
+        arming:disarm()
+        gcs:send_text(4, string.format('fatigue: battery low %.2f V, stopped, rotor OK, %.1f krev', volt, revs / 1000))
+        return update, 100
+      end
+    else
+      t_vlow = nil
+    end
+  end
 
   if state == 'run' then
     local d = (rpm - rpm_base) / rpm_base * 100
