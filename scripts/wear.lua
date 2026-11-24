@@ -62,7 +62,8 @@ local NSLOT = math.floor(CYCLE / SLOT + 0.5)
 
 -- ---------------------------------------------------------------------------------
 local REASON = {user = 1, rpm = 2, telem = 4, overspeed = 5, battery = 6, temp = 7, cycles = 8}
-local state = 'idle'                                 -- idle / run / stopped
+local state = 'idle'                                 -- idle / wait / run / stopped
+local t_wait, t_seen = nil, nil                      -- telemetry wait after arming
 local t_arm, t_last, t_rpm_ok, t_vlow = nil, 0, 0, nil
 local revs, cyc = 0, 0
 local tmpl = {}                                      -- learnt rpm per slot
@@ -116,7 +117,7 @@ function update()
       event(REASON.user, 0)
       gcs:send_text(5, string.format('wear: disarmed by hand | cycle %d, %.1f krev', cyc, revs / 1000))
     end
-    state, t_arm = 'idle', nil
+    state, t_arm, t_wait = 'idle', nil, nil
     return update, 100
   end
   if state == 'stopped' then
@@ -125,6 +126,30 @@ function update()
   end
 
   local now = millis():tofloat() / 1000
+  -- after arming the ESC telemetry goes quiet for ~3 s: hold zero throttle until
+  -- rpm has been coming in for 0.5 s (max 8 s), then start the flight
+  if t_arm == nil then
+    if state ~= 'wait' then
+      state, t_wait, t_seen = 'wait', now, nil
+      gcs:send_text(6, 'wear: armed, waiting for ESC telemetry')
+    end
+    if esc_telem:get_rpm(0) then
+      t_seen = t_seen or now
+    else
+      t_seen = nil
+    end
+    if t_seen == nil or now - t_seen < 0.5 then
+      if now - t_wait > 8 then
+        state, t_arm = 'stopped', now
+        SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
+        arming:disarm()
+        gcs:send_text(2, 'wear: STOP no ESC telemetry 8 s after arming')
+        return update, 100
+      end
+      SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
+      return update, 10
+    end
+  end
   if t_arm == nil then
     t_arm, t_last, t_rpm_ok, t_vlow = now, now, now, nil
     state, revs, cyc, tmpl, slot_i, slot_buf, ratios, ratio_now = 'run', 0, 0, {}, -1, {}, {}, 1
