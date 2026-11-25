@@ -96,7 +96,11 @@ local integ = 0                                      -- PI integrator (us)
 local rpm_f = 0                                      -- filtered rpm for control
 local tgt_s = nil                                    -- slew-limited rpm target
 local t_trk = nil
-local phase, t_phase, t_fly = 'fly', 0, 0            -- fly / rest; flight-time clock
+local phase, t_phase, t_fly = 'fly', 0, 0            -- fly / land / rest; flight-time clock
+local LAND = 8                                       -- s, throttle ramp down to stop before a rest or
+                                                     -- the end (a sudden cut brakes the rotor and pushes
+                                                     -- its energy back into the bench supply: trips it)
+local last_pwm, land_from, land_then = 1000, 1000, nil
 local check_from = 2                                 -- first cycle whose slots are checked
 local flights = 0
 
@@ -188,7 +192,7 @@ function update()
     t_arm, t_last, t_rpm_ok, t_vlow, t_stall = now, now, now, nil, nil
     state, revs, cyc, tmpl, slot_i, slot_buf, ratios, ratio_now = 'run', 0, 0, {}, -1, {}, {}, 1
     integ, rpm_f, tgt_s, t_trk = 0, 0, nil, nil
-    phase, t_phase, t_fly, check_from, flights = 'fly', now, 0, 2, 1
+    phase, t_phase, t_fly, check_from, flights, land_then = 'fly', now, 0, 2, 1, nil
     cs = new_stats()
     gcs:send_text(6, string.format('wear: start, hover %d rpm, %.0f s cycle, learning on cycle 2',
                                    math.floor(P.RHOV:get()), CYCLE))
@@ -208,6 +212,19 @@ function update()
 
   -- duty cycle: rest with the motor stopped, then fly again from the start of a cycle
   local thot = P.TMAX:get() - 15
+  if phase == 'land' then
+    local f = math.min(1, (now - t_phase) / LAND)
+    local pwm = land_from + (1000 - land_from) * f
+    SRV_Channels:set_output_pwm_chan_timeout(0, math.floor(pwm), 50)
+    logger:write('WEAR', 'pwm,rpm,tgt,ff,integ,ratio,krev,volt,temp,cyc,seg', 'Hffffffffhb', math.floor(pwm),
+                 raw or -1, 0, 0, 0, ratio_now, revs / 1000, volt, temp, cyc, 0)
+    if temp > P.TMAX:get() then stop(2, string.format('ESC hot %d C', temp), REASON.temp, raw); return update, 100 end
+    if f >= 1 then
+      if land_then then stop(5, land_then, REASON.cycles, raw); return update, 100 end
+      phase, t_phase = 'rest', now
+    end
+    return update, 20
+  end
   if phase == 'rest' then
     SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
     integ, rpm_f, t_stall, tgt_s, t_trk = 0, 0, nil, nil, nil
@@ -226,9 +243,8 @@ function update()
   end
   t_fly = t_fly + dt
   if now - t_phase >= P.ON:get() * 60 or temp >= thot then
-    phase, t_phase = 'rest', now
-    SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
-    gcs:send_text(6, string.format('wear: flight %d done (%s) | resting %.0f min | %.1f krev | ESC %d C',
+    phase, t_phase, land_from, land_then = 'land', now, last_pwm, nil
+    gcs:send_text(6, string.format('wear: flight %d done (%s) | ramping down, then resting %.0f min | %.1f krev | ESC %d C',
                                    flights, temp >= thot and 'ESC warm' or 'time', P.OFF:get(), revs / 1000, temp))
     return update, 50
   end
@@ -252,8 +268,10 @@ function update()
     cyc = new_cyc
     cs = new_stats()
     if P.CYC:get() > 0 and cyc >= P.CYC:get() then
-      stop(5, string.format('%d cycles done, no failure', cyc), REASON.cycles, raw)
-      return update, 100
+      phase, t_phase, land_from = 'land', now, last_pwm
+      land_then = string.format('%d cycles done, no failure', cyc)
+      gcs:send_text(6, 'wear: ' .. land_then .. ', ramping down')
+      return update, 20
     end
   end
   local frac, seg = plan_at(tc)
@@ -340,6 +358,7 @@ function update()
   if volt > 1 then cs.vmin = math.min(cs.vmin, volt) end
   cs.tmax = math.max(cs.tmax, temp)
 
+  last_pwm = pwm
   SRV_Channels:set_output_pwm_chan_timeout(0, math.floor(pwm), 50)
   logger:write('WEAR', 'pwm,rpm,tgt,ff,integ,ratio,krev,volt,temp,cyc,seg', 'Hffffffffhb', math.floor(pwm),
                raw or -1, target, ff, integ, ratio_now, revs / 1000, volt, temp, cyc, seg_index(seg))
