@@ -25,7 +25,7 @@
 -- Guard round the rotor, stand out of its plane, eye protection.
 
 local KEY = 75
-assert(param:add_table(KEY, 'WRR_', 12), 'wear: param table')
+assert(param:add_table(KEY, 'WRR_', 16), 'wear: param table')
 assert(param:add_param(KEY, 1, 'RHOV', 12750))  -- hover rpm
 assert(param:add_param(KEY, 2, 'SCL', 1.0))     -- scale on every excursion from hover
 assert(param:add_param(KEY, 3, 'CYC', 0))       -- stop after this many cycles (0 = until break)
@@ -34,13 +34,16 @@ assert(param:add_param(KEY, 5, 'RMAX', 21000))  -- overspeed (rpm)
 assert(param:add_param(KEY, 6, 'VLOW', 21.0))   -- battery low from ESC voltage (V, 2 s); 6S 3.5 V/cell
 assert(param:add_param(KEY, 7, 'TMAX', 90))     -- ESC too hot (deg C)
 assert(param:add_param(KEY, 8, 'PMAX', 1900))   -- never command more than this (us)
-assert(param:add_param(KEY, 9, 'KP', 0.010))    -- rpm loop: us per rpm of error
-assert(param:add_param(KEY, 10, 'KI', 0.040))   -- rpm loop: us per rpm per second
+assert(param:add_param(KEY, 9, 'KP', 0.006))    -- rpm loop: us per rpm of error
+assert(param:add_param(KEY, 10, 'KI', 0.020))   -- rpm loop: us per rpm per second
 assert(param:add_param(KEY, 11, 'ON', 12))      -- fly this many minutes (one flight) ...
 assert(param:add_param(KEY, 12, 'OFF', 10))     -- ... then rest this many minutes, motor stopped
+assert(param:add_param(KEY, 13, 'SLEW', 20000)) -- rpm target never changes faster than this (rpm/s)
+assert(param:add_param(KEY, 14, 'TRK', 30))     -- stop if rpm is off target by more than this % for 1 s
+assert(param:add_param(KEY, 15, 'LOCK', 0))     -- set to 1 by a rotor-type stop: no run until you inspect and set 0
 
 local P = {}
-for _, n in ipairs({'RHOV', 'SCL', 'CYC', 'DTHR', 'RMAX', 'VLOW', 'TMAX', 'PMAX', 'KP', 'KI', 'ON', 'OFF'}) do
+for _, n in ipairs({'RHOV', 'SCL', 'CYC', 'DTHR', 'RMAX', 'VLOW', 'TMAX', 'PMAX', 'KP', 'KI', 'ON', 'OFF', 'SLEW', 'TRK', 'LOCK'}) do
   P[n] = Parameter('WRR_' .. n)
 end
 
@@ -49,8 +52,14 @@ end
 local function hold(f) return function() return f end end
 local function ramp(a, b, T) return function(t) return a + (b - a) * t / T end end
 local function sine(amp, f) return function(t) return 1 + amp * math.sin(2 * math.pi * f * t) end end
+local EDGE = 0.08                                    -- s, raised-cosine edge of every step
 local function square(hi, lo, t_hi, t_lo)
-  return function(t) if t % (t_hi + t_lo) < t_hi then return hi end return lo end
+  return function(t)
+    local p = t % (t_hi + t_lo)
+    local function s(x) x = math.max(0, math.min(1, x / EDGE)); return 0.5 - 0.5 * math.cos(math.pi * x) end
+    if p < t_hi then return lo + (hi - lo) * s(p) end
+    return hi + (lo - hi) * s(p - t_hi)
+  end
 end
 local PLAN = {
   {'spinup',  3.0, ramp(0.4, 1.0, 3.0)},
@@ -70,7 +79,8 @@ local SLOT = 0.2                                     -- template slot (s)
 local NSLOT = math.floor(CYCLE / SLOT + 0.5)
 
 -- ---------------------------------------------------------------------------------
-local REASON = {user = 1, thr = 2, telem = 4, overspeed = 5, battery = 6, temp = 7, cycles = 8, stall = 9}
+local REASON = {user = 1, thr = 2, telem = 4, overspeed = 5, battery = 6, temp = 7, cycles = 8, stall = 9, track = 10}
+local ROTOR = {[REASON.thr] = true, [REASON.stall] = true, [REASON.track] = true}   -- stops that latch WRR_LOCK
 local state = 'idle'                                 -- idle / wait / run / stopped
 local t_wait, t_seen = nil, nil
 local t_arm, t_last, t_rpm_ok, t_vlow, t_stall = nil, 0, 0, nil, nil
@@ -84,6 +94,8 @@ local cs = nil
 local g = 0.02                                       -- feed-forward: us above 1000 per rpm (starts low: undershoot, the loop pulls it up)
 local integ = 0                                      -- PI integrator (us)
 local rpm_f = 0                                      -- filtered rpm for control
+local tgt_s = nil                                    -- slew-limited rpm target
+local t_trk = nil
 local phase, t_phase, t_fly = 'fly', 0, 0            -- fly / rest; flight-time clock
 local check_from = 2                                 -- first cycle whose slots are checked
 local flights = 0
@@ -108,6 +120,10 @@ local function stop(level, why, code, rpm)
   SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
   arming:disarm()
   event(code, rpm)
+  if ROTOR[code] then
+    P.LOCK:set_and_save(1)
+    gcs:send_text(2, 'wear: LOCKED - inspect the rotor, then set WRR_LOCK 0 to run again')
+  end
   gcs:send_text(level, string.format('wear: STOP %s | cycle %d, %.1f min, %.1f krev', why, cyc,
                                      (millis():tofloat() / 1000 - (t_arm or 0)) / 60, revs / 1000))
   notify:play_tune(code == REASON.thr and 'MFT100L4CCC' or 'MFT200L8C')
@@ -139,6 +155,13 @@ function update()
     SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
     return update, 100
   end
+  if P.LOCK:get() > 0 then
+    SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 500)
+    arming:disarm()
+    gcs:send_text(2, 'wear: LOCKED after a rotor stop - inspect the rotor, set WRR_LOCK 0, arm again')
+    state = 'idle'
+    return update, 500
+  end
 
   local now = millis():tofloat() / 1000
   -- after arming the ESC telemetry goes quiet for ~3 s: hold zero throttle until rpm has
@@ -164,7 +187,7 @@ function update()
     end
     t_arm, t_last, t_rpm_ok, t_vlow, t_stall = now, now, now, nil, nil
     state, revs, cyc, tmpl, slot_i, slot_buf, ratios, ratio_now = 'run', 0, 0, {}, -1, {}, {}, 1
-    integ, rpm_f = 0, 0
+    integ, rpm_f, tgt_s, t_trk = 0, 0, nil, nil
     phase, t_phase, t_fly, check_from, flights = 'fly', now, 0, 2, 1
     cs = new_stats()
     gcs:send_text(6, string.format('wear: start, hover %d rpm, %.0f s cycle, learning on cycle 2',
@@ -187,7 +210,7 @@ function update()
   local thot = P.TMAX:get() - 15
   if phase == 'rest' then
     SRV_Channels:set_output_pwm_chan_timeout(0, 1000, 50)
-    integ, rpm_f, t_stall = 0, 0, nil
+    integ, rpm_f, t_stall, tgt_s, t_trk = 0, 0, nil, nil, nil
     if now - t_rpm_ok > 3 then stop(2, 'no rpm telemetry while resting', REASON.telem, 0); return update, 100 end
     if temp > P.TMAX:get() then stop(2, string.format('ESC hot %d C', temp), REASON.temp, raw); return update, 100 end
     if now - t_phase >= P.OFF:get() * 60 and temp <= P.TMAX:get() - 40 then
@@ -236,6 +259,10 @@ function update()
   local frac, seg = plan_at(tc)
   local target = P.RHOV:get() * (1 + P.SCL:get() * (frac - 1))
   target = math.min(target, P.RMAX:get() * 0.9)
+  if tgt_s == nil then tgt_s = target end
+  local step = P.SLEW:get() * dt
+  tgt_s = tgt_s + math.max(-step, math.min(step, target - tgt_s))
+  target = tgt_s
 
   -- rpm loop: feed-forward (learnt us/rpm) + PI on the error
   if raw then rpm_f = rpm_f + math.min(1, dt / 0.02) * (raw - rpm_f) end
@@ -290,6 +317,15 @@ function update()
     if now - t_stall > 2 then stop(2, string.format('cannot hold rpm (%.0f vs %.0f)', rpm_f, target), REASON.stall, raw); return update, 100 end
   else
     t_stall = nil
+  end
+  if tc > 3 and math.abs(rpm_f - target) > P.TRK:get() / 100 * target then
+    t_trk = t_trk or now
+    if now - t_trk > 1 then
+      stop(2, string.format('rpm off target %.0f vs %.0f for 1 s (desync / damage?)', rpm_f, target), REASON.track, raw)
+      return update, 100
+    end
+  else
+    t_trk = nil
   end
   if temp > P.TMAX:get() then stop(2, string.format('ESC hot %d C', temp), REASON.temp, raw); return update, 100 end
   if volt > 1 and volt < P.VLOW:get() then
